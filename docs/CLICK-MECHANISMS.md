@@ -193,9 +193,13 @@ finger to the surface also clicks.
   │  sensor     │
   │  [dome]     │  ← dome between sensor and standoff base
   ──────────────
-  ○foot    ○foot   ← standoff feet, with dome travel gap
+  ▓▓rim    ▓▓rim   ← raised rim with UHMWPE glide pads, dome travel gap
   ═══════════════  surface
 ```
+
+For optical variants (S-OLED, S-VCSL), the rim maintains sensor focal distance
+(2.4–3.2mm). See [GLIDE-SYSTEM.md](GLIDE-SYSTEM.md) for rim construction,
+material selection, and failure mode analysis.
 
 **Works with:** S-OLED, S-VCSL, S-OPTB (any sensor with a rigid PCB mount).
 **Does not work with:** S-BALL (ball protrusion conflicts with dome travel).
@@ -247,11 +251,13 @@ and the electronics. Detects finger pressure through shell deformation.
   │  flex PCB   │
   │  sensor     │
   ──────────────
-  ○foot    ○foot
+  ▓▓rim    ▓▓rim   ← raised rim with UHMWPE glide pads
   ═══════════════  surface
 ```
 
 **Works with:** All sensor types. Adds zero height. Ring can be fully sealed.
+For optical variants, the rim provides focal distance — see
+[GLIDE-SYSTEM.md](GLIDE-SYSTEM.md).
 **Requires:** ADC threshold calibration, haptic LRA driver for feedback.
 
 ### Pattern E: Ball Press-Down (Ball Variants Only)

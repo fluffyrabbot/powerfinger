@@ -141,6 +141,77 @@ PowerFinger project.
 
 ---
 
+## Tier 5: Ambitious — Tolkien Estate / Middle-earth Enterprises
+
+### The Pitch
+
+Middle-earth Enterprises (Embracer Group subsidiary) holds exclusive worldwide
+merchandising rights to The Lord of the Rings. "The One Ring" is trademarked
+for jewelry and merchandise. We'd like to officially license the association.
+
+**Why they might say yes:**
+
+- **It's an accessibility device.** Tolkien wrote about power being used to help
+  or to dominate. An assistive device called "The One Ring" that gives people
+  with disabilities agency over their computers is the most on-brand use of the
+  IP imaginable. It's a better Tolkien story than most licensed merchandise.
+- **It's open-source hardware.** Not a mass-market consumer product competing
+  with their jewelry licensees. It's schematics and firmware — a community
+  project, not a profit engine.
+- **The PR writes itself.** "Tolkien estate licenses 'One Ring' name to
+  open-source assistive device for people with disabilities." That's a headline
+  that makes everyone involved look good.
+- **It's a Palantir counterpoint.** Palantir Technologies named themselves after
+  Sauron's seeing-stones and built surveillance infrastructure for governments.
+  The Tolkien estate has never publicly commented on this. An officially licensed
+  "One Ring" that *distributes* agency rather than *concentrating* surveillance
+  would be a quiet, elegant counterstatement. The contrast markets itself.
+- **Revenue is possible.** We'd offer a small equity stake or per-unit royalty on
+  any commercial kits sold under the "One Ring" branding. The dollar amounts are
+  tiny (it's a $9 BOM device) but the gesture is real.
+
+**Why they'll probably say no:**
+
+- **Brand risk.** The One Ring is canonically evil — a tool of domination. Nerds
+  will point this out loudly. The estate may not want to explain why they
+  licensed Sauron's ring for a real product, even a wholesome one.
+- **Precedent.** Licensing the name for a hardware device opens a category they
+  may not want opened. If they say yes to us, what do they say to the next smart
+  ring company?
+- **Complexity.** An open-source project with CERN-OHL-S licensing is legally
+  weird territory for a traditional IP licensing operation. Their lawyers would
+  need to understand reciprocal hardware licenses, and that conversation might
+  not be worth having for a project at our scale.
+- **Embracer.** The parent company has been in cost-cutting mode. Novel licensing
+  deals for small open-source projects are not where their attention is.
+
+**What we'd ask for:**
+
+- Permission to use "The One Ring" as a product name / variant name for the
+  PowerFinger universal ring module
+- Permission to use Tolkien-referencing marketing language (we'd keep it
+  tasteful and on-message for accessibility)
+- We would NOT ask to use any Tolkien artwork, the ring inscription, movie
+  imagery, or any other visual IP
+
+**What we'd offer:**
+
+- Attribution and link to Middle-earth Enterprises on all project pages
+- Small equity stake or per-unit royalty on commercially sold kits
+- Right of approval on all marketing copy that references Tolkien IP
+- Commitment to accessibility-first messaging (no gaming/military positioning)
+
+**Contact path:** Middle-earth Enterprises licensing inquiries through their
+parent (Embracer Group / Freemode). Also worth a speculative email to the
+Tolkien Estate (separate entity, manages literary rights) for their blessing
+even if MEE holds the merchandising rights.
+
+**Status:** Not yet contacted. Draft pitch before approaching. This is a
+long-shot with a great story — worth attempting after P0 prototype exists and
+the project has a demo video.
+
+---
+
 ## Outreach Priority Order
 
 1. **Makers Making Change** — submit design challenge, get matched with EE/ME
@@ -149,6 +220,7 @@ PowerFinger project.
 4. **Open Assistive + GOAT** — list for discovery
 5. **e-NABLE** — recruit for ring shell mechanical design
 6. **ATHack / TOM Makeathon** — present at next event with working prototype
+7. **Middle-earth Enterprises** — long-shot Tolkien licensing pitch after demo video exists
 
 ---
 

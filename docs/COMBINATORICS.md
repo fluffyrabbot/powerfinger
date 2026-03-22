@@ -74,8 +74,8 @@ or sensor at the tip must accommodate 30–70° pen angles from horizontal.
 | Code | Mechanism | How It Works | Surface Agnostic? | Moving Parts | Resolution | Sensor BOM |
 |------|-----------|-------------|-------------------|-------------|-----------|-----------|
 | **S-BALL** | Mechanical ball + Hall effect | 5–8mm ball in socket, 4 roller spindles with magnets, 4 SMD Hall sensors detect rotation | **Yes — any surface** | Yes (ball + rollers) | Low: ~9–36 ticks/rev (~15–60 DPI equiv.) | ~$2.50 |
-| **S-OLED** | Direct optical (LED) | Optical mouse sensor (YS8205/ADNB-3532/ADNS-2080) looks down at surface through aperture, LED illumination | Most opaque surfaces. Fails on glass, mirrors, uniform white | **None** | Good: 800–2000 CPI | ~$0.50–4 |
-| **S-VCSL** | Direct laser (VCSEL) | Same as S-OLED but VCSEL laser illumination instead of LED | More surfaces than LED — handles gloss, lacquer. Still fails on glass | **None** | Good: 2000+ CPI | ~$3–6 |
+| **S-OLED** | Direct optical (LED) | Optical mouse sensor (YS8205/ADNB-3532/ADNS-2080) looks down at surface through aperture, LED illumination. Requires raised rim for focal distance — see [GLIDE-SYSTEM.md](GLIDE-SYSTEM.md) | Most opaque surfaces. Fails on glass, mirrors, uniform white | **None** | Good: 800–2000 CPI | ~$0.50–4 |
+| **S-VCSL** | Direct laser (VCSEL) | Same as S-OLED but VCSEL laser illumination instead of LED. Same raised rim requirement — see [GLIDE-SYSTEM.md](GLIDE-SYSTEM.md) | More surfaces than LED — handles gloss, lacquer. Still fails on glass | **None** | Good: 2000+ CPI | ~$3–6 |
 | **S-OPTB** | Optical on captive ball | Ball in socket, optical sensor (PMW3360 or similar) aimed at ball underside, reads ball surface texture | **Yes — any surface** | Ball only (no rollers) | Excellent: 100–12,000 CPI | ~$6–9 |
 
 ---
@@ -365,6 +365,38 @@ fingers.** Two identical rings decompose a mouse into its atomic primitives:
 - **Scales to N rings.** A third identical ring on the ring finger becomes a
   modifier or scroll wheel. A fourth becomes whatever you want. Same device,
   different software role.
+- **Scales to N body positions.** The electronics module is not a ring — it's a
+  sensor + click + BLE + battery package. The ring shell is just one harness for
+  it. A different silicone harness mounts the same module on a toe, a knuckle,
+  a prosthetic, a headband, or any other body position where a user has
+  controllable fine motor movement. No hardware redesign needed — same PCB, same
+  firmware, different harness.
+
+### Harness, Not Ring
+
+The electronics module is the product. The ring shell is one harness — the
+default, most common mounting for finger use. But the module can be mounted
+anywhere:
+
+| Harness | Mounting | Use Case |
+|---------|----------|----------|
+| **Fingertip ring** (default) | Silicone/printed ring on distal phalanx | Standard desk, lap, any-surface use |
+| **Toe ring** | Silicone band on big toe or second toe | Users with limited hand/arm mobility |
+| **Knuckle strap** | Elastic strap on proximal phalanx | Users who can't curl fingertips |
+| **Prosthetic mount** | Clip or socket adapter | Mounts to existing prosthetic device |
+| **Headband mount** | Forehead or temple bracket | Head-tracking for users with limited limb mobility |
+| **Flat puck** | Adhesive base, no body attachment | Stationary surface use (desk widget) |
+
+The harness is the cheapest, simplest part of the system — a piece of shaped
+silicone or a 3D-printed bracket. Designing a new harness requires no electrical
+engineering, no firmware changes, and no PCB redesign. Anyone with a 3D printer
+or a silicone mold can create a harness for a body position that doesn't exist
+yet.
+
+This is the deepest form of the universal ring principle: **the hardware is
+body-position-agnostic because the mounting is separate from the electronics.**
+Software assigns the role. The harness assigns the body position. The module
+itself is invariant.
 
 ### Click Mechanism in Every Ring
 
@@ -453,33 +485,54 @@ cursor + left click + long-press for right click.
 Beyond the canonical two-ring pair, additional identical rings add axes of
 control. The companion app manages role assignment:
 
-| Configuration | Fingers | Roles |
-|--------------|---------|-------|
-| **Two rings (canonical)** | **Middle + Index** | **Cursor+LClick, Scroll+RClick — complete mouse** |
-| Single ring (fallback) | Middle | Cursor + click (compromised) |
-| Three rings | Middle + Index + Ring | Cursor+LClick, Scroll+RClick, Modifier |
+| Configuration | Body Position | Roles |
+|--------------|---------------|-------|
+| **Two rings (canonical)** | **Middle + Index fingers** | **Cursor+LClick, Scroll+RClick — complete mouse** |
+| Single ring (fallback) | Middle finger | Cursor + click (compromised) |
+| Three rings | Middle + Index + Ring fingers | Cursor+LClick, Scroll+RClick, Modifier |
 | Four rings | Middle + Index + Ring + Pinky | Full configurable surface |
-| Ring + Wand | Any + dominant hand | Cursor (ring) + precision/drawing (wand) |
+| Ring + Wand | Any finger + dominant hand | Cursor (ring) + precision/drawing (wand) |
+| **Toe pair** | **Big toe + second toe** | **Cursor+LClick, Scroll+RClick — foot-operated mouse** |
+| Toe + finger | Big toe + any finger | Cursor (toe), click (finger) — or vice versa |
+| Prosthetic mount | Residual limb or prosthetic | Cursor + click via available motion |
+| Headband | Forehead/temple | Head-tilt cursor control |
 
-**Every ring is the same hardware.** Adding a finger adds a channel. The
-companion app assigns meaning. This is a modular, composable input system
-built from a single universal component.
+**Every module is the same hardware.** Adding a body position adds a channel.
+The companion app assigns meaning. The harness determines where it mounts. This
+is a modular, composable input system built from a single universal component.
 
 ---
 
 ## Parametric Design Notes
 
-Every ring is the same device — sensor + click + BLE + battery. The shell is
-the primary variable. A parametric CAD model should accept:
+The system has two design layers: the **electronics module** (invariant) and the
+**harness** (variable). The module is one PCB, one firmware image, one BOM. The
+harness is the physical mounting that adapts it to a body position and use
+context.
+
+### Electronics Module
+
+One PCB design fits every harness. The module exposes:
+- Sensor aperture (bottom face)
+- Click actuation surface (top or bottom, depending on mechanism)
+- USB-C or pogo pin charging interface
+- BLE antenna (keep-out zone in harness design)
+
+### Harness Parameters
+
+A parametric CAD model for the default ring harness should accept:
 
 - `angle`: sensor tilt (0, 15, 30, 45 degrees)
 - `finger_circumference`: sizing parameter (S/M/L or continuous)
-- `sensor_type`: determines aperture geometry and standoff height
+- `sensor_type`: determines aperture geometry and rim height (optical variants need precise focal distance — see [GLIDE-SYSTEM.md](GLIDE-SYSTEM.md))
 - `click_type`: dome (needs dome cavity) or piezo (fully sealed shell)
 - `has_camera`: adds camera mount and cable routing
 - `has_laser`: adds laser module mount
 
-One parametric model produces all 128 ring variants. One firmware image runs
-on every ring. One PCB design fits every shell. The entire ring product line
-is a single universal component in different housings with software-assigned
-roles.
+Other harness types (toe, knuckle, prosthetic mount, headband) are separate
+parametric models that accept the same module. The mechanical interface between
+module and harness should be standardized early — snap-fit, friction fit, or
+silicone overmold — so that new harnesses can be designed independently.
+
+One module. One firmware. Many harnesses. The entire product line is a single
+universal component in different mountings with software-assigned roles.

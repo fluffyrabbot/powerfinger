@@ -63,11 +63,14 @@ A pen-shaped device with a tracking element at the tip. Hold it like a pen, drag
 it across any surface — desk, tray table, wall, your knee. A surface-agnostic
 tablet without the tablet.
 
-### Multi-Ring Expansion
+### Multi-Module Expansion
 
-Additional identical rings on more fingers add axes of control. Three rings,
-four rings — each is the same hardware, the companion app assigns meaning.
-A modular, composable input system built from one universal component.
+Additional identical modules on more fingers — or toes, knuckles, prosthetics,
+headbands — add axes of control. The electronics module is invariant; the
+harness (ring shell, toe band, clip mount) adapts it to any body position. Three
+modules, four modules — each is the same hardware, the companion app assigns
+meaning. A modular, composable input system built from one universal component
+in arbitrary physical mountings.
 
 See [docs/COMBINATORICS.md](docs/COMBINATORICS.md) for the full matrix of form
 factors, sensing mechanisms, and optional capabilities.
@@ -116,3 +119,19 @@ from these designs must publish their complete source. See
 
 Because controlling a computer should require nothing more than the power of a
 single finger. And because it's just corny enough to remember.
+
+### One Ring
+
+Yes, we know. One ring to move them all, one ring to click things, one ring to
+scroll them all, and on the desktop bind them.
+
+Unlike [certain companies](https://en.wikipedia.org/wiki/Palantir_Technologies)
+that named themselves after Tolkien's surveillance apparatus and then built
+actual surveillance apparatus, we named our ring after its function: it's a
+ring, and there's one of it. (Well, two. You need two for a full mouse. But
+the hardware is identical — it really is One Ring.)
+
+The uncomfortable literary parallel isn't lost on us: Tolkien's ring was a
+concentrator of power that its bearer couldn't put down. Ours is a distributor
+of agency that you can take off whenever you want. We think he'd approve of the
+inversion, but we're not intellectual property lawyers and neither was he.
