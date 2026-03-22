@@ -257,46 +257,56 @@ Protects ball/sensor from pocket debris when not in use.
 
 | Category | Variants |
 |----------|---------|
-| Ring (4 angles × 16 combos) | 64 |
+| Nav ring (4 angles × 16 combos) | 64 |
+| Click ring (4 angles × 1 config) | 4 |
 | Wand standard (16 combos) | 16 |
 | Wand retractable (16 combos) | 16 |
-| **Total unique variants** | **96** |
-| Within $25 BOM ceiling | 85 |
+| **Total unique variants** | **100** |
+| Within $25 BOM ceiling | 89 |
 | Exceed $25 BOM ceiling | 11 |
+
+**Canonical setup:** 1 nav ring + 1 click ring = ~$15 complete mouse.
+The 96 nav ring + wand variants exist for the combinatorial design space and
+defensive publication. The canonical two-ring setup is the opinionated default
+and the only configuration that should be prototyped in Phase 1.
 
 ---
 
 ## Recommended Build Order
 
-### Phase 1 — Minimum Viable Prototypes (3 builds)
+### Phase 1 — Canonical Two-Ring Mouse (P0)
+
+| Priority | Device | BOM | Why |
+|----------|--------|-----|-----|
+| **P0** | R30-OLED-NONE-NONE (nav, middle finger) | ~$9 | Cheapest nav ring, natural hand angle |
+| **P0** | Click ring (index finger) | ~$6 | Completes the mouse — nav + click = full replacement |
+
+**Total P0 BOM: ~$15 for a complete mouse replacement.**
+
+This is the canonical setup. Build and test these two together. A nav ring
+without a click ring is a tech demo. A nav ring with a click ring is a product.
+
+### Phase 2 — Alternative Sensing + Wand (P1–P2)
 
 | Priority | Variant | BOM | Why |
 |----------|---------|-----|-----|
-| **P0** | R30-OLED-NONE-NONE | ~$9 | Cheapest ring, natural hand angle, proves the core concept |
-| **P1** | R30-BALL-NONE-NONE | ~$11 | Surface-agnostic ring, tests mechanical ball in inverted orientation |
+| **P1** | R30-BALL-NONE-NONE (nav) + click ring | ~$17 | Surface-agnostic pair, tests ball in inverted orientation |
 | **P1** | WSTD-BALL-NONE-NONE | ~$14 | Core wand concept, pen-on-any-surface |
+| **P2** | R30-OPTB-NONE-NONE (nav) + click ring | ~$21 | Premium pair: any surface + high resolution |
+| **P2** | R15-OLED-NONE-NONE (nav) + click ring | ~$15 | Alternate angle, compare ergonomics against R30 |
 
-### Phase 2 — Capability Expansion (4 builds)
-
-| Priority | Variant | BOM | Why |
-|----------|---------|-----|-----|
-| **P2** | R30-OPTB-NONE-NONE | ~$15 | Premium ring: surface-agnostic + high resolution, no debris |
-| **P2** | R30-OLED-NONE-DOT | ~$12 | Laser-guided variant for presentation use |
-| **P2** | WSTD-BALL-NONE-DOT | ~$17 | Wand + aim laser for OCR prep |
-| **P2** | R15-OLED-NONE-NONE | ~$9 | Alternate angle, compare ergonomics against R30 |
-
-### Phase 3 — OCR Integration (2 builds)
+### Phase 3 — OCR + Extras (P3)
 
 | Priority | Variant | BOM | Why |
 |----------|---------|-----|-----|
-| **P3** | R30-OLED-CAM-DOT | ~$20 | Full OCR ring: mouse + text scanner + aim laser |
+| **P3** | R30-OLED-CAM-DOT (nav+OCR) + click ring | ~$26 | Full OCR ring pair (slightly over ceiling — acceptable for camera variant) |
 | **P3** | WSTD-BALL-CAM-DOT | ~$25 | Full OCR wand: any-surface pen + scanner + aim |
 
 ### Phase 4 — Angle Validation
 
-Build R00, R15, R45 variants of the P0 winner (OLED-NONE-NONE) to validate
-which angles work best for different hand sizes, mobility ranges, and use
-postures (desk, lap, bed, wheelchair armrest).
+Build R00, R15, R45 variants of the P0 nav ring (OLED-NONE-NONE) paired with
+the click ring to validate which angles work best for different hand sizes,
+mobility ranges, and use postures (desk, lap, bed, wheelchair armrest).
 
 ---
 
@@ -318,21 +328,92 @@ postures (desk, lap, bed, wheelchair armrest).
 
 ---
 
-## Multi-Ring Composition
+## Canonical Setup: Two Rings, Two Primitives
 
-Any ring variant can be combined with other ring variants on different fingers.
+The opinionated default for PowerFinger is **two rings on two fingers**:
+
+```
+  NAV RING (middle finger)        CLICK RING (index finger)
+  ┌──────────────┐                ┌──────────────┐
+  │  optical or   │                │  mechanical   │
+  │  ball sensor  │                │  switch with  │
+  │  → cursor X/Y │                │  tactile      │
+  │               │                │  feedback     │
+  └──────────────┘                └──────────────┘
+       MOVE                            CLICK
+```
+
+**Nav ring** (middle finger): tracking sensor, reports cursor X/Y deltas.
+This is any ring variant from the matrix above (R30-OLED-NONE-NONE recommended).
+
+**Click ring** (index finger): a simple mechanical switch with tactile feedback.
+Press the fingertip down = click. The action should feel like pressing a
+physical button — crisp, mechanical, unmistakable. This is deliberately the
+simplest possible device: a dome switch or micro tactile switch in a ring shell,
+a BLE radio, and a battery. No sensor, no optics, no moving ball.
+
+**Click ring BOM (~$6):**
+
+| Component | Spec | ~Cost |
+|-----------|------|-------|
+| Tactile switch | Dome or micro switch with snap feedback | $0.30 |
+| MCU + BLE | ESP32-C3 | $3 |
+| LiPo | 50–80mAh (click ring draws almost nothing) | $1 |
+| 3D-printed ring shell | Sized for index fingertip pad | $1.50 |
+| Misc (flex PCB, charge) | — | $1 |
+| **Total** | | **~$6** |
+
+**Why two fingers, two primitives:**
+
+Every pointing interaction reduces to move and click. Scroll, drag, right-click,
+double-click, zoom — all of these are **combinations of move and click** that
+can be defined in software:
+
+| Gesture | Implementation |
+|---------|---------------|
+| Left click | Click ring press |
+| Right click | Click ring long-press (>300ms) |
+| Double click | Click ring double-tap |
+| Drag | Click ring hold + nav ring move |
+| Scroll | Click ring hold + nav ring move (vertical) — or companion app assigns scroll mode |
+| Middle click | Both rings press simultaneously |
+| Zoom | Defined per-app in companion app |
+
+The companion app maps these primitives to OS-level HID events. The rings
+themselves are dumb: one reports deltas, one reports press/release. All
+complexity lives in software, which is free to update, configure per-app, and
+adapt to individual users' needs.
+
+**This is the setup to prototype first.** One nav ring + one click ring = a
+complete mouse replacement for ~$15 total BOM. Every other configuration
+(single ring with on-board click, triple ring, ring + wand) is an expansion
+from this baseline.
+
+### Single-Ring Fallback
+
+For users who can only wear one ring (e.g., limited finger independence), the
+nav ring can also support click via a dome switch under the sensor or a
+capacitive touch zone on the ring body. This is the existing design from the
+variant matrix. It works, but the click feel is worse — pressing the whole
+finger down is less precise than pressing a dedicated click ring on a different
+finger.
+
+---
+
+## Multi-Ring Expansion
+
+Beyond the canonical two-ring setup, additional rings add axes of control.
 The companion app manages role assignment:
 
 | Configuration | Fingers | Roles |
 |--------------|---------|-------|
-| Single ring | Middle | Cursor X/Y + click |
-| Dual ring | Middle + Index | Cursor + scroll/zoom |
-| Triple ring | Middle + Index + Ring | Cursor + scroll + modifier |
-| Ring + Wand | Any + dominant hand | Cursor (ring) + precision/drawing (wand) |
+| **Canonical (recommended)** | **Middle + Index** | **Nav + Click — complete mouse** |
+| Single ring (fallback) | Middle | Nav + on-board click (compromised) |
+| Triple ring | Middle + Index + Ring | Nav + Click + Modifier/scroll |
+| Ring + Wand | Any + dominant hand | Nav (ring) + precision/drawing (wand) |
 
-Rings do not need to be the same variant. A user might wear R30-OLED-NONE-NONE
-on the middle finger (cursor) and R30-BALL-NONE-NONE on the index finger
-(scroll, works on any surface including glass).
+Rings do not need to be the same variant. The canonical setup uses a nav ring
+(any sensor variant) on middle and a click ring (switch-only) on index.
 
 ---
 
