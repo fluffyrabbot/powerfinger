@@ -39,11 +39,23 @@ better as a common good. We design for:
 
 ## Form Factors
 
-### Fingertip Ring
+### Universal Ring
 
-A ring worn on the distal phalanx (fingertip pad) of the middle finger. Drag
-your finger across any surface to move the cursor. Available in multiple sensor
-angles optimized for different hand positions.
+Every ring has a tracking sensor + a click switch + BLE. One ring is a mouse.
+Two identical rings are a **complete mouse replacement**: cursor + left click on
+one finger, scroll + right click on the other. Roles are assigned in software,
+not hardware. Buy two of the same $9 ring and you have an $18 mouse that works
+on any surface.
+
+A mouse is just move + click. PowerFinger decomposes it across fingers:
+
+```
+Middle finger (Ring 1):  move cursor + left click
+Index finger  (Ring 2):  scroll      + right click
+```
+
+Everything else — drag, double-click, zoom, middle click, modifiers — is
+software-defined combinations of those four primitives.
 
 ### Hefty Pen (Wand)
 
@@ -51,10 +63,11 @@ A pen-shaped device with a tracking element at the tip. Hold it like a pen, drag
 it across any surface — desk, tray table, wall, your knee. A surface-agnostic
 tablet without the tablet.
 
-### Multi-Ring System
+### Multi-Ring Expansion
 
-Multiple independent rings compose into a modular control surface. Each finger
-is an input channel. The configuration is user-defined.
+Additional identical rings on more fingers add axes of control. Three rings,
+four rings — each is the same hardware, the companion app assigns meaning.
+A modular, composable input system built from one universal component.
 
 See [docs/COMBINATORICS.md](docs/COMBINATORICS.md) for the full matrix of form
 factors, sensing mechanisms, and optional capabilities.
