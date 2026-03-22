@@ -258,11 +258,11 @@ Protects ball/sensor from pocket debris when not in use.
 | Category | Variants |
 |----------|---------|
 | Nav ring (4 angles × 16 combos) | 64 |
-| Click ring (4 angles × 1 config) | 4 |
+| Click ring (4 angles × 2 mechanisms) | 8 |
 | Wand standard (16 combos) | 16 |
 | Wand retractable (16 combos) | 16 |
-| **Total unique variants** | **100** |
-| Within $25 BOM ceiling | 89 |
+| **Total unique variants** | **104** |
+| Within $25 BOM ceiling | 93 |
 | Exceed $25 BOM ceiling | 11 |
 
 **Canonical setup:** 1 nav ring + 1 click ring = ~$15 complete mouse.
@@ -346,22 +346,41 @@ The opinionated default for PowerFinger is **two rings on two fingers**:
 **Nav ring** (middle finger): tracking sensor, reports cursor X/Y deltas.
 This is any ring variant from the matrix above (R30-OLED-NONE-NONE recommended).
 
-**Click ring** (index finger): a simple mechanical switch with tactile feedback.
+**Click ring** (index finger): a dedicated click device with tactile feedback.
 Press the fingertip down = click. The action should feel like pressing a
-physical button — crisp, mechanical, unmistakable. This is deliberately the
-simplest possible device: a dome switch or micro tactile switch in a ring shell,
-a BLE radio, and a battery. No sensor, no optics, no moving ball.
+physical button — crisp, unmistakable. This is deliberately the simplest
+possible device: a switch in a ring shell, a BLE radio, and a battery. No
+sensor, no optics, no moving ball.
 
-**Click ring BOM (~$6):**
+Two click mechanisms are recommended (see [CLICK-MECHANISMS.md](CLICK-MECHANISMS.md)
+for full analysis of all seven mechanisms evaluated):
+
+**Click ring BOM — Metal Dome variant (~$6, recommended default):**
 
 | Component | Spec | ~Cost |
 |-----------|------|-------|
-| Tactile switch | Dome or micro switch with snap feedback | $0.30 |
+| Metal snap dome | 4–5mm stainless, 5–10M cycle life | $0.10 |
 | MCU + BLE | ESP32-C3 | $3 |
 | LiPo | 50–80mAh (click ring draws almost nothing) | $1 |
 | 3D-printed ring shell | Sized for index fingertip pad | $1.50 |
 | Misc (flex PCB, charge) | — | $1 |
 | **Total** | | **~$6** |
+
+**Click ring BOM — Piezo Film variant (~$8, premium sealed):**
+
+| Component | Spec | ~Cost |
+|-----------|------|-------|
+| Piezo film | 150μm polymer, laminated to inner shell | $1.50 |
+| Haptic LRA | Simulates click feel on press | $1 |
+| MCU + BLE | ESP32-C3 | $3 |
+| LiPo | 50–80mAh | $1 |
+| 3D-printed ring shell | Fully sealed, sized for index fingertip pad | $1.50 |
+| Misc (flex PCB, charge) | — | $1 |
+| **Total** | | **~$8** |
+
+The piezo variant enables a fully sealed ring (no mechanical openings, moisture-
+proof, debris-proof) with effectively infinite sensor life. The tradeoff is
+simulated click feel — user testing must determine acceptability.
 
 **Why two fingers, two primitives:**
 

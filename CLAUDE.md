@@ -180,5 +180,7 @@ This creates timestamped, enabling disclosure searchable by patent examiners.
 
 - Patent landscape: `docs/IP-STRATEGY.md`
 - Design matrix: `docs/COMBINATORICS.md`
+- Click mechanism analysis: `docs/CLICK-MECHANISMS.md`
+- Outreach / collaborators: `docs/OUTREACH.md`
 - CERN-OHL-S 2.0: https://opensource.org/license/cern-ohl-s
 - ESP-IDF BLE HID: https://github.com/espressif/esp-idf/tree/master/examples/bluetooth
