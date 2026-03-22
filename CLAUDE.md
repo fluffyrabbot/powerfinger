@@ -183,6 +183,7 @@ This creates timestamped, enabling disclosure searchable by patent examiners.
 - Click mechanism analysis: `docs/CLICK-MECHANISMS.md`
 - Glide system (raised rim + UHMWPE pads): `docs/GLIDE-SYSTEM.md`
 - Prototype build spec (EE/ME pitch): `docs/PROTOTYPE-SPEC.md`
+- Firmware build order: `docs/FIRMWARE-ROADMAP.md`
 - Outreach / collaborators: `docs/OUTREACH.md`
 - CERN-OHL-S 2.0: https://opensource.org/license/cern-ohl-s
 - ESP-IDF BLE HID: https://github.com/espressif/esp-idf/tree/master/examples/bluetooth
