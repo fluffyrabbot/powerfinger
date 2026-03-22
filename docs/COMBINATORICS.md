@@ -77,10 +77,56 @@ or sensor at the tip must accommodate 30–70° pen angles from horizontal.
 | **S-OLED** | Direct optical (LED) | Optical mouse sensor (YS8205/ADNB-3532/ADNS-2080) looks down at surface through aperture, LED illumination. Requires raised rim for focal distance — see [GLIDE-SYSTEM.md](GLIDE-SYSTEM.md) | Most opaque surfaces. Fails on glass, mirrors, uniform white | **None** | Good: 800–2000 CPI | ~$0.50–4 |
 | **S-VCSL** | Direct laser (VCSEL) | Same as S-OLED but VCSEL laser illumination instead of LED. Same raised rim requirement — see [GLIDE-SYSTEM.md](GLIDE-SYSTEM.md) | More surfaces than LED — handles gloss, lacquer. Still fails on glass | **None** | Good: 2000+ CPI | ~$3–6 |
 | **S-OPTB** | Optical on captive ball | Ball in socket, optical sensor (PMW3360 or similar) aimed at ball underside, reads ball surface texture | **Yes — any surface** | Ball only (no rollers) | Excellent: 100–12,000 CPI | ~$6–9 |
+| **S-IMU** | 6-axis IMU (gyro + accel) | MPU-6050/BMI270/LSM6DSO. Tracks angular velocity and acceleration in free space. No surface contact needed. Cursor movement from hand tilt/rotation. | **Yes — no surface needed** | **None** | Moderate: depends on fusion algorithm and filtering. Sufficient for cursor control, not precision drawing. | ~$0.50–2 |
+
+#### S-IMU Notes
+
+The IMU is fundamentally different from the other sensing mechanisms: it tracks
+the ring's orientation in space, not its position on a surface. This means:
+
+- **No surface required.** Works in bed, in a wheelchair without a tray table,
+  standing, walking. The most accessible option for users who lack a usable
+  surface.
+- **Drift.** Gyroscope integration accumulates error over time. The cursor
+  slowly wanders if the hand is "still." Mitigated by: high-pass filtering
+  (ignore slow drift, pass fast movement), accelerometer gravity reference
+  (corrects roll/pitch), and auto-centering after inactivity timeout.
+- **No angle dependency.** Unlike optical variants, the IMU doesn't care about
+  the ring's angle relative to a surface. The `angle` parameter in the ring
+  shell becomes purely ergonomic, not functional.
+- **Lower precision than optical.** Sufficient for cursor navigation, scrolling,
+  and clicking. Not suitable for precision drawing or pixel-level work. For
+  users who need precision, the hybrid variants (see below) provide optical
+  tracking on surfaces with IMU fallback in air.
 
 ---
 
 ### Optional Capabilities
+
+#### IMU Hybrid Mode
+
+Any surface-tracking sensor (S-OLED, S-VCSL, S-BALL, S-OPTB) can be combined
+with an IMU to create a hybrid that auto-switches between surface and air
+tracking:
+
+| Code | Capability | Hardware Required | BOM Add | Notes |
+|------|-----------|-------------------|---------|-------|
+| **I-NONE** | No IMU | — | $0 | Surface tracking only |
+| **I-IMU** | IMU hybrid | 6-axis IMU (MPU-6050/BMI270/LSM6DSO) | +$0.50–2 | Auto-switches between surface and air tracking |
+
+**How hybrid mode works:** The optical sensor's SQUAL register (surface quality
+score) reports in real time whether a trackable surface is present. When SQUAL
+is above threshold, the ring tracks via the surface sensor (high precision, no
+drift). When SQUAL drops to zero (finger lifted or no surface), the ring
+switches to IMU (air mouse, moderate precision, drift-compensated). The
+transition is automatic — no button, no mode switch, no user action.
+
+For S-BALL and S-OPTB variants, lift detection uses the Hall sensor baseline
+shift (ball not rotating + no surface pressure = lifted) instead of SQUAL.
+
+This is the most accessible configuration: surface precision when available,
+air control when not. A user in a wheelchair can track on the armrest, then
+lift their hand to point at a screen across the room.
 
 | Code | Capability | Hardware Required | BOM Add | Notes |
 |------|-----------|-------------------|---------|-------|
@@ -98,15 +144,30 @@ or sensor at the tip must accommodate 30–70° pen angles from horizontal.
 
 ### Naming Convention
 
-Each variant is named: `{FormFactor}-{Sensing}-{Camera}-{Laser}`
+Each variant is named: `{FormFactor}-{Sensing}-{IMU}-{Camera}-{Laser}`
 
-Example: `R30-OLED-NONE-NONE` = Ring at 30°, LED optical sensor, no camera, no laser.
+Examples:
+- `R30-OLED-NONE-NONE-NONE` = Ring at 30°, optical LED, no IMU, no camera, no laser.
+- `R30-OLED-IMU-NONE-NONE` = Ring at 30°, optical LED + IMU hybrid, no camera, no laser.
+- `R30-IMU-NONE-NONE` = Ring at 30°, IMU only (air mouse), no camera, no laser.
+
+For brevity in tables below, IMU-NONE variants omit the IMU field (matching
+the original naming). IMU variants are listed separately after each angle's
+base table.
 
 ---
 
-### Ring Variants (4 angles × 4 sensors × 2 camera × 2 laser = 64 combinations)
+### Ring Variants
+
+Base variants: 4 angles x 4 surface sensors x 2 camera x 2 laser = 64.
+IMU-only variants: 4 angles x 2 camera x 2 laser = 16.
+IMU hybrid variants: 4 angles x 4 surface sensors x 2 camera x 2 laser = 64.
+Total ring sensing configurations: 144.
 
 #### R-00 (Flat, 0°)
+
+*IMU and IMU hybrid variants follow the same pattern as R-30 (see below) at
+identical BOMs. Only the base 16 surface-tracking combinations are listed here.*
 
 | Variant ID | Sensing | Camera | Laser | BOM Est. | Primary Use | Surface | Notes |
 |-----------|---------|--------|-------|----------|-------------|---------|-------|
@@ -130,7 +191,8 @@ Example: `R30-OLED-NONE-NONE` = Ring at 30°, LED optical sensor, no camera, no 
 #### R-15 (15°)
 
 *Same 16 combinations as R-00 with identical BOMs.* Shell geometry changes only.
-Optimized for slight-curl hand position.
+Optimized for slight-curl hand position. Same IMU and IMU hybrid variants as
+R-30 apply at identical BOMs.
 
 | Variant ID | Sensing | Camera | Laser | BOM Est. |
 |-----------|---------|--------|-------|----------|
@@ -178,10 +240,45 @@ adjustment.
 | R30-OPTB-CAM-NONE | Optical/ball | OCR | — | ~$23 | P4 |
 | R30-OPTB-CAM-DOT | Optical/ball | OCR | Laser | ~$25 | P4 — BOM ceiling |
 
+#### R-30 IMU Variants
+
+##### IMU Only (Air Mouse)
+
+| Variant ID | Sensing | Camera | Laser | BOM Est. | Notes |
+|-----------|---------|--------|-------|----------|-------|
+| R30-IMU-NONE-NONE | IMU only | — | — | **~$9** | **Cheapest surface-free ring.** Air mouse, no surface needed. Same BOM as optical — IMU replaces optical sensor at similar cost. |
+| R30-IMU-NONE-DOT | IMU only | — | Laser | ~$12 | Air pointer with laser dot — presentation use |
+| R30-IMU-CAM-NONE | IMU only | OCR | — | ~$17 | Air mouse + OCR. Unusual combo but valid for book scanning without surface tracking. |
+| R30-IMU-CAM-DOT | IMU only | OCR | Laser | ~$20 | Full air ring |
+
+##### IMU Hybrids (Surface + Air Auto-Switch)
+
+These add an IMU to a surface-tracking sensor. The ring tracks on surfaces via
+the primary sensor and switches to IMU air tracking when lifted. Add ~$0.50–2
+to the base variant BOM.
+
+| Variant ID | Sensing | Camera | Laser | BOM Est. | Priority |
+|-----------|---------|--------|-------|----------|----------|
+| **R30-OLED-IMU-NONE-NONE** | Optical LED + IMU | — | — | **~$10–11** | **P2 — Most accessible optical ring** |
+| R30-BALL-IMU-NONE-NONE | Ball+Hall + IMU | — | — | ~$13 | P2 — Surface-agnostic + air fallback |
+| R30-OLED-IMU-NONE-DOT | Optical LED + IMU | — | Laser | ~$13–14 | Hybrid + presentation laser |
+| R30-OPTB-IMU-NONE-NONE | Optical/ball + IMU | — | — | ~$17 | Premium hybrid: 12K CPI on surface, air fallback |
+| R30-BALL-IMU-NONE-DOT | Ball+Hall + IMU | — | Laser | ~$16 | Surface-agnostic hybrid + aim |
+| R30-OLED-IMU-CAM-DOT | Optical LED + IMU | OCR | Laser | ~$22 | Full-capability hybrid ring |
+
+*All other IMU hybrid combinations (VCSL+IMU, OPTB+IMU with camera/laser)
+follow the same pattern: base variant BOM + $0.50–2 for IMU. Only the
+high-value combinations are listed above. The full combinatorial expansion
+(4 surface sensors × 2 camera × 2 laser × IMU = 16 per angle) exists for
+the design space and defensive publication.*
+
+---
+
 #### R-45 (45°)
 
-*Same 16 combinations with identical BOMs.* Shell geometry changes only.
-Optimized for curled-finger, keyboard-adjacent hand position.
+*Same 16 base combinations with identical BOMs.* Shell geometry changes only.
+Optimized for curled-finger, keyboard-adjacent hand position. Same IMU and
+IMU hybrid variants as R-30 apply at identical BOMs.
 
 | Variant ID | Sensing | Camera | Laser | BOM Est. |
 |-----------|---------|--------|-------|----------|
@@ -205,6 +302,12 @@ Optimized for curled-finger, keyboard-adjacent hand position.
 ---
 
 ### Wand Variants (2 tip styles × 4 sensors × 2 camera × 2 laser = 32 combinations)
+
+*IMU and IMU hybrid variants apply to wands identically to rings. An IMU-only
+wand is an air pointer (presentation remote). An IMU hybrid wand tracks on a
+surface via the tip sensor and switches to air pointing when lifted. Add
+~$0.50–2 to base BOM. IMU wand variants are not enumerated separately below —
+the combinatorial pattern is the same.*
 
 #### W-STD (Standard Tip)
 
@@ -257,15 +360,17 @@ Protects ball/sensor from pocket debris when not in use.
 
 | Category | Variants |
 |----------|---------|
-| Universal ring (4 angles × 16 sensor combos × 2 click mechanisms) | 128 |
+| Ring — surface sensors (4 angles × 4 sensors × 2 camera × 2 laser × 2 click) | 128 |
+| Ring — IMU only (4 angles × 2 camera × 2 laser × 2 click) | 32 |
+| Ring — IMU hybrids (4 angles × 4 sensors × 2 camera × 2 laser × 2 click) | 128 |
 | Wand standard (16 combos) | 16 |
 | Wand retractable (16 combos) | 16 |
-| **Total unique variants** | **160** |
+| **Total unique variants** | **320** |
 
-In practice, start with one: R30-OLED-NONE-NONE with dome click. Buy two.
+In practice, start with one: R30-OLED-NONE-NONE-NONE with dome click. Buy two.
 That's a complete mouse for ~$18.
 
-The 160 variants exist for the combinatorial design space and defensive
+The 320 variants exist for the combinatorial design space and defensive
 publication. The canonical two-ring setup (two identical rings, software-
 assigned roles) is the opinionated default and the only configuration that
 should be prototyped in Phase 1.
@@ -292,6 +397,8 @@ right click" (index finger). This is the canonical setup.
 |----------|---------|----------|-----|-----|
 | **P1** | R30-BALL-NONE-NONE (dome click) | ×2 | ~$22 | Surface-agnostic pair, tests ball in inverted orientation |
 | **P1** | WSTD-BALL-NONE-NONE | ×1 | ~$14 | Core wand concept, pen-on-any-surface |
+| **P2** | R30-IMU-NONE-NONE (dome click) | ×2 | ~$18 | Air mouse pair: no surface needed, most accessible variant |
+| **P2** | R30-OLED-IMU-NONE-NONE (dome click) | ×2 | ~$22 | Hybrid pair: surface + air auto-switch, validates IMU fallback |
 | **P2** | R30-OPTB-NONE-NONE (dome click) | ×2 | ~$30 | Premium pair: any surface + high resolution |
 | **P2** | R30-OLED-NONE-NONE (piezo click) | ×2 | ~$22 | Tests sealed piezo click vs. dome — same sensor, different click |
 
@@ -312,19 +419,25 @@ mobility ranges, and use postures (desk, lap, bed, wheelchair armrest).
 
 ## Surface Compatibility Matrix
 
-| Surface | S-BALL | S-OLED | S-VCSL | S-OPTB |
-|---------|--------|--------|--------|--------|
-| Wood desk | Yes | Yes | Yes | Yes |
-| Glass | **Yes** | No | No | **Yes** |
-| Glossy/lacquered | Yes | Marginal | Yes | Yes |
-| Matte plastic | Yes | Yes | Yes | Yes |
-| Paper/book page | Yes | Yes | Yes | Yes |
-| Fabric (jeans, couch) | Yes | Marginal | Marginal | Yes |
-| Metal (tray table) | Yes | Yes | Yes | Yes |
-| Skin | Yes | Marginal | Marginal | Yes |
-| Mirror | Yes | No | No | Yes |
-| Uniform white | Yes | No | Marginal | Yes |
-| Dark/black matte | Yes | Yes | Yes | Yes |
+| Surface | S-BALL | S-OLED | S-VCSL | S-OPTB | S-IMU |
+|---------|--------|--------|--------|--------|-------|
+| Wood desk | Yes | Yes | Yes | Yes | Yes |
+| Glass | **Yes** | No | No | **Yes** | **Yes** |
+| Glossy/lacquered | Yes | Marginal | Yes | Yes | Yes |
+| Matte plastic | Yes | Yes | Yes | Yes | Yes |
+| Paper/book page | Yes | Yes | Yes | Yes | Yes |
+| Fabric (jeans, couch) | Yes | Marginal | Marginal | Yes | **Yes** |
+| Metal (tray table) | Yes | Yes | Yes | Yes | Yes |
+| Skin | Yes | Marginal | Marginal | Yes | **Yes** |
+| Mirror | Yes | No | No | Yes | **Yes** |
+| Uniform white | Yes | No | Marginal | Yes | **Yes** |
+| Dark/black matte | Yes | Yes | Yes | Yes | Yes |
+| **No surface (air)** | No | No | No | No | **Yes** |
+
+S-IMU works on every surface because it doesn't use the surface. The "Yes"
+entries for S-IMU mean the ring functions in that environment — the surface is
+irrelevant. The IMU hybrid variants (I-IMU) inherit the surface column of their
+primary sensor AND the S-IMU column as fallback.
 
 ---
 

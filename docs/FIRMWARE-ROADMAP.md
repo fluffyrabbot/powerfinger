@@ -182,7 +182,38 @@ magnets, 3D-printed socket (~$2 in filament).
 
 ---
 
-## Phase 7 — DPI/Sensitivity Configuration
+## Phase 7 — IMU Driver + Hybrid Mode
+
+**What:** Driver for a 6-axis IMU (MPU-6050/BMI270/LSM6DSO) over I2C or SPI.
+Two operating modes:
+
+- **IMU-only (S-IMU variant).** Angular velocity from gyroscope maps to cursor
+  X/Y deltas. Accelerometer provides gravity reference for drift correction.
+  High-pass filter rejects slow gyro drift, passes intentional hand movement.
+  Auto-center cursor after inactivity timeout.
+- **Hybrid mode (I-IMU variants).** Optical sensor's SQUAL register (or Hall
+  baseline for ball variants) detects surface presence. SQUAL > threshold →
+  track via surface sensor. SQUAL → 0 → crossfade to IMU. Transition must be
+  seamless with no cursor jump at the switch point.
+
+**Why:** The IMU-only ring is the most accessible variant — works anywhere with
+no surface. The hybrid is the most capable — surface precision when available,
+air control when not. Both use the same BLE HID + power + click stack from
+Phases 0–3.
+
+**Validate:** Tape an MPU-6050 breakout (~$2) to the existing dev board rig.
+Test IMU-only mode: tilt hand, cursor moves. Test hybrid mode: track on desk
+(optical), lift hand, cursor switches to air tracking without jumping.
+
+**Done when:** IMU-only mode produces usable cursor control in air. Hybrid mode
+switches cleanly between surface and air. Drift is imperceptible during normal
+use (< 1 pixel/second at rest after high-pass filter).
+
+**Hardware needed:** MPU-6050 or BMI270 breakout (~$2), jumper wires.
+
+---
+
+## Phase 8 — DPI/Sensitivity Configuration
 
 **What:** Expose a BLE GATT characteristic for DPI/sensitivity adjustment. The
 companion app (or any BLE tool) can read and write the sensitivity multiplier.
