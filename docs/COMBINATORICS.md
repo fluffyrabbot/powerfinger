@@ -54,6 +54,102 @@ and sensor mount orientation, not by the sensor itself. All angles use identical
 electronics. A parametric CAD model with angle as a variable produces all four
 variants from one design.
 
+#### Nail Mount (Typing-Compatible Ring)
+
+The electronics module sits on the **nail side** (dorsal surface) of the
+fingertip. A silicone harness wraps the finger to hold the module in place. The
+finger pad remains fully exposed for typing. When the user curls the finger and
+drags it across a surface, the sensor on the nail side reads the desk past the
+fingertip.
+
+```
+SIDE VIEW — Nail mount
+
+TYPING MODE:                     POINTING MODE:
+
+    ┌─sensor─┐                      ┌─sensor─┐
+    │████████│ ← nail side          │████████│
+    │ finger │                        ╲finger│
+    │        │                         ╲     │
+    │  pad   │ ← exposed, hits key      ╲pad ╲___
+    └────────┘                           └──◉──══════ surface
+   key ══════                          sensor reads surface
+```
+
+| Variant | Notes |
+|---------|-------|
+| **N-30** | 30° curl angle, sensor overhangs fingertip |
+| **N-45** | 45° curl angle, more compact overhang |
+
+**Keyboard compatibility:** This is the only ring form factor where the same
+finger can type AND point without removing the device. The finger pad is
+exposed; the module rides on the nail. The user types normally, then curls the
+finger to point.
+
+**Engineering constraints:**
+
+- **Height budget is extreme.** The module must add ≤3–4mm above the nail, or it
+  catches on adjacent keycaps during typing. This likely requires a bare sensor
+  die on flex PCB with a flat LiPo — no rigid PCB stackup.
+- **Bottom-row keys (M, comma, period, slash)** are the stress test. The finger
+  approaches these at a low angle where the nail-side module comes closest to
+  adjacent keycaps. Module compactness determines whether this form factor is
+  viable for full-size keyboards.
+- **Focal distance is variable.** Unlike the standard ring (fixed rim), the
+  nail-mount's sensor-to-surface distance varies with finger curl radius. A
+  tiny integrated standoff at the sensor tip helps, but the IMU hybrid (I-IMU)
+  is the most robust approach: optical tracking when focal distance is good, IMU
+  fallback when it drifts.
+
+**Status:** Concept. Requires validation of whether the module can be made thin
+enough to not interfere with typing. If viable, this is the most ergonomic ring
+variant for users who split time between typing and pointing.
+
+#### Wrist Bracelet
+
+The electronics module mounts on the **outer wrist** (ulnar side) via a
+bracelet or cuff. The sensor points down at the desk surface. The user slides
+their forearm to move the cursor. Thumb rests on the bracelet body for click.
+
+```
+TOP VIEW — Wrist bracelet on desk
+
+    ┌──────────┐
+    │ forearm   │
+    │           │
+    │    ┌────┐ │
+    │    │████│ ← module on ulnar side
+    │    │sens│    sensor faces desk
+    │    │ or │    thumb on top for click
+    │    └────┘ │
+    │           │
+    └──────────┘
+    ═══════════════ desk surface
+```
+
+| Variant | Notes |
+|---------|-------|
+| **B-STD** | Standard bracelet, fixed mount |
+| **B-ROT** | Rotating mount — module can pivot to adjust sensor angle |
+
+**Keyboard compatibility:** Full. The bracelet is on the wrist, not the fingers.
+The user types normally and points by sliding their forearm. No removal, no mode
+switch, no interference with any key.
+
+**Ergonomic argument:** The forearm rests in neutral pronation (similar to a
+vertical mouse). No wrist deviation, no grip force, no sustained finger curl.
+The weight of the module is irrelevant on the wrist — grams that matter on a
+fingertip are imperceptible on a wrist.
+
+**Tradeoff:** Wrist/forearm movement has lower spatial resolution than fingertip
+movement (~1–2mm discrimination vs. ~0.1mm at the fingertip). Requires higher
+sensor DPI and more aggressive acceleration curves to compensate. Sufficient for
+cursor navigation and clicking; likely insufficient for precision drawing.
+
+**Status:** Concept. A genuinely novel form factor — a surface-tracking wrist
+device with vertical-mouse ergonomics and full typing compatibility. Worth
+prototyping if the nail mount proves too constrained.
+
 #### Hefty Pen (Wand)
 
 A rigid pen-shaped device, ~8mm diameter × 120mm length. Aluminum or stainless
@@ -360,17 +456,19 @@ Protects ball/sensor from pocket debris when not in use.
 
 | Category | Variants |
 |----------|---------|
-| Ring — surface sensors (4 angles × 4 sensors × 2 camera × 2 laser × 2 click) | 128 |
-| Ring — IMU only (4 angles × 2 camera × 2 laser × 2 click) | 32 |
-| Ring — IMU hybrids (4 angles × 4 sensors × 2 camera × 2 laser × 2 click) | 128 |
+| Fingertip ring — surface sensors (4 angles × 4 sensors × 2 camera × 2 laser × 2 click) | 128 |
+| Fingertip ring — IMU only (4 angles × 2 camera × 2 laser × 2 click) | 32 |
+| Fingertip ring — IMU hybrids (4 angles × 4 sensors × 2 camera × 2 laser × 2 click) | 128 |
+| Nail mount — surface + IMU variants (2 angles × same combos as ring) | 144 |
+| Wrist bracelet — surface + IMU variants (2 styles × same sensor combos) | 80 |
 | Wand standard (16 combos) | 16 |
 | Wand retractable (16 combos) | 16 |
-| **Total unique variants** | **320** |
+| **Total unique variants** | **544** |
 
 In practice, start with one: R30-OLED-NONE-NONE-NONE with dome click. Buy two.
 That's a complete mouse for ~$18.
 
-The 320 variants exist for the combinatorial design space and defensive
+The 544 variants exist for the combinatorial design space and defensive
 publication. The canonical two-ring setup (two identical rings, software-
 assigned roles) is the opinionated default and the only configuration that
 should be prototyped in Phase 1.
@@ -494,6 +592,8 @@ anywhere:
 | Harness | Mounting | Use Case |
 |---------|----------|----------|
 | **Fingertip ring** (default) | Silicone/printed ring on distal phalanx | Standard desk, lap, any-surface use |
+| **Nail mount** | Silicone harness, module on nail side, pad exposed | Typing-compatible — same finger types and points |
+| **Wrist bracelet** | Cuff on outer wrist, sensor faces desk | Typing-compatible — forearm slide, vertical-mouse ergonomics |
 | **Toe ring** | Silicone band on big toe or second toe | Users with limited hand/arm mobility |
 | **Knuckle strap** | Elastic strap on proximal phalanx | Users who can't curl fingertips |
 | **Prosthetic mount** | Clip or socket adapter | Mounts to existing prosthetic device |
@@ -580,6 +680,58 @@ on a different finger from the cursor).
 
 ---
 
+## Keyboard Compatibility
+
+The standard fingertip ring (R-xx variants) is **not typing-compatible.** The
+ring occupies the finger pad, which is the surface that hits keys. Users must
+choose between pointing and typing at any given moment — same tradeoff as a
+conventional mouse, but with a faster transition (finger down to point, lift to
+type, vs. hand off mouse, move to keyboard, move back to mouse).
+
+This is the fundamental UX tension in the design. Three approaches address it:
+
+### Typing-Compatible Form Factors
+
+| Form Factor | Keyboard Compatible? | Tradeoff |
+|-------------|:-------------------:|----------|
+| **Fingertip ring** (R-xx) | No — ring occupies finger pad | Best pointing precision, worst keyboard coexistence |
+| **Nail mount** (N-xx) | Yes — pad exposed, module on nail | Extreme height constraints; bottom-row keys (M, comma) may still conflict depending on module thickness |
+| **Wrist bracelet** (B-xx) | Yes — fingers completely free | Lower pointing resolution (wrist vs. fingertip spatial discrimination) |
+| **Wand** (W-xx) | Partially — set down wand to type | Same transition cost as conventional mouse |
+| **Toe ring** | Yes — feet and hands are independent | Requires foot dexterity; not for everyone |
+
+Circumventing keyboard incompatibility is a high-priority design goal. The nail
+mount and wrist bracelet exist specifically because the standard ring forces a
+pointing-or-typing choice. If the nail mount can be made thin enough (≤3–4mm
+above nail), it is the ideal form factor: same finger types and points, no
+device removal, no mode switch.
+
+### Text Input Fallback for Ring-Only Users
+
+For users who choose the standard fingertip ring (or who cannot use a keyboard
+for other reasons), the companion app should provide software text input:
+
+| Method | UX Quality | Notes |
+|--------|-----------|-------|
+| **Voice input** (OS-level dictation) | Good for prose, poor for code/commands | Zero hardware cost. Available on all major OSes. Requires microphone. Privacy-sensitive — conflicts with no-cloud principle unless using on-device recognition (Whisper, etc.) |
+| **Virtual keyboard + cursor** | Functional but slow | Point-and-click on an on-screen keyboard. Familiar from touchscreen devices. Painful for anything longer than a URL. |
+| **Virtual keyboard + swipe/swype** | Better than point-and-click | Drag the cursor across keys in a continuous gesture. Well-proven on phones (GBoard, SwiftKey). Requires companion app to implement swipe decoding. Meaningfully faster than point-and-click for short text. |
+| **Half-QWERTY (one-handed)** | Good for trained users | Mirror-mapping lets one hand type the full alphabet. Research shows 50% of two-handed speed after ~8 hours practice, up to 83% with extended use. Requires a physical keyboard — but only one hand on it, the other hand points with the ring. |
+
+**Honest assessment:** All of these are a substantial UX loss compared with
+two-handed keyboard typing for users accustomed to a keyboard. Voice input is
+the least friction for prose but doesn't work for code, passwords, or quiet
+environments. Virtual keyboards are universally worse than physical ones. The
+half-QWERTY approach (one hand types, the other points) is the most promising
+hybrid but requires learning investment.
+
+**The right answer is to make the ring typing-compatible** (nail mount or wrist
+bracelet), not to replace the keyboard with software workarounds. The fallback
+methods exist for users who cannot use a keyboard regardless of form factor —
+they should not become the default because the ring design forced it.
+
+---
+
 ## Single-Ring Fallback
 
 For users who can only wear one ring (e.g., limited finger independence), a
@@ -605,6 +757,9 @@ control. The companion app manages role assignment:
 | Three rings | Middle + Index + Ring fingers | Cursor+LClick, Scroll+RClick, Modifier |
 | Four rings | Middle + Index + Ring + Pinky | Full configurable surface |
 | Ring + Wand | Any finger + dominant hand | Cursor (ring) + precision/drawing (wand) |
+| **Nail mount pair** | **Middle + Index (nail side)** | **Cursor+LClick, Scroll+RClick — typing-compatible mouse** |
+| **Wrist bracelet** | **Outer wrist** | **Cursor+Click — typing-compatible, vertical-mouse ergonomics** |
+| Bracelet + ring | Wrist + any finger | Cursor (bracelet), click (ring) — typing-compatible pointing with tactile click |
 | **Toe pair** | **Big toe + second toe** | **Cursor+LClick, Scroll+RClick — foot-operated mouse** |
 | Toe + finger | Big toe + any finger | Cursor (toe), click (finger) — or vice versa |
 | Prosthetic mount | Residual limb or prosthetic | Cursor + click via available motion |
