@@ -150,6 +150,99 @@ cursor navigation and clicking; likely insufficient for precision drawing.
 device with vertical-mouse ergonomics and full typing compatibility. Worth
 prototyping if the nail mount proves too constrained.
 
+#### Tethered Sensor (Fingertip Dot + Wrist Hub)
+
+The sensing element lives on the fingertip. Everything else — MCU, battery,
+BLE radio, click switch — lives on a wrist module. A thin flex ribbon cable
+runs along the dorsal (top) finger surface connecting the two.
+
+```
+SIDE VIEW — Tethered sensor architecture
+
+    fingertip:              flex ribbon:              wrist:
+    ┌───────┐               ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌    ┌──────────┐
+    │LED ◉  │──SPI+pwr──along dorsal finger────────  │ ESP32-C3 │
+    │sensor │  (6 lines, under silicone sleeve)      │ LiPo     │
+    │~5x5mm │                                        │ BLE      │
+    └───────┘                                        │ dome sw  │
+    <0.5g                   <0.3g                    └──────────┘
+    taped/gloved            silicone channel          wristband
+    to nail                 or adhesive strip         ~5–8g
+```
+
+| Variant | Sensor on Fingertip | Click Location | Notes |
+|---------|--------------------|----------------|-------|
+| **T-OLED** | Optical LED (PAW3204) | Wrist (thumb dome) | Lightest fingertip, 800 CPI |
+| **T-VCSL** | Laser VCSEL | Wrist (thumb dome) | Better surface range |
+| **T-IMU** | IMU only (bare die) | Wrist (thumb dome) | Lightest possible, air mouse |
+| **T-OLED-IMU** | Optical + IMU hybrid | Wrist (thumb dome) | Surface + air, sub-gram fingertip |
+
+**Why this is a product, not a prototype:**
+
+- **Fingertip weight: <0.5g.** The finger feels like a bare finger with a
+  sticker on it. Finger fatigue is effectively zero. For precision work,
+  extended use, or users with finger weakness, this is the most ergonomic
+  architecture — the user moves a sensor dot, not a device.
+- **Wrist carries everything heavy.** The MCU, battery, and radio are on the
+  wrist where grams are imperceptible. A wristband with a 5–8g module is
+  lighter than a watch.
+- **Sensor resolution is identical** to the self-contained ring (same sensor
+  die, same optics). No performance compromise from the split.
+- **Flex ribbon is unobtrusive.** A 6-conductor flex cable is <1mm wide and
+  <0.2mm thick. Routed along the top of the finger under a thin silicone sleeve
+  or adhesive channel, it's visually subtle and mechanically invisible during
+  finger movement. Same principle as flex cables inside laptop hinges — thin,
+  flexible, rated for millions of bend cycles.
+- **Click on the wrist.** A dome switch on the wrist module, actuated by the
+  thumb. This separates the click action from the pointing finger entirely —
+  no accidental clicks during cursor movement, ever. Alternatively, a second
+  tethered sensor dot on another finger provides click (press down on dome at
+  fingertip, signal travels via flex to wrist hub).
+
+**Keyboard compatibility:** Depends on sensor placement. Sensor on nail side
+(like the nail mount) allows typing — the flex ribbon runs up the dorsal
+finger and the pad is exposed. Sensor on finger pad requires removal or
+finger lift to type.
+
+**Engineering advantages over self-contained ring:**
+
+- No height budget crisis. The sensor die on the fingertip is ~3mm tall. The
+  MCU, battery, and antenna — the tall components — are on the wrist.
+- No antenna detuning from finger proximity. The BLE antenna is on the wrist,
+  in free air, not enclosed in a ring shell pressed against skin.
+- Battery can be larger. The wrist module has room for 200–500mAh, giving weeks
+  of battery life without the 80–100mAh constraint of the ring form factor.
+- Thermal management is trivial. Any heat from the MCU or radio dissipates from
+  the wrist, not from a sealed ring on a fingertip.
+
+**Tradeoff:** The flex cable. It's a tether. It can snag, it needs strain relief
+at both ends, it's one more thing to break. Some users will find it annoying.
+Others won't notice it — the same way some people preferred wired earbuds for
+the lighter earpiece, some users will prefer a tethered sensor for the lighter
+fingertip.
+
+**BOM estimate:**
+
+| Component | Location | Cost |
+|-----------|----------|------|
+| Sensor die (PAW3204) | Fingertip | ~$0.50–2 |
+| LED | Fingertip | ~$0.05 |
+| Flex cable (6-conductor, ~80mm) | Finger to wrist | ~$0.50–1 |
+| ESP32-C3 SuperMini | Wrist | ~$3 |
+| LiPo 200–500mAh | Wrist | ~$2 |
+| Dome switch | Wrist | ~$0.10 |
+| Wristband + fingertip sleeve | Body | ~$1–2 |
+| **Total** | | **~$7–10** |
+
+Under the $10 target for the cheapest ring. The tethered architecture is as
+cheap as the self-contained ring but with better ergonomics, better battery
+life, and better thermal/antenna performance.
+
+**Status:** Concept, but architecturally simple — it's the self-contained ring
+with the heavy components moved to the wrist and a flex cable in between. No
+new sensing principles, no new firmware architecture. The firmware is identical
+to the self-contained ring; the SPI bus just runs through a longer cable.
+
 #### Hefty Pen (Wand)
 
 A rigid pen-shaped device, ~8mm diameter × 120mm length. Aluminum or stainless
@@ -460,15 +553,16 @@ Protects ball/sensor from pocket debris when not in use.
 | Fingertip ring — IMU only (4 angles × 2 camera × 2 laser × 2 click) | 32 |
 | Fingertip ring — IMU hybrids (4 angles × 4 sensors × 2 camera × 2 laser × 2 click) | 128 |
 | Nail mount — surface + IMU variants (2 angles × same combos as ring) | 144 |
+| Tethered sensor — surface + IMU variants (4 sensor types × 2 camera × 2 laser × 2 IMU) | 32 |
 | Wrist bracelet — surface + IMU variants (2 styles × same sensor combos) | 80 |
 | Wand standard (16 combos) | 16 |
 | Wand retractable (16 combos) | 16 |
-| **Total unique variants** | **544** |
+| **Total unique variants** | **576** |
 
 In practice, start with one: R30-OLED-NONE-NONE-NONE with dome click. Buy two.
 That's a complete mouse for ~$18.
 
-The 544 variants exist for the combinatorial design space and defensive
+The 576 variants exist for the combinatorial design space and defensive
 publication. The canonical two-ring setup (two identical rings, software-
 assigned roles) is the opinionated default and the only configuration that
 should be prototyped in Phase 1.
@@ -593,6 +687,7 @@ anywhere:
 |---------|----------|----------|
 | **Fingertip ring** (default) | Silicone/printed ring on distal phalanx | Standard desk, lap, any-surface use |
 | **Nail mount** | Silicone harness, module on nail side, pad exposed | Typing-compatible — same finger types and points |
+| **Tethered sensor** | Sensor dot on fingertip, flex cable to wrist hub | Sub-gram fingertip, best precision ergonomics, longest battery |
 | **Wrist bracelet** | Cuff on outer wrist, sensor faces desk | Typing-compatible — forearm slide, vertical-mouse ergonomics |
 | **Toe ring** | Silicone band on big toe or second toe | Users with limited hand/arm mobility |
 | **Knuckle strap** | Elastic strap on proximal phalanx | Users who can't curl fingertips |
@@ -696,6 +791,7 @@ This is the fundamental UX tension in the design. Three approaches address it:
 |-------------|:-------------------:|----------|
 | **Fingertip ring** (R-xx) | No — ring occupies finger pad | Best pointing precision, worst keyboard coexistence |
 | **Nail mount** (N-xx) | Yes — pad exposed, module on nail | Extreme height constraints; bottom-row keys (M, comma) may still conflict depending on module thickness |
+| **Tethered sensor** (T-xx) | Depends — nail-side placement allows typing | Sub-gram fingertip, flex cable along finger. Best precision ergonomics. Typing-compatible if sensor is on nail side. |
 | **Wrist bracelet** (B-xx) | Yes — fingers completely free | Lower pointing resolution (wrist vs. fingertip spatial discrimination) |
 | **Wand** (W-xx) | Partially — set down wand to type | Same transition cost as conventional mouse |
 | **Toe ring** | Yes — feet and hands are independent | Requires foot dexterity; not for everyone |
@@ -758,6 +854,7 @@ control. The companion app manages role assignment:
 | Four rings | Middle + Index + Ring + Pinky | Full configurable surface |
 | Ring + Wand | Any finger + dominant hand | Cursor (ring) + precision/drawing (wand) |
 | **Nail mount pair** | **Middle + Index (nail side)** | **Cursor+LClick, Scroll+RClick — typing-compatible mouse** |
+| **Tethered pair** | **Sensor dots on Middle + Index, hub on wrist** | **Cursor+LClick, Scroll+RClick — sub-gram fingertip, wrist hub** |
 | **Wrist bracelet** | **Outer wrist** | **Cursor+Click — typing-compatible, vertical-mouse ergonomics** |
 | Bracelet + ring | Wrist + any finger | Cursor (bracelet), click (ring) — typing-compatible pointing with tactile click |
 | **Toe pair** | **Big toe + second toe** | **Cursor+LClick, Scroll+RClick — foot-operated mouse** |
