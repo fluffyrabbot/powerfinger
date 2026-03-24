@@ -71,17 +71,39 @@ degree pen angles from horizontal.
 
 ---
 
-## Fixed Across All Three
+## USB Hub Dongle (x1)
 
-- **MCU:** ESP32-C3 (BLE 5.0, supports 7.5ms connection intervals, ESP-IDF
-  framework)
-- **Protocol:** BLE HID mouse profile — no custom drivers, no USB dongle, pairs
-  like any Bluetooth mouse on any OS
+| Component | Spec |
+|-----------|------|
+| MCU | ESP32-S3 (BLE 5.0 + native USB OTG) |
+| Role | BLE central — pairs with all rings/wands over BLE |
+| Output | USB HID mouse — single unified mouse to the host OS |
+| Connector | USB-A or USB-C |
+| Enclosure | 3D-printed, small USB-stick form factor |
+| BOM target | ~$5-6 |
+
+The hub pairs with multiple PowerFinger devices over BLE, assigns roles
+(first ring = cursor + left click, second = scroll + right click), composes
+their events into a single USB HID mouse report, and presents to the OS as
+one mouse. No companion app required. No drivers. Works on any OS with USB.
+
+A single ring also works without the hub — pairs directly with the host as a
+standard BLE HID mouse for basic cursor + click.
+
+---
+
+## Fixed Across All Devices
+
+- **Ring/wand MCU:** ESP32-C3 (BLE 5.0, supports 7.5ms connection intervals,
+  ESP-IDF framework)
+- **Hub MCU:** ESP32-S3 (BLE 5.0 central + USB OTG device)
+- **Protocol:** Each ring is a BLE HID mouse peripheral. The hub is a BLE
+  central + USB HID device. Single ring works standalone (BLE HID to host).
+  Multi-ring works through the hub (BLE to hub, USB to host).
 - **License:** MIT firmware, CERN-OHL-S 2.0 hardware (open source, your name on
   it if you want it)
-- **No cloud dependency.** No app required for basic single-ring mouse function.
-  Companion app (built separately) adds multi-ring role assignment and
-  configuration
+- **No cloud dependency.** No app required for single-ring or multi-ring
+  function. Companion app is optional configuration UI.
 - **No planned obsolescence.** Every component must be replaceable. Commodity
   parts with multiple source vendors
 
@@ -129,8 +151,10 @@ These are non-negotiable — see CLAUDE.md and the design docs for full rational
 | Priority | What | Quantity | Why |
 |----------|------|----------|-----|
 | **P0** | Optical ring pair (Prototype 1) | x2 | Validates core concept: two identical rings = mouse |
+| **P0** | USB hub dongle | x1 | Validates multi-ring composition — two rings = one USB mouse |
 | **P1** | Ball+Hall ring pair (Prototype 2) | x2 | Validates surface-agnostic sensing in ring form factor |
 | **P1** | Ball+Hall wand (Prototype 3) | x1 | Validates pen-on-any-surface concept |
 
-P0 is the gate. If the optical ring pair works as a mouse, everything else
-follows. If it doesn't, we learn why before spending more.
+P0 is the gate. If the optical ring pair works as a mouse through the hub,
+everything else follows. The hub is P0 because multi-ring composition is the
+core product concept — without it, you just have two independent mice.

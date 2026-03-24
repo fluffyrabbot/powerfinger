@@ -719,9 +719,58 @@ time, both fit alongside any sensor — see CLICK-MECHANISMS.md):
 BOM impact is negligible. The R30-OLED-NONE-NONE ring with dome click is
 **~$9.** With piezo click it's **~$11.** Both are well under the $25 ceiling.
 
+### USB Hub Dongle
+
+The hub is what makes multi-ring composition work without per-OS software. It's
+a small USB device (ESP32-S3) that acts as a BLE central — it pairs with all
+connected rings, assigns roles, composes their events, and presents to the host
+OS as **one standard USB HID mouse.**
+
+```
+Ring 1 ──BLE──┐
+              ├──► USB Hub Dongle ──USB HID──► OS sees one mouse
+Ring 2 ──BLE──┘    (ESP32-S3)
+Ring N ──BLE──┘
+```
+
+**Why a hub instead of a companion app:**
+
+Without the hub, each ring pairs directly with the host as a separate BLE HID
+mouse. The host OS sees multiple cursors. A companion app must intercept Ring 2's
+cursor events and remap them to scroll — but the interception mechanism is
+different on every OS (Linux: `libevdev`, macOS: `IOHIDManager`, Windows:
+`RawInput`) and impossible on iOS and most Android. The hub eliminates all of
+this: the OS sees one USB mouse and doesn't know or care that it's composed from
+multiple BLE sources.
+
+| Property | With Hub | Without Hub (Companion App) |
+|----------|---------|---------------------------|
+| Multi-ring works on | Every OS with USB | Linux, macOS, Windows (each different) |
+| iOS / Android support | Yes (USB adapter) | No (can't intercept HID) |
+| App required for 2-ring mouse | No | Yes |
+| Host needs BLE | No | Yes |
+| Latency control | Hub manages BLE timing | Host BLE radio time-slices |
+| N-ring scaling | Hub handles all connections | Host BLE radio limits |
+
+**A single ring still works without the hub** — it pairs directly with the host
+as a standard BLE HID mouse. The hub is needed only for multi-device composition
+(two rings = mouse, or any configuration involving more than one PowerFinger
+device).
+
+| Component | Cost |
+|-----------|------|
+| ESP32-S3 (BLE 5.0 + USB OTG) | ~$3–4 |
+| USB-A or USB-C connector | ~$0.20 |
+| PCB + passives | ~$1 |
+| Enclosure (3D-printed) | ~$0.50 |
+| **Total hub BOM** | **~$5–6** |
+
+The hub is a shared accessory, not a per-ring cost. One hub serves any number
+of PowerFinger devices.
+
 ---
 
-## Canonical Setup: Two Identical Rings
+## Canonical Setup: Two Identical Rings + Hub
 
 The opinionated default for PowerFinger is **two identical rings on two
 fingers**, with roles assigned in software:
@@ -731,15 +780,21 @@ fingers**, with roles assigned in software:
 | **Middle** (Ring 1) | Primary | Cursor X/Y | Left click |
 | **Index** (Ring 2) | Secondary | Scroll (vertical drag) | Right click |
 
-**Total BOM: ~$18** (two R30-OLED-NONE-NONE rings with dome click).
+**Total BOM: ~$24** (two R30-OLED-NONE-NONE rings with dome click + USB hub).
 
-This is a **complete mouse replacement** from two copies of the same $9 device.
+This is a **complete mouse replacement** from two copies of the same $9 device
+and a $6 USB hub. The hub pairs with both rings over BLE, assigns roles, and
+presents to the host OS as one standard USB HID mouse. No companion app needed.
+No drivers. Plug in the hub, the rings auto-connect, and you have a mouse.
+
+A single ring also works without the hub — it pairs directly with the host as
+a standard BLE HID mouse for basic cursor + click.
 
 ### Gesture Map
 
 Every mouse action decomposes into combinations of move and click from two
-fingers. The rings report raw deltas and press/release events. The companion
-app composes them into OS-level HID events:
+fingers. The rings report raw deltas and press/release events. The hub composes
+them into a single USB HID report:
 
 | Mouse Action | Ring 1 (Middle) | Ring 2 (Index) |
 |---|---|---|
@@ -755,8 +810,9 @@ app composes them into OS-level HID events:
 
 **The rings are dumb.** Each reports two things: (1) sensor X/Y deltas when
 the finger moves, (2) click press/release events. All gesture interpretation
-lives in the companion app, which is free to update, configure per-app, and
-adapt to individual users' needs.
+lives in the hub, which composes them into one unified input stream. The
+companion app (optional) configures role assignments and sensitivity, but the
+hub works out of the box with sensible defaults.
 
 ### Why This Works
 

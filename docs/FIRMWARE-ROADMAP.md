@@ -102,56 +102,97 @@ tradeoffs are available.
 
 ---
 
-## Phase 4 — Two-Ring Coordination
+## Phase 4 — USB Hub Dongle
 
-**What:** Flash two ESP32-C3 dev boards with identical firmware. Both pair with
-the same host as separate BLE HID mice. A validation script (Python or similar)
-listens to both devices and assigns roles: one as cursor + left click, the other
-as scroll + right click.
+**What:** An ESP32-S3 dev board acting as a BLE central + USB HID device. It
+pairs with multiple rings over BLE, assigns roles, composes their events into
+a single unified HID mouse report, and presents to the host OS as one standard
+USB HID mouse.
 
-**Why:** This is the core product concept. Each ring is stateless — reports raw
-deltas and click events. Role assignment lives in the companion software. But
-the BLE layer must support it: two ESP32-C3 devices paired simultaneously to
-the same host, HID reports interleaving without conflict, both reconnecting
-after sleep.
+```
+Ring 1 (ESP32-C3) ──BLE──┐
+                          ├──► USB Hub Dongle ──USB HID──► OS sees one mouse
+Ring 2 (ESP32-C3) ──BLE──┘    (ESP32-S3)
+                               - BLE central: pairs with N rings
+                               - role engine: MAC → role mapping
+                               - event composer: N inputs → 1 HID report
+                               - USB HID device: one mouse to the OS
+```
 
-**Validate:** Two dev boards, two dome switches, two sensor breakouts (or one
-sensor + one click-only board). Use the Python script as a minimal companion
-app. Browse a website with two fingers: cursor on one, scroll on the other.
+**Why the hub instead of a companion app:**
 
-**Done when:** Two-finger browsing works. No pairing conflicts. Both devices
-reconnect after sleep. Latency is acceptable with both active simultaneously.
+The companion app approach requires per-OS input interception to remap Ring 2's
+cursor events into scroll events. This means different implementations for
+Linux (`libevdev`/`uinput`), macOS (`IOHIDManager`/`CGEventTap`), Windows
+(`RawInput`/`SendInput`), and is impossible on iOS and most Android without
+root or accessibility hacks. The hub eliminates all of this:
 
-**Hardware needed:** Second ESP32-C3 SuperMini (~$3), second dome switch, second
-sensor breakout (optional — one sensor + one click-only is sufficient).
+- **OS sees one mouse.** No interception, no remapping, no permissions, no
+  per-OS code. USB HID works on every OS including iOS (via Lightning/USB-C
+  adapter), ChromeOS, game consoles, smart TVs.
+- **No companion app required for multi-ring.** The hub does the composition.
+  Two rings just work as cursor + scroll out of the box. Satisfies the "no app
+  required" hard rule for the full two-ring setup, not just single-ring.
+- **No host BLE radio dependency.** The hub's BLE radio manages ring
+  connections. Works on hosts with no BLE at all (desktops, older laptops).
+- **Latency control.** Hub runs BLE at 7.5ms intervals per ring and emits USB
+  HID reports at 1ms (USB full-speed polling). Absorbs BLE jitter, outputs
+  smooth reports. No latency budget splitting on the host's BLE radio.
+- **N-ring scaling.** Add a third ring, a fourth — the hub manages all
+  connections and composes one HID report. The OS never knows.
+
+**Hub firmware architecture:**
+
+1. **BLE central** — scans, pairs, bonds with PowerFinger peripherals. Stores
+   bonding info in NVS. Reconnects automatically after power cycle.
+2. **Role engine** — maps each ring's BLE MAC address to a role (cursor, scroll,
+   modifier, etc.). Default assignment: first ring paired = cursor + left click,
+   second = scroll + right click. Configurable via USB serial or companion app.
+3. **Event composer** — receives BLE HID reports from all connected rings,
+   applies role semantics (Ring 2 Y-axis → scroll wheel delta), composes into
+   a single USB HID mouse report with cursor X/Y, buttons, and scroll wheel.
+4. **USB HID device** — ESP32-S3 native USB OTG presents as a standard USB HID
+   mouse. One device, one report descriptor, one cursor.
+
+**Validate:** Two ESP32-C3 dev boards running ring firmware (from Phases 0–2)
+pair with an ESP32-S3 dev board over BLE. The S3 plugs into a laptop via USB.
+Move one C3 → cursor moves. Move the other C3 → scroll happens. Click either →
+correct button. The laptop sees one mouse.
+
+**Done when:** Two-ring mousing works through the hub on any OS. Plug in the
+hub, rings auto-connect, cursor and scroll work. No software installed on the
+host.
+
+**Hardware needed:** ESP32-S3 dev board (~$4), USB cable. Plus two ESP32-C3
+rigs from Phase 2.
 
 ---
 
-## Phase 5 — Companion App (MVP)
+## Phase 5 — Companion App (Configuration UI)
 
-**What:** A lightweight daemon (system tray app or CLI) that discovers paired
-PowerFinger devices, assigns roles, and remaps HID events. Translates "Ring 2
-Y-axis delta" into OS scroll events. Handles:
+**What:** A lightweight app that talks to the hub over USB serial (or BLE for
+hubless single-ring use). Provides:
 
-- Device discovery and identification (which ring is which)
-- Role assignment (cursor, scroll, modifier)
-- Event remapping (raw HID → OS-level mouse events with role semantics)
-- Single-ring fallback detection (auto-switch to cursor + click when only one
-  ring is connected)
+- Role reassignment (drag-and-drop: which ring is cursor, which is scroll)
+- Sensitivity / DPI adjustment per ring
+- Gesture configuration (what does simultaneous two-ring click do?)
+- Hub firmware update
+- Ring firmware OTA update (hub relays to rings over BLE)
 
-**Why:** Without this, Ring 2 is just a second cursor. The companion app is what
-makes two cursors into cursor + scroll. For MVP, a Python script or Rust CLI is
-sufficient. Flutter/PWA companion app with full UI is a later phase — prove the
-concept before building the interface.
+**Why:** The hub handles multi-ring composition without an app. The companion
+app is the configuration UI — a luxury, not a requirement. It's how you
+customize, not how you use.
 
-**Validate:** Full two-ring mouse experience. Move cursor with middle finger,
-scroll with index finger, left click with middle finger dome, right click with
-index finger dome. If this works on dev boards, it works on prototype hardware.
+**Platform priority:**
+1. **Web Serial** (Chrome/Edge) — talks to hub over USB serial from a webpage.
+   Zero install, works on any desktop OS with a modern browser. MVP path.
+2. **Desktop app** (Tauri or Electron) — for users who want a native app.
+3. **Mobile app** (Flutter) — talks to hub over BLE for mobile configuration.
 
-**Done when:** You have a demo video of two-finger mousing. That's the outreach
-asset.
+**Done when:** User can reassign ring roles, adjust sensitivity, and update
+firmware from a web page connected to the hub via USB.
 
-**Hardware needed:** Same two dev board rigs from Phase 4.
+**Hardware needed:** Same hub + ring setup from Phase 4.
 
 ---
 
