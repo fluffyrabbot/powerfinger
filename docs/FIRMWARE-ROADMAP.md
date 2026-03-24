@@ -269,6 +269,103 @@ time. Setting persists across reboots.
 
 ---
 
+## Phase 9 — Firmware Update Architecture
+
+**What:** Field-updateable firmware for both the hub and the rings. Three
+components:
+
+### Hub Update Path (USB)
+
+The hub (ESP32-S3) is always plugged into USB. Two update mechanisms:
+
+1. **USB DFU bootloader** in a protected flash partition. The ESP32-S3's
+   built-in USB DFU mode (hold boot button on plug-in) accepts a raw `.bin`
+   file. This is the failsafe — if application firmware is bricked, DFU always
+   works. No application code involved.
+
+2. **Web Serial update** from the companion app. The same browser-based UI
+   (Phase 5) that configures roles also flashes firmware. User clicks "update,"
+   selects a `.bin` file (downloaded from GitHub releases or loaded locally),
+   companion app writes it over USB serial to the hub's OTA partition. Hub
+   reboots into new firmware.
+
+```
+Flash partition layout (hub):
+
+┌──────────────────────┐
+│  DFU bootloader      │  ← protected, never overwritten
+├──────────────────────┤
+│  OTA partition A     │  ← active application firmware
+├──────────────────────┤
+│  OTA partition B     │  ← receives update, becomes active on reboot
+├──────────────────────┤
+│  NVS                 │  ← role assignments, bonding info (preserved)
+└──────────────────────┘
+```
+
+ESP-IDF's `esp_ota_ops` handles the A/B partition swap. If the new firmware
+fails to boot, the bootloader rolls back to the previous partition. NVS
+(bonding info, role assignments) is in a separate partition and survives
+firmware updates.
+
+### Ring Update Path (BLE OTA via Hub)
+
+Rings (ESP32-C3) have no USB connection during normal use. The hub acts as a
+firmware update gateway:
+
+```
+GitHub Releases ──download──► Browser (Web Serial)
+                                    │
+                                    ├──USB──► Hub: flash hub firmware directly
+                                    │
+                                    └──USB──► Hub ──BLE OTA──► Ring 1
+                                                  ──BLE OTA──► Ring 2
+                                                  ──BLE OTA──► Ring N
+```
+
+1. User downloads ring firmware `.bin` from GitHub releases (or loads local
+   file).
+2. Companion app (Web Serial) sends the binary to the hub over USB serial.
+3. Hub stores the binary in a staging area (SPI flash or PSRAM on the S3).
+4. Hub initiates BLE OTA to each connected ring using ESP-IDF's `esp_ota`
+   over a custom GATT service (not the HID profile — a separate OTA service
+   UUID).
+5. Each ring receives the binary, writes to its OTA partition, validates
+   checksum, reboots.
+6. If the new ring firmware fails to boot, the ring's bootloader rolls back
+   and the hub reports the failure to the companion app.
+
+Ring flash partition layout mirrors the hub: DFU bootloader (protected) + A/B
+OTA partitions + NVS (calibration, bonding info preserved across updates).
+
+### Direct Ring Update (Fallback)
+
+If no hub is available, a ring can be updated by plugging it into USB directly
+(USB-C charging port doubles as serial) and flashing via `esptool.py` or
+Web Serial. This is the development workflow and the fallback for users without
+a hub.
+
+**Why field-updateable firmware matters:**
+
+- The BLE stack will need tuning per OS (connection interval negotiation
+  behaves differently on macOS, Windows, Android).
+- The hub's role composition logic will change as user testing reveals which
+  gesture mappings work and which don't.
+- Sensor calibration algorithms will improve over time.
+- Security patches for BLE vulnerabilities.
+- A device that can't be updated becomes e-waste when a bug is found. This
+  violates the no-planned-obsolescence rule.
+
+**Done when:** Hub can be updated from the companion app (Web Serial) without
+any special tools. A ring can be OTA-updated through the hub. Both devices
+roll back on failed update. NVS (bonding, calibration, role assignments) is
+preserved across updates.
+
+**Hardware needed:** Same hub + ring rigs. No additional hardware — the update
+path uses existing USB and BLE connections.
+
+---
+
 ## What the Prototype Hardware Validates That Dev Boards Can't
 
 When the EE/ME delivers assembled prototype rings and wands, the firmware is
