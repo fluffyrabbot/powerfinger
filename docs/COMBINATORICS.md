@@ -1,13 +1,40 @@
 # PowerFinger Design Combinatorics
 
-Every PowerFinger variant is a combination of:
-1. **Form factor** (ring at various angles, or wand)
-2. **Sensing mechanism** (how movement is tracked)
-3. **Optional: OCR camera** (for text scanning)
-4. **Optional: guidance laser** (for aim feedback)
+## What to Build
 
-This document enumerates all viable combinations, their properties, and their
-BOM estimates.
+**Build R30-OLED-NONE-NONE with dome click. Buy two. That's a complete mouse
+for ~$18.**
+
+Two identical rings, software-assigned roles: cursor + left click on one finger,
+scroll + right click on the other. Everything is the same device — same PCB, same
+firmware, same BOM. The companion app or USB hub dongle assigns meaning.
+
+| Priority | What to Build | Qty | BOM Each | Why |
+|----------|--------------|-----|----------|-----|
+| **P0** | R30-OLED-NONE-NONE (dome click) | **×2** | ~$9 | Two identical rings = complete mouse |
+| **P0** | USB hub dongle (ESP32-S3) | ×1 | ~$6 | Multi-ring composition — two rings = one USB mouse |
+| **P1** | R30-BALL-NONE-NONE (dome click) | ×2 | ~$11 | Surface-agnostic pair (glass, fabric, skin) |
+| **P1** | WSTD-BALL-NONE-NONE (wand) | ×1 | ~$14 | Pen-on-any-surface, angle-independent |
+
+P0 is the gate. If the optical ring pair works as a mouse through the hub,
+everything else follows. See [PROTOTYPE-SPEC.md](PROTOTYPE-SPEC.md) for the
+full build spec pitched to EE/ME collaborators.
+
+---
+
+## The Design Space
+
+Everything below enumerates the full combinatorial design space — 576 variants
+across 6 orthogonal axes. This serves two purposes:
+
+1. **Exploration.** Builders who want to try a different sensor, form factor, or
+   option combination can find it here with BOM estimates and tradeoff analysis.
+2. **Defensive publication.** Every variant described here constitutes prior art.
+   The enumeration makes it harder for anyone to patent these combinations after
+   this publication date. See [IP-STRATEGY.md](IP-STRATEGY.md).
+
+The opinionated defaults above are what we recommend building. The matrix below
+is what's possible.
 
 ---
 
@@ -559,29 +586,15 @@ Protects ball/sensor from pocket debris when not in use.
 | Wand retractable (16 combos) | 16 |
 | **Total unique variants** | **576** |
 
-In practice, start with one: R30-OLED-NONE-NONE-NONE with dome click. Buy two.
-That's a complete mouse for ~$18.
-
-The 576 variants exist for the combinatorial design space and defensive
-publication. The canonical two-ring setup (two identical rings, software-
-assigned roles) is the opinionated default and the only configuration that
-should be prototyped in Phase 1.
+576 variants. Build the one at the top of this document. The rest is prior art
+and exploration space.
 
 ---
 
 ## Recommended Build Order
 
-### Phase 1 — Two Identical Rings (P0)
-
-| Priority | What to Build | Quantity | BOM Each | Why |
-|----------|--------------|----------|----------|-----|
-| **P0** | R30-OLED-NONE-NONE (dome click) | **×2** | ~$9 | Two identical rings = complete mouse |
-
-**Total P0 BOM: ~$18 for a complete mouse replacement.**
-
-Build two copies of the same ring. Flash identical firmware. Companion app
-assigns one as "cursor + left click" (middle finger) and the other as "scroll +
-right click" (index finger). This is the canonical setup.
+See "What to Build" at the top of this document for the summary. Full phased
+build order below.
 
 ### Phase 2 — Alternative Sensing + Wand (P1–P2)
 
