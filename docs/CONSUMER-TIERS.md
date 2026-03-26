@@ -125,6 +125,10 @@ who want to hack on the firmware. Two-ring systems where total cost matters.
 **Click lifecycle:** Piezo film effectively infinite. LRA haptic motor ~10M+
 actuations. No mechanical wear path. Fully sealed — moisture-proof, debris-proof.
 
+**Deep sleep wake:** Piezo click uses ADC, not GPIO — cannot wake from deep sleep
+directly. Pro tier wakes on sensor motion detect pin (move finger to wake, then
+click). See FIRMWARE-ROADMAP.md Phase 3 for details.
+
 **Who it's for:** Users who need surface agnosticism — wheelchair tray surfaces,
 bedside use on blankets, glass desks, variable environments. Users who want a
 sealed device they don't maintain. Accessibility users for whom surface

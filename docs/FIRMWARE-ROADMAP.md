@@ -20,8 +20,16 @@ where most projects burn weeks on edge cases. NimBLE stack configuration,
 bonding persistence across reboots, reconnection without re-pairing — all of
 this is pure software and needs no hardware.
 
+**Bond asymmetry recovery:** If a ring attempts to reconnect using a stored bond
+and the central (host or hub) rejects with an authentication error (bond deleted
+on the host side), the ring must: (a) delete the stale bond from NVS, (b) re-enter
+advertising with pairing capability, (c) accept a new bond. This is the most
+common BLE pairing failure mode in consumer devices — do not rely on NimBLE
+defaults, test explicitly.
+
 **Done when:** Dev board pairs with macOS/Windows/Linux/iOS, moves cursor in a
-circle, registers click events, and reconnects after sleep without re-pairing.
+circle, registers click events, reconnects after sleep without re-pairing, AND
+recovers cleanly when the bond is deleted on the host side.
 
 **Hardware needed:** ESP32-C3 SuperMini (~$3).
 
@@ -41,8 +49,9 @@ read fast enough that deltas don't overflow, not so fast that power is wasted.
 ugly cradle). Drag finger on desk. Cursor moves. This is the P0 ring's complete
 firmware running on breadboard hardware.
 
-**Done when:** Cursor tracks finger movement on a desk surface. No visible lag,
-no drift at rest.
+**Done when:** Cursor tracks finger movement on a desk surface. Latency below
+perceptible threshold (~20ms end-to-end). Drift at rest < 1 pixel per 10 seconds
+(sensor noise filtered by dead zone or averaging).
 
 **Hardware needed:** Optical sensor breakout (~$5–8), jumper wires.
 
@@ -54,11 +63,20 @@ no drift at rest.
 
 - **Dead zone during click.** Pressing the finger down causes micro-movement of
   the sensor. Suppress X/Y deltas while the dome is actuated to prevent
-  click-drag artifacts.
+  click-drag artifacts. Dead zone exit requires BOTH conditions:
+  (a) at least `DEAD_ZONE_TIME_MS` (default 50ms) since click actuation, AND
+  (b) accumulated sensor deltas exceed `DEAD_ZONE_DISTANCE` (default 10 counts)
+  since click actuation. For Pro tier piezo+LRA click, add an additional
+  `HAPTIC_SUPPRESS_MS` (default 20ms) of delta suppression during the haptic
+  pulse to prevent cursor jump from motor vibration. All thresholds are named
+  constants, not magic numbers.
 - **Calibration on boot.** Capture zero-offset from sensor at startup so drift
-  from mounting angle doesn't bias the cursor.
-- **Click-and-drag.** When dome is held and finger moves beyond dead zone
-  threshold, re-enable delta reporting for intentional drag.
+  from mounting angle doesn't bias the cursor. If standard deviation of sensor
+  readings during calibration exceeds `CALIBRATION_MOTION_THRESHOLD`, re-run
+  calibration after 500ms (device was moving during boot). Max 3 retries; on
+  failure, use zero offset and log a warning.
+- **Click-and-drag.** When dome is held and finger moves beyond dead zone exit
+  conditions above, re-enable delta reporting for intentional drag.
 
 **Why:** This is where "it moves a cursor" becomes "it's usable as a mouse."
 Without the dead zone, every click drags the cursor a few pixels.
@@ -80,15 +98,32 @@ Open links, close tabs, select text.
 - **Adaptive connection interval.** Default 15ms (allows inter-event light
   sleep). Switch to 7.5ms when sensor reports motion, revert to 15ms after
   ~250ms of no motion. This gives low-latency tracking during movement and
-  ~2x power savings during idle. Measure average mA at both intervals.
+  ~2x power savings during idle. Measure average mA at both intervals. If the
+  BLE central rejects the 7.5ms request, operate at whatever interval the
+  central accepted — do not retry more than once per connection (avoid wasting
+  BLE bandwidth on repeated rejections).
 - **Light sleep** between BLE connection events. CPU halts, BLE radio wakes it
   at each connection interval. Verify that light sleep actually engages at 15ms
   intervals (community measurements suggest 7.5ms is too fast for the ESP32-C3
   to sleep between events).
+- **Sensor noise threshold.** Sensor deltas below `NOISE_THRESHOLD` (default:
+  2 counts for optical, TBD for Hall after calibration) do not count as motion
+  and do not reset the idle timer. Without this, sensor jitter prevents the
+  device from ever entering idle or deep sleep.
 - **Deep sleep** after inactivity timeout (configurable, ~30–60 seconds of no
-  movement and no click). Full power-down, wake on GPIO interrupt (dome press
-  or sensor motion detect pin). With RT9080 LDO (0.5µA Iq), system deep sleep
-  should be ~16–21µA total.
+  motion above noise threshold and no click). Full power-down, wake on GPIO
+  interrupt (dome press or sensor motion detect pin). With RT9080 LDO (0.5µA
+  Iq), system deep sleep should be ~16–21µA total. **Pro tier wake:** the piezo
+  click uses ADC threshold detection, not GPIO — it cannot wake from deep sleep
+  directly. Pro tier must wake on the sensor motion detect pin only (user moves
+  finger to wake, then clicks). Alternatively, use the ESP32-C3 ULP coprocessor
+  to poll the piezo ADC during deep sleep (~100–150µA — significantly more than
+  GPIO wake, evaluate whether this is acceptable).
+- **Battery low-voltage cutoff.** Monitor VBAT via ADC every 60 seconds during
+  connected states. If VBAT drops below `LOW_VOLTAGE_CUTOFF` (default 3.2V —
+  above the LiPo knee at ~3.0V), immediately enter deep sleep and do not wake
+  until USB charging voltage is detected. LiPo cells suffer permanent damage
+  below ~3.0V.
 - **Hall sensor power gating** (ball variants only). The DRV5053 has no sleep
   mode — four sensors draw ~12mA continuously. Add a MOSFET or load switch on
   the Hall sensor VCC rail, controlled by a GPIO. Gate off in idle/deep sleep.
@@ -160,13 +195,41 @@ root or accessibility hacks. The hub eliminates all of this:
 **Hub firmware architecture:**
 
 1. **BLE central** — scans, pairs, bonds with PowerFinger peripherals. Stores
-   bonding info in NVS. Reconnects automatically after power cycle.
-2. **Role engine** — maps each ring's BLE MAC address to a role (cursor, scroll,
-   modifier, etc.). Default assignment: first ring paired = cursor + left click,
-   second = scroll + right click. Configurable via USB serial or companion app.
-3. **Event composer** — receives BLE HID reports from all connected rings,
-   applies role semantics (Ring 2 Y-axis → scroll wheel delta), composes into
-   a single USB HID mouse report with cursor X/Y, buttons, and scroll wheel.
+   bonding info in NVS. Reconnects automatically after power cycle. Maximum
+   simultaneous connections: 4 rings (limited by ESP32-S3 NimBLE memory budget).
+   Connection attempts beyond the limit are rejected.
+2. **Role engine** — maps each ring's BLE MAC address to a role. Default
+   assignment: first ring paired = cursor + left click, second = scroll + right
+   click. Configurable via USB serial or companion app. Roles are a first-class
+   concept:
+
+   | Role | X deltas → | Y deltas → | Click → |
+   |------|-----------|-----------|---------|
+   | Cursor | cursor X | cursor Y | left click |
+   | Scroll | horizontal scroll | vertical scroll | right click |
+   | Modifier | (ignored) | (ignored) | middle click |
+
+   Each connected ring has exactly one role. Role reassignment must be atomic:
+   pause event composition, swap mappings, resume. No window where two rings
+   share a role or a role is unassigned.
+
+3. **Event composer** — maintains per-ring state: `{buttons, delta_x, delta_y,
+   connected}`. On each USB HID poll (1ms): composed report buttons = OR of
+   all connected rings' buttons per role mapping; cursor deltas = SUM of all
+   cursor-role ring deltas since last poll; scroll = SUM of all scroll-role ring
+   deltas since last poll.
+
+   **Disconnection handling (critical for accessibility):** on BLE disconnection
+   event for ring R, immediately: (a) set all buttons contributed by R to
+   released, (b) zero R's delta contribution, (c) emit a USB HID report
+   reflecting the change. A ring disconnecting mid-click must NOT leave a stuck
+   button on the host — accessibility users may not be able to resolve this
+   without assistance.
+
+   **USB suspend:** on host USB suspend (laptop lid close, sleep), request each
+   connected ring to drop to idle connection interval (30ms). On USB resume,
+   do not change ring intervals — rings adapt via their own motion detection.
+
 4. **USB HID device** — ESP32-S3 native USB OTG presents as a standard USB HID
    mouse. One device, one report descriptor, one cursor.
 
@@ -249,10 +312,13 @@ Two operating modes:
   X/Y deltas. Accelerometer provides gravity reference for drift correction.
   High-pass filter rejects slow gyro drift, passes intentional hand movement.
   Auto-center cursor after inactivity timeout.
-- **Hybrid mode (I-IMU variants).** Optical sensor's SQUAL register (or Hall
-  baseline for ball variants) detects surface presence. SQUAL > threshold →
-  track via surface sensor. SQUAL → 0 → crossfade to IMU. Transition must be
-  seamless with no cursor jump at the switch point.
+- **Hybrid mode (I-IMU variants).** The motion source module exports a
+  `surface_confidence` value (0–255). For PixArt optical sensors this maps to
+  the SQUAL register; for Hall arrays it maps to baseline magnetic field
+  deviation; for IMU-only it is always 0. `surface_confidence` > threshold →
+  track via surface sensor. `surface_confidence` → 0 → crossfade to IMU.
+  Transition must be seamless with no cursor jump at the switch point. Use
+  `surface_confidence` in the interface, not vendor-specific register names.
 
 **Why:** The IMU-only ring is the most accessible variant — works anywhere with
 no surface. The hybrid is the most capable — surface precision when available,
@@ -275,7 +341,10 @@ use (< 1 pixel/second at rest after high-pass filter).
 
 **What:** Expose a BLE GATT characteristic for DPI/sensitivity adjustment. The
 companion app (or any BLE tool) can read and write the sensitivity multiplier.
-Persisted to NVS (ESP32 non-volatile storage) so it survives power cycles.
+Valid range: 1–255 (0 is reserved, writes outside range rejected with
+ATT_ERR_VALUE_NOT_ALLOWED). Persisted to NVS (ESP32 non-volatile storage) so
+it survives power cycles. NVS writes should be deferred to idle periods (flash
+erase takes 20–200ms and can interfere with BLE timing).
 
 **Why:** Hard-coded DPI is a project hard rule violation. Different users, different
 surfaces, and different use contexts need different sensitivity. This must be
@@ -320,10 +389,18 @@ Flash partition layout (hub):
 └──────────────────────┘
 ```
 
-ESP-IDF's `esp_ota_ops` handles the A/B partition swap. If the new firmware
-fails to boot, the bootloader rolls back to the previous partition. NVS
-(bonding info, role assignments) is in a separate partition and survives
-firmware updates.
+ESP-IDF's `esp_ota_ops` handles the A/B partition swap. **Boot confirmation is
+mandatory:** new firmware must call `esp_ota_mark_app_valid_cancel_rollback()`
+within 30 seconds of boot. A watchdog timer (30s) forces a reset if this call
+is not made (crash, hang, assertion failure), and the bootloader then rolls back
+to the previous partition. Without this explicit confirmation, the A/B rollback
+mechanism is inert — ESP-IDF does not roll back automatically. NVS (bonding
+info, role assignments) is in a separate partition and survives firmware updates.
+
+**BLE OTA link failure:** if the BLE link drops mid-transfer to a ring, the
+partial image on the ring's inactive OTA partition is harmless (the active
+partition is unaffected). The hub must detect the incomplete transfer and offer
+to retry. Transfers are not resumable — restart from the beginning on failure.
 
 ### Ring Update Path (BLE OTA via Hub)
 
@@ -380,6 +457,84 @@ preserved across updates.
 
 **Hardware needed:** Same hub + ring rigs. No additional hardware — the update
 path uses existing USB and BLE connections.
+
+---
+
+## Ring State Machine
+
+Every ring device has exactly one active state at any time:
+
+```
+                         gpio_interrupt
+  ┌────────────┐      (dome or motion)      ┌──────────┐
+  │ DEEP_SLEEP │ ──────────────────────────► │ BOOTING  │
+  └────────────┘                             └────┬─────┘
+       ▲                                          │ calibration_complete
+       │ sleep_timeout                            ▼
+       │ (or low battery)                  ┌──────────────┐
+       │                    ble_timeout    │ ADVERTISING  │◄──── ble_disconnected
+       │◄──────────────────────────────────└──────┬───────┘     (from any connected)
+       │                                          │ ble_connected
+       │                                          ▼
+       │                     no motion      ┌─────────────────┐
+       │      ┌──────────── for 250ms ──────│CONNECTED_ACTIVE │
+       │      ▼                             └────────▲────────┘
+  ┌────────────────────┐                             │
+  │ CONNECTED_IDLE     │────── motion > ─────────────┘
+  └────────────────────┘    NOISE_THRESHOLD
+```
+
+**Key transitions:**
+- `DEEP_SLEEP → BOOTING`: GPIO interrupt only (dome press or sensor motion
+  detect pin). Pro tier: sensor motion detect pin is the primary wake source,
+  since piezo cannot generate GPIO interrupt.
+- `BOOTING → ADVERTISING`: after calibration completes and passes sanity check.
+  HID reports are not enabled until calibration is complete.
+- `ADVERTISING → CONNECTED_IDLE`: BLE connection established.
+- `ADVERTISING → DEEP_SLEEP`: if no connection within `RECONNECT_TIMEOUT`
+  (default 60s). Prevents battery drain from indefinite advertising.
+- `CONNECTED_IDLE → CONNECTED_ACTIVE`: sensor delta exceeds `NOISE_THRESHOLD`.
+  Request 7.5ms connection interval.
+- `CONNECTED_ACTIVE → CONNECTED_IDLE`: no delta above `NOISE_THRESHOLD` for
+  250ms. Revert to 15ms connection interval.
+- `CONNECTED_IDLE → DEEP_SLEEP`: no activity for `SLEEP_TIMEOUT` (30–60s).
+- `CONNECTED_* → ADVERTISING`: BLE disconnected. Advertise for
+  `RECONNECT_TIMEOUT`, then deep sleep.
+- `* → DEEP_SLEEP`: VBAT < `LOW_VOLTAGE_CUTOFF`. Forced, non-negotiable.
+
+**Invariants:**
+- HID reports are never sent before calibration completes.
+- Advertising never runs indefinitely (bounded by `RECONNECT_TIMEOUT`).
+- VBAT < `LOW_VOLTAGE_CUTOFF` always results in deep sleep, from any state.
+
+---
+
+## Platform HAL — Define Before Writing Firmware
+
+The nRF52840 migration is already recommended for the consumer product (see
+[CONSUMER-TIERS.md](CONSUMER-TIERS.md) and [POWER-BUDGET.md](POWER-BUDGET.md)).
+Every hour of ESP-IDF-specific firmware written without a hardware abstraction
+layer is an hour of code that must be ported later.
+
+Define a thin HAL as the first firmware artifact — before Phase 0 code:
+
+| HAL interface | Hides | ESP-IDF impl | Zephyr impl |
+|---|---|---|---|
+| `hal_gpio_*` | Pin numbering, interrupt config | `gpio_*` | `gpio_*` (different API) |
+| `hal_spi_*` | SPI bus init, transfer | `spi_master_*` | `spi_*` |
+| `hal_adc_*` | ADC channel, calibration | `adc_oneshot_*` | `adc_*` |
+| `hal_timer_*` | Hardware timers, software timers | `esp_timer_*` | `k_timer_*` |
+| `hal_sleep(mode)` | Sleep mode semantics | `esp_light_sleep_start` / `esp_deep_sleep_start` | `k_cpu_idle` / `sys_poweroff` |
+| `hal_storage_get/set` | NVS vs settings subsystem | `nvs_*` | `settings_*` |
+| `hal_ota_*` | OTA mechanism | `esp_ota_ops` | MCUboot |
+| `hal_ble_*` | BLE stack | NimBLE | Zephyr BLE |
+
+This is not a heavy abstraction — one header file, one `.c` per target platform.
+The sensor drivers, click logic, dead zone state machine, report composer, and
+power policy all call HAL functions instead of ESP-IDF functions directly.
+
+Cost: ~1 day of work at project start. Payoff: MCU migration touches one module
+instead of every module.
 
 ---
 

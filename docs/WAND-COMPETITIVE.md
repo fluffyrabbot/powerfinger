@@ -124,9 +124,10 @@ The wand's competitive advantages are structural, not incremental:
   sufficient. For precise selection, drawing, or drag-select, it's not. The Pro
   wand variant (PMW3360 optical-on-ball, ~$25 BOM) would match or exceed the
   competition.
-- **Battery life.** Estimated 1–2 weeks on 100–150mAh with ESP32-C3, which is
-  comparable to the SwiftPoint but worse than the AA-powered Genius. The
-  nRF52840 migration would improve this to 3–6 weeks.
+- **Battery life.** Estimated 2–5 days on 100–150mAh with ESP32-C3 (the
+  ball+Hall sensor draws ~12mA active, dominating the power budget). Worse
+  than the SwiftPoint (~2 weeks) and the AA-powered Genius. The nRF52840
+  migration would improve this to 1–3 weeks.
 - **Weight.** The aluminum tube + electronics weigh more than the 17g Genius.
   For tremor users this is actually an advantage (weighted pens stabilize
   tremor), but for general use it's a tradeoff.

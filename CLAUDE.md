@@ -73,10 +73,11 @@ powerfinger/
   fit in ~7–8mm above surface with 2.5–3mm air gap below.
 - **Optical sensor focal distance: 2.4–3.2mm.** Ring needs standoff feet or
   raised rim to maintain this.
-- **Power target (prototype):** 3–6 days battery life on 80–100mAh (ring), 1–2
-  weeks on 100–150mAh (wand). ESP32-C3 BLE idle floor (~0.35–2mA) makes 1–2
-  weeks unachievable on this MCU — see `docs/POWER-BUDGET.md`. Consumer product
-  generation should evaluate nRF52840 migration for 2–4 week ring battery life.
+- **Power target (prototype, ESP32-C3):** Standard ring (optical): 3–6 days on
+  80–100mAh. Pro ring (PMW3360): 1–3 days on 80–100mAh. Wand (ball+Hall):
+  2–5 days on 100–150mAh. See `docs/POWER-BUDGET.md` for component-level
+  breakdown. Consumer product generation should evaluate nRF52840 migration
+  for 3–5x improvement.
 
 ## Code Smell Checklist (LLM Failure Modes)
 
