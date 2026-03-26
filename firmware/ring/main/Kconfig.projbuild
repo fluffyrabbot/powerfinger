@@ -1,0 +1,75 @@
+# SPDX-License-Identifier: MIT
+# PowerFinger Ring — Project-level Kconfig
+
+menu "PowerFinger Configuration"
+
+    choice POWERFINGER_SENSOR_DRIVER
+        prompt "Sensor driver"
+        default SENSOR_NONE
+        help
+            Select the motion sensor driver. Use NONE for Phase 0
+            (fake data, BLE HID validation only).
+
+        config SENSOR_NONE
+            bool "None (fake data for Phase 0)"
+
+        config SENSOR_PAW3204
+            bool "PAW3204 optical (Standard tier)"
+
+        config SENSOR_PMW3360
+            bool "PMW3360 optical-on-ball (Pro tier)"
+    endchoice
+
+    choice POWERFINGER_CLICK_INPUT
+        prompt "Click input"
+        default CLICK_NONE
+        help
+            Select the click input mechanism. Use NONE for Phase 0.
+
+        config CLICK_NONE
+            bool "None (no click for Phase 0)"
+
+        config CLICK_SNAP_DOME
+            bool "Snap dome (GPIO, Standard tier)"
+
+        config CLICK_PIEZO_LRA
+            bool "Piezo + LRA haptic (ADC + PWM, Pro tier)"
+    endchoice
+
+    config POWERFINGER_SENSOR_SCLK_PIN
+        int "Sensor serial clock GPIO pin"
+        default 4
+        depends on SENSOR_PAW3204 || SENSOR_PMW3360
+
+    config POWERFINGER_SENSOR_SDIO_PIN
+        int "Sensor SDIO / MOSI GPIO pin"
+        default 5
+        depends on SENSOR_PAW3204 || SENSOR_PMW3360
+
+    config POWERFINGER_SENSOR_NCS_PIN
+        int "Sensor chip select GPIO pin"
+        default 6
+        depends on SENSOR_PAW3204 || SENSOR_PMW3360
+
+    config POWERFINGER_SENSOR_MISO_PIN
+        int "Sensor MISO GPIO pin (PMW3360 SPI only)"
+        default 7
+        depends on SENSOR_PMW3360
+
+    config POWERFINGER_DOME_PIN
+        int "Snap dome GPIO pin"
+        default 8
+        depends on CLICK_SNAP_DOME
+
+    config POWERFINGER_VBAT_ADC_CHANNEL
+        int "VBAT ADC channel number"
+        default 0
+
+    config POWERFINGER_HALL_POWER_PIN
+        int "Hall sensor power gate GPIO pin"
+        default 9
+        help
+            GPIO controlling MOSFET for Hall sensor VCC rail
+            (ball variants only). Set to -1 if not used.
+
+endmenu
