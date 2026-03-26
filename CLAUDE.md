@@ -66,13 +66,17 @@ powerfinger/
 
 ## Key Technical Constraints
 
-- **BLE HID latency < 15ms.** ESP32-C3 supports 7.5ms connection intervals.
+- **BLE HID latency < 20ms.** Default 15ms connection interval (adaptive to
+  7.5ms during active tracking). Fixed 7.5ms prevents inter-event light sleep
+  on ESP32-C3 and roughly halves battery life.
 - **Ring height budget: ~10mm** finger-to-surface. Sensor + PCB + battery must
   fit in ~7–8mm above surface with 2.5–3mm air gap below.
 - **Optical sensor focal distance: 2.4–3.2mm.** Ring needs standoff feet or
   raised rim to maintain this.
-- **Power target:** 1–2 weeks battery life on 80–100mAh (ring), 2–4 weeks on
-  100–150mAh (wand).
+- **Power target (prototype):** 3–6 days battery life on 80–100mAh (ring), 1–2
+  weeks on 100–150mAh (wand). ESP32-C3 BLE idle floor (~0.35–2mA) makes 1–2
+  weeks unachievable on this MCU — see `docs/POWER-BUDGET.md`. Consumer product
+  generation should evaluate nRF52840 migration for 2–4 week ring battery life.
 
 ## Code Smell Checklist (LLM Failure Modes)
 
@@ -184,6 +188,9 @@ This creates timestamped, enabling disclosure searchable by patent examiners.
 - Glide system (raised rim + UHMWPE pads): `docs/GLIDE-SYSTEM.md`
 - Prototype build spec (EE/ME pitch): `docs/PROTOTYPE-SPEC.md`
 - Firmware build order: `docs/FIRMWARE-ROADMAP.md`
+- Consumer tiers (Standard/Pro): `docs/CONSUMER-TIERS.md`
+- Power budget (pre-hardware estimates): `docs/POWER-BUDGET.md`
+- Wand competitive landscape + patent analysis: `docs/WAND-COMPETITIVE.md`
 - Outreach / collaborators: `docs/OUTREACH.md`
 - CERN-OHL-S 2.0: https://opensource.org/license/cern-ohl-s
 - ESP-IDF BLE HID: https://github.com/espressif/esp-idf/tree/master/examples/bluetooth

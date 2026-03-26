@@ -60,21 +60,52 @@ is deliberately more permissive than the hardware license because:
 | Apple (2025) | Trackball Apple Pencil | Apple Inc. | 2025 | Ball-tip pen with optical sensors, any-surface | Apple does not sue open-source hardware makers or small peripheral companies. Their enforcement targets large direct competitors (Samsung, Masimo, Qualcomm). |
 | Prolo "Modtouch" | Capacitive touch + IMU ring | Prolo Team | 2025 | Specific to dual-zone thumb trackpad | Different mechanism entirely |
 
+### Wand-Specific Patents
+
+The wand's patent position is cleaner than the ring's. Detailed analysis in
+[WAND-COMPETITIVE.md](WAND-COMPETITIVE.md).
+
+| Patent | Title | Holder | Year | Threat | Analysis |
+|--------|-------|--------|------|--------|----------|
+| US12,353,649 | "Input device with optical sensors" | Apple | 2025 | **Low** | Claims require optical sensors (optical flow, laser speckle). Wand uses Hall effect + magnetic ball — different physics. Apple enforces against billion-dollar competitors, not open-source. |
+| US5210405A | "Pen-type input device with ball" | Matsushita | 1991 | **None (expired 2005)** | Ball-in-pen-tip with rotation sensors. Strong prior art establishing the core concept as unpatentable since 1991. |
+| US6633282B1 | "Ballpoint pen type input device" | Monroe/Rondevoo | 1999 | **None (expired 2019)** | Wireless ball pen pointing device. Prior art for wireless ball-pen concept. |
+| US20010025289A1 | "Wireless pen input device" | Xybernaut | 2001 | **None (abandoned)** | Bluetooth roller-ball pen on any flat surface. Abandoned — no patent protection, but strong prior art. |
+
+**Wacom (2,000+ patents):** All cover pen-to-digitizer coupling (EMR/AES).
+A BLE HID pen with a ball sensor touches none of it. Wacom's 2024 enforcement
+(vs Maxeye) targeted a USI-compliant digitizer stylus, confirming their scope.
+
+**Microsoft Surface Pen patents:** Cover digitizer protocol features. Not
+applicable to a standalone BLE HID pointing device.
+
+**SwiftPoint (WO2006080858A1):** Claims cover a sliding-base pen-grip mouse form
+factor. Different device class from a pen-tube with ball at tip.
+
 ### Assessment
 
-The general concept of "ring + sensor = mouse" is broadly patented. The specific
-combination in PowerFinger (middle fingertip pad, drag-to-track, angled sensor
-mount, direct optical or mechanical ball) may or may not fall within existing
-claims.
-
-**Critical fact:** No patent holder in this space has ever enforced against any
+**Ring:** The general concept of "ring + sensor = mouse" is broadly patented. The
+specific combination in PowerFinger (middle fingertip pad, drag-to-track, angled
+sensor mount, direct optical or mechanical ball) may or may not fall within
+existing claims. No patent holder in this space has ever enforced against any
 ring mouse product — commercial or open source. FTM Computer Products has zero
 litigation in 12 years despite Padrone, Prolo, AirKLC, and Magnima all shipping
 products in this space.
 
+**Wand:** The patent position is cleaner than the ring's. The ball-in-pen-tip
+concept has expired prior art dating to 1991. The major patent portfolios in the
+stylus space (Wacom, Apple Pencil, Microsoft Surface Pen) all cover
+digitizer-coupled devices — a BLE HID pen with Hall effect ball sensing uses
+none of these technologies. Apple's trackball pencil patent (US12,353,649,
+granted July 2025) is the only active patent worth monitoring, and its claims are
+tied to optical sensing, not Hall effect.
+
 **A freedom-to-operate (FTO) opinion from a patent attorney is required before
 Phase 2 investment.** Estimated cost: $2–5K. This is gated at Phase 1.5 in the
-execution plan.
+execution plan. The FTO should specifically analyze:
+- US8648805B2 (FTM fingertip mouse) against the ring design
+- US12,353,649 (Apple trackball pencil) system-level claims against the wand
+  design, confirming the Hall-effect vs optical distinction provides clearance
 
 ---
 

@@ -77,26 +77,42 @@ Open links, close tabs, select text.
 
 **What:** Implement sleep states:
 
+- **Adaptive connection interval.** Default 15ms (allows inter-event light
+  sleep). Switch to 7.5ms when sensor reports motion, revert to 15ms after
+  ~250ms of no motion. This gives low-latency tracking during movement and
+  ~2x power savings during idle. Measure average mA at both intervals.
 - **Light sleep** between BLE connection events. CPU halts, BLE radio wakes it
-  at each connection interval.
+  at each connection interval. Verify that light sleep actually engages at 15ms
+  intervals (community measurements suggest 7.5ms is too fast for the ESP32-C3
+  to sleep between events).
 - **Deep sleep** after inactivity timeout (configurable, ~30–60 seconds of no
   movement and no click). Full power-down, wake on GPIO interrupt (dome press
-  or sensor motion detect pin).
+  or sensor motion detect pin). With RT9080 LDO (0.5µA Iq), system deep sleep
+  should be ~16–21µA total.
+- **Hall sensor power gating** (ball variants only). The DRV5053 has no sleep
+  mode — four sensors draw ~12mA continuously. Add a MOSFET or load switch on
+  the Hall sensor VCC rail, controlled by a GPIO. Gate off in idle/deep sleep.
 - **Current measurement.** Measure actual mA in each state with a USB power
-  monitor or INA219 breakout.
+  monitor or INA219 breakout. Compare against pre-hardware estimates in
+  [POWER-BUDGET.md](POWER-BUDGET.md).
 
-**Why:** The 1–2 week battery target on 80–100mAh means ~6–12mW average draw.
-BLE at 7.5ms connection intervals alone eats ~3–5mW. Aggressive sleep between
-connection events is mandatory. This phase tells you whether the power budget is
-realistic or whether latency vs. battery life tradeoffs are needed.
+**Why:** Pre-hardware estimates (see [POWER-BUDGET.md](POWER-BUDGET.md)) predict
+3–6 days on 80–100mAh with the ESP32-C3 — not the originally hoped 1–2 weeks.
+The ESP32-C3 can't enter light sleep between BLE events at 7.5ms intervals (the
+next event arrives before sleep completes). At 15ms intervals, inter-event sleep
+works and roughly doubles battery life vs 7.5ms. This phase produces real
+measurements to confirm or correct those estimates.
 
 **Validate:** Log average mA over a simulated use session (30 min active, then
 idle). Calculate battery life against 80mAh. This produces a real number — not
 an estimate — for the ring prototype's battery life.
 
-**Done when:** You have measured mA for active use, idle, and deep sleep. You
-know whether 80mAh yields a week or three days, and what connection interval
-tradeoffs are available.
+**Done when:** You have measured mA for active use (at both 7.5ms and 15ms
+intervals), idle (with adaptive interval at 15ms), and deep sleep. You know
+whether the 3–6 day estimate from POWER-BUDGET.md is correct and whether
+adaptive connection intervals deliver the predicted ~2x improvement. This data
+also informs whether the consumer product should migrate to nRF52840 (predicted
+3–5x improvement over ESP32-C3 for BLE HID).
 
 **Hardware needed:** USB power monitor or INA219 breakout (~$3).
 
@@ -225,7 +241,8 @@ magnets, 3D-printed socket (~$2 in filament).
 
 ## Phase 7 — IMU Driver + Hybrid Mode
 
-**What:** Driver for a 6-axis IMU (MPU-6050/BMI270/LSM6DSO) over I2C or SPI.
+**What:** Driver for a 6-axis IMU (BMI270 recommended — 685µA full mode vs
+MPU-6050's 3.6mA, see [POWER-BUDGET.md](POWER-BUDGET.md)) over I2C or SPI.
 Two operating modes:
 
 - **IMU-only (S-IMU variant).** Angular velocity from gyroscope maps to cursor

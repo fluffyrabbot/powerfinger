@@ -38,7 +38,7 @@ This is the P0 build. Everything else depends on this working.
 | Component | Spec |
 |-----------|------|
 | MCU | ESP32-C3 SuperMini |
-| Sensor | 5mm steel ball in socket, 4 roller spindles with magnets, 4 SMD Hall sensors |
+| Sensor | 5mm steel ball in socket, 4 roller spindles with magnets, 4 SMD Hall sensors (DRV5053, power-gated) |
 | Click | Metal snap dome |
 | Battery | LiPo 80-100mAh |
 | Charging | USB-C |
@@ -66,8 +66,12 @@ at finger-pressure force levels.
 | Protocol | BLE HID mouse |
 | BOM target | ~$14 |
 
-Pen grip, drag on any surface. The ball at the tip must accommodate 30-70
-degree pen angles from horizontal.
+Pen grip, drag on any surface. The ball at the tip must accommodate 30–70
+degree pen angles from horizontal. The ball+Hall sensor is angle-independent —
+unlike optical pen mice that fail past ~20 degrees, this works at any natural
+pen grip angle. No commercial pen mouse offers surface agnosticism + angle
+independence + BLE HID (no dongle). See [WAND-COMPETITIVE.md](WAND-COMPETITIVE.md)
+for the full competitive analysis.
 
 ---
 
@@ -132,9 +136,16 @@ software beyond verifying the stock ESP-IDF BLE HID example runs and pairs.
 
 These are non-negotiable — see CLAUDE.md and the design docs for full rationale.
 
+- **LDO: RT9080-33GJ5** (not AP2112K). 0.5µA quiescent vs 55µA — the LDO
+  dominates deep sleep power. See [POWER-BUDGET.md](POWER-BUDGET.md).
+- **Charge resistor: 10kΩ** (not 2kΩ). Sets 100mA charge rate (1.25C on 80mAh).
+  2kΩ was 6.25C — kills the cell in 100–200 cycles.
+- **Hall sensor: DRV5053** (not SS49E). ~3mA vs 6mA per sensor. Must be
+  power-gated via MOSFET in sleep.
 - **BOM ceiling:** No single variant may exceed $25. The cheapest ring must stay
   under $10.
-- **BLE HID latency < 15ms.** ESP32-C3 supports 7.5ms connection intervals.
+- **BLE HID latency < 15ms.** Default 15ms connection interval with adaptive
+  switch to 7.5ms during active tracking.
 - **Ring height budget: ~10mm** finger-to-surface. Sensor + PCB + battery must
   fit in ~7-8mm above surface with 2.5-3mm air gap below.
 - **DPI/sensitivity must be configurable** via BLE characteristic, never

@@ -59,9 +59,24 @@ software-defined combinations of those four primitives.
 
 ### Hefty Pen (Wand)
 
-A pen-shaped device with a tracking element at the tip. Hold it like a pen, drag
-it across any surface — desk, tray table, wall, your knee. A surface-agnostic
-tablet without the tablet.
+A pen-shaped BLE HID pointing device with a ball+Hall sensor at the tip. Hold it
+like a pen, drag it across any surface — desk, glass, tray table, blanket, wall,
+your knee. A surface-agnostic tablet stylus without the tablet.
+
+No existing product fills this space. Commercial pen mice ($35–150) use optical
+sensors that fail on glass and degrade past ~20 degrees of pen tilt. Assistive
+styluses only work on touchscreens. The wand works on any surface, at any
+natural pen angle (30–70 degrees), over BLE HID with no dongle required. $14
+BOM.
+
+Pen grip reduces forearm pronation from ~42 degrees (flat mouse) to ~28 degrees
+— clinically significant for carpal tunnel and RSI. Users self-select their grip
+angle, which the ball sensor handles at any tilt. An aluminum or stainless steel
+body provides natural weight stabilization for tremor (same principle as weighted
+assistive pens at $15–25).
+
+See [docs/WAND-COMPETITIVE.md](docs/WAND-COMPETITIVE.md) for the full
+competitive landscape, accessibility case, and patent analysis.
 
 ### Multi-Module Expansion
 

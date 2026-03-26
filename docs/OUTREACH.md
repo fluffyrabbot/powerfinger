@@ -242,6 +242,9 @@ the project has a demo video.
 ### Accessibility Tester
 - Someone with limited wrist/hand mobility who currently uses a mouse
   alternative (trackball, head mouse, eye tracking, switch)
+- Tremor/Parkinson's users who currently use weighted writing pens — the wand's
+  metal body provides natural weight stabilization, and a weighted sleeve
+  accessory could bring it to 80–100g (same range as therapeutic pens)
 - Willing to try prototypes and give honest feedback
 - Ideally involved from Phase 1 so design decisions are informed by real needs
 
