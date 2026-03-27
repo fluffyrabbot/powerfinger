@@ -157,6 +157,75 @@ These are non-negotiable — see CLAUDE.md and the design docs for full rational
 
 ---
 
+## Battery Safety
+
+Full analysis: [BATTERY-SAFETY.md](BATTERY-SAFETY.md)
+
+### Cell specification
+
+All LiPo cells **must have an integrated protection circuit module (PCM)**
+providing overcharge (4.25-4.30V), over-discharge (2.4-2.5V), and short-circuit
+protection. Bare/unprotected cells are rejected regardless of cost savings. Cells
+must have UN 38.3 test documentation from the manufacturer.
+
+### Charge rate constraint
+
+**RPROG must be 20 kohm (not 10 kohm).** This sets 50 mA charge current (0.5C
+on 100mAh, 0.625C on 80mAh). The ring is a sealed enclosure worn on skin with
+no ventilation. At 100 mA (RPROG = 10 kohm), the TP4054 dissipates up to 200 mW,
+which in the ring's thermal environment produces an estimated 50 deg C
+temperature rise above body temperature — reaching ~87 deg C internally.
+This exceeds both the cell's 45 deg C charge limit and IEC 62368-1's 48 deg C
+skin contact limit (Clause 9.1.2, Table 42, non-metal continuous contact).
+
+At 50 mA the worst-case temperature rise drops to ~25 deg C. Charge time
+increases from ~1 hour to ~2 hours — acceptable for a device charged overnight.
+
+### Thermal limits
+
+| Limit | Value | Source |
+|-------|-------|--------|
+| Max skin-contact surface temperature | 48 deg C | IEC 62368-1 Table 42 (non-metal, continuous) |
+| Max cell charging temperature | 45 deg C | Cell manufacturer spec (typical LiPo) |
+| Min cell charging temperature | 0 deg C | Below this, lithium plating occurs |
+
+### Hardware additions for safety
+
+| Component | Purpose | BOM impact |
+|-----------|---------|-----------|
+| NTC 10k B3950 (0402) + divider resistor | Cell temperature monitoring via ADC | +$0.03 |
+| SI2301 P-ch MOSFET (SOT-23) + pull-up | Firmware charge enable/disable on VBUS | +$0.04 |
+| RPROG change: 10 kohm to 20 kohm | Reduce charge current from 100 mA to 50 mA | $0.00 |
+
+The TP4054 has **no NTC input and no temperature monitoring**. The firmware must
+fill this gap using the NTC thermistor and VBUS MOSFET.
+
+### Firmware requirements
+
+- **Temperature monitoring during charging:** Read NTC via ADC. Disable charging
+  (cut VBUS via MOSFET) at T >= 45 deg C. Re-enable at T < 40 deg C (5 deg C
+  hysteresis). Disable charging at T < 0 deg C.
+- **Overvoltage detection:** If VBAT > 4.25V, disable charging. This indicates
+  a TP4054 fault or cell PCM failure.
+- **Critical low voltage:** If VBAT < 3.0V, enter deep sleep immediately
+  (existing 3.2V cutoff handles the normal case).
+- **Charge state tracking:** Detect USB via VBUS GPIO; monitor TP4054 CHRG pin.
+  Stay awake during charging to maintain temperature monitoring.
+- **Cell health logging:** Track charge cycles, max temperature, and fault
+  events in NVS. Expose via BLE diagnostic characteristic.
+
+### Shell requirements
+
+- **Non-hermetic closure.** Friction-fit or snap-fit that separates under
+  internal pressure. A sealed shell could build pressure during a cell vent
+  event.
+- **Minimum 1.0mm wall thickness** over the cell for mechanical puncture
+  protection.
+- **Swelling detection.** Cell swelling must be tactilely or visually detectable
+  through the shell.
+
+---
+
 ## Build Order
 
 | Priority | What | Quantity | Why |
