@@ -28,5 +28,9 @@ ring_role_t role_engine_get_role(const uint8_t mac[6]);
 // Persists to NVS during idle.
 hal_status_t role_engine_set_role(const uint8_t mac[6], ring_role_t role);
 
+// Remove a ring's role assignment (frees a slot for a new ring).
+// Call when a ring is physically replaced or factory-reset.
+hal_status_t role_engine_forget(const uint8_t mac[6]);
+
 // Get role name as string (for logging)
 const char *role_engine_role_name(ring_role_t role);

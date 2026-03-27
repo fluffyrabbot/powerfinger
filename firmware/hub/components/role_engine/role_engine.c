@@ -5,6 +5,9 @@
 // Default assignment: first ring = CURSOR, second = SCROLL.
 // Reassignment is atomic (mutex-protected).
 // Roles persist to NVS across power cycles.
+//
+// NVS writes happen outside the mutex to avoid blocking the NimBLE task
+// for up to 200ms during flash sector erase/garbage collection.
 
 #include "role_engine.h"
 #include "ble_central.h"
@@ -25,8 +28,9 @@ static SemaphoreHandle_t s_mutex = NULL;
 
 #include <string.h>
 
-// NVS key prefix for role storage
-#define ROLE_NVS_KEY "roles"
+// NVS blob format: version byte + array of role_entry_t
+#define ROLE_NVS_KEY     "roles"
+#define ROLE_NVS_VERSION 1
 
 // Role assignment entry
 typedef struct {
@@ -34,8 +38,16 @@ typedef struct {
     ring_role_t role;
 } role_entry_t;
 
+// NVS blob layout
+typedef struct {
+    uint8_t version;
+    uint8_t count;
+    role_entry_t entries[HUB_MAX_RINGS];
+} role_blob_t;
+
 static role_entry_t s_entries[HUB_MAX_RINGS];
 static int s_entry_count = 0;
+static bool s_dirty = false;  // deferred NVS write flag
 
 static const char *s_role_names[] = {
     [ROLE_CURSOR]   = "CURSOR",
@@ -53,9 +65,15 @@ static ring_role_t default_role_for_index(int index)
     }
 }
 
-static void save_to_nvs(void)
+// Write to NVS (called outside mutex)
+static void flush_to_nvs(int count)
 {
-    hal_storage_set(ROLE_NVS_KEY, s_entries, sizeof(role_entry_t) * s_entry_count);
+    role_blob_t blob;
+    blob.version = ROLE_NVS_VERSION;
+    blob.count = (uint8_t)count;
+    memcpy(blob.entries, s_entries, sizeof(role_entry_t) * count);
+
+    hal_storage_set(ROLE_NVS_KEY, &blob, sizeof(uint8_t) * 2 + sizeof(role_entry_t) * count);
     hal_storage_commit();
 }
 
@@ -69,12 +87,27 @@ hal_status_t role_engine_init(void)
     hal_storage_init();
 
     // Try to load saved roles from NVS
-    size_t len = sizeof(s_entries);
-    if (hal_storage_get(ROLE_NVS_KEY, s_entries, &len) == HAL_OK) {
-        s_entry_count = (int)(len / sizeof(role_entry_t));
+    role_blob_t blob;
+    size_t len = sizeof(blob);
+    if (hal_storage_get(ROLE_NVS_KEY, &blob, &len) == HAL_OK) {
+        if (len >= 2 && blob.version == ROLE_NVS_VERSION && blob.count <= HUB_MAX_RINGS) {
+            // Validate each entry
+            s_entry_count = 0;
+            for (int i = 0; i < blob.count; i++) {
+                if (blob.entries[i].role < ROLE_COUNT) {
+                    s_entries[s_entry_count++] = blob.entries[i];
+                }
+            }
 #ifdef ESP_PLATFORM
-        ESP_LOGI(TAG, "loaded %d role assignments from NVS", s_entry_count);
+            ESP_LOGI(TAG, "loaded %d role assignments from NVS (v%d)",
+                     s_entry_count, blob.version);
 #endif
+        } else {
+#ifdef ESP_PLATFORM
+            ESP_LOGW(TAG, "NVS role data version mismatch or corrupt, resetting");
+#endif
+            s_entry_count = 0;
+        }
     } else {
         s_entry_count = 0;
 #ifdef ESP_PLATFORM
@@ -87,57 +120,106 @@ hal_status_t role_engine_init(void)
 
 ring_role_t role_engine_get_role(const uint8_t mac[6])
 {
+    bool need_save = false;
+    int save_count = 0;
+    ring_role_t result;
+
     LOCK();
 
     // Search for existing assignment
     for (int i = 0; i < s_entry_count; i++) {
         if (memcmp(s_entries[i].mac, mac, 6) == 0) {
-            ring_role_t role = s_entries[i].role;
+            result = s_entries[i].role;
             UNLOCK();
-            return role;
+            return result;
         }
     }
 
-    // Not found — assign default role and persist
+    // Not found — assign default role
     if (s_entry_count < HUB_MAX_RINGS) {
         int idx = s_entry_count;
         memcpy(s_entries[idx].mac, mac, 6);
         s_entries[idx].role = default_role_for_index(idx);
         s_entry_count++;
-
-        ring_role_t role = s_entries[idx].role;
+        result = s_entries[idx].role;
+        need_save = true;
+        save_count = s_entry_count;
 #ifdef ESP_PLATFORM
-        ESP_LOGI(TAG, "assigned %s to new ring (index %d)", s_role_names[role], idx);
+        ESP_LOGI(TAG, "assigned %s to new ring (index %d)", s_role_names[result], idx);
 #endif
-        save_to_nvs();
-        UNLOCK();
-        return role;
+    } else {
+        result = ROLE_CURSOR;  // fallback: all slots full
     }
 
     UNLOCK();
-    return ROLE_CURSOR;  // fallback
+
+    // NVS write outside mutex to avoid blocking NimBLE task during flash erase
+    if (need_save) {
+        flush_to_nvs(save_count);
+    }
+
+    return result;
 }
 
 hal_status_t role_engine_set_role(const uint8_t mac[6], ring_role_t role)
 {
     if (role >= ROLE_COUNT) return HAL_ERR_INVALID_ARG;
 
+    bool found = false;
+    int save_count = 0;
+
     LOCK();
 
-    // Find existing entry
     for (int i = 0; i < s_entry_count; i++) {
         if (memcmp(s_entries[i].mac, mac, 6) == 0) {
             s_entries[i].role = role;
+            found = true;
+            save_count = s_entry_count;
 #ifdef ESP_PLATFORM
             ESP_LOGI(TAG, "reassigned ring %d to %s", i, s_role_names[role]);
 #endif
-            save_to_nvs();
-            UNLOCK();
-            return HAL_OK;
+            break;
         }
     }
 
     UNLOCK();
+
+    if (found) {
+        flush_to_nvs(save_count);
+        return HAL_OK;
+    }
+    return HAL_ERR_NOT_FOUND;
+}
+
+hal_status_t role_engine_forget(const uint8_t mac[6])
+{
+    bool found = false;
+    int save_count = 0;
+
+    LOCK();
+
+    for (int i = 0; i < s_entry_count; i++) {
+        if (memcmp(s_entries[i].mac, mac, 6) == 0) {
+            // Shift remaining entries down
+            for (int j = i; j < s_entry_count - 1; j++) {
+                s_entries[j] = s_entries[j + 1];
+            }
+            s_entry_count--;
+            found = true;
+            save_count = s_entry_count;
+#ifdef ESP_PLATFORM
+            ESP_LOGI(TAG, "forgot ring at index %d, %d entries remain", i, s_entry_count);
+#endif
+            break;
+        }
+    }
+
+    UNLOCK();
+
+    if (found) {
+        flush_to_nvs(save_count);
+        return HAL_OK;
+    }
     return HAL_ERR_NOT_FOUND;
 }
 

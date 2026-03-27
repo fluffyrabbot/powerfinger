@@ -172,8 +172,8 @@ static int ble_hid_report_map_access(uint16_t conn_handle, uint16_t attr_handle,
 {
     (void)conn_handle; (void)attr_handle; (void)arg;
     if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
-        os_mbuf_append(ctxt->om, s_hid_report_map, sizeof(s_hid_report_map));
-        return 0;
+        int rc = os_mbuf_append(ctxt->om, s_hid_report_map, sizeof(s_hid_report_map));
+        return (rc == 0) ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
     }
     return BLE_ATT_ERR_UNLIKELY;
 }
@@ -184,15 +184,13 @@ static int ble_hid_report_access(uint16_t conn_handle, uint16_t attr_handle,
     (void)conn_handle; (void)arg;
 
     if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
-        // Return empty report on read
         uint8_t empty_report[4] = { 0 };
-        os_mbuf_append(ctxt->om, empty_report, sizeof(empty_report));
-        return 0;
+        int rc = os_mbuf_append(ctxt->om, empty_report, sizeof(empty_report));
+        return (rc == 0) ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
     }
     if (ctxt->op == BLE_GATT_ACCESS_OP_READ_DSC) {
-        // Report Reference descriptor
-        os_mbuf_append(ctxt->om, s_report_ref_input, sizeof(s_report_ref_input));
-        return 0;
+        int rc = os_mbuf_append(ctxt->om, s_report_ref_input, sizeof(s_report_ref_input));
+        return (rc == 0) ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
     }
     return BLE_ATT_ERR_UNLIKELY;
 }

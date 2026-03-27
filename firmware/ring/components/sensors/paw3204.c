@@ -35,19 +35,29 @@ static const char *TAG = "paw3204";
 #endif
 
 // --- Bit-bang serial protocol ---
+//
+// GPIO direction is cached to avoid calling hal_gpio_init (which does a
+// full gpio_config register write) on every single bit. Direction changes
+// only happen at the boundary between address and data phases.
 
-// Set SDIO as output and drive a value
-static void sdio_output(bool level)
+static bool s_sdio_is_output = false;
+
+// Switch SDIO to output mode (only reconfigures if not already output)
+static void sdio_set_output(void)
 {
-    hal_gpio_init(PIN_SDIO, HAL_GPIO_OUTPUT);
-    hal_gpio_set(PIN_SDIO, level);
+    if (!s_sdio_is_output) {
+        hal_gpio_init(PIN_SDIO, HAL_GPIO_OUTPUT);
+        s_sdio_is_output = true;
+    }
 }
 
-// Set SDIO as input and read
-static bool sdio_input(void)
+// Switch SDIO to input mode (only reconfigures if not already input)
+static void sdio_set_input(void)
 {
-    hal_gpio_init(PIN_SDIO, HAL_GPIO_INPUT_PULLUP);
-    return hal_gpio_get(PIN_SDIO);
+    if (s_sdio_is_output) {
+        hal_gpio_init(PIN_SDIO, HAL_GPIO_INPUT_PULLUP);
+        s_sdio_is_output = false;
+    }
 }
 
 // Clock one bit out (MSB first). SDIO must already be set.
@@ -62,8 +72,9 @@ static void clock_pulse(void)
 // Write one byte to the sensor (MSB first)
 static void write_byte(uint8_t data)
 {
+    sdio_set_output();
     for (int i = 7; i >= 0; i--) {
-        sdio_output((data >> i) & 0x01);
+        hal_gpio_set(PIN_SDIO, (data >> i) & 0x01);
         delay_us(PAW3204_T_SDIO_SETUP_US);
         clock_pulse();
     }
@@ -73,7 +84,7 @@ static void write_byte(uint8_t data)
 static uint8_t read_byte(void)
 {
     uint8_t data = 0;
-    sdio_input(); // switch SDIO to input
+    sdio_set_input();
 
     for (int i = 7; i >= 0; i--) {
         hal_gpio_set(PIN_SCLK, true);
@@ -127,7 +138,8 @@ hal_status_t sensor_init(void)
     hal_timer_delay_ms(PAW3204_T_POWERUP_MS);
 
     // Perform a re-sync: toggle SCLK with SDIO high
-    sdio_output(true);
+    sdio_set_output();
+    hal_gpio_set(PIN_SDIO, true);
     for (int i = 0; i < 20; i++) {
         clock_pulse();
     }
@@ -197,7 +209,8 @@ hal_status_t sensor_wake(void)
     // Drive SDIO high during resync clocks (matches sensor_init pattern).
     // Without this, SDIO may be left as input from a prior reg_read,
     // and the resync pulses would run with SDIO floating.
-    sdio_output(true);
+    sdio_set_output();
+    hal_gpio_set(PIN_SDIO, true);
     for (int i = 0; i < 20; i++) {
         clock_pulse();
     }
