@@ -2,277 +2,152 @@
 
 ## 1. Current State
 
-**Branch:** `main`, 5 commits ahead of origin (not pushed). Working tree clean
-except `build-test/` (host test artifacts) and `docs/AGENTIC_CHECKLIST.md` (new,
-unstaged).
+**Branch:** `main`. Working tree has uncommitted changes from this session
+(audit fixes + BOM corrections + config updates). `build-test/` contains host
+test artifacts.
 
-```
-e667442 fix(firmware): finish remaining audit items — types, errors, supervision, tests
-f6ead50 fix(firmware): round 2 audit fixes — supervision, type safety, error propagation
-c627c51 test(firmware): add event composer tests, strengthen state machine coverage
-0900d5d fix(firmware): medium-priority audit fixes — role engine, sensor, OTA, BLE
-78c3c88 feat(firmware): implement ring + hub firmware through Phase 4
-```
+**What was done this session:**
 
-**What exists:** Complete ring + hub firmware through Phase 4 of
-[FIRMWARE-ROADMAP.md](docs/FIRMWARE-ROADMAP.md). 46 tests, 123 assertions, 0
-failures. Two rounds of audits (9 specialized auditors) with all findings fixed.
-Ten design/analysis docs in `docs/`. BOMs for all 4 prototypes.
+1. **6 auditors run on all hub firmware and 13 new docs:**
+   - Bellman (hub firmware) — 4 critical, 5 medium, 3 low findings
+   - Concurrency (hub firmware) — 3 critical, 2 high, 2 medium findings
+   - Jackson counterexample (role engine + composer) — 5 counterexamples found
+   - Brooks conceptual integrity (13 docs) — 4 inconsistencies found
+   - Reliability (full firmware) — 5 critical, 5 high, 4 medium findings
+   - Data integrity (BOMs + config) — 10 discrepancies confirmed
 
-**What does NOT exist:** No physical hardware validation. No ESP-IDF build
-(`idf.py build` has never been run). No schematics, PCB layouts, or CAD models.
-No companion app. The hub USB HID output is a stub.
+2. **Critical firmware fixes applied:**
+   - `ble_gap_conn_find()` return checked before `delete_peer` (memory safety)
+   - `ble_gap_connect()` return checked, scan resumes on failure
+   - Short BLE report logged instead of silently discarded
+   - `usb_hid_mouse_init()` return checked — fatal restart on failure
+   - `usb_hid_mouse_send()` return checked — warnings logged
+   - `cursor_dx`/`cursor_dy` int16 overflow fixed — int32 accumulation with
+     clamping (accessibility hazard for multi-CURSOR-ring users)
+   - `flush_to_nvs` snapshot race fixed — entries captured under mutex
+   - `on_reset` count underflow fixed — zero first, then process callbacks
 
----
+3. **BOM corrections applied (all 3 ring/wand BOMs):**
+   - RPROG 10kΩ→20kΩ (50mA charge rate, thermal safety)
+   - YS8205 removed from optical ring alt list (not a standalone sensor)
+   - AH3503 alt note corrected (not pin-compatible, different package/pinout)
+   - LTC4054ES5-4.2 added as true pin-compatible TP4054 alt
+   - ESP32-C3-MINI-1-N4 NRND note added (successor: -N4X)
+   - NTC thermistor + voltage divider resistor added ($0.02 + $0.01)
+   - SI2301 P-ch MOSFET + gate pull-up resistor added ($0.03 + $0.01)
+   - TP4056 and MCP73831 alt caveats clarified
 
-## 2. Crucial Context
+4. **Config constants updated (ring_config.h):**
+   - `HAPTIC_SUPPRESS_MS` 20→35 (A6 analysis)
+   - `DEAD_ZONE_DISTANCE_PRO` = 15 added (A6 analysis, Pro tier)
 
-### Architecture decisions (load-bearing)
+5. **Doc inconsistencies fixed:**
+   - RPROG 10k→20k corrected in PROTOTYPE-SPEC.md, CONSUMER-TIERS.md,
+     POWER-BUDGET.md (all now reference BATTERY-SAFETY.md §5)
+   - AGENTIC_CHECKLIST.md marked fully complete (all items [x])
 
-- **BLE→main queue.** Ring uses a FreeRTOS queue for BLE→main task events. BLE
-  callbacks never dispatch directly — eliminates state machine races.
-- **State machine controls advertising.** HAL auto-advertising was removed. The
-  state machine starts advertising via action flags on boot and after disconnect.
-  If this path doesn't fire on first boot, the ring is invisible.
-- **Event composer `connected` flag.** Managed only by `mark_connected` /
-  `ring_disconnected`, NOT by `feed()`. Prevents stale BLE notifications from
-  resurrecting disconnected rings.
-- **Opaque typed handles.** `struct hal_spi_ctx *`, not `void *` — compile-time
-  safety across HAL boundary.
-- **Power manager decoupled.** Uses `power_event_t` enum, not `ring_state.h`
-  types — reusable for wand firmware without pulling in ring state machine.
-
-### Gotchas (discovered by auditors)
-
-- **PAW3204 is NOT SPI.** Proprietary 2-wire serial, bit-banged via GPIO with
-  direction caching. `T_RESYNC_US` corrected from 1 to 4 per datasheet.
-- **Zero-report on transition.** Hub must send a zero-report when transitioning
-  from non-zero (button release), otherwise host sees stuck click.
-- **Deep sleep wake config.** Without GPIO wake + timer safety net, deep sleep =
-  bricked device. Both are configured in `power_manager.c`.
-- **`sensor_wake()` SDIO direction.** Must set SDIO direction explicitly before
-  resync clocks, or the first read after wake returns garbage.
-- **Bond recovery peer address.** Must use actual address from
-  `ble_gap_conn_find`, not zeroed struct — zeroed address causes silent
-  reconnection failure.
-- **Battery level placeholder.** `hal_ble_esp.c:226` always reports 100%. Power
-  manager reads real VBAT via ADC but doesn't wire it to the BLE characteristic.
-
-### Test coverage gaps (known)
-
-- Calibration: retry logic, variance computation, motion threshold — 0 tests
-- Power manager: battery cutoff, adaptive interval switching — 0 tests
-- PAW3204: product ID verification, register timing — 0 tests
-- Mock HAL supports failure injection (`mock_hal_set_adc_mv`,
-  `mock_hal_inject_ble_send_failure`) but no tests use it yet
+6. **Tests verified:** 175 tests, 0 failures after all changes.
 
 ---
 
-## 3. Work Plan
+## 2. Remaining Audit Findings (Not Yet Fixed)
 
-Two tracks run in parallel. **Track A** is pure agentic work (no hardware).
-**Track B** requires dev boards / prototypes. Items are numbered by recommended
-execution order within each track.
+### From Bellman Audit
 
-### Track A — Agentic Research & Firmware (no hardware needed)
+| ID | Severity | Finding | File |
+|----|----------|---------|------|
+| M1 | Medium | Magic number: BLE connection timeout 30000 | ble_central.c:145 |
+| M2 | Medium | CCCD assumed at val_handle+1 (not guaranteed) | ble_central.c:85 |
+| M3 | Medium | Magic numbers: scan interval/window 0x50/0x30 | ble_central.c:279-280 |
+| M4 | Medium | HID descriptor Logical Min -32767 vs INT16_MIN | hid_report_descriptor.c:47 |
+| M5 | Medium | No app-level timeout on GATT discovery | ble_central.c:186 |
+| L3 | Low | Ring wheel field silently dropped at hub | main.c:39-41 |
 
-Full checklist with sub-tasks: [docs/AGENTIC_CHECKLIST.md](docs/AGENTIC_CHECKLIST.md)
+### From Jackson Counterexample Audit
 
-#### A1. TinyUSB HID Integration (Hub) — `AGENTIC_CHECKLIST.md §1.1`
+| ID | Severity | Finding | File |
+|----|----------|---------|------|
+| CE-2 | Medium | Forget + re-pair assigns wrong default role (index-based, not role-occupancy-based) | role_engine.c:59-66 |
+| CE-5 | Medium | Last-writer-wins NVS race (stale count can overwrite newer blob) | role_engine.c flush sites |
 
-The only stub in the ring→hub→PC data path. Implement `usb_hid_mouse.c` and
-`hid_report_descriptor.c` using ESP-IDF TinyUSB component. Wire into existing
-`event_composer.c` output. Add host-side tests via mock HAL.
+### From Concurrency Audit
 
-**Files:** `firmware/hub/components/usb_hid/usb_hid_mouse.c`,
-`firmware/hub/components/usb_hid/hid_report_descriptor.c`
+| ID | Severity | Finding | File |
+|----|----------|---------|------|
+| C2 | Critical | Partial MAC read race on dual-core (ble_central.c has no spinlock) | ble_central.c:375-380 |
+| H4 | High | NimBLE task blocked ~200ms during NVS flash erase in role_engine_get_role | role_engine.c:156-159 |
+| H5 | High | Role engine used without mutex if xSemaphoreCreateMutex fails | role_engine.c:83, main.c:79 |
+| M6 | Medium | Compose acquires spinlock on every 1ms tick even when no ring connected | event_composer.c:131 |
 
-**Gotcha:** Report descriptor should be superset of ring's BLE descriptor (add
-horizontal scroll). The hub main loop's zero-report stuck-button logic depends
-on `usb_hid_mouse_send` actually transmitting.
+### From Reliability Audit
 
-#### A2. Dual-Footprint PCB Feasibility — `AGENTIC_CHECKLIST.md §1.2`
+| ID | Severity | Finding | File |
+|----|----------|---------|------|
+| R1 | Critical | OTA never confirmed — rollback fires on every reboot | both sdkconfig.defaults |
+| R2 | Critical | Light sleep leaves Hall sensors unpowered — motion deadlock | power_manager.c:163 |
+| R3 | Critical | Deep sleep wake-source config return unchecked — can brick device | power_manager.c:152 |
+| R4 | Critical | ADC init failure causes immediate false low-battery shutdown | power_manager.c:60 |
+| R5 | Critical | Hub BLE host reset doesn't restart scanning (on_sync handles it, but not documented) | ble_central.c on_reset |
+| R6 | High | assert on NULL queue — crash loop instead of restart | ring main.c:176 |
+| R7 | High | s_conn_param_rejected persists across reconnections | power_manager.c:27 |
+| R8 | High | Battery ADC read failure is silent, skips safety check | power_manager.c:113 |
+| R9 | High | os_mbuf_append return ignored in GATT callbacks | hal_ble_esp.c:212-229 |
+| R10 | High | CCCD write has no completion callback — may silently fail | ble_central.c:93-98 |
+| R11 | Medium | SPI double-init returns error (no guard like GPIO has) | hal_spi_esp.c:35 |
+| R12 | Medium | NVS commit failure silently ignored in role engine | role_engine.c:77 |
+| R13 | Medium | RING_EVT_NONE (-1) as table index is UB if passed to dispatch | ring_state.c:192 |
 
-Determines whether the EE designs one ring PCB or two. Compare PAW3204 vs
-PMW3360 pinouts, footprints, voltage domains. Produce a constraints document
-for schematic capture.
+### From Brooks Conceptual Integrity Audit
 
-#### A3. PMW3360 Ball Diameter Optimization — `AGENTIC_CHECKLIST.md §1.3`
-
-Model focal distance geometry for 4–8mm balls against 10mm height budget. The
-answer constrains Pro ring shell CAD and sensor cavity dimensions.
-
-#### A4. Battery Safety Spec — `AGENTIC_CHECKLIST.md §2.1`
-
-LiPo on a finger. Research IEC 62133-2, TP4054 charge behavior, protection
-circuit requirements, and thermal constraints in a sealed ring. Write safety
-spec section for PROTOTYPE-SPEC.md.
-
-#### A5. Regulatory Pre-Scan — `AGENTIC_CHECKLIST.md §2.2`
-
-Map FCC Part 15 and CE RED requirements. Determine what ESP32-C3-MINI-1-N4
-module pre-certification covers vs. what still needs testing. Identify PCB
-layout constraints (antenna keep-out, ground plane, shielding).
-
-#### A6. Piezo/Haptic Dead Zone Analysis — `AGENTIC_CHECKLIST.md §2.3`
-
-Model whether LRA vibration registers as sensor motion. Determine optimal
-`HAPTIC_SUPPRESS_MS`. Decide if Pro tier needs mechanical isolation or a
-different click mechanism.
-
-#### A7. Patent Claim Mapping — `AGENTIC_CHECKLIST.md §2.4`
-
-Pull full claims for US8648805B2 and 3 other ring patents. Map claim elements
-to P0 design. Produce claim chart for patent attorney. FTO opinion is blocked
-on funding — this cuts attorney hours when it happens.
-
-#### A8. Multi-Source Vendor Verification — `AGENTIC_CHECKLIST.md §2.5`
-
-Verify every BOM line item is available from 2+ distributors. Check that
-"Alternatives" column entries are real (in stock, pin-compatible).
-
-#### A9. nRF52840 Migration Spec — `AGENTIC_CHECKLIST.md §2.6`
-
-Map all 9 HAL interfaces to Zephyr/nRF equivalents. Identify gaps that would
-be cheaper to fix now while the HAL is young. POWER-BUDGET.md concludes
-ESP32-C3 can't hit consumer battery targets — this migration is inevitable.
-
-#### A10–A14. Tier 3 items — `AGENTIC_CHECKLIST.md §3.1–3.5`
-
-Accessibility research synthesis, surface test protocol, companion app
-architecture (GATT schema + Web Serial), multi-ring composition protocol
-formalization, defensive publication drafts. Valuable, not blocking. Do when
-Track B is waiting on hardware.
+| ID | Severity | Finding |
+|----|----------|---------|
+| B1 | Medium | Companion app protocol format conflict (text in COMPANION-APP-ARCH.md vs binary in MULTI-RING-PROTOCOL.md §4) |
+| B2 | Low | Ball material terminology drift (steel vs ceramic across docs) |
+| B3 | Low | DPI multiplier encoding inconsistency (10=1.0x vs 128=mid-range) |
+| B4 | Low | BLE latency target: <20ms (CLAUDE.md) vs <15ms (PROTOTYPE-SPEC.md) |
 
 ---
 
-### Track B — Hardware Validation (requires dev boards)
+## 3. Recommended Next Steps
 
-#### B1. Phase 0: BLE HID on bare ESP32-C3
+### 3.1 Priority Fixes (Next Session)
 
-Flash ring firmware to ESP32-C3 SuperMini. Pair with macOS/Windows/Linux/iOS.
-Verify cursor circles, click events, reconnect after reboot, bond recovery when
-host deletes bond.
+1. **Add spinlock to ble_central.c** for s_rings[] and s_connected_count
+   (Concurrency C2 — partial MAC read on dual-core)
+2. **Fix power_manager wake-source return checks** (Reliability R3 — brick risk)
+3. **Fix power_manager Hall re-enable after light sleep** (Reliability R2)
+4. **Fix ADC init failure degradation** (Reliability R4)
+5. **Replace assert with esp_restart** in ring main.c (Reliability R6)
+6. **Fix default_role_for_index** to consider occupied roles (Jackson CE-2)
 
-**Build:** `idf.py set-target esp32c3 && idf.py build && idf.py flash`
+### 3.2 Remaining from Prior Session
 
-**Config:** `CONFIG_SENSOR_NONE=y`, `CONFIG_CLICK_NONE=y` (defaults).
+- HAL migration prep changes from A9 (NRF52840-MIGRATION.md) — not yet applied
+- 20 additional tests from MULTI-RING-PROTOCOL.md §8
+- Test coverage gaps: calibration, power manager, PAW3204
 
-**Watch for:** State machine advertising path must fire on first boot (HAL
-auto-advertise was removed). May need `sdkconfig.defaults` tuning for NimBLE
-memory. Bond asymmetry recovery: delete bond on phone, verify ring re-enters
-pairing.
+### 3.3 Doc Reconciliation
 
-**Hardware:** ESP32-C3 SuperMini (~$3).
-
-#### B2. Phase 1–2: PAW3204 sensor + snap dome click
-
-Wire PAW3204 breakout + snap dome to C3 dev board. Set
-`CONFIG_SENSOR_PAW3204=y`, `CONFIG_CLICK_SNAP_DOME=y`. Verify cursor tracks
-desk movement, click doesn't jump cursor, click-and-drag works.
-
-**Done when:** Can browse a website with dev board taped to finger.
-
-**Watch for:** GPIO pins SCLK/SDIO default to 4/5 in Kconfig. Bit-bang timing
-is conservative but untested on real silicon. SDIO direction caching — first
-real hardware test. Drift at rest should be <1px/10s (dead zone + calibration).
-
-**Hardware:** PAW3204 breakout (~$5–8), snap dome (~$0.10), jumper wires.
-
-#### B3. Phase 3: Power measurement
-
-Measure actual mA in each state with USB power monitor. Compare against
-[POWER-BUDGET.md](docs/POWER-BUDGET.md).
-
-**Measure:** Active@7.5ms, active@15ms, idle@15ms (adaptive interval), deep
-sleep. Log average mA over 30min simulated use session.
-
-**Watch for:** Light sleep between 15ms BLE events may not engage on SuperMini
-modules (module-level overhead). 50-failure sensor counter triggers deep sleep
-reboot — verify no false positives during surface lift.
-
-**Hardware:** USB power monitor or INA219 breakout (~$3).
-
-#### B4. Phase 4: Hub two-ring validation
-
-Flash hub to ESP32-S3. Pair 2 C3 rings. **Depends on A1 (TinyUSB) completing
-first** — without it, the hub can't output USB HID.
-
-**Done when:** Ring 1 moves cursor, Ring 2 scrolls. Disconnect mid-click: no
-stuck button on host. Reconnect: role resumes.
-
-**Watch for:** Hub `sdkconfig` needs `CONFIG_TINYUSB_HID_ENABLED=y`. CDC+HID
-composite USB if you also want serial debug/config.
-
-**Hardware:** ESP32-S3 dev board (~$5), 2x ESP32-C3 from B1/B2.
-
-#### B5. Phase 6: Ball+Hall sensor driver
-
-Implement `sensor_interface.h` for 4-Hall-sensor DRV5053 array. Differential
-rotation computation, boot calibration, temperature compensation.
-
-**Watch for:** DRV5053 has no sleep mode — 4 sensors draw ~12mA continuously.
-Power gating via MOSFET GPIO already wired in `power_manager.c`. ADC reads 4
-channels — ensure sampling doesn't alias with BLE radio events.
-
-**Hardware:** 4x DRV5053, 5mm steel ball, roller spindle assembly, magnets.
+- Resolve companion app protocol format conflict (B1)
+- Update CONSUMER-TIERS.md open questions with cross-references to answers
+- Reconcile ball material terminology across docs
+- Reconcile DPI multiplier encoding
 
 ---
 
-## 4. Dependency Graph
+## 4. Files Modified This Session
 
-```
-Track A (agentic)              Track B (hardware)
-─────────────────              ──────────────────
-A1 TinyUSB ──────────────────► B4 Hub validation
-A2 Dual-footprint ───────────► EE schematic capture
-A3 Ball diameter ─────────────► EE Pro ring shell CAD
-A4 Battery safety ────────────► EE charge circuit design
-A5 Regulatory ────────────────► EE PCB layout (keep-out zones)
-A8 Vendor verification ───────► Parts ordering
-
-B1 Phase 0 BLE ──────────────► B2 Phase 1-2 sensor+click
-B2 Phase 1-2 ────────────────► B3 Phase 3 power measurement
-A1 + B2 ─────────────────────► B4 Phase 4 hub
-B2 ──────────────────────────► B5 Phase 6 ball+Hall
-```
-
-**Critical path:** A1 (TinyUSB) gates B4 (hub validation). Everything else in
-Track A runs in parallel with Track B.
-
----
-
-## 5. Audit Cycle
-
-| After | Run | Why |
-|-------|-----|-----|
-| B1–B2 (first hardware) | `bellman-auditor` on full firmware | Catches timing, ISR, BLE edge cases only visible on real hardware |
-| A1 (TinyUSB) | `concurrency-audit-architect` + `jackson-counterexample-auditor` on hub | TinyUSB adds new task/callback context |
-| B5 (ball+Hall) | `dijkstra-correctness-auditor` on new driver | Differential rotation math is error-prone |
-| Companion app MVP | `schneier-security-auditor` | USB serial command interface is a new attack surface |
-
----
-
-## 6. Files Quick Reference
-
-| Area | Key files |
-|------|-----------|
-| Ring main loop | `firmware/ring/main/main.c` |
-| Ring state machine | `firmware/ring/components/state_machine/ring_state.c` |
-| Ring config constants | `firmware/ring/components/state_machine/include/ring_config.h` |
-| PAW3204 driver | `firmware/ring/components/sensors/paw3204.c` |
-| Dead zone + calibration | `firmware/ring/components/click/dead_zone.c`, `calibration.c` |
-| Power manager | `firmware/ring/components/power/power_manager.c` |
-| BLE HID (ring) | `firmware/ring/components/hal/esp_idf/hal_ble_esp.c` |
-| HAL headers (all 9) | `firmware/ring/components/hal/include/hal_*.h` |
-| Hub main loop | `firmware/hub/main/main.c` |
-| Hub BLE central | `firmware/hub/components/ble_central/ble_central.c` |
-| Event composer | `firmware/hub/components/event_composer/event_composer.c` |
-| Role engine | `firmware/hub/components/role_engine/role_engine.c` |
-| USB HID stub | `firmware/hub/components/usb_hid/usb_hid_mouse.c` |
-| Tests | `firmware/test/test_*.c` |
-| Mock HAL | `firmware/test/mocks/mock_hal.c`, `mock_hal.h` |
-| BOMs | `hardware/bom/*.csv` |
-| Agentic checklist | `docs/AGENTIC_CHECKLIST.md` |
-| Firmware roadmap | `docs/FIRMWARE-ROADMAP.md` |
-| Design matrix | `docs/COMBINATORICS.md` |
+| File | Changes |
+|------|---------|
+| `firmware/hub/main/main.c` | Check usb_hid_mouse_init/send return values |
+| `firmware/hub/components/event_composer/event_composer.c` | Fix cursor_dx/dy overflow with int32 accumulation |
+| `firmware/hub/components/ble_central/ble_central.c` | Check ble_gap_conn_find, ble_gap_connect returns; log short reports; fix on_reset count |
+| `firmware/hub/components/role_engine/role_engine.c` | Fix flush_to_nvs stale-snapshot race with mutex-held snapshot |
+| `firmware/ring/components/state_machine/include/ring_config.h` | HAPTIC_SUPPRESS_MS 20→35, add DEAD_ZONE_DISTANCE_PRO=15 |
+| `hardware/bom/R30-OLED-NONE-NONE.csv` | RPROG 20k, remove YS8205, add LTC4054, NRND note, NTC+MOSFET, TP4056/MCP73831 caveats |
+| `hardware/bom/R30-BALL-NONE-NONE.csv` | RPROG 20k, fix AH3503, add LTC4054, NRND note, NTC+MOSFET |
+| `hardware/bom/WSTD-BALL-NONE-NONE.csv` | RPROG 20k, fix AH3503, add LTC4054, NRND note, NTC+MOSFET |
+| `docs/PROTOTYPE-SPEC.md` | RPROG 10k→20k correction |
+| `docs/CONSUMER-TIERS.md` | RPROG 10k→20k correction |
+| `docs/POWER-BUDGET.md` | RPROG 10k→20k supersession note |
+| `docs/AGENTIC_CHECKLIST.md` | All items marked complete |

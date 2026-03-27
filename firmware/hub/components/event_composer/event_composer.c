@@ -123,8 +123,10 @@ void event_composer_compose(composed_report_t *out)
     if (!out) return;
     memset(out, 0, sizeof(*out));
 
-    // Accumulate scroll in wider type to prevent int8_t overflow from
-    // multiple scroll-role rings (e.g. two rings each contributing 127)
+    // Accumulate in wider types to prevent overflow when composing
+    // multiple rings with the same role (e.g. two CURSOR rings both at INT16_MAX)
+    int32_t cursor_dx_acc = 0;
+    int32_t cursor_dy_acc = 0;
     int16_t scroll_h_acc = 0;
     int16_t scroll_v_acc = 0;
 
@@ -136,8 +138,8 @@ void event_composer_compose(composed_report_t *out)
         switch (r->role) {
         case ROLE_CURSOR:
             out->buttons |= (r->buttons & 0x01);
-            out->cursor_dx += r->acc_dx;
-            out->cursor_dy += r->acc_dy;
+            cursor_dx_acc += r->acc_dx;
+            cursor_dy_acc += r->acc_dy;
             break;
 
         case ROLE_SCROLL:
@@ -163,6 +165,14 @@ void event_composer_compose(composed_report_t *out)
         r->acc_dy = 0;
     }
     UNLOCK();
+
+    // Clamp cursor to int16_t after accumulating across all rings
+    if (cursor_dx_acc > INT16_MAX) cursor_dx_acc = INT16_MAX;
+    if (cursor_dx_acc < INT16_MIN) cursor_dx_acc = INT16_MIN;
+    if (cursor_dy_acc > INT16_MAX) cursor_dy_acc = INT16_MAX;
+    if (cursor_dy_acc < INT16_MIN) cursor_dy_acc = INT16_MIN;
+    out->cursor_dx = (int16_t)cursor_dx_acc;
+    out->cursor_dy = (int16_t)cursor_dy_acc;
 
     // Clamp scroll to int8_t after accumulating across all rings
     out->scroll_h = clamp_i8(scroll_h_acc);

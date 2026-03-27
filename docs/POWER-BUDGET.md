@@ -354,9 +354,11 @@ setting charge current to ~500 mA. On an 80 mAh cell, that's a **6.25C rate** �
 this is far too aggressive and will significantly shorten battery life. At 6C,
 many LiPo cells lose 20% capacity within 100–200 cycles.
 
-**Recommendation:** Change RPROG to 10kΩ for ~100 mA charge current (1.25C on
-80 mAh). Charge takes ~1 hour instead of ~12 minutes. This is the correct
-tradeoff for longevity on a cell this small.
+**Recommendation:** Change RPROG to 20kΩ for ~50 mA charge current (0.625C on
+80 mAh). Charge takes ~1.5–2 hours instead of ~12 minutes. The earlier
+recommendation of 10kΩ (100mA) was superseded by
+[BATTERY-SAFETY.md](BATTERY-SAFETY.md) §5 thermal analysis, which found 100mA
+produces unsafe temperatures (62–87°C internal) in the sealed ring enclosure.
 
 ---
 

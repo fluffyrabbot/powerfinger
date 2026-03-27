@@ -1,5 +1,8 @@
 # Pre-Hardware Agentic Research Checklist
 
+**Status: COMPLETE.** All 13 items (A1–A14, excluding A1 which was the hub
+firmware implementation) have been delivered. See deliverables linked below.
+
 Research and spec work an LLM agent can meaningfully complete before hardware
 prototypes exist. Ordered by impact: items higher on the list unblock hardware
 decisions or reduce rework risk. Items lower on the list are valuable but not
@@ -25,11 +28,11 @@ These items remove open questions that block PCB layout, shell design, or
 firmware completion on dev boards.
 
 ### 1.1 TinyUSB HID Integration (Hub)
-- [ ] Write TinyUSB HID device driver for ESP32-S3 hub dongle
-- [ ] Implement USB HID report descriptor (match BLE report format)
-- [ ] Wire into existing event composer output path
-- [ ] Add host-side tests for USB report generation
-- [ ] Verify with `firmware/test/` mock HAL
+- [x] Write TinyUSB HID device driver for ESP32-S3 hub dongle
+- [x] Implement USB HID report descriptor (match BLE report format)
+- [x] Wire into existing event composer output path
+- [x] Add host-side tests for USB report generation
+- [x] Verify with `firmware/test/` mock HAL
 
 **Why first:** The hub's `usb_hid_mouse.c` is the only stub in the ring-to-PC
 data path. Completing it makes the full ring → BLE → hub → USB → OS pipeline
@@ -39,11 +42,11 @@ testable on dev boards. Pure software — no custom hardware needed.
 existing `hid_report_descriptor.c` (BLE side).
 
 ### 1.2 Dual-Footprint PCB Feasibility Study
-- [ ] Compare PAW3204 and PMW3360 pinouts, footprints, voltage domains
-- [ ] Analyze shared vs. divergent routing (SPI bus, motion pin, power rail)
-- [ ] Determine whether a single PCB can accommodate both via component stuffing
-- [ ] Document constraints an EE must respect if dual-footprint is feasible
-- [ ] If infeasible, document the minimum delta between two PCB variants
+- [x] Compare PAW3204 and PMW3360 pinouts, footprints, voltage domains
+- [x] Analyze shared vs. divergent routing (SPI bus, motion pin, power rail)
+- [x] Determine whether a single PCB can accommodate both via component stuffing
+- [x] Document constraints an EE must respect if dual-footprint is feasible
+- [x] If infeasible, document the minimum delta between two PCB variants
 
 **Why:** CONSUMER-TIERS.md open question #3. Directly affects whether the EE
 designs one board or two. Answering this before schematic capture saves a
@@ -53,11 +56,11 @@ potential PCB respin.
 existing BOMs (`R30-OLED-NONE-NONE.csv`, Pro tier BOM in CONSUMER-TIERS.md).
 
 ### 1.3 PMW3360 Ball Diameter Optimization
-- [ ] Model focal distance geometry for ball diameters 4mm–8mm
-- [ ] Map valid focal distances against 10mm ring height budget
-- [ ] Determine minimum ball diameter for usable SQUAL at finger-pressure force
-- [ ] Cross-reference with shell geometry constraints (sensor cavity volume)
-- [ ] Write recommendation with tradeoff analysis
+- [x] Model focal distance geometry for ball diameters 4mm–8mm
+- [x] Map valid focal distances against 10mm ring height budget
+- [x] Determine minimum ball diameter for usable SQUAL at finger-pressure force
+- [x] Cross-reference with shell geometry constraints (sensor cavity volume)
+- [x] Write recommendation with tradeoff analysis
 
 **Why:** CONSUMER-TIERS.md open question #2. The ball diameter constrains the
 ring shell CAD, the sensor cavity dimensions, and the glide system. The EE/ME
@@ -73,14 +76,14 @@ PROTOTYPE-SPEC.md height budget, GLIDE-SYSTEM.md rim geometry.
 These items prevent expensive surprises during or after prototyping.
 
 ### 2.1 Battery Safety and Charging Spec
-- [ ] Research IEC 62133-2 requirements for sub-100mAh LiPo cells
-- [ ] Analyze TP4054 charge termination behavior and protection requirements
-- [ ] Determine whether BOM cells need external protection MOSFETs or if
+- [x] Research IEC 62133-2 requirements for sub-100mAh LiPo cells
+- [x] Analyze TP4054 charge termination behavior and protection requirements
+- [x] Determine whether BOM cells need external protection MOSFETs or if
       integrated cell protection is sufficient
-- [ ] Document thermal runaway risk in a ring form factor (no ventilation,
+- [x] Document thermal runaway risk in a ring form factor (no ventilation,
       skin contact, small thermal mass)
-- [ ] Specify charge rate limits for the ring's thermal envelope
-- [ ] Write safety spec section for PROTOTYPE-SPEC.md
+- [x] Specify charge rate limits for the ring's thermal envelope
+- [x] Write safety spec section for PROTOTYPE-SPEC.md
 
 **Why:** LiPo on a finger. The current BOM specifies TP4054 + battery but
 doesn't address protection circuitry, charge termination accuracy, or thermal
@@ -91,13 +94,13 @@ rework issue.
 datasheets from BOM suppliers, ring shell thermal constraints.
 
 ### 2.2 Regulatory Pre-Scan (FCC / CE / BLE)
-- [ ] Determine what ESP32-C3-MINI-1-N4 module pre-certification covers
-- [ ] Identify what testing is still required for a finished product
+- [x] Determine what ESP32-C3-MINI-1-N4 module pre-certification covers
+- [x] Identify what testing is still required for a finished product
       (intentional radiator, unintentional emissions from PCB)
-- [ ] Map FCC Part 15 Subpart C requirements to the ring design
-- [ ] Map CE RED (EU Radio Equipment Directive) requirements
-- [ ] Estimate certification cost and timeline for a single SKU
-- [ ] Identify design constraints that affect certification (antenna keep-out
+- [x] Map FCC Part 15 Subpart C requirements to the ring design
+- [x] Map CE RED (EU Radio Equipment Directive) requirements
+- [x] Estimate certification cost and timeline for a single SKU
+- [x] Identify design constraints that affect certification (antenna keep-out
       zones, ground plane requirements, shielding)
 
 **Why:** Certification requirements impose PCB layout constraints. Learning
@@ -109,13 +112,13 @@ emissions from the PCB traces, battery, and motor (LRA in Pro tier).
 FCC Part 15 Subpart C, CE RED 2014/53/EU, existing ring BOM.
 
 ### 2.3 Piezo Click + Haptic Dead Zone Interaction Analysis
-- [ ] Research piezo film (PVDF) press-detection thresholds and response curves
-- [ ] Analyze DRV2605L waveform library: which waveforms produce minimum
+- [x] Research piezo film (PVDF) press-detection thresholds and response curves
+- [x] Analyze DRV2605L waveform library: which waveforms produce minimum
       mechanical coupling to an adjacent optical sensor
-- [ ] Model whether LRA vibration at typical haptic amplitudes would register
+- [x] Model whether LRA vibration at typical haptic amplitudes would register
       as motion on PAW3204 or PMW3360 at their respective SQUAL thresholds
-- [ ] Determine optimal `HAPTIC_SUPPRESS_MS` window from first principles
-- [ ] Document whether the Pro tier needs a longer dead zone than Standard
+- [x] Determine optimal `HAPTIC_SUPPRESS_MS` window from first principles
+- [x] Document whether the Pro tier needs a longer dead zone than Standard
 
 **Why:** CONSUMER-TIERS.md open questions #1 and #5. The piezo click is the
 Pro tier's highest UX risk. If LRA vibration causes cursor jump that can't be
@@ -126,13 +129,13 @@ mechanism or a mechanical isolation strategy.
 notes, PAW3204/PMW3360 SQUAL documentation, CLICK-MECHANISMS.md.
 
 ### 2.4 Claim-Level Patent Mapping
-- [ ] Pull full claim text for US8648805B2 (closest ring patent)
-- [ ] Map each independent claim element to PowerFinger P0 design
-- [ ] Identify which elements PowerFinger practices vs. does not practice
-- [ ] Repeat for US20130063355A1, US20150241976A1, US8125448B2
-- [ ] Repeat for wand patents (US12353649, expired/abandoned patents)
-- [ ] Produce a claim chart suitable for patent attorney review
-- [ ] Estimate cost savings for FTO opinion prep
+- [x] Pull full claim text for US8648805B2 (closest ring patent)
+- [x] Map each independent claim element to PowerFinger P0 design
+- [x] Identify which elements PowerFinger practices vs. does not practice
+- [x] Repeat for US20130063355A1, US20150241976A1, US8125448B2
+- [x] Repeat for wand patents (US12353649, expired/abandoned patents)
+- [x] Produce a claim chart suitable for patent attorney review
+- [x] Estimate cost savings for FTO opinion prep
 
 **Why:** IP-STRATEGY.md identifies the patents but doesn't map claims to the
 design. A structured claim chart cuts patent attorney hours significantly
@@ -145,11 +148,11 @@ attorney conversation is cheaper when it happens.
 COMBINATORICS.md design descriptions.
 
 ### 2.5 Multi-Source Vendor Verification
-- [ ] For each line item in all 4 BOMs (`R30-OLED`, `R30-BALL`, `WSTD-BALL`,
+- [x] For each line item in all 4 BOMs (`R30-OLED`, `R30-BALL`, `WSTD-BALL`,
       `USB-HUB`), verify availability from at least 2 distributors
-- [ ] Identify any single-source components
-- [ ] For single-source parts, find drop-in alternates or document the risk
-- [ ] Verify that alternate parts listed in BOM "Alternatives" columns are
+- [x] Identify any single-source components
+- [x] For single-source parts, find drop-in alternates or document the risk
+- [x] Verify that alternate parts listed in BOM "Alternatives" columns are
       actually in stock and pin-compatible
 
 **Why:** CLAUDE.md hard rule: "Every component must be replaceable. Use
@@ -162,15 +165,15 @@ a respin.
 Mouser, LCSC).
 
 ### 2.6 nRF52840 Migration Spec
-- [ ] Compare Zephyr BLE HID vs. nRF Connect SDK BLE HID APIs
-- [ ] Map current NimBLE API surface to Zephyr/nRF equivalents
-- [ ] Identify which of the 9 HAL interfaces (`hal_ble.h`, `hal_spi.h`,
+- [x] Compare Zephyr BLE HID vs. nRF Connect SDK BLE HID APIs
+- [x] Map current NimBLE API surface to Zephyr/nRF equivalents
+- [x] Identify which of the 9 HAL interfaces (`hal_ble.h`, `hal_spi.h`,
       `hal_gpio.h`, `hal_adc.h`, `hal_timer.h`, `hal_sleep.h`,
       `hal_storage.h`, `hal_ota.h`, `hal_types.h`) port cleanly vs. need
       rewriting
-- [ ] Document SPI, GPIO, ADC, timer, sleep, storage, OTA API differences
-- [ ] Estimate firmware migration scope (files changed, LOC delta)
-- [ ] Identify any HAL design changes that would ease migration if made now
+- [x] Document SPI, GPIO, ADC, timer, sleep, storage, OTA API differences
+- [x] Estimate firmware migration scope (files changed, LOC delta)
+- [x] Identify any HAL design changes that would ease migration if made now
 
 **Why:** POWER-BUDGET.md concludes ESP32-C3 can't hit consumer battery targets.
 The HAL abstraction layer was designed for this migration, but no one has
@@ -188,12 +191,12 @@ Zephyr BLE HID samples, nRF Connect SDK BLE HID samples, nRF52840 datasheet.
 These items improve the project but don't gate hardware or firmware decisions.
 
 ### 3.1 Accessibility User Research Synthesis
-- [ ] Compile published research on ring-form input devices for motor-impaired
+- [x] Compile published research on ring-form input devices for motor-impaired
       users (spinal cord injury, ALS, cerebral palsy, essential tremor)
-- [ ] Document grip force ranges and finger dexterity profiles for target users
-- [ ] Identify relevant tremor filtering algorithms from assistive tech literature
-- [ ] Map findings to ring shell geometry parameters and firmware filter settings
-- [ ] Identify user populations where ring mouse is contraindicated (document
+- [x] Document grip force ranges and finger dexterity profiles for target users
+- [x] Identify relevant tremor filtering algorithms from assistive tech literature
+- [x] Map findings to ring shell geometry parameters and firmware filter settings
+- [x] Identify user populations where ring mouse is contraindicated (document
       honestly per CLAUDE.md surface-agnosticism-is-a-spectrum rule)
 
 **Why:** The project's accessibility-first rule is a hard constraint. Published
@@ -204,13 +207,13 @@ parameters before the first user test.
 proceedings, existing assistive device studies (LipSync, FlipMouse, Glassouse).
 
 ### 3.2 Surface Compatibility Test Protocol
-- [ ] Define quantitative metrics: tracking accuracy (px/mm linearity), jitter
+- [x] Define quantitative metrics: tracking accuracy (px/mm linearity), jitter
       (px RMS at rest), dropout rate (% lost frames), latency (ms end-to-end)
-- [ ] Specify test fixtures (consistent finger pressure, controlled speed)
-- [ ] Define pass/fail criteria per metric per surface type
-- [ ] Cover all 6 CLAUDE.md surfaces: wood, glass, fabric, paper, glossy
+- [x] Specify test fixtures (consistent finger pressure, controlled speed)
+- [x] Define pass/fail criteria per metric per surface type
+- [x] Cover all 6 CLAUDE.md surfaces: wood, glass, fabric, paper, glossy
       magazine, matte plastic
-- [ ] Add surfaces relevant to accessibility use: wheelchair tray (vinyl,
+- [x] Add surfaces relevant to accessibility use: wheelchair tray (vinyl,
       powder-coated metal), hospital bed rail, skin, clothing
 
 **Why:** The moment hardware arrives, you need a test protocol. Writing it now
@@ -223,12 +226,12 @@ HID compliance test procedures, existing surface compatibility tables in
 COMBINATORICS.md.
 
 ### 3.3 Companion App Architecture (Web Serial)
-- [ ] Design the configuration data model: role assignment, DPI curves,
+- [x] Design the configuration data model: role assignment, DPI curves,
       dead zone parameters, gesture mapping
-- [ ] Specify the BLE GATT characteristic schema for configuration read/write
-- [ ] Define the Web Serial protocol for hub configuration
-- [ ] Wireframe the configuration UI (role assignment, per-ring settings)
-- [ ] Document platform support matrix (Web Serial browser support, fallback
+- [x] Specify the BLE GATT characteristic schema for configuration read/write
+- [x] Define the Web Serial protocol for hub configuration
+- [x] Wireframe the configuration UI (role assignment, per-ring settings)
+- [x] Document platform support matrix (Web Serial browser support, fallback
       strategies for Safari/iOS)
 
 **Why:** Phase 5 of FIRMWARE-ROADMAP.md. The GATT characteristic schema affects
@@ -239,12 +242,12 @@ BLE service refactor later. The UI itself is not blocking.
 BLE GATT specification, existing `hal_ble_esp.c` GAP/GATT logic.
 
 ### 3.4 Multi-Ring Composition Protocol Spec
-- [ ] Formally specify role assignment protocol (cursor, scroll, modifier,
+- [x] Formally specify role assignment protocol (cursor, scroll, modifier,
       custom)
-- [ ] Define behavior for: ring disconnect during drag, ring reconnect with
+- [x] Define behavior for: ring disconnect during drag, ring reconnect with
       stale role, two rings claiming same role, role reassignment while in use
-- [ ] Specify state machine for role negotiation between hub and companion app
-- [ ] Write edge case tests against existing `event_composer.c` and
+- [x] Specify state machine for role negotiation between hub and companion app
+- [x] Write edge case tests against existing `event_composer.c` and
       `role_engine.c`
 
 **Why:** The hub firmware implements basic role assignment, but the protocol
@@ -255,12 +258,12 @@ specified. Formalizing it now prevents protocol drift as features are added.
 FIRMWARE-ROADMAP.md Phase 4 and 5 descriptions.
 
 ### 3.5 Defensive Publication Preparation
-- [ ] Draft Hackaday.io project page content (establishes dated public
+- [x] Draft Hackaday.io project page content (establishes dated public
       disclosure)
-- [ ] Draft arXiv-style technical note covering the sensing mechanisms,
+- [x] Draft arXiv-style technical note covering the sensing mechanisms,
       form factors, and multi-ring paradigm
-- [ ] Prepare OSHWA certification application materials
-- [ ] Review IP-STRATEGY.md action items and complete all that don't require
+- [x] Prepare OSHWA certification application materials
+- [x] Review IP-STRATEGY.md action items and complete all that don't require
       funding
 
 **Why:** IP-STRATEGY.md lists 6 action items, most of which are blocked only

@@ -138,8 +138,9 @@ These are non-negotiable — see CLAUDE.md and the design docs for full rational
 
 - **LDO: RT9080-33GJ5** (not AP2112K). 0.5µA quiescent vs 55µA — the LDO
   dominates deep sleep power. See [POWER-BUDGET.md](POWER-BUDGET.md).
-- **Charge resistor: 10kΩ** (not 2kΩ). Sets 100mA charge rate (1.25C on 80mAh).
-  2kΩ was 6.25C — kills the cell in 100–200 cycles.
+- **Charge resistor: 20kΩ** (not 2kΩ or 10kΩ). Sets 50mA charge rate (0.625C on
+  80mAh). 10kΩ (100mA) produces unsafe temperatures in the sealed ring enclosure
+  — see [BATTERY-SAFETY.md](BATTERY-SAFETY.md) §5 thermal analysis.
 - **Hall sensor: DRV5053** (not SS49E). ~3mA vs 6mA per sensor. Must be
   power-gated via MOSFET in sleep.
 - **BOM ceiling:** No single variant may exceed $25. The cheapest ring must stay

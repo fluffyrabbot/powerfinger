@@ -327,10 +327,11 @@ These changes are already reflected in the hardware BOMs:
   current dominated deep sleep power 11:1 over the ESP32-C3's 5µA. The RT9080
   at 0.5µA Iq drops system deep sleep from ~75µA to ~16µA. Cost delta: +$0.07.
 
-- **Charge resistor: 10kΩ** replaces 2kΩ. The 2kΩ set a 500mA charge rate
+- **Charge resistor: 20kΩ** replaces 2kΩ. The 2kΩ set a 500mA charge rate
   (6.25C on 80mAh) — far too aggressive, degrading the cell in 100–200 cycles.
-  10kΩ sets 100mA (1.25C), extending cell life to 300–500 cycles. Charge takes
-  ~1 hour instead of ~12 minutes.
+  20kΩ sets 50mA (0.625C on 80mAh). 10kΩ (100mA) was initially considered but
+  [BATTERY-SAFETY.md](BATTERY-SAFETY.md) §5 thermal analysis found unsafe
+  temperatures in the sealed ring. Charge takes ~1.5–2 hours.
 
 - **Hall sensors: DRV5053** replaces SS49E as the recommended part. ~3mA per
   sensor vs 6mA (12mA vs 24mA for four sensors). Must be power-gated via MOSFET

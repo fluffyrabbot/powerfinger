@@ -41,9 +41,11 @@
 // Dead zone exit requires BOTH conditions to be met.
 #define DEAD_ZONE_TIME_MS           50   // minimum hold time before exit
 #define DEAD_ZONE_DISTANCE          10   // minimum accumulated counts before exit
+#define DEAD_ZONE_DISTANCE_PRO      15   // Pro: account for LRA vibration contribution (A6 analysis)
 
 // Additional suppression during haptic pulse (Pro tier, piezo+LRA click)
-#define HAPTIC_SUPPRESS_MS          20
+// 35ms covers Sharp Click waveform 17 (~20ms) + mechanical decay margin (A6 analysis)
+#define HAPTIC_SUPPRESS_MS          35
 
 // Click debounce (dome switch bounce is typically 1-5ms)
 #define CLICK_DEBOUNCE_MS           5
