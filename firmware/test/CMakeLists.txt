@@ -43,10 +43,22 @@ target_include_directories(dead_zone PUBLIC
     ../ring/components/hal/include
 )
 
+# Event composer — compiled for host with lock macros as no-ops (no ESP_PLATFORM)
+add_library(event_composer STATIC
+    ../hub/components/event_composer/event_composer.c
+)
+target_include_directories(event_composer PUBLIC
+    ../hub/components/event_composer/include
+    ../hub/components/role_engine/include
+    ../hub/components/ble_central/include
+    ../ring/components/hal/include
+)
+
 # Test executable
 add_executable(powerfinger_tests
     test_state_machine.c
     test_dead_zone.c
+    test_event_composer.c
     test_main.c
 )
 target_link_libraries(powerfinger_tests
@@ -54,10 +66,14 @@ target_link_libraries(powerfinger_tests
     mock_hal
     state_machine
     dead_zone
+    event_composer
 )
 target_include_directories(powerfinger_tests PRIVATE
     ../ring/components/state_machine/include
     ../ring/components/click/include
     ../ring/components/hal/include
+    ../hub/components/event_composer/include
+    ../hub/components/role_engine/include
+    ../hub/components/ble_central/include
     mocks
 )

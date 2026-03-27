@@ -43,9 +43,10 @@ extern int unity_tests;
 } while(0)
 
 #define RUN_TEST(func) do { \
+    int _before = unity_failures; \
     printf("  %s...", #func); \
     func(); \
-    printf(" ok\n"); \
+    printf("%s\n", (unity_failures == _before) ? " ok" : " FAILED"); \
 } while(0)
 
 #define UNITY_BEGIN() do { \

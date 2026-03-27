@@ -196,6 +196,54 @@ void test_state_names_not_null(void)
     }
 }
 
+// --- LOW_BATTERY from DEEP_SLEEP (completes "any state" coverage) ---
+
+void test_low_battery_from_deep_sleep(void)
+{
+    // s_state starts as DEEP_SLEEP before ring_state_init
+    // After init, state is BOOTING. To test DEEP_SLEEP, we need to
+    // reach it via a transition first.
+    reset();
+    ring_actions_t a;
+    ring_state_dispatch(RING_EVT_CALIBRATION_DONE, &a);
+    ring_state_dispatch(RING_EVT_BLE_ADV_TIMEOUT, &a);
+    TEST_ASSERT_EQUAL(RING_STATE_DEEP_SLEEP, ring_state_get());
+
+    ring_state_t s = ring_state_dispatch(RING_EVT_LOW_BATTERY, &a);
+    TEST_ASSERT_EQUAL(RING_STATE_DEEP_SLEEP, s);
+    TEST_ASSERT_TRUE(a.enter_deep_sleep);
+}
+
+// --- HID must NOT be enabled on non-ACTIVE transitions ---
+
+void test_no_hid_enable_on_cal_done(void)
+{
+    reset();
+    ring_actions_t a;
+    ring_state_dispatch(RING_EVT_CALIBRATION_DONE, &a);
+    TEST_ASSERT_FALSE(a.enable_hid_reports);
+}
+
+void test_no_hid_enable_on_ble_connected(void)
+{
+    reset();
+    ring_actions_t a;
+    ring_state_dispatch(RING_EVT_CALIBRATION_DONE, &a);
+    ring_state_dispatch(RING_EVT_BLE_CONNECTED, &a);
+    TEST_ASSERT_FALSE(a.enable_hid_reports);
+}
+
+void test_no_hid_enable_on_disconnect(void)
+{
+    reset();
+    ring_actions_t a;
+    ring_state_dispatch(RING_EVT_CALIBRATION_DONE, &a);
+    ring_state_dispatch(RING_EVT_BLE_CONNECTED, &a);
+    ring_state_dispatch(RING_EVT_MOTION_DETECTED, &a);
+    ring_state_dispatch(RING_EVT_BLE_DISCONNECTED, &a);
+    TEST_ASSERT_FALSE(a.enable_hid_reports);
+}
+
 // --- Test runner ---
 
 void run_state_machine_tests(void)
@@ -217,4 +265,8 @@ void run_state_machine_tests(void)
     RUN_TEST(test_low_battery_from_connected_idle);
     RUN_TEST(test_motion_ignored_in_advertising);
     RUN_TEST(test_state_names_not_null);
+    RUN_TEST(test_low_battery_from_deep_sleep);
+    RUN_TEST(test_no_hid_enable_on_cal_done);
+    RUN_TEST(test_no_hid_enable_on_ble_connected);
+    RUN_TEST(test_no_hid_enable_on_disconnect);
 }
