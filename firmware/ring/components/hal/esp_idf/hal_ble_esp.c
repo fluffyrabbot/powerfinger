@@ -206,28 +206,29 @@ static int ble_hid_info_access(uint16_t conn_handle, uint16_t attr_handle,
 
     if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
         const ble_uuid_t *uuid = ctxt->chr->uuid;
+        int rc = 0;
 
         if (ble_uuid_cmp(uuid, BLE_UUID16_DECLARE(0x2A4A)) == 0) {
             // HID Information
-            os_mbuf_append(ctxt->om, s_hid_info, sizeof(s_hid_info));
+            rc = os_mbuf_append(ctxt->om, s_hid_info, sizeof(s_hid_info));
         } else if (ble_uuid_cmp(uuid, BLE_UUID16_DECLARE(0x2A4E)) == 0) {
             // Protocol Mode: Report Protocol
             uint8_t protocol_mode = 0x01;
-            os_mbuf_append(ctxt->om, &protocol_mode, 1);
+            rc = os_mbuf_append(ctxt->om, &protocol_mode, 1);
         } else if (ble_uuid_cmp(uuid, BLE_UUID16_DECLARE(0x2A29)) == 0) {
             // Manufacturer Name
             const char *name = "PowerFinger";
-            os_mbuf_append(ctxt->om, name, strlen(name));
+            rc = os_mbuf_append(ctxt->om, name, strlen(name));
         } else if (ble_uuid_cmp(uuid, BLE_UUID16_DECLARE(0x2A50)) == 0) {
             // PnP ID: Bluetooth SIG vendor source (0x02), no assigned VID/PID yet
             uint8_t pnp_id[] = { 0x02, 0xFF, 0xFF, 0x01, 0x00, 0x01, 0x00 };
-            os_mbuf_append(ctxt->om, pnp_id, sizeof(pnp_id));
+            rc = os_mbuf_append(ctxt->om, pnp_id, sizeof(pnp_id));
         } else if (ble_uuid_cmp(uuid, BLE_UUID16_DECLARE(0x2A19)) == 0) {
             // Battery Level: placeholder 100%
             uint8_t level = 100;
-            os_mbuf_append(ctxt->om, &level, 1);
+            rc = os_mbuf_append(ctxt->om, &level, 1);
         }
-        return 0;
+        return (rc == 0) ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
     }
     if (ctxt->op == BLE_GATT_ACCESS_OP_WRITE_CHR) {
         // Protocol Mode write (switch between Boot and Report protocol)
@@ -246,7 +247,7 @@ static void notify_app(hal_ble_event_t type)
     }
 }
 
-static void start_advertising(void);
+static int start_advertising(void);
 
 static int ble_gap_event_handler(struct ble_gap_event *event, void *arg)
 {

@@ -220,17 +220,18 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
     }
 
     case BLE_GAP_EVENT_DISCONNECT: {
+        RINGS_LOCK();
         int idx = find_ring_by_conn(event->disconnect.conn.conn_handle);
         if (idx >= 0) {
-            RINGS_LOCK();
             s_rings[idx].connected = false;
             s_rings[idx].subscribed = false;
             s_connected_count--;
-            RINGS_UNLOCK();
+        }
+        RINGS_UNLOCK();
 
+        if (idx >= 0) {
             ESP_LOGI(TAG, "ring %d disconnected, reason=%d",
                      idx, event->disconnect.reason);
-
             if (s_conn_cb) {
                 s_conn_cb((uint8_t)idx, false, s_cb_arg);
             }
@@ -243,7 +244,9 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
 
     case BLE_GAP_EVENT_NOTIFY_RX: {
         // Incoming HID report notification from a ring
+        RINGS_LOCK();
         int idx = find_ring_by_conn(event->notify_rx.conn_handle);
+        RINGS_UNLOCK();
         if (idx < 0) break;
 
         // Parse 4-byte HID report: [buttons, dx, dy, wheel]
@@ -252,20 +255,19 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
                      idx, OS_MBUF_PKTLEN(event->notify_rx.om));
             break;
         }
-        if (OS_MBUF_PKTLEN(event->notify_rx.om) >= 4) {
-            uint8_t buf[4];
-            os_mbuf_copydata(event->notify_rx.om, 0, 4, buf);
 
-            hub_ring_report_t report = {
-                .buttons = buf[0],
-                .dx = (int8_t)buf[1],
-                .dy = (int8_t)buf[2],
-                .wheel = (int8_t)buf[3],
-            };
+        uint8_t buf[4];
+        os_mbuf_copydata(event->notify_rx.om, 0, 4, buf);
 
-            if (s_report_cb) {
-                s_report_cb((uint8_t)idx, &report, s_cb_arg);
-            }
+        hub_ring_report_t report = {
+            .buttons = buf[0],
+            .dx = (int8_t)buf[1],
+            .dy = (int8_t)buf[2],
+            .wheel = (int8_t)buf[3],
+        };
+
+        if (s_report_cb) {
+            s_report_cb((uint8_t)idx, &report, s_cb_arg);
         }
         break;
     }

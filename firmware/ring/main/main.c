@@ -65,8 +65,12 @@ static void ble_event_callback(const hal_ble_event_data_t *evt, void *arg)
         return;
     }
 
-    // Post to queue (non-blocking; NimBLE callbacks are task context, not ISR)
-    xQueueSend(s_evt_queue, &ring_evt, 0);
+    // Post to queue (non-blocking; NimBLE callbacks are task context, not ISR).
+    // If the queue is full the event is dropped. Under normal operation the
+    // main loop drains faster than events arrive, so this should not fire.
+    if (xQueueSend(s_evt_queue, &ring_evt, 0) != pdTRUE) {
+        ESP_LOGW(TAG, "BLE event queue full — event %d dropped", (int)ring_evt);
+    }
 }
 
 // --- Execute state machine action flags ---
@@ -335,7 +339,7 @@ void app_main(void)
 
         power_manager_feed_watchdog();
 
-        hal_timer_delay_ms(15);
+        hal_timer_delay_ms(SENSOR_POLL_INTERVAL_MS);
     }
 #endif
 }

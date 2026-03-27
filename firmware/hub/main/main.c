@@ -24,6 +24,11 @@ static const char *TAG = "powerfinger_hub";
 // USB HID poll interval (1ms for USB full-speed)
 #define USB_POLL_INTERVAL_MS 1
 
+// Flush pending NVS role changes every ~1s (~1000 ticks at 1ms/tick).
+// Absorbs the ~200ms flash erase stall in the main loop rather than on
+// the NimBLE task. Assumes loop period ≈ USB_POLL_INTERVAL_MS.
+#define NVS_FLUSH_INTERVAL_TICKS 1000
+
 // --- Callbacks from BLE central ---
 
 static void on_ring_report(uint8_t ring_index, const hub_ring_report_t *report, void *arg)
@@ -110,7 +115,7 @@ void app_main(void)
     // accessibility hazard the event composer is designed to prevent.
     bool prev_report_nonzero = false;
 
-    // NVS flush counter: role_engine_flush_if_dirty() every ~1000 ticks (~1s).
+    // NVS flush counter: role_engine_flush_if_dirty() every NVS_FLUSH_INTERVAL_TICKS.
     // Assumes loop runs at ~1ms/tick — valid as long as USB HID timing holds.
     // If the loop gains variable-duration work, switch to hal_timer_get_ms().
     uint32_t flush_ticks = 0;
@@ -134,7 +139,7 @@ void app_main(void)
 
         // Deferred NVS flush — absorbs the ~200ms flash erase stall here
         // rather than blocking the NimBLE task when a new ring first connects.
-        if (++flush_ticks >= 1000) {
+        if (++flush_ticks >= NVS_FLUSH_INTERVAL_TICKS) {
             role_engine_flush_if_dirty();
             flush_ticks = 0;
         }

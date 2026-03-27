@@ -14,6 +14,11 @@
 #define NOISE_THRESHOLD_OPTICAL     2    // counts (PAW3204/ADNS-2080)
 #define NOISE_THRESHOLD_HALL        5    // counts (DRV5053, TBD after calibration)
 
+// --- Main loop ---
+// Sensor poll rate. Matches the minimum BLE connection interval (7.5ms rounds
+// up to 15ms on most hosts) and keeps CPU load proportional to HID report rate.
+#define SENSOR_POLL_INTERVAL_MS     15
+
 // --- State machine timing ---
 // Duration of no motion before transitioning from ACTIVE to IDLE.
 // At this point, connection interval reverts from 7.5ms to 15ms.

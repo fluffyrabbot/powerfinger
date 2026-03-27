@@ -189,7 +189,7 @@ ring_state_t ring_state_dispatch(ring_event_t event, ring_actions_t *out_actions
         return s_state;
     }
 
-    if (event >= RING_EVT_COUNT || s_state >= RING_STATE_COUNT) {
+    if ((int)event < 0 || event >= RING_EVT_COUNT || s_state >= RING_STATE_COUNT) {
         if (out_actions) *out_actions = actions;
         return s_state;
     }
