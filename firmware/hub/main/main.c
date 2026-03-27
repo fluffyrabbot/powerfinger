@@ -75,11 +75,16 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    // Initialize components
-    role_engine_init();
+    // Initialize components — BLE is fatal, others are degradable
+    if (role_engine_init() != HAL_OK) {
+        ESP_LOGW(TAG, "role engine init failed — using defaults");
+    }
     event_composer_init();
     usb_hid_mouse_init();
-    ble_central_init(on_ring_report, on_ring_connection, NULL);
+    if (ble_central_init(on_ring_report, on_ring_connection, NULL) != HAL_OK) {
+        ESP_LOGE(TAG, "BLE central init failed — hub cannot function");
+        esp_restart();
+    }
 
     // Register main task with watchdog (hub must not hang silently)
     esp_task_wdt_add(NULL);

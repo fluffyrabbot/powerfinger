@@ -96,7 +96,7 @@ void power_manager_on_motion(void)
     hall_power_set(true);
 }
 
-ring_event_t power_manager_tick(uint32_t now_ms)
+power_event_t power_manager_tick(uint32_t now_ms)
 {
     // --- Adaptive connection interval: revert to idle after 250ms ---
     if (s_active_params_requested &&
@@ -116,19 +116,18 @@ ring_event_t power_manager_tick(uint32_t now_ms)
                 ESP_LOGW(TAG, "low battery: %lu mV < %d mV cutoff",
                          (unsigned long)vbat_mv, LOW_VOLTAGE_CUTOFF_MV);
 #endif
-                return RING_EVT_LOW_BATTERY;
+                return POWER_EVT_LOW_BATTERY;
             }
         }
     }
 
     // --- Sleep timeout check ---
     if ((now_ms - s_last_motion_ms) >= SLEEP_TIMEOUT_MS) {
-        // Power gate Hall sensors before sleep
         hall_power_set(false);
-        return RING_EVT_SLEEP_TIMEOUT;
+        return POWER_EVT_SLEEP_TIMEOUT;
     }
 
-    return RING_EVT_COUNT;  // no event
+    return POWER_EVT_NONE;
 }
 
 void power_manager_feed_watchdog(void)

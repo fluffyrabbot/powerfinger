@@ -76,7 +76,11 @@ static void execute_actions(const ring_actions_t *a)
         hal_ble_stop_advertising();
     }
     if (a->start_advertising) {
-        hal_ble_start_advertising(BLE_ADVERTISE_TIMEOUT_MS);
+        if (hal_ble_start_advertising(BLE_ADVERTISE_TIMEOUT_MS) != HAL_OK) {
+            ESP_LOGE(TAG, "advertising start failed — entering deep sleep");
+            power_manager_enter_sleep(true);
+            return;
+        }
     }
     if (a->request_active_conn_params) {
         ble_gap_request_active_params();
@@ -204,9 +208,12 @@ void app_main(void)
         return;  // unreachable after deep sleep
     }
 
-    // Initialize power management
+    // Initialize power management — battery monitoring is safety-critical
+    // for LiPo protection. Without it, the cell can be damaged by deep discharge.
     if (power_manager_init() != HAL_OK) {
-        ESP_LOGW(TAG, "power manager init failed — battery monitoring disabled");
+        ESP_LOGE(TAG, "power manager init failed — entering deep sleep (LiPo safety)");
+        power_manager_enter_sleep(true);
+        return;
     }
 
     ESP_LOGI(TAG, "PowerFinger ring firmware ready");
@@ -217,6 +224,11 @@ void app_main(void)
     // --- Main loop: state machine driven ---
     uint32_t last_motion_ms = hal_timer_get_ms();
     uint32_t adv_start_ms = hal_timer_get_ms();  // track advertising timeout
+
+    // Consecutive sensor failures — after 50 failures (~750ms at 15ms poll),
+    // enter deep sleep and reboot. Eliminates false positives from surface lift.
+    #define SENSOR_FAILURE_THRESHOLD 50
+    uint8_t consecutive_sensor_failures = 0;
 
     while (1) {
         uint32_t now = hal_timer_get_ms();
@@ -247,11 +259,12 @@ void app_main(void)
         }
 
         // --- Read sensor ---
-        sensor_reading_t reading = {0};  // zero-init prevents stale data on failure
+        sensor_reading_t reading = {0};
         bool sensor_valid = false;
         if (sensor_ok && sensor_read(&reading) == HAL_OK) {
             calibration_apply(&reading.dx, &reading.dy);
             sensor_valid = true;
+            consecutive_sensor_failures = 0;
 
             if (reading.motion_detected) {
                 memset(&actions, 0, sizeof(actions));
@@ -259,6 +272,13 @@ void app_main(void)
                 execute_actions(&actions);
                 last_motion_ms = now;
                 power_manager_on_motion();
+            }
+        } else if (sensor_ok) {
+            consecutive_sensor_failures++;
+            if (consecutive_sensor_failures >= SENSOR_FAILURE_THRESHOLD) {
+                ESP_LOGE(TAG, "sensor failed %d consecutive reads — rebooting",
+                         SENSOR_FAILURE_THRESHOLD);
+                power_manager_enter_sleep(true);
             }
         }
 
@@ -287,11 +307,18 @@ void app_main(void)
         }
 
         // --- Power management tick ---
-        ring_event_t pwr_evt = power_manager_tick(now);
-        if (pwr_evt != RING_EVT_COUNT) {
-            memset(&actions, 0, sizeof(actions));
-            ring_state_dispatch(pwr_evt, &actions);
-            execute_actions(&actions);
+        power_event_t pwr_evt = power_manager_tick(now);
+        if (pwr_evt != POWER_EVT_NONE) {
+            // Map power events to ring state machine events
+            ring_event_t ring_evt = RING_EVT_NONE;
+            if (pwr_evt == POWER_EVT_LOW_BATTERY)    ring_evt = RING_EVT_LOW_BATTERY;
+            if (pwr_evt == POWER_EVT_SLEEP_TIMEOUT)  ring_evt = RING_EVT_SLEEP_TIMEOUT;
+
+            if (ring_evt != RING_EVT_NONE) {
+                memset(&actions, 0, sizeof(actions));
+                ring_state_dispatch(ring_evt, &actions);
+                execute_actions(&actions);
+            }
         }
 
         power_manager_feed_watchdog();

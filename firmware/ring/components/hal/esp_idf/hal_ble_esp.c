@@ -31,7 +31,11 @@ static void ble_on_reset(int reason);
 static hal_ble_event_cb_t s_app_cb = NULL;
 static void *s_app_cb_arg = NULL;
 static uint16_t s_conn_handle = BLE_HS_CONN_HANDLE_NONE;
-static bool s_connected = false;
+// atomic_bool for cross-task safety: written from NimBLE task (GAP callbacks),
+// read from main loop (hal_ble_is_connected, hal_ble_send_mouse_report).
+// Required for ESP32-S3 dual-core; safe-by-accident on single-core ESP32-C3.
+#include <stdatomic.h>
+static atomic_bool s_connected = false;
 static const char *s_device_name = "PowerFinger";
 static uint32_t s_adv_timeout_ms = 0;
 
@@ -290,8 +294,13 @@ static int ble_gap_event_handler(struct ble_gap_event *event, void *arg)
             // to match and leave the stale bond in place, causing a
             // permanent reconnection failure loop.
             struct ble_gap_conn_desc enc_desc;
-            ble_gap_conn_find(s_conn_handle, &enc_desc);
-            ble_store_util_delete_peer(&enc_desc.peer_id_addr);
+            if (ble_gap_conn_find(s_conn_handle, &enc_desc) == 0) {
+                ble_store_util_delete_peer(&enc_desc.peer_id_addr);
+            } else {
+                // Stale handle — delete all bonds as fallback
+                ESP_LOGW(TAG, "conn_find failed, deleting all bonds");
+                ble_store_util_delete_all();
+            }
             ble_gap_terminate(s_conn_handle, BLE_ERR_AUTH_FAIL);
             notify_app(HAL_BLE_EVT_BOND_FAILED);
         }
@@ -526,7 +535,7 @@ hal_status_t hal_ble_send_mouse_report(const hal_hid_mouse_report_t *report)
 
     int rc = ble_gatts_notify_custom(s_conn_handle, s_hid_report_handle, om);
     if (rc != 0) {
-        ESP_LOGD(TAG, "notify failed: %d", rc);
+        ESP_LOGW(TAG, "HID notify failed: %d", rc);
         return HAL_ERR_IO;
     }
 

@@ -167,10 +167,14 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
         s_rings[slot].hid_cccd_handle = 0;
         s_connected_count++;
 
-        // Get peer address
+        // Get peer address (check return — stale handle would leave MAC zeroed)
         struct ble_gap_conn_desc desc;
-        ble_gap_conn_find(event->connect.conn_handle, &desc);
-        memcpy(s_rings[slot].mac, desc.peer_id_addr.val, 6);
+        if (ble_gap_conn_find(event->connect.conn_handle, &desc) == 0) {
+            memcpy(s_rings[slot].mac, desc.peer_id_addr.val, 6);
+        } else {
+            ESP_LOGW(TAG, "conn_find failed for handle=%d", event->connect.conn_handle);
+            memset(s_rings[slot].mac, 0, 6);
+        }
 
         ESP_LOGI(TAG, "ring %d connected (handle=%d), discovering services...",
                  slot, event->connect.conn_handle);

@@ -8,13 +8,20 @@
 
 #include "hal_types.h"
 
+typedef enum {
+    HAL_SPI_MODE_0 = 0,    // CPOL=0, CPHA=0 (clock idle low, sample on rising)
+    HAL_SPI_MODE_1 = 1,    // CPOL=0, CPHA=1
+    HAL_SPI_MODE_2 = 2,    // CPOL=1, CPHA=0
+    HAL_SPI_MODE_3 = 3,    // CPOL=1, CPHA=1 (clock idle high, sample on falling)
+} hal_spi_mode_t;
+
 typedef struct {
     hal_pin_t clk;
     hal_pin_t mosi;
     hal_pin_t miso;
     hal_pin_t cs;
-    uint32_t  clock_hz;     // SPI clock frequency
-    uint8_t   mode;         // SPI mode (0-3): CPOL | CPHA
+    uint32_t       clock_hz;   // SPI clock frequency
+    hal_spi_mode_t mode;       // SPI mode (0-3)
 } hal_spi_config_t;
 
 // Initialize SPI bus and return handle

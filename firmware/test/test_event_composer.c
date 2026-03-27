@@ -247,6 +247,40 @@ void test_invalid_ring_index_ignored(void)
     TEST_ASSERT_EQUAL(0, r.buttons);
 }
 
+// --- Reconnect lifecycle ---
+
+void test_reconnect_after_disconnect_works(void)
+{
+    reset();
+    // First connection
+    event_composer_mark_connected(0);
+    event_composer_feed(0, ROLE_CURSOR, 0x01, 10, 10);
+
+    // Disconnect
+    event_composer_ring_disconnected(0);
+
+    // Reconnect
+    event_composer_mark_connected(0);
+    event_composer_feed(0, ROLE_CURSOR, 0x00, 5, 5);
+
+    composed_report_t r;
+    event_composer_compose(&r);
+    TEST_ASSERT_EQUAL(0, r.buttons);      // new connection has no click
+    TEST_ASSERT_EQUAL(5, r.cursor_dx);    // new deltas work
+}
+
+void test_buttons_reflect_latest_feed(void)
+{
+    reset();
+    event_composer_mark_connected(0);
+    event_composer_feed(0, ROLE_CURSOR, 0x01, 0, 0);  // press
+    event_composer_feed(0, ROLE_CURSOR, 0x00, 0, 0);  // release
+
+    composed_report_t r;
+    event_composer_compose(&r);
+    TEST_ASSERT_EQUAL(0, r.buttons);  // last feed wins for buttons
+}
+
 // --- Test runner ---
 
 void run_event_composer_tests(void)
@@ -267,4 +301,6 @@ void run_event_composer_tests(void)
     RUN_TEST(test_accumulator_saturates_negative);
     RUN_TEST(test_modifier_ring_middle_click);
     RUN_TEST(test_invalid_ring_index_ignored);
+    RUN_TEST(test_reconnect_after_disconnect_works);
+    RUN_TEST(test_buttons_reflect_latest_feed);
 }

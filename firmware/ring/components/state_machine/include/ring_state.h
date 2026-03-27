@@ -21,7 +21,8 @@ typedef enum {
 
 // Events that trigger state transitions
 typedef enum {
-    RING_EVT_GPIO_WAKE,             // GPIO interrupt woke from deep sleep
+    RING_EVT_NONE = -1,             // No event (sentinel, not a real event)
+    RING_EVT_GPIO_WAKE = 0,         // GPIO interrupt woke from deep sleep
     RING_EVT_CALIBRATION_DONE,      // Boot calibration completed successfully
     RING_EVT_CALIBRATION_FAILED,    // Calibration failed after max retries
     RING_EVT_BLE_CONNECTED,         // BLE link established

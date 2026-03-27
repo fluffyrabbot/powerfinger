@@ -7,11 +7,14 @@
 
 #include "hal_types.h"
 
+// Typed ADC channel identifier (prevents confusion with other uint8_t values)
+typedef uint8_t hal_adc_channel_t;
+
 // Initialize ADC for the given channel
-hal_status_t hal_adc_init(uint8_t channel);
+hal_status_t hal_adc_init(hal_adc_channel_t channel);
 
 // Read ADC value in millivolts (calibrated)
-hal_status_t hal_adc_read_mv(uint8_t channel, uint32_t *out_mv);
+hal_status_t hal_adc_read_mv(hal_adc_channel_t channel, uint32_t *out_mv);
 
 // Deinitialize ADC channel
-hal_status_t hal_adc_deinit(uint8_t channel);
+hal_status_t hal_adc_deinit(hal_adc_channel_t channel);
