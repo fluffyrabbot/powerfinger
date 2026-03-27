@@ -8,6 +8,7 @@
 extern void run_state_machine_tests(void);
 extern void run_dead_zone_tests(void);
 extern void run_event_composer_tests(void);
+extern void run_usb_hid_tests(void);
 
 int main(void)
 {
@@ -16,6 +17,7 @@ int main(void)
     run_state_machine_tests();
     run_dead_zone_tests();
     run_event_composer_tests();
+    run_usb_hid_tests();
 
     printf("\n--- Results: %d tests, %d failures ---\n",
            unity_tests, unity_failures);
