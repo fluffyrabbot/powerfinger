@@ -13,10 +13,10 @@
 
 static const char *TAG = "hal_spi";
 
-typedef struct {
+struct hal_spi_ctx {
     spi_device_handle_t dev;
     hal_pin_t cs;
-} spi_ctx_t;
+};
 
 hal_status_t hal_spi_init(const hal_spi_config_t *config, hal_spi_handle_t *out_handle)
 {
@@ -45,7 +45,7 @@ hal_status_t hal_spi_init(const hal_spi_config_t *config, hal_spi_handle_t *out_
         .queue_size = 1,
     };
 
-    spi_ctx_t *ctx = calloc(1, sizeof(spi_ctx_t));
+    struct hal_spi_ctx *ctx = calloc(1, sizeof(struct hal_spi_ctx));
     if (!ctx) return HAL_ERR_NO_MEM;
 
     ctx->cs = config->cs;
@@ -67,7 +67,7 @@ hal_status_t hal_spi_transfer(hal_spi_handle_t handle,
 {
     if (!handle || len == 0) return HAL_ERR_INVALID_ARG;
 
-    spi_ctx_t *ctx = (spi_ctx_t *)handle;
+    struct hal_spi_ctx *ctx = (struct hal_spi_ctx *)handle;
     spi_transaction_t txn = {
         .length = len * 8,
         .tx_buffer = tx_buf,
@@ -102,7 +102,7 @@ hal_status_t hal_spi_deinit(hal_spi_handle_t handle)
 {
     if (!handle) return HAL_ERR_INVALID_ARG;
 
-    spi_ctx_t *ctx = (spi_ctx_t *)handle;
+    struct hal_spi_ctx *ctx = (struct hal_spi_ctx *)handle;
     spi_bus_remove_device(ctx->dev);
     spi_bus_free(SPI2_HOST);
     free(ctx);

@@ -11,11 +11,11 @@
 
 static const char *TAG = "hal_timer";
 
-typedef struct {
+struct hal_timer_ctx {
     esp_timer_handle_t handle;
     uint32_t period_ms;
     bool periodic;
-} timer_ctx_t;
+};
 
 hal_status_t hal_timer_create(const char *name, uint32_t period_ms, bool periodic,
                               hal_callback_t callback, void *arg,
@@ -23,7 +23,7 @@ hal_status_t hal_timer_create(const char *name, uint32_t period_ms, bool periodi
 {
     if (!callback || !out_handle) return HAL_ERR_INVALID_ARG;
 
-    timer_ctx_t *ctx = calloc(1, sizeof(timer_ctx_t));
+    struct hal_timer_ctx *ctx = calloc(1, sizeof(struct hal_timer_ctx));
     if (!ctx) return HAL_ERR_NO_MEM;
 
     ctx->period_ms = period_ms;
@@ -50,7 +50,7 @@ hal_status_t hal_timer_create(const char *name, uint32_t period_ms, bool periodi
 hal_status_t hal_timer_start(hal_timer_handle_t handle)
 {
     if (!handle) return HAL_ERR_INVALID_ARG;
-    timer_ctx_t *ctx = (timer_ctx_t *)handle;
+    struct hal_timer_ctx *ctx = (struct hal_timer_ctx *)handle;
 
     uint64_t period_us = (uint64_t)ctx->period_ms * 1000;
     esp_err_t ret;
@@ -67,7 +67,7 @@ hal_status_t hal_timer_start(hal_timer_handle_t handle)
 hal_status_t hal_timer_stop(hal_timer_handle_t handle)
 {
     if (!handle) return HAL_ERR_INVALID_ARG;
-    timer_ctx_t *ctx = (timer_ctx_t *)handle;
+    struct hal_timer_ctx *ctx = (struct hal_timer_ctx *)handle;
 
     esp_err_t ret = esp_timer_stop(ctx->handle);
     // ESP_ERR_INVALID_STATE means timer was already stopped — that's fine
@@ -78,7 +78,7 @@ hal_status_t hal_timer_stop(hal_timer_handle_t handle)
 hal_status_t hal_timer_set_period(hal_timer_handle_t handle, uint32_t period_ms)
 {
     if (!handle) return HAL_ERR_INVALID_ARG;
-    timer_ctx_t *ctx = (timer_ctx_t *)handle;
+    struct hal_timer_ctx *ctx = (struct hal_timer_ctx *)handle;
     ctx->period_ms = period_ms;
 
     // If timer is running, restart with new period
@@ -92,7 +92,7 @@ hal_status_t hal_timer_set_period(hal_timer_handle_t handle, uint32_t period_ms)
 hal_status_t hal_timer_delete(hal_timer_handle_t handle)
 {
     if (!handle) return HAL_ERR_INVALID_ARG;
-    timer_ctx_t *ctx = (timer_ctx_t *)handle;
+    struct hal_timer_ctx *ctx = (struct hal_timer_ctx *)handle;
 
     esp_timer_stop(ctx->handle);
     esp_timer_delete(ctx->handle);

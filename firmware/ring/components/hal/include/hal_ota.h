@@ -8,8 +8,8 @@
 
 #include "hal_types.h"
 
-// Opaque OTA session handle
-typedef void *hal_ota_handle_t;
+// Opaque OTA session handle — distinct from other handle types
+typedef struct hal_ota_ctx *hal_ota_handle_t;
 
 // Begin an OTA update. Erases the inactive partition.
 hal_status_t hal_ota_begin(hal_ota_handle_t *out_handle);

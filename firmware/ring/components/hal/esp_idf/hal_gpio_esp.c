@@ -96,11 +96,4 @@ hal_status_t hal_gpio_set_interrupt(hal_pin_t pin, hal_gpio_intr_t edge,
     return HAL_OK;
 }
 
-hal_status_t hal_gpio_enable_wake(hal_pin_t pin, bool level)
-{
-    esp_err_t ret = esp_deep_sleep_enable_gpio_wakeup(
-        (1ULL << pin),
-        level ? ESP_GPIO_WAKEUP_GPIO_HIGH : ESP_GPIO_WAKEUP_GPIO_LOW
-    );
-    return (ret == ESP_OK) ? HAL_OK : HAL_ERR_IO;
-}
+// hal_gpio_enable_wake removed — wake source config is in hal_sleep.h

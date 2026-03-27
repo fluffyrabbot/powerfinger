@@ -33,5 +33,5 @@ bool hal_gpio_get(hal_pin_t pin);
 hal_status_t hal_gpio_set_interrupt(hal_pin_t pin, hal_gpio_intr_t edge,
                                     hal_isr_callback_t cb, void *arg);
 
-// Configure pin as deep sleep wake source
-hal_status_t hal_gpio_enable_wake(hal_pin_t pin, bool level);
+// Deep sleep wake via GPIO is configured through hal_sleep.h:
+// hal_sleep_configure_wake_gpio(pin, level)

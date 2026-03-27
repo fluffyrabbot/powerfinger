@@ -346,7 +346,8 @@ static int ble_gap_event_handler(struct ble_gap_event *event, void *arg)
 
 // --- Advertising ---
 
-static void start_advertising(void)
+// Returns 0 on success, NimBLE error code on failure
+static int start_advertising(void)
 {
     struct ble_gap_adv_params adv_params = {
         .conn_mode = BLE_GAP_CONN_MODE_UND,
@@ -388,6 +389,7 @@ static void start_advertising(void)
     if (rc != 0 && rc != BLE_HS_EALREADY) {
         ESP_LOGE(TAG, "advertising start failed: %d", rc);
     }
+    return (rc == BLE_HS_EALREADY) ? 0 : rc;
 }
 
 // --- NimBLE host callbacks ---
@@ -493,8 +495,8 @@ hal_status_t hal_ble_init(const char *device_name, hal_ble_event_cb_t cb, void *
 hal_status_t hal_ble_start_advertising(uint32_t timeout_ms)
 {
     s_adv_timeout_ms = timeout_ms;
-    start_advertising();
-    return HAL_OK;
+    int rc = start_advertising();
+    return (rc == 0) ? HAL_OK : HAL_ERR_IO;
 }
 
 hal_status_t hal_ble_stop_advertising(void)

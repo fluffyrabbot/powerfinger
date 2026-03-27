@@ -29,9 +29,10 @@ typedef uint32_t hal_pin_t;
 // Pin value indicating "not configured" / unused
 #define HAL_PIN_NONE UINT32_MAX
 
-// Opaque handles
-typedef void *hal_spi_handle_t;
-typedef void *hal_timer_handle_t;
+// Opaque handles — distinct types prevent passing a timer handle to an SPI
+// function. The implementation files define the actual struct contents.
+typedef struct hal_spi_ctx *hal_spi_handle_t;
+typedef struct hal_timer_ctx *hal_timer_handle_t;
 
 // ISR callback signature (must be safe to call from interrupt context)
 typedef void (*hal_isr_callback_t)(void *arg);

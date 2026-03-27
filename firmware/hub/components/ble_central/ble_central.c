@@ -298,7 +298,21 @@ static void on_sync(void)
 
 static void on_reset(int reason)
 {
-    ESP_LOGE(TAG, "BLE host reset, reason=%d", reason);
+    ESP_LOGE(TAG, "BLE host reset, reason=%d, clearing all ring state", reason);
+
+    // NimBLE host reset means all connections are gone. Clear all ring state
+    // and notify the app so the event composer releases stuck buttons.
+    for (int i = 0; i < HUB_MAX_RINGS; i++) {
+        if (s_rings[i].connected) {
+            s_rings[i].connected = false;
+            s_rings[i].subscribed = false;
+            s_connected_count--;
+            if (s_conn_cb) {
+                s_conn_cb((uint8_t)i, false, s_cb_arg);
+            }
+        }
+    }
+    s_connected_count = 0;
 }
 
 static void host_task(void *param)

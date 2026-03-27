@@ -42,7 +42,7 @@ hal_status_t hal_gpio_init(hal_pin_t p, hal_gpio_mode_t m) { (void)p;(void)m; re
 hal_status_t hal_gpio_set(hal_pin_t p, bool l) { (void)p;(void)l; return HAL_OK; }
 bool hal_gpio_get(hal_pin_t p) { (void)p; return false; }
 hal_status_t hal_gpio_set_interrupt(hal_pin_t p, hal_gpio_intr_t e, hal_isr_callback_t cb, void *a) { (void)p;(void)e;(void)cb;(void)a; return HAL_OK; }
-hal_status_t hal_gpio_enable_wake(hal_pin_t p, bool l) { (void)p;(void)l; return HAL_OK; }
+// hal_gpio_enable_wake removed — wake config is in hal_sleep.h
 
 // --- hal_adc stubs ---
 hal_status_t hal_adc_init(uint8_t ch) { (void)ch; return HAL_OK; }
