@@ -34,3 +34,7 @@ hal_status_t role_engine_forget(const uint8_t mac[6]);
 
 // Get role name as string (for logging)
 const char *role_engine_role_name(ring_role_t role);
+
+// Flush any pending role changes to NVS. Call from main loop, not from
+// NimBLE task context — NVS writes block up to ~200ms on flash erase.
+void role_engine_flush_if_dirty(void);

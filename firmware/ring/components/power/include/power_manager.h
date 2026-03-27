@@ -23,6 +23,11 @@ typedef enum {
 // Sets up battery ADC, watchdog timer.
 hal_status_t power_manager_init(void);
 
+// Called when a BLE connection is established.
+// Resets connection parameter rejection state so active params (7.5ms)
+// can be re-requested — the new central may accept them even if the last one didn't.
+void power_manager_on_connect(void);
+
 // Called from main loop on sensor motion events.
 // Manages adaptive connection interval transitions.
 void power_manager_on_motion(void);

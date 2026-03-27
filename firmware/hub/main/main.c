@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include "esp_log.h"
+#include "esp_ota_ops.h"
 #include "esp_task_wdt.h"
 #include "nvs_flash.h"
 #include "hal_timer.h"
@@ -77,10 +78,16 @@ void app_main(void)
 
     // Initialize components — BLE is fatal, others are degradable
     if (role_engine_init() != HAL_OK) {
-        ESP_LOGW(TAG, "role engine init failed — using defaults");
+        // Mutex allocation failure means OOM at boot — restart rather than
+        // running the role engine without synchronization.
+        ESP_LOGE(TAG, "role engine init failed (OOM) — restarting");
+        esp_restart();
     }
     event_composer_init();
-    usb_hid_mouse_init();
+    if (usb_hid_mouse_init() != HAL_OK) {
+        ESP_LOGE(TAG, "USB HID init failed — hub has no output path");
+        esp_restart();
+    }
     if (ble_central_init(on_ring_report, on_ring_connection, NULL) != HAL_OK) {
         ESP_LOGE(TAG, "BLE central init failed — hub cannot function");
         esp_restart();
@@ -88,6 +95,11 @@ void app_main(void)
 
     // Register main task with watchdog (hub must not hang silently)
     esp_task_wdt_add(NULL);
+
+    // Confirm this firmware is valid — cancels automatic rollback.
+    // Must be called after all critical init succeeds and the watchdog is
+    // armed, so a broken build that hangs here still gets rolled back.
+    esp_ota_mark_app_valid_cancel_rollback();
 
     ESP_LOGI(TAG, "hub ready, scanning for rings...");
 
@@ -98,6 +110,11 @@ void app_main(void)
     // accessibility hazard the event composer is designed to prevent.
     bool prev_report_nonzero = false;
 
+    // NVS flush counter: role_engine_flush_if_dirty() every ~1000 ticks (~1s).
+    // Assumes loop runs at ~1ms/tick — valid as long as USB HID timing holds.
+    // If the loop gains variable-duration work, switch to hal_timer_get_ms().
+    uint32_t flush_ticks = 0;
+
     while (1) {
         composed_report_t report;
         event_composer_compose(&report);
@@ -107,10 +124,20 @@ void app_main(void)
                                report.scroll_v != 0 || report.scroll_h != 0);
 
         if (report_nonzero || prev_report_nonzero) {
-            usb_hid_mouse_send(&report);
+            hal_status_t send_rc = usb_hid_mouse_send(&report);
+            if (send_rc != HAL_OK && send_rc != HAL_ERR_BUSY) {
+                ESP_LOGW(TAG, "USB HID send error: %d", send_rc);
+            }
         }
 
         prev_report_nonzero = report_nonzero;
+
+        // Deferred NVS flush — absorbs the ~200ms flash erase stall here
+        // rather than blocking the NimBLE task when a new ring first connects.
+        if (++flush_ticks >= 1000) {
+            role_engine_flush_if_dirty();
+            flush_ticks = 0;
+        }
 
         esp_task_wdt_reset();
         hal_timer_delay_ms(USB_POLL_INTERVAL_MS);

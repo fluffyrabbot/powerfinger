@@ -20,10 +20,18 @@
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
 #include "store/config/ble_store_config.h"
+#include "freertos/FreeRTOS.h"
 
 #include <string.h>
 
 static const char *TAG = "ble_central";
+
+// Spinlock protecting s_rings[] and s_connected_count from concurrent
+// reads on the app core (ble_central_get_mac, ble_central_connected_count)
+// while the NimBLE host task on the other core writes during GAP events.
+static portMUX_TYPE s_rings_lock = portMUX_INITIALIZER_UNLOCKED;
+#define RINGS_LOCK()   portENTER_CRITICAL(&s_rings_lock)
+#define RINGS_UNLOCK() portEXIT_CRITICAL(&s_rings_lock)
 
 // Callbacks
 static hub_ring_report_cb_t s_report_cb = NULL;
@@ -139,7 +147,7 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
         ble_gap_disc_cancel();
 
         ESP_LOGI(TAG, "found PowerFinger device, connecting...");
-        ble_gap_connect(
+        int rc = ble_gap_connect(
             BLE_OWN_ADDR_PUBLIC,
             &event->disc.addr,
             30000,  // 30s connection timeout
@@ -147,6 +155,10 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
             gap_event_handler,
             NULL
         );
+        if (rc != 0) {
+            ESP_LOGW(TAG, "ble_gap_connect failed: %d (will retry on next scan)", rc);
+            start_scan();
+        }
         break;
     }
 
@@ -157,32 +169,40 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
             break;
         }
 
-        int slot = find_free_slot();
-        if (slot < 0) break;
-
-        s_rings[slot].conn_handle = event->connect.conn_handle;
-        s_rings[slot].connected = true;
-        s_rings[slot].subscribed = false;
-        s_rings[slot].hid_report_handle = 0;
-        s_rings[slot].hid_cccd_handle = 0;
-        s_connected_count++;
-
-        // Get peer address (check return — stale handle would leave MAC zeroed)
+        // Resolve peer MAC before acquiring lock (ble_gap_conn_find may block)
         struct ble_gap_conn_desc desc;
-        if (ble_gap_conn_find(event->connect.conn_handle, &desc) == 0) {
-            memcpy(s_rings[slot].mac, desc.peer_id_addr.val, 6);
-        } else {
+        bool got_desc = (ble_gap_conn_find(event->connect.conn_handle, &desc) == 0);
+        if (!got_desc) {
             ESP_LOGW(TAG, "conn_find failed for handle=%d", event->connect.conn_handle);
-            memset(s_rings[slot].mac, 0, 6);
         }
+
+        // Atomically claim a slot and record state
+        RINGS_LOCK();
+        int slot = find_free_slot();
+        if (slot >= 0) {
+            s_rings[slot].conn_handle = event->connect.conn_handle;
+            s_rings[slot].connected = true;
+            s_rings[slot].subscribed = false;
+            s_rings[slot].hid_report_handle = 0;
+            s_rings[slot].hid_cccd_handle = 0;
+            if (got_desc) {
+                memcpy(s_rings[slot].mac, desc.peer_id_addr.val, 6);
+            } else {
+                memset(s_rings[slot].mac, 0, 6);
+            }
+            s_connected_count++;
+        }
+        RINGS_UNLOCK();
+
+        if (slot < 0) break;
 
         ESP_LOGI(TAG, "ring %d connected (handle=%d), discovering services...",
                  slot, event->connect.conn_handle);
 
-        // Initiate security (bonding)
+        // Initiate security (bonding) — outside lock, may yield
         ble_gap_security_initiate(event->connect.conn_handle);
 
-        // Discover HID service characteristics
+        // Discover HID service characteristics — outside lock
         ble_gattc_disc_all_chrs(
             event->connect.conn_handle,
             1, 0xFFFF,
@@ -202,11 +222,14 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_DISCONNECT: {
         int idx = find_ring_by_conn(event->disconnect.conn.conn_handle);
         if (idx >= 0) {
-            ESP_LOGI(TAG, "ring %d disconnected, reason=%d",
-                     idx, event->disconnect.reason);
+            RINGS_LOCK();
             s_rings[idx].connected = false;
             s_rings[idx].subscribed = false;
             s_connected_count--;
+            RINGS_UNLOCK();
+
+            ESP_LOGI(TAG, "ring %d disconnected, reason=%d",
+                     idx, event->disconnect.reason);
 
             if (s_conn_cb) {
                 s_conn_cb((uint8_t)idx, false, s_cb_arg);
@@ -224,6 +247,11 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
         if (idx < 0) break;
 
         // Parse 4-byte HID report: [buttons, dx, dy, wheel]
+        if (OS_MBUF_PKTLEN(event->notify_rx.om) < 4) {
+            ESP_LOGW(TAG, "ring %d: short HID report (%d bytes, expected 4)",
+                     idx, OS_MBUF_PKTLEN(event->notify_rx.om));
+            break;
+        }
         if (OS_MBUF_PKTLEN(event->notify_rx.om) >= 4) {
             uint8_t buf[4];
             os_mbuf_copydata(event->notify_rx.om, 0, 4, buf);
@@ -244,8 +272,12 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
 
     case BLE_GAP_EVENT_REPEAT_PAIRING: {
         struct ble_gap_conn_desc desc;
-        ble_gap_conn_find(event->repeat_pairing.conn_handle, &desc);
-        ble_store_util_delete_peer(&desc.peer_id_addr);
+        if (ble_gap_conn_find(event->repeat_pairing.conn_handle, &desc) == 0) {
+            ble_store_util_delete_peer(&desc.peer_id_addr);
+        } else {
+            ESP_LOGW(TAG, "repeat pairing: conn_find failed for handle=%d",
+                     event->repeat_pairing.conn_handle);
+        }
         return BLE_GAP_REPEAT_PAIRING_RETRY;
     }
 
@@ -304,19 +336,25 @@ static void on_reset(int reason)
 {
     ESP_LOGE(TAG, "BLE host reset, reason=%d, clearing all ring state", reason);
 
-    // NimBLE host reset means all connections are gone. Clear all ring state
-    // and notify the app so the event composer releases stuck buttons.
+    // NimBLE host reset means all connections are gone. Snapshot which rings
+    // were connected under the lock, then fire callbacks outside it.
+    // on_sync() will restart scanning after the host reinitializes.
+    bool was_connected[HUB_MAX_RINGS];
+
+    RINGS_LOCK();
+    s_connected_count = 0;
     for (int i = 0; i < HUB_MAX_RINGS; i++) {
-        if (s_rings[i].connected) {
-            s_rings[i].connected = false;
-            s_rings[i].subscribed = false;
-            s_connected_count--;
-            if (s_conn_cb) {
-                s_conn_cb((uint8_t)i, false, s_cb_arg);
-            }
+        was_connected[i] = s_rings[i].connected;
+        s_rings[i].connected = false;
+        s_rings[i].subscribed = false;
+    }
+    RINGS_UNLOCK();
+
+    for (int i = 0; i < HUB_MAX_RINGS; i++) {
+        if (was_connected[i] && s_conn_cb) {
+            s_conn_cb((uint8_t)i, false, s_cb_arg);
         }
     }
-    s_connected_count = 0;
 }
 
 static void host_task(void *param)
@@ -376,8 +414,13 @@ hal_status_t ble_central_get_mac(uint8_t ring_index, uint8_t mac_out[6])
 {
 #ifdef ESP_PLATFORM
     if (ring_index >= HUB_MAX_RINGS) return HAL_ERR_INVALID_ARG;
-    if (!s_rings[ring_index].connected) return HAL_ERR_NOT_FOUND;
+    RINGS_LOCK();
+    if (!s_rings[ring_index].connected) {
+        RINGS_UNLOCK();
+        return HAL_ERR_NOT_FOUND;
+    }
     memcpy(mac_out, s_rings[ring_index].mac, 6);
+    RINGS_UNLOCK();
     return HAL_OK;
 #else
     (void)ring_index;
@@ -389,7 +432,10 @@ hal_status_t ble_central_get_mac(uint8_t ring_index, uint8_t mac_out[6])
 uint8_t ble_central_connected_count(void)
 {
 #ifdef ESP_PLATFORM
-    return s_connected_count;
+    RINGS_LOCK();
+    uint8_t count = s_connected_count;
+    RINGS_UNLOCK();
+    return count;
 #else
     return 0;
 #endif

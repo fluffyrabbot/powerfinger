@@ -47,7 +47,8 @@ typedef struct {
 
 static role_entry_t s_entries[HUB_MAX_RINGS];
 static int s_entry_count = 0;
-static bool s_dirty = false;  // deferred NVS write flag
+static bool s_dirty = false;          // deferred NVS write pending
+static role_blob_t s_pending_blob;    // snapshot to write when s_dirty is consumed
 
 static const char *s_role_names[] = {
     [ROLE_CURSOR]   = "CURSOR",
@@ -65,16 +66,22 @@ static ring_role_t default_role_for_index(int index)
     }
 }
 
-// Write to NVS (called outside mutex)
-static void flush_to_nvs(int count)
+// Write to NVS from a pre-captured snapshot (avoids reading s_entries without mutex)
+static void flush_to_nvs(const role_blob_t *snapshot)
+{
+    size_t len = sizeof(uint8_t) * 2 + sizeof(role_entry_t) * snapshot->count;
+    hal_storage_set(ROLE_NVS_KEY, snapshot, len);
+    hal_storage_commit();
+}
+
+// Capture s_entries into a blob while mutex is held. Caller must hold the lock.
+static role_blob_t snapshot_entries_locked(int count)
 {
     role_blob_t blob;
     blob.version = ROLE_NVS_VERSION;
     blob.count = (uint8_t)count;
     memcpy(blob.entries, s_entries, sizeof(role_entry_t) * count);
-
-    hal_storage_set(ROLE_NVS_KEY, &blob, sizeof(uint8_t) * 2 + sizeof(role_entry_t) * count);
-    hal_storage_commit();
+    return blob;
 }
 
 hal_status_t role_engine_init(void)
@@ -120,8 +127,6 @@ hal_status_t role_engine_init(void)
 
 ring_role_t role_engine_get_role(const uint8_t mac[6])
 {
-    bool need_save = false;
-    int save_count = 0;
     ring_role_t result;
 
     LOCK();
@@ -142,8 +147,11 @@ ring_role_t role_engine_get_role(const uint8_t mac[6])
         s_entries[idx].role = default_role_for_index(idx);
         s_entry_count++;
         result = s_entries[idx].role;
-        need_save = true;
-        save_count = s_entry_count;
+        // Capture snapshot and mark dirty while lock is held.
+        // Actual NVS write is deferred to role_engine_flush_if_dirty(),
+        // called from the main loop — keeps the NimBLE task unblocked.
+        s_pending_blob = snapshot_entries_locked(s_entry_count);
+        s_dirty = true;
 #ifdef ESP_PLATFORM
         ESP_LOGI(TAG, "assigned %s to new ring (index %d)", s_role_names[result], idx);
 #endif
@@ -153,11 +161,6 @@ ring_role_t role_engine_get_role(const uint8_t mac[6])
 
     UNLOCK();
 
-    // NVS write outside mutex to avoid blocking NimBLE task during flash erase
-    if (need_save) {
-        flush_to_nvs(save_count);
-    }
-
     return result;
 }
 
@@ -166,7 +169,6 @@ hal_status_t role_engine_set_role(const uint8_t mac[6], ring_role_t role)
     if (role >= ROLE_COUNT) return HAL_ERR_INVALID_ARG;
 
     bool found = false;
-    int save_count = 0;
 
     LOCK();
 
@@ -174,7 +176,8 @@ hal_status_t role_engine_set_role(const uint8_t mac[6], ring_role_t role)
         if (memcmp(s_entries[i].mac, mac, 6) == 0) {
             s_entries[i].role = role;
             found = true;
-            save_count = s_entry_count;
+            s_pending_blob = snapshot_entries_locked(s_entry_count);
+            s_dirty = true;
 #ifdef ESP_PLATFORM
             ESP_LOGI(TAG, "reassigned ring %d to %s", i, s_role_names[role]);
 #endif
@@ -184,17 +187,12 @@ hal_status_t role_engine_set_role(const uint8_t mac[6], ring_role_t role)
 
     UNLOCK();
 
-    if (found) {
-        flush_to_nvs(save_count);
-        return HAL_OK;
-    }
-    return HAL_ERR_NOT_FOUND;
+    return found ? HAL_OK : HAL_ERR_NOT_FOUND;
 }
 
 hal_status_t role_engine_forget(const uint8_t mac[6])
 {
     bool found = false;
-    int save_count = 0;
 
     LOCK();
 
@@ -206,7 +204,8 @@ hal_status_t role_engine_forget(const uint8_t mac[6])
             }
             s_entry_count--;
             found = true;
-            save_count = s_entry_count;
+            s_pending_blob = snapshot_entries_locked(s_entry_count);
+            s_dirty = true;
 #ifdef ESP_PLATFORM
             ESP_LOGI(TAG, "forgot ring at index %d, %d entries remain", i, s_entry_count);
 #endif
@@ -216,15 +215,31 @@ hal_status_t role_engine_forget(const uint8_t mac[6])
 
     UNLOCK();
 
-    if (found) {
-        flush_to_nvs(save_count);
-        return HAL_OK;
-    }
-    return HAL_ERR_NOT_FOUND;
+    return found ? HAL_OK : HAL_ERR_NOT_FOUND;
 }
 
 const char *role_engine_role_name(ring_role_t role)
 {
     if (role < ROLE_COUNT) return s_role_names[role];
     return "UNKNOWN";
+}
+
+void role_engine_flush_if_dirty(void)
+{
+    bool need_flush = false;
+    role_blob_t snapshot;
+
+    LOCK();
+    if (s_dirty) {
+        snapshot = s_pending_blob;
+        s_dirty = false;
+        need_flush = true;
+    }
+    UNLOCK();
+
+    // NVS write outside mutex — blocks ~200ms on flash erase.
+    // Must be called from main loop task, never from NimBLE task context.
+    if (need_flush) {
+        flush_to_nvs(&snapshot);
+    }
 }

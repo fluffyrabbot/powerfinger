@@ -77,6 +77,15 @@ hal_status_t power_manager_init(void)
     return HAL_OK;
 }
 
+void power_manager_on_connect(void)
+{
+    // Reset connection parameter rejection state so the new central gets
+    // asked for 7.5ms active params. A previous central may have rejected
+    // them, but a new one may accept.
+    s_conn_param_rejected = false;
+    s_active_params_requested = false;
+}
+
 void power_manager_on_motion(void)
 {
     s_last_motion_ms = hal_timer_get_ms();
@@ -149,17 +158,28 @@ void power_manager_enter_sleep(bool deep)
         // Configure wake sources: dome press (active-low) wakes from deep sleep.
         // Without this, the device enters permanent sleep — bricked.
 #ifdef CONFIG_POWERFINGER_DOME_PIN
-        hal_sleep_configure_wake_gpio((hal_pin_t)CONFIG_POWERFINGER_DOME_PIN, false);
+        hal_status_t gpio_rc = hal_sleep_configure_wake_gpio(
+            (hal_pin_t)CONFIG_POWERFINGER_DOME_PIN, false);
+        if (gpio_rc != HAL_OK) {
+#ifdef ESP_PLATFORM
+            ESP_LOGW(TAG, "wake GPIO config failed (%d) — timer wake only", gpio_rc);
 #endif
-        // Safety net: also configure a timer wake so the device eventually
-        // wakes even if dome pin is not available (e.g., piezo variant).
-        // 60 seconds — check for USB charging voltage, then re-sleep if none.
-        hal_sleep_configure_wake_timer(60 * 1000 * 1000);  // 60s in microseconds
+        }
+#endif
+        // Safety net: timer wake so device eventually wakes even if dome pin
+        // is unavailable (e.g. piezo variant). 60s — check USB charging voltage.
+        hal_status_t timer_rc = hal_sleep_configure_wake_timer(60 * 1000 * 1000);
+        if (timer_rc != HAL_OK) {
+#ifdef ESP_PLATFORM
+            ESP_LOGE(TAG, "wake timer config failed (%d) — device may not wake", timer_rc);
+#endif
+        }
 
         hal_sleep_enter(HAL_SLEEP_DEEP);
         // Does not return — device reboots on wake
     } else {
         hal_sleep_enter(HAL_SLEEP_LIGHT);
-        // Returns after wake — re-enable Hall sensors if needed
+        // Returns after wake — restore Hall sensor power for motion detection
+        hall_power_set(true);
     }
 }

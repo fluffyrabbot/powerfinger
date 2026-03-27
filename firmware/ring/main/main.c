@@ -10,6 +10,7 @@
 #include <math.h>
 #include <string.h>
 #include "esp_log.h"
+#include "esp_ota_ops.h"
 #include "nvs_flash.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -119,6 +120,7 @@ static void phase0_fake_motion_loop(void)
             execute_actions(&actions);
             if (queued_evt == RING_EVT_BLE_CONNECTED) {
                 adv_start_ms = 0;  // connected, stop tracking adv timeout
+                power_manager_on_connect();
             }
             if (queued_evt == RING_EVT_BLE_DISCONNECTED) {
                 adv_start_ms = hal_timer_get_ms();
@@ -173,7 +175,10 @@ void app_main(void)
 
     // Create BLE event queue (must exist before BLE init)
     s_evt_queue = xQueueCreate(EVT_QUEUE_LEN, sizeof(ring_event_t));
-    assert(s_evt_queue != NULL);
+    if (!s_evt_queue) {
+        ESP_LOGE(TAG, "BLE event queue alloc failed — restarting");
+        esp_restart();
+    }
 
     // Initialize state machine
     ring_state_init();
@@ -216,6 +221,11 @@ void app_main(void)
         return;
     }
 
+    // Confirm this firmware is valid — cancels automatic rollback.
+    // Placed after all critical init (BLE + power manager) and before the
+    // main loop so a build that crashes during init still gets rolled back.
+    esp_ota_mark_app_valid_cancel_rollback();
+
     ESP_LOGI(TAG, "PowerFinger ring firmware ready");
 
 #if defined(CONFIG_SENSOR_NONE) && defined(CONFIG_CLICK_NONE)
@@ -242,6 +252,8 @@ void app_main(void)
 
             if (queued_evt == RING_EVT_BLE_CONNECTED) {
                 adv_start_ms = 0;
+                // Reset conn param rejection — new central may accept 7.5ms
+                power_manager_on_connect();
             }
             if (queued_evt == RING_EVT_BLE_DISCONNECTED) {
                 dead_zone_reset();
