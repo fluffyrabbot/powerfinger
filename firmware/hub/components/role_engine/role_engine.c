@@ -56,22 +56,44 @@ static const char *s_role_names[] = {
     [ROLE_MODIFIER] = "MODIFIER",
 };
 
-// Default role based on assignment order
-static ring_role_t default_role_for_index(int index)
+// Assign the first unoccupied role in priority order.
+// Called while mutex is held, before s_entry_count is incremented, so
+// s_entries[0..s_entry_count-1] are the existing (already assigned) entries.
+static ring_role_t default_role_for_new_ring(void)
 {
-    switch (index) {
-    case 0: return ROLE_CURSOR;
-    case 1: return ROLE_SCROLL;
-    default: return ROLE_MODIFIER;
+    static const ring_role_t priority[] = {
+        ROLE_CURSOR, ROLE_SCROLL, ROLE_MODIFIER,
+    };
+    for (int r = 0; r < (int)(sizeof(priority) / sizeof(priority[0])); r++) {
+        bool occupied = false;
+        for (int i = 0; i < s_entry_count; i++) {
+            if (s_entries[i].role == priority[r]) {
+                occupied = true;
+                break;
+            }
+        }
+        if (!occupied) return priority[r];
     }
+    return ROLE_MODIFIER;  // all named roles occupied
 }
 
 // Write to NVS from a pre-captured snapshot (avoids reading s_entries without mutex)
 static void flush_to_nvs(const role_blob_t *snapshot)
 {
     size_t len = sizeof(uint8_t) * 2 + sizeof(role_entry_t) * snapshot->count;
-    hal_storage_set(ROLE_NVS_KEY, snapshot, len);
-    hal_storage_commit();
+    hal_status_t rc = hal_storage_set(ROLE_NVS_KEY, snapshot, len);
+    if (rc != HAL_OK) {
+#ifdef ESP_PLATFORM
+        ESP_LOGE(TAG, "NVS role write failed: %d — roles not persisted", (int)rc);
+#endif
+        return;
+    }
+    rc = hal_storage_commit();
+    if (rc != HAL_OK) {
+#ifdef ESP_PLATFORM
+        ESP_LOGE(TAG, "NVS commit failed: %d — roles may not survive power loss", (int)rc);
+#endif
+    }
 }
 
 // Capture s_entries into a blob while mutex is held. Caller must hold the lock.
@@ -144,7 +166,7 @@ ring_role_t role_engine_get_role(const uint8_t mac[6])
     if (s_entry_count < HUB_MAX_RINGS) {
         int idx = s_entry_count;
         memcpy(s_entries[idx].mac, mac, 6);
-        s_entries[idx].role = default_role_for_index(idx);
+        s_entries[idx].role = default_role_for_new_ring();
         s_entry_count++;
         result = s_entries[idx].role;
         // Capture snapshot and mark dirty while lock is held.

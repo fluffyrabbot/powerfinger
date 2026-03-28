@@ -26,6 +26,22 @@
 
 static const char *TAG = "ble_central";
 
+// BLE timing constants
+// 30s gives slow hosts time to complete the connection procedure.
+#define BLE_CONNECT_TIMEOUT_MS    30000
+
+// Scan interval and window in BLE units (0.625ms each).
+// 50ms interval / 30ms window = 60% duty cycle.
+// Aggressive enough to find rings quickly; conservative enough not to
+// starve BLE connections already in flight.
+#define BLE_SCAN_INTERVAL         0x50   // 50ms
+#define BLE_SCAN_WINDOW           0x30   // 30ms
+
+// Descriptor discovery range for HID Report characteristic.
+// Covers CCCD (0x2902) + Report Reference (0x2908) + margin.
+// PowerFinger rings have exactly 2 descriptors; 8 handles is generous.
+#define HID_DSC_SEARCH_RANGE      8
+
 // Spinlock protecting s_rings[] and s_connected_count from concurrent
 // reads on the app core (ble_central_get_mac, ble_central_connected_count)
 // while the NimBLE host task on the other core writes during GAP events.
@@ -74,10 +90,54 @@ static int find_free_slot(void)
 // --- Forward declarations ---
 static void start_scan(void);
 static int gap_event_handler(struct ble_gap_event *event, void *arg);
+static int on_disc_dsc(uint16_t conn_handle, const struct ble_gatt_error *error,
+                       uint16_t chr_val_handle, const struct ble_gatt_dsc *dsc,
+                       void *arg);
 
 // --- GATT discovery callbacks ---
 
-// Called when we discover characteristics on a connected ring
+// Called when descriptor discovery for the HID Report characteristic completes.
+// Looks for CCCD (0x2902) and writes it to enable notifications.
+static int on_disc_dsc(uint16_t conn_handle,
+                       const struct ble_gatt_error *error,
+                       uint16_t chr_val_handle,
+                       const struct ble_gatt_dsc *dsc,
+                       void *arg)
+{
+    (void)chr_val_handle;
+    int ring_idx = (int)(intptr_t)arg;
+    if (ring_idx < 0 || ring_idx >= HUB_MAX_RINGS) return 0;
+
+    if (error->status == 0 && dsc != NULL) {
+        if (ble_uuid_cmp(&dsc->uuid.u, BLE_UUID16_DECLARE(0x2902)) == 0) {
+            RINGS_LOCK();
+            s_rings[ring_idx].hid_cccd_handle = dsc->handle;
+            RINGS_UNLOCK();
+            ESP_LOGI(TAG, "ring %d: found CCCD at handle=%d", ring_idx, dsc->handle);
+        }
+    } else if (error->status == BLE_HS_EDONE) {
+        RINGS_LOCK();
+        uint16_t cccd_handle      = s_rings[ring_idx].hid_cccd_handle;
+        uint16_t ring_conn_handle = s_rings[ring_idx].conn_handle;
+        RINGS_UNLOCK();
+
+        if (cccd_handle != 0) {
+            uint8_t cccd_val[2] = { 0x01, 0x00 };
+            ble_gattc_write_flat(ring_conn_handle, cccd_handle,
+                                 cccd_val, sizeof(cccd_val), NULL, NULL);
+            RINGS_LOCK();
+            s_rings[ring_idx].subscribed = true;
+            RINGS_UNLOCK();
+            ESP_LOGI(TAG, "ring %d: subscribed to HID notifications", ring_idx);
+        } else {
+            ESP_LOGW(TAG, "ring %d: CCCD not found in descriptor search range — "
+                     "HID notifications disabled", ring_idx);
+        }
+    }
+    return 0;
+}
+
+// Called for each characteristic discovered on a connected ring.
 static int on_disc_chr(uint16_t conn_handle,
                        const struct ble_gatt_error *error,
                        const struct ble_gatt_chr *chr, void *arg)
@@ -88,24 +148,30 @@ static int on_disc_chr(uint16_t conn_handle,
     if (error->status == 0 && chr != NULL) {
         // Look for HID Report characteristic (UUID 0x2A4D)
         if (ble_uuid_cmp(&chr->uuid.u, BLE_UUID16_DECLARE(0x2A4D)) == 0) {
+            RINGS_LOCK();
             s_rings[ring_idx].hid_report_handle = chr->val_handle;
-            // CCCD is at val_handle + 1 for standard GATT
-            s_rings[ring_idx].hid_cccd_handle = chr->val_handle + 1;
+            RINGS_UNLOCK();
             ESP_LOGI(TAG, "ring %d: found HID Report handle=%d",
                      ring_idx, chr->val_handle);
         }
     } else if (error->status == BLE_HS_EDONE) {
-        // Discovery complete — subscribe to notifications
-        if (s_rings[ring_idx].hid_cccd_handle != 0) {
-            uint8_t cccd_val[2] = { 0x01, 0x00 };  // enable notifications
-            ble_gattc_write_flat(
-                s_rings[ring_idx].conn_handle,
-                s_rings[ring_idx].hid_cccd_handle,
-                cccd_val, sizeof(cccd_val),
-                NULL, NULL
+        // Characteristic discovery complete. Initiate descriptor discovery to
+        // find the CCCD handle for the HID Report characteristic.
+        // Searching [val_handle, val_handle+HID_DSC_SEARCH_RANGE] covers all
+        // practical HID descriptor configurations without needing the next
+        // characteristic's handle. val_handle+1 assumption is not used.
+        RINGS_LOCK();
+        uint16_t report_handle = s_rings[ring_idx].hid_report_handle;
+        RINGS_UNLOCK();
+
+        if (report_handle != 0) {
+            ble_gattc_disc_all_dscs(
+                conn_handle,
+                report_handle,
+                report_handle + HID_DSC_SEARCH_RANGE,
+                on_disc_dsc,
+                (void *)(intptr_t)ring_idx
             );
-            s_rings[ring_idx].subscribed = true;
-            ESP_LOGI(TAG, "ring %d: subscribed to HID notifications", ring_idx);
         }
     }
     return 0;
@@ -150,7 +216,7 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
         int rc = ble_gap_connect(
             BLE_OWN_ADDR_PUBLIC,
             &event->disc.addr,
-            30000,  // 30s connection timeout
+            BLE_CONNECT_TIMEOUT_MS,
             NULL,   // default connection params
             gap_event_handler,
             NULL
@@ -310,8 +376,8 @@ static void start_scan(void)
     }
 
     struct ble_gap_disc_params scan_params = {
-        .itvl = 0x50,          // 50ms scan interval
-        .window = 0x30,        // 30ms scan window
+        .itvl = BLE_SCAN_INTERVAL,
+        .window = BLE_SCAN_WINDOW,
         .filter_policy = BLE_HCI_SCAN_FILT_NO_WL,
         .limited = 0,
         .passive = 0,          // active scan to get scan response
