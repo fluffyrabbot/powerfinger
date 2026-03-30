@@ -29,6 +29,13 @@ static const char *TAG = "powerfinger_hub";
 // the NimBLE task. Assumes loop period ≈ USB_POLL_INTERVAL_MS.
 #define NVS_FLUSH_INTERVAL_TICKS 1000
 
+// H1: USB HID send failure escalation.
+// After this many consecutive send errors (excluding HAL_ERR_BUSY which is
+// transient), the hub restarts. At 1ms poll rate, 5000 = 5 seconds of
+// continuous failure — long enough to survive brief USB bus resets, short
+// enough to not leave a user without input indefinitely.
+#define USB_SEND_FAIL_THRESHOLD 5000
+
 // --- Callbacks from BLE central ---
 
 static void on_ring_report(uint8_t ring_index, const hub_ring_report_t *report, void *arg)
@@ -120,6 +127,9 @@ void app_main(void)
     // If the loop gains variable-duration work, switch to hal_timer_get_ms().
     uint32_t flush_ticks = 0;
 
+    // H1: consecutive USB HID send failure counter
+    uint32_t usb_fail_count = 0;
+
     while (1) {
         composed_report_t report;
         event_composer_compose(&report);
@@ -130,8 +140,19 @@ void app_main(void)
 
         if (report_nonzero || prev_report_nonzero) {
             hal_status_t send_rc = usb_hid_mouse_send(&report);
-            if (send_rc != HAL_OK && send_rc != HAL_ERR_BUSY) {
-                ESP_LOGW(TAG, "USB HID send error: %d", send_rc);
+            if (send_rc == HAL_OK || send_rc == HAL_ERR_BUSY) {
+                usb_fail_count = 0;
+            } else {
+                usb_fail_count++;
+                if (usb_fail_count >= USB_SEND_FAIL_THRESHOLD) {
+                    ESP_LOGE(TAG, "USB HID send failed %lu consecutive times — restarting",
+                             (unsigned long)USB_SEND_FAIL_THRESHOLD);
+                    esp_restart();
+                }
+                if ((usb_fail_count % 1000) == 1) {
+                    ESP_LOGW(TAG, "USB HID send error: %d (%lu consecutive)",
+                             send_rc, (unsigned long)usb_fail_count);
+                }
             }
         }
 
@@ -141,6 +162,8 @@ void app_main(void)
         // rather than blocking the NimBLE task when a new ring first connects.
         if (++flush_ticks >= NVS_FLUSH_INTERVAL_TICKS) {
             role_engine_flush_if_dirty();
+            // H8: disconnect rings stuck in GATT discovery
+            ble_central_check_discovery_timeout();
             flush_ticks = 0;
         }
 

@@ -7,6 +7,7 @@
 
 #include "ble_central.h"
 #include "hal_types.h"
+#include "hal_timer.h"
 
 #ifdef ESP_PLATFORM
 
@@ -54,6 +55,11 @@ static hub_ring_report_cb_t s_report_cb = NULL;
 static hub_ring_conn_cb_t s_conn_cb = NULL;
 static void *s_cb_arg = NULL;
 
+// H8: timeout for GATT discovery. If a ring is connected but not subscribed
+// within this window, disconnect it and let rescan/reconnect retry.
+// 10s is generous: typical discovery + CCCD write completes in <2s.
+#define GATT_DISCOVERY_TIMEOUT_MS 10000
+
 // Per-ring connection state
 typedef struct {
     uint16_t conn_handle;
@@ -62,6 +68,7 @@ typedef struct {
     uint8_t  mac[6];
     bool     connected;
     bool     subscribed;
+    uint32_t connect_time_ms;       // H8: timestamp for discovery timeout
 } ring_conn_t;
 
 static ring_conn_t s_rings[HUB_MAX_RINGS];
@@ -281,6 +288,7 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
             s_rings[slot].subscribed = false;
             s_rings[slot].hid_report_handle = 0;
             s_rings[slot].hid_cccd_handle = 0;
+            s_rings[slot].connect_time_ms = hal_timer_get_ms();
             if (got_desc) {
                 memcpy(s_rings[slot].mac, desc.peer_id_addr.val, 6);
             } else {
@@ -440,11 +448,17 @@ static void on_reset(int reason)
     bool was_connected[HUB_MAX_RINGS];
 
     RINGS_LOCK();
-    s_connected_count = 0;
     for (int i = 0; i < HUB_MAX_RINGS; i++) {
         was_connected[i] = s_rings[i].connected;
         s_rings[i].connected = false;
         s_rings[i].subscribed = false;
+    }
+    // H6: recompute count from array state rather than unconditionally
+    // setting to 0. Prevents underflow if a concurrent disconnect handler
+    // on the other core already decremented count for a ring we just cleared.
+    s_connected_count = 0;
+    for (int i = 0; i < HUB_MAX_RINGS; i++) {
+        if (s_rings[i].connected) s_connected_count++;
     }
     RINGS_UNLOCK();
 
@@ -536,5 +550,31 @@ uint8_t ble_central_connected_count(void)
     return count;
 #else
     return 0;
+#endif
+}
+
+void ble_central_check_discovery_timeout(void)
+{
+#ifdef ESP_PLATFORM
+    uint32_t now = hal_timer_get_ms();
+
+    for (int i = 0; i < HUB_MAX_RINGS; i++) {
+        uint16_t ch = 0;
+        bool needs_disconnect = false;
+
+        RINGS_LOCK();
+        if (s_rings[i].connected && !s_rings[i].subscribed &&
+            (now - s_rings[i].connect_time_ms) >= GATT_DISCOVERY_TIMEOUT_MS) {
+            ch = s_rings[i].conn_handle;
+            needs_disconnect = true;
+        }
+        RINGS_UNLOCK();
+
+        if (needs_disconnect) {
+            ESP_LOGW(TAG, "ring %d: GATT discovery timed out after %dms — disconnecting",
+                     i, GATT_DISCOVERY_TIMEOUT_MS);
+            ble_gap_terminate(ch, BLE_ERR_REM_USER_CONN_TERM);
+        }
+    }
 #endif
 }

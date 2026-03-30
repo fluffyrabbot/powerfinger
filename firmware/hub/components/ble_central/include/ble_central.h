@@ -36,3 +36,8 @@ hal_status_t ble_central_get_mac(uint8_t ring_index, uint8_t mac_out[6]);
 
 // Get number of currently connected rings
 uint8_t ble_central_connected_count(void);
+
+// H8: Check for rings stuck in GATT discovery (connected but not subscribed
+// after GATT_DISCOVERY_TIMEOUT_MS). Disconnects them so rescan can retry.
+// Called periodically from the main loop.
+void ble_central_check_discovery_timeout(void);
