@@ -2,152 +2,137 @@
 
 ## 1. Current State
 
-**Branch:** `main`. Working tree has uncommitted changes from this session
-(audit fixes + BOM corrections + config updates). `build-test/` contains host
-test artifacts.
+**Branch:** `main`, pushed to origin. Working tree clean except `build-test/`
+(host test artifacts).
 
-**What was done this session:**
+**What was done this session (2026-03-28/29):**
 
-1. **6 auditors run on all hub firmware and 13 new docs:**
-   - Bellman (hub firmware) — 4 critical, 5 medium, 3 low findings
-   - Concurrency (hub firmware) — 3 critical, 2 high, 2 medium findings
-   - Jackson counterexample (role engine + composer) — 5 counterexamples found
-   - Brooks conceptual integrity (13 docs) — 4 inconsistencies found
-   - Reliability (full firmware) — 5 critical, 5 high, 4 medium findings
-   - Data integrity (BOMs + config) — 10 discrepancies confirmed
+1. **6-agent audit cycle** launched in parallel:
+   - Bellman (code smells, security) — 1C / 3H / 5M / 4L
+   - Lamport (invariants, protocols) — 3 critical invariant gaps
+   - Armstrong (fault isolation) — supervision score 2/5
+   - Reliability (edge cases, degradation) — 2C / 4H / 6M
+   - Concurrency (races, locks) — 2 concrete races
+   - Hickey (simplicity) — 3.5/5 separation score
 
-2. **Critical firmware fixes applied:**
-   - `ble_gap_conn_find()` return checked before `delete_peer` (memory safety)
-   - `ble_gap_connect()` return checked, scan resumes on failure
-   - Short BLE report logged instead of silently discarded
-   - `usb_hid_mouse_init()` return checked — fatal restart on failure
-   - `usb_hid_mouse_send()` return checked — warnings logged
-   - `cursor_dx`/`cursor_dy` int16 overflow fixed — int32 accumulation with
-     clamping (accessibility hazard for multi-CURSOR-ring users)
-   - `flush_to_nvs` snapshot race fixed — entries captured under mutex
-   - `on_reset` count underflow fixed — zero first, then process callbacks
+2. **Pass 1 — Critical safety (commit b9d582c):**
+   - C1: CCCD write return value checked — disconnect ring on failure
+   - C2: conn_handle validated in GATT discovery callbacks — prevents slot reuse corruption
+   - C3: ble_gap_conn_find return checked in ring REPEAT_PAIRING — prevents bond store corruption
+   - C4: Role change zeros buttons/accumulators — prevents stuck-button hazard
+   - M4 bonus: Scroll accumulators widened to int32_t — prevents UB with multiple SCROLL rings
 
-3. **BOM corrections applied (all 3 ring/wand BOMs):**
-   - RPROG 10kΩ→20kΩ (50mA charge rate, thermal safety)
-   - YS8205 removed from optical ring alt list (not a standalone sensor)
-   - AH3503 alt note corrected (not pin-compatible, different package/pinout)
-   - LTC4054ES5-4.2 added as true pin-compatible TP4054 alt
-   - ESP32-C3-MINI-1-N4 NRND note added (successor: -N4X)
-   - NTC thermistor + voltage divider resistor added ($0.02 + $0.01)
-   - SI2301 P-ch MOSFET + gate pull-up resistor added ($0.03 + $0.01)
-   - TP4056 and MCP73831 alt caveats clarified
+3. **Pass 2 — High reliability (commit 9034006):**
+   - H1: USB HID send failure escalation — 5000-tick threshold → esp_restart()
+   - H6: Defensive s_connected_count recompute in on_reset
+   - H8: GATT discovery timeout — 10s timeout disconnects zombie rings
 
-4. **Config constants updated (ring_config.h):**
-   - `HAPTIC_SUPPRESS_MS` 20→35 (A6 analysis)
-   - `DEAD_ZONE_DISTANCE_PRO` = 15 added (A6 analysis, Pro tier)
+4. **Pass 3 — Robustness (commit 0d2f89c):**
+   - H3: ble_gap_security_initiate return checked (hub + ring)
+   - H7: ble_gap_adv_set_fields return checked (ring)
+   - M1: ble_gattc_disc_all_dscs return checked
+   - M2: ble_gattc_disc_all_chrs return checked
+   - M3: s_connected_count read under spinlock in start_scan()
+   - M8: NVS write failure re-sets dirty flag for retry
 
-5. **Doc inconsistencies fixed:**
-   - RPROG 10k→20k corrected in PROTOTYPE-SPEC.md, CONSUMER-TIERS.md,
-     POWER-BUDGET.md (all now reference BATTERY-SAFETY.md §5)
-   - AGENTIC_CHECKLIST.md marked fully complete (all items [x])
-
-6. **Tests verified:** 175 tests, 0 failures after all changes.
+5. **Tests:** 175 tests, 0 failures after all changes.
 
 ---
 
-## 2. Remaining Audit Findings (Not Yet Fixed)
+## 2. Remaining Audit Findings (Triaged)
 
-### From Bellman Audit
+### Architectural (require design work)
 
-| ID | Severity | Finding | File |
-|----|----------|---------|------|
-| M1 | Medium | Magic number: BLE connection timeout 30000 | ble_central.c:145 |
-| M2 | Medium | CCCD assumed at val_handle+1 (not guaranteed) | ble_central.c:85 |
-| M3 | Medium | Magic numbers: scan interval/window 0x50/0x30 | ble_central.c:279-280 |
-| M4 | Medium | HID descriptor Logical Min -32767 vs INT16_MIN | hid_report_descriptor.c:47 |
-| M5 | Medium | No app-level timeout on GATT discovery | ble_central.c:186 |
-| L3 | Low | Ring wheel field silently dropped at hub | main.c:39-41 |
+| ID | Severity | Finding | Notes |
+|----|----------|---------|-------|
+| H2 | High | NVS flush blocks USB HID for ~200ms | Needs background FreeRTOS task. Cursor freezes on first ring connect. |
+| M9 | Medium | Role lookup per-report (mutex 500+/sec on hot path) | Cache role at connect time in event_composer. Hickey + Concurrency flagged. |
+| M10 | Medium | Timeout logic in main loop, not state machine | Hickey + Lamport: idle/adv timeouts should be state machine's responsibility. |
+| M11 | Medium | Connection param management duplicated | power_manager + state machine both control conn params. Single owner needed. |
 
-### From Jackson Counterexample Audit
+### Medium Priority
 
-| ID | Severity | Finding | File |
-|----|----------|---------|------|
-| CE-2 | Medium | Forget + re-pair assigns wrong default role (index-based, not role-occupancy-based) | role_engine.c:59-66 |
-| CE-5 | Medium | Last-writer-wins NVS race (stale count can overwrite newer blob) | role_engine.c flush sites |
+| ID | Severity | Finding | Notes |
+|----|----------|---------|-------|
+| H4 | High | portMAX_DELAY mutex in NimBLE callback | Low risk with deferred flush pattern, but bounded timeout would be safer. |
+| H5 | High | Sensor failure → infinite reboot loop | Current 60s deep sleep cycles are tolerable. NVS reboot counter better. |
+| M5 | Medium | Dual advertising timeout paths | BLE stack + main loop timer can fire independently. Unify to one. |
+| M6 | Medium | Battery level always reports 100% | No user warning before low-battery shutdown. |
+| M7 | Medium | BLE event queue drop → stale state machine | Add periodic reconciliation check (state vs hal_ble_is_connected). |
+| M12 | Medium | No PowerFinger-specific device authentication | Hub connects to any BLE HID mouse. Add manufacturer-specific adv data. |
+| M13 | Medium | SLEEP_TIMEOUT in CONNECTED_ACTIVE silently dropped | Specify: is sleep timeout only from IDLE, or from any connected state? |
 
-### From Concurrency Audit
+### Low Priority (hardening, documentation)
 
-| ID | Severity | Finding | File |
-|----|----------|---------|------|
-| C2 | Critical | Partial MAC read race on dual-core (ble_central.c has no spinlock) | ble_central.c:375-380 |
-| H4 | High | NimBLE task blocked ~200ms during NVS flash erase in role_engine_get_role | role_engine.c:156-159 |
-| H5 | High | Role engine used without mutex if xSemaphoreCreateMutex fails | role_engine.c:83, main.c:79 |
-| M6 | Medium | Compose acquires spinlock on every 1ms tick even when no ring connected | event_composer.c:131 |
+| ID | Finding |
+|----|---------|
+| L1 | Callback pointers not documented as write-once |
+| L2 | BLE UUIDs as inline hex (0x2902, 0x2A4D, 0x1812) |
+| L3 | Float math in Phase 0 test path pulls in libm |
+| L4 | NVS blob struct packing not guaranteed across compilers |
+| L5 | Timer wraparound reliance on unsigned semantics undocumented |
+| L6 | Counter type mismatch: uint8_t vs threshold could overflow |
+| L7 | Duplicate MAC not validated on NVS role blob load |
+| L8 | No boot reason logging (esp_reset_reason()) |
+| L9 | LOCK/UNLOCK macro names hide spinlock vs mutex distinction |
+| L10 | event_composer_mark_connected naming asymmetry |
+| L11 | RING_EVT_NONE = -1 sentinel forces signed comparison |
+| L12 | Hub shutdown: no zero USB report before esp_restart() |
 
-### From Reliability Audit
+### Hickey Simplification Opportunities
 
-| ID | Severity | Finding | File |
-|----|----------|---------|------|
-| R1 | Critical | OTA never confirmed — rollback fires on every reboot | both sdkconfig.defaults |
-| R2 | Critical | Light sleep leaves Hall sensors unpowered — motion deadlock | power_manager.c:163 |
-| R3 | Critical | Deep sleep wake-source config return unchecked — can brick device | power_manager.c:152 |
-| R4 | Critical | ADC init failure causes immediate false low-battery shutdown | power_manager.c:60 |
-| R5 | Critical | Hub BLE host reset doesn't restart scanning (on_sync handles it, but not documented) | ble_central.c on_reset |
-| R6 | High | assert on NULL queue — crash loop instead of restart | ring main.c:176 |
-| R7 | High | s_conn_param_rejected persists across reconnections | power_manager.c:27 |
-| R8 | High | Battery ADC read failure is silent, skips safety check | power_manager.c:113 |
-| R9 | High | os_mbuf_append return ignored in GATT callbacks | hal_ble_esp.c:212-229 |
-| R10 | High | CCCD write has no completion callback — may silently fail | ble_central.c:93-98 |
-| R11 | Medium | SPI double-init returns error (no guard like GPIO has) | hal_spi_esp.c:35 |
-| R12 | Medium | NVS commit failure silently ignored in role engine | role_engine.c:77 |
-| R13 | Medium | RING_EVT_NONE (-1) as table index is UB if passed to dispatch | ring_state.c:192 |
+- Phase 0 fake motion loop duplicates main loop event pump — extract shared function
+- Redundant memset(&actions, 0) in ring main.c — state machine already zeroes internally
+- #ifdef ESP_PLATFORM scattered through 6 files — should be behind hal_log.h / hal_sync.h
 
-### From Brooks Conceptual Integrity Audit
+### Lamport Specification Gaps
 
-| ID | Severity | Finding |
-|----|----------|---------|
-| B1 | Medium | Companion app protocol format conflict (text in COMPANION-APP-ARCH.md vs binary in MULTI-RING-PROTOCOL.md §4) |
-| B2 | Low | Ball material terminology drift (steel vs ceramic across docs) |
-| B3 | Low | DPI multiplier encoding inconsistency (10=1.0x vs 128=mid-range) |
-| B4 | Low | BLE latency target: <20ms (CLAUDE.md) vs <15ms (PROTOTYPE-SPEC.md) |
+- No CALIBRATING state in state machine (CLAUDE.md says it exists)
+- `subscribed` flag set but never read — use it in H8 timeout or remove
+- `wheel` field parsed by hub but not forwarded through event composer
+- Role change during active use not formally specified
+- Multiple CURSOR rings: OR'd buttons + summed deltas not documented as spec
 
 ---
 
 ## 3. Recommended Next Steps
 
-### 3.1 Priority Fixes (Next Session)
+### 3.1 Next Implementation Session
 
-1. **Add spinlock to ble_central.c** for s_rings[] and s_connected_count
-   (Concurrency C2 — partial MAC read on dual-core)
-2. **Fix power_manager wake-source return checks** (Reliability R3 — brick risk)
-3. **Fix power_manager Hall re-enable after light sleep** (Reliability R2)
-4. **Fix ADC init failure degradation** (Reliability R4)
-5. **Replace assert with esp_restart** in ring main.c (Reliability R6)
-6. **Fix default_role_for_index** to consider occupied roles (Jackson CE-2)
+1. **H2: NVS flush to background task** — biggest remaining UX issue (200ms cursor freeze)
+2. **M9: Cache role at connect time** — removes mutex from hot path, simplifies event_composer_feed
+3. **M12: Add manufacturer-specific adv data** — prevent hub connecting to non-PowerFinger HID devices
 
-### 3.2 Remaining from Prior Session
+### 3.2 Design Decisions Needed (BDFL)
 
-- HAL migration prep changes from A9 (NRF52840-MIGRATION.md) — not yet applied
+- **M10/M11**: Should timeout logic + conn param management move into the state machine? (Hickey + Lamport both recommend this; trades main loop simplicity for state machine complexity)
+- **M13**: Should SLEEP_TIMEOUT fire from CONNECTED_ACTIVE? (Currently silently dropped)
+- **H5**: How aggressive should sensor-reboot-loop prevention be? (Current: 60s deep sleep cycles. Option: NVS counter, permanent sleep after N reboots.)
+
+### 3.3 Prior Session Carry-Forward
+
+- HAL migration prep for nRF52840 (from A9 doc)
 - 20 additional tests from MULTI-RING-PROTOCOL.md §8
 - Test coverage gaps: calibration, power manager, PAW3204
-
-### 3.3 Doc Reconciliation
-
-- Resolve companion app protocol format conflict (B1)
-- Update CONSUMER-TIERS.md open questions with cross-references to answers
-- Reconcile ball material terminology across docs
-- Reconcile DPI multiplier encoding
+- Doc reconciliation: companion app protocol format, ball material terminology, DPI encoding, BLE latency target
 
 ---
 
-## 4. Files Modified This Session
+## 4. Commits This Session
+
+| Hash | Description |
+|------|-------------|
+| `b9d582c` | fix(firmware): 4 critical safety fixes (C1-C4 + M4) |
+| `9034006` | fix(hub): 3 high-priority reliability fixes (H1, H6, H8) |
+| `0d2f89c` | fix(firmware): 7 robustness fixes (H3, H7, M1-M3, M8) |
+
+## 5. Files Modified This Session
 
 | File | Changes |
 |------|---------|
-| `firmware/hub/main/main.c` | Check usb_hid_mouse_init/send return values |
-| `firmware/hub/components/event_composer/event_composer.c` | Fix cursor_dx/dy overflow with int32 accumulation |
-| `firmware/hub/components/ble_central/ble_central.c` | Check ble_gap_conn_find, ble_gap_connect returns; log short reports; fix on_reset count |
-| `firmware/hub/components/role_engine/role_engine.c` | Fix flush_to_nvs stale-snapshot race with mutex-held snapshot |
-| `firmware/ring/components/state_machine/include/ring_config.h` | HAPTIC_SUPPRESS_MS 20→35, add DEAD_ZONE_DISTANCE_PRO=15 |
-| `hardware/bom/R30-OLED-NONE-NONE.csv` | RPROG 20k, remove YS8205, add LTC4054, NRND note, NTC+MOSFET, TP4056/MCP73831 caveats |
-| `hardware/bom/R30-BALL-NONE-NONE.csv` | RPROG 20k, fix AH3503, add LTC4054, NRND note, NTC+MOSFET |
-| `hardware/bom/WSTD-BALL-NONE-NONE.csv` | RPROG 20k, fix AH3503, add LTC4054, NRND note, NTC+MOSFET |
-| `docs/PROTOTYPE-SPEC.md` | RPROG 10k→20k correction |
-| `docs/CONSUMER-TIERS.md` | RPROG 10k→20k correction |
-| `docs/POWER-BUDGET.md` | RPROG 10k→20k supersession note |
-| `docs/AGENTIC_CHECKLIST.md` | All items marked complete |
+| `firmware/hub/components/ble_central/ble_central.c` | C1 (CCCD write check), C2 (conn_handle validation in discovery), H3 (security initiate check), H6 (count recompute), H8 (discovery timeout + connect_time_ms), M1-M3 (return checks, lock hygiene) |
+| `firmware/hub/components/ble_central/include/ble_central.h` | H8: ble_central_check_discovery_timeout() declaration |
+| `firmware/hub/components/event_composer/event_composer.c` | C4 (role change zeros buttons), M4 (int32_t scroll accumulators) |
+| `firmware/hub/components/role_engine/role_engine.c` | M8 (NVS retry on flush failure) |
+| `firmware/hub/main/main.c` | H1 (USB fail escalation), H8 (discovery timeout call) |
+| `firmware/ring/components/hal/esp_idf/hal_ble_esp.c` | C3 (REPEAT_PAIRING conn_find check), H3 (security initiate check), H7 (adv fields check) |
