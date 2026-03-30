@@ -77,8 +77,9 @@ static ring_role_t default_role_for_new_ring(void)
     return ROLE_MODIFIER;  // all named roles occupied
 }
 
-// Write to NVS from a pre-captured snapshot (avoids reading s_entries without mutex)
-static void flush_to_nvs(const role_blob_t *snapshot)
+// Write to NVS from a pre-captured snapshot (avoids reading s_entries without mutex).
+// M8: returns true on success, false on failure (caller should re-set dirty flag).
+static bool flush_to_nvs(const role_blob_t *snapshot)
 {
     size_t len = sizeof(uint8_t) * 2 + sizeof(role_entry_t) * snapshot->count;
     hal_status_t rc = hal_storage_set(ROLE_NVS_KEY, snapshot, len);
@@ -86,14 +87,16 @@ static void flush_to_nvs(const role_blob_t *snapshot)
 #ifdef ESP_PLATFORM
         ESP_LOGE(TAG, "NVS role write failed: %d — roles not persisted", (int)rc);
 #endif
-        return;
+        return false;
     }
     rc = hal_storage_commit();
     if (rc != HAL_OK) {
 #ifdef ESP_PLATFORM
         ESP_LOGE(TAG, "NVS commit failed: %d — roles may not survive power loss", (int)rc);
 #endif
+        return false;
     }
+    return true;
 }
 
 // Capture s_entries into a blob while mutex is held. Caller must hold the lock.
@@ -262,6 +265,15 @@ void role_engine_flush_if_dirty(void)
     // NVS write outside mutex — blocks ~200ms on flash erase.
     // Must be called from main loop task, never from NimBLE task context.
     if (need_flush) {
-        flush_to_nvs(&snapshot);
+        if (!flush_to_nvs(&snapshot)) {
+            // M8: re-set dirty so the next flush interval retries.
+            // Without this, a transient NVS failure permanently loses
+            // the role assignment — it works in RAM but never persists.
+            LOCK();
+            s_dirty = true;
+            // s_pending_blob is still valid (snapshot captured under lock
+            // earlier), so we don't need to re-snapshot.
+            UNLOCK();
+        }
     }
 }

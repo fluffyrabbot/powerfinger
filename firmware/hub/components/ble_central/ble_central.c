@@ -202,13 +202,19 @@ static int on_disc_chr(uint16_t conn_handle,
         RINGS_UNLOCK();
 
         if (report_handle != 0) {
-            ble_gattc_disc_all_dscs(
+            // M1: check return; on failure the ring will hit the H8
+            // discovery timeout and be disconnected.
+            int dsc_rc = ble_gattc_disc_all_dscs(
                 conn_handle,
                 report_handle,
                 report_handle + HID_DSC_SEARCH_RANGE,
                 on_disc_dsc,
                 (void *)(intptr_t)ring_idx
             );
+            if (dsc_rc != 0) {
+                ESP_LOGE(TAG, "ring %d: descriptor discovery failed (rc=%d)",
+                         ring_idx, dsc_rc);
+            }
         }
     }
     return 0;
@@ -303,16 +309,32 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
         ESP_LOGI(TAG, "ring %d connected (handle=%d), discovering services...",
                  slot, event->connect.conn_handle);
 
-        // Initiate security (bonding) — outside lock, may yield
-        ble_gap_security_initiate(event->connect.conn_handle);
+        // Initiate security (bonding) — outside lock, may yield.
+        // H3: log on failure; connection can proceed without encryption
+        // but some centrals reject unencrypted HID.
+        {
+            int sec_rc = ble_gap_security_initiate(event->connect.conn_handle);
+            if (sec_rc != 0) {
+                ESP_LOGW(TAG, "ring %d: security initiate failed (rc=%d), "
+                         "proceeding without encryption", slot, sec_rc);
+            }
+        }
 
-        // Discover HID service characteristics — outside lock
-        ble_gattc_disc_all_chrs(
-            event->connect.conn_handle,
-            1, 0xFFFF,
-            on_disc_chr,
-            (void *)(intptr_t)slot
-        );
+        // Discover HID service characteristics — outside lock.
+        // M2: check return; on failure the ring will hit the H8 discovery
+        // timeout and be disconnected.
+        {
+            int chr_rc = ble_gattc_disc_all_chrs(
+                event->connect.conn_handle,
+                1, 0xFFFF,
+                on_disc_chr,
+                (void *)(intptr_t)slot
+            );
+            if (chr_rc != 0) {
+                ESP_LOGE(TAG, "ring %d: characteristic discovery failed (rc=%d)",
+                         slot, chr_rc);
+            }
+        }
 
         if (s_conn_cb) {
             s_conn_cb((uint8_t)slot, true, s_cb_arg);
@@ -408,7 +430,11 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
 
 static void start_scan(void)
 {
-    if (s_connected_count >= HUB_MAX_RINGS) {
+    // M3: read s_connected_count under lock for dual-core consistency
+    RINGS_LOCK();
+    uint8_t count = s_connected_count;
+    RINGS_UNLOCK();
+    if (count >= HUB_MAX_RINGS) {
         ESP_LOGI(TAG, "all slots full, not scanning");
         return;
     }

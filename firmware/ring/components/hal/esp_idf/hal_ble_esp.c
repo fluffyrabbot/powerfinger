@@ -260,8 +260,16 @@ static int ble_gap_event_handler(struct ble_gap_event *event, void *arg)
             s_connected = true;
             ESP_LOGI(TAG, "connected, handle=%d", s_conn_handle);
 
-            // Request encryption (triggers bonding)
-            ble_gap_security_initiate(s_conn_handle);
+            // Request encryption (triggers bonding).
+            // H3: log on failure; connection proceeds but some centrals
+            // may reject unencrypted HID notifications.
+            {
+                int sec_rc = ble_gap_security_initiate(s_conn_handle);
+                if (sec_rc != 0) {
+                    ESP_LOGW(TAG, "security initiate failed (rc=%d), "
+                             "proceeding without encryption", sec_rc);
+                }
+            }
 
             notify_app(HAL_BLE_EVT_CONNECTED);
         } else {
@@ -386,13 +394,23 @@ static int start_advertising(void)
     fields.num_uuids16 = 1;
     fields.uuids16_is_complete = 1;
 
-    ble_gap_adv_set_fields(&fields);
+    // H7: check advertising field return values — if the advertising data
+    // exceeds 31 bytes (e.g. long device name), the hub cannot discover this ring.
+    int adv_rc = ble_gap_adv_set_fields(&fields);
+    if (adv_rc != 0) {
+        ESP_LOGE(TAG, "ble_gap_adv_set_fields failed: %d (adv data too large?)", adv_rc);
+        return adv_rc;
+    }
 
     // Appearance: HID Mouse (0x03C2)
     struct ble_hs_adv_fields rsp_fields = { 0 };
     rsp_fields.appearance = 0x03C2;
     rsp_fields.appearance_is_present = 1;
-    ble_gap_adv_rsp_set_fields(&rsp_fields);
+    int rsp_rc = ble_gap_adv_rsp_set_fields(&rsp_fields);
+    if (rsp_rc != 0) {
+        ESP_LOGE(TAG, "ble_gap_adv_rsp_set_fields failed: %d", rsp_rc);
+        return rsp_rc;
+    }
 
     int32_t timeout = (s_adv_timeout_ms > 0)
         ? (int32_t)(s_adv_timeout_ms / 10)  // BLE duration units = 10ms
