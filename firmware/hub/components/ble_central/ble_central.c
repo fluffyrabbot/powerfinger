@@ -108,6 +108,15 @@ static int on_disc_dsc(uint16_t conn_handle,
     int ring_idx = (int)(intptr_t)arg;
     if (ring_idx < 0 || ring_idx >= HUB_MAX_RINGS) return 0;
 
+    // C2 fix: verify conn_handle still matches this ring's slot.
+    // If the ring disconnected and another ring claimed this slot before
+    // the callback fired, the conn_handle will differ — abort silently.
+    RINGS_LOCK();
+    bool slot_valid = s_rings[ring_idx].connected &&
+                      s_rings[ring_idx].conn_handle == conn_handle;
+    RINGS_UNLOCK();
+    if (!slot_valid) return 0;
+
     if (error->status == 0 && dsc != NULL) {
         if (ble_uuid_cmp(&dsc->uuid.u, BLE_UUID16_DECLARE(0x2902)) == 0) {
             RINGS_LOCK();
@@ -122,16 +131,30 @@ static int on_disc_dsc(uint16_t conn_handle,
         RINGS_UNLOCK();
 
         if (cccd_handle != 0) {
+            // C1 fix: check CCCD write result. Only mark subscribed on
+            // success. A failed write means no HID notifications — the
+            // ring would appear connected but produce no input.
             uint8_t cccd_val[2] = { 0x01, 0x00 };
-            ble_gattc_write_flat(ring_conn_handle, cccd_handle,
-                                 cccd_val, sizeof(cccd_val), NULL, NULL);
-            RINGS_LOCK();
-            s_rings[ring_idx].subscribed = true;
-            RINGS_UNLOCK();
-            ESP_LOGI(TAG, "ring %d: subscribed to HID notifications", ring_idx);
+            int rc = ble_gattc_write_flat(ring_conn_handle, cccd_handle,
+                                          cccd_val, sizeof(cccd_val), NULL, NULL);
+            if (rc == 0) {
+                RINGS_LOCK();
+                s_rings[ring_idx].subscribed = true;
+                RINGS_UNLOCK();
+                ESP_LOGI(TAG, "ring %d: subscribed to HID notifications", ring_idx);
+            } else {
+                ESP_LOGE(TAG, "ring %d: CCCD write failed (rc=%d) — "
+                         "HID notifications will not arrive, disconnecting",
+                         ring_idx, rc);
+                ble_gap_terminate(ring_conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+            }
         } else {
             ESP_LOGW(TAG, "ring %d: CCCD not found in descriptor search range — "
-                     "HID notifications disabled", ring_idx);
+                     "HID notifications disabled, disconnecting", ring_idx);
+            RINGS_LOCK();
+            uint16_t ring_conn_handle2 = s_rings[ring_idx].conn_handle;
+            RINGS_UNLOCK();
+            ble_gap_terminate(ring_conn_handle2, BLE_ERR_REM_USER_CONN_TERM);
         }
     }
     return 0;
@@ -144,6 +167,13 @@ static int on_disc_chr(uint16_t conn_handle,
 {
     int ring_idx = (int)(intptr_t)arg;
     if (ring_idx < 0 || ring_idx >= HUB_MAX_RINGS) return 0;
+
+    // C2 fix: verify conn_handle still matches this ring's slot.
+    RINGS_LOCK();
+    bool slot_valid = s_rings[ring_idx].connected &&
+                      s_rings[ring_idx].conn_handle == conn_handle;
+    RINGS_UNLOCK();
+    if (!slot_valid) return 0;
 
     if (error->status == 0 && chr != NULL) {
         // Look for HID Report characteristic (UUID 0x2A4D)

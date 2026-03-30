@@ -89,6 +89,16 @@ void event_composer_feed(uint8_t ring_index, ring_role_t role,
         UNLOCK();
         return;
     }
+    // C4 fix: if the role changes while buttons are held, the button-to-bit
+    // mapping changes (CURSOR bit0=left, SCROLL bit0→right, MODIFIER bit0→middle).
+    // Without clearing, a held left-click instantly becomes a held right-click
+    // with no release event for left-click — same stuck-button hazard class
+    // as the disconnect invariant. Zero buttons and accumulators on role change.
+    if (r->role != role) {
+        r->buttons = 0;
+        r->acc_dx = 0;
+        r->acc_dy = 0;
+    }
     r->buttons = buttons;
     r->acc_dx = sat_add_i16(r->acc_dx, dx);
     r->acc_dy = sat_add_i16(r->acc_dy, dy);
@@ -127,8 +137,8 @@ void event_composer_compose(composed_report_t *out)
     // multiple rings with the same role (e.g. two CURSOR rings both at INT16_MAX)
     int32_t cursor_dx_acc = 0;
     int32_t cursor_dy_acc = 0;
-    int16_t scroll_h_acc = 0;
-    int16_t scroll_v_acc = 0;
+    int32_t scroll_h_acc = 0;
+    int32_t scroll_v_acc = 0;
 
     LOCK();
     for (int i = 0; i < HUB_MAX_RINGS; i++) {

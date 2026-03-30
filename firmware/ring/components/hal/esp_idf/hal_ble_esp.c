@@ -308,10 +308,16 @@ static int ble_gap_event_handler(struct ble_gap_event *event, void *arg)
         break;
 
     case BLE_GAP_EVENT_REPEAT_PAIRING: {
-        // Delete old bond and allow re-pairing
+        // Delete old bond and allow re-pairing.
+        // C3 fix: check ble_gap_conn_find return — on failure, desc is
+        // uninitialized and delete_peer would operate on stack garbage.
         struct ble_gap_conn_desc desc;
-        ble_gap_conn_find(event->repeat_pairing.conn_handle, &desc);
-        ble_store_util_delete_peer(&desc.peer_id_addr);
+        if (ble_gap_conn_find(event->repeat_pairing.conn_handle, &desc) == 0) {
+            ble_store_util_delete_peer(&desc.peer_id_addr);
+        } else {
+            ESP_LOGW(TAG, "repeat pairing: conn_find failed, deleting all bonds");
+            ble_store_util_delete_all();
+        }
         return BLE_GAP_REPEAT_PAIRING_RETRY;
     }
 
