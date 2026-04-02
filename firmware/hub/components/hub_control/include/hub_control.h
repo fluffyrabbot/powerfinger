@@ -16,3 +16,8 @@ hal_status_t hub_control_set_role(const uint8_t mac[6], ring_role_t role);
 // the event-composer cache is updated to the swapped roles as part of the same
 // control operation.
 hal_status_t hub_control_swap_roles(const uint8_t mac_a[6], const uint8_t mac_b[6]);
+
+// Forget a ring by MAC, dropping live input immediately if the ring is
+// connected, requesting disconnect, deleting the current bond entry, and
+// removing the persisted role assignment.
+hal_status_t hub_control_forget_ring(const uint8_t mac[6]);

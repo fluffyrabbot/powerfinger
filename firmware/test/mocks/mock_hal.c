@@ -41,6 +41,8 @@ static hal_status_t s_storage_commit_status = HAL_OK;
 static int s_storage_commit_fail_count = 0;
 static bool s_mock_ring_present[HUB_MAX_RINGS] = {0};
 static uint8_t s_mock_ring_macs[HUB_MAX_RINGS][6] = {{0}};
+static bool s_mock_bond_present[HUB_MAX_RINGS] = {0};
+static uint8_t s_mock_bond_macs[HUB_MAX_RINGS][6] = {{0}};
 
 void mock_hal_reset(void)
 {
@@ -68,6 +70,8 @@ void mock_hal_reset(void)
     s_storage_commit_fail_count = 0;
     memset(s_mock_ring_present, 0, sizeof(s_mock_ring_present));
     memset(s_mock_ring_macs, 0, sizeof(s_mock_ring_macs));
+    memset(s_mock_bond_present, 0, sizeof(s_mock_bond_present));
+    memset(s_mock_bond_macs, 0, sizeof(s_mock_bond_macs));
 }
 
 void mock_hal_set_time_ms(uint32_t ms) { s_time_ms = ms; }
@@ -122,6 +126,50 @@ void mock_ble_central_set_connected_ring(uint8_t ring_index, const uint8_t mac[6
 
     s_mock_ring_present[ring_index] = true;
     memcpy(s_mock_ring_macs[ring_index], mac, sizeof(s_mock_ring_macs[ring_index]));
+}
+
+void mock_ble_central_clear_bonds(void)
+{
+    memset(s_mock_bond_present, 0, sizeof(s_mock_bond_present));
+    memset(s_mock_bond_macs, 0, sizeof(s_mock_bond_macs));
+}
+
+void mock_ble_central_seed_bond(const uint8_t mac[6])
+{
+    if (!mac) {
+        return;
+    }
+
+    for (uint8_t i = 0; i < HUB_MAX_RINGS; i++) {
+        if (s_mock_bond_present[i] &&
+            memcmp(s_mock_bond_macs[i], mac, sizeof(s_mock_bond_macs[i])) == 0) {
+            return;
+        }
+    }
+
+    for (uint8_t i = 0; i < HUB_MAX_RINGS; i++) {
+        if (!s_mock_bond_present[i]) {
+            s_mock_bond_present[i] = true;
+            memcpy(s_mock_bond_macs[i], mac, sizeof(s_mock_bond_macs[i]));
+            return;
+        }
+    }
+}
+
+bool mock_ble_central_has_bond(const uint8_t mac[6])
+{
+    if (!mac) {
+        return false;
+    }
+
+    for (uint8_t i = 0; i < HUB_MAX_RINGS; i++) {
+        if (s_mock_bond_present[i] &&
+            memcmp(s_mock_bond_macs[i], mac, sizeof(s_mock_bond_macs[i])) == 0) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 int mock_hal_get_ble_conn_param_request_count(void)
@@ -297,4 +345,40 @@ hal_status_t ble_central_find_ring_index_by_mac(const uint8_t mac[6],
     }
 
     return HAL_ERR_NOT_FOUND;
+}
+
+hal_status_t ble_central_disconnect_ring_by_mac(const uint8_t mac[6])
+{
+    if (!mac) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    for (uint8_t i = 0; i < HUB_MAX_RINGS; i++) {
+        if (s_mock_ring_present[i] &&
+            memcmp(s_mock_ring_macs[i], mac, sizeof(s_mock_ring_macs[i])) == 0) {
+            s_mock_ring_present[i] = false;
+            memset(s_mock_ring_macs[i], 0, sizeof(s_mock_ring_macs[i]));
+            return HAL_OK;
+        }
+    }
+
+    return HAL_ERR_NOT_FOUND;
+}
+
+hal_status_t ble_central_delete_bond_by_mac(const uint8_t mac[6])
+{
+    if (!mac) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    for (uint8_t i = 0; i < HUB_MAX_RINGS; i++) {
+        if (s_mock_bond_present[i] &&
+            memcmp(s_mock_bond_macs[i], mac, sizeof(s_mock_bond_macs[i])) == 0) {
+            s_mock_bond_present[i] = false;
+            memset(s_mock_bond_macs[i], 0, sizeof(s_mock_bond_macs[i]));
+            return HAL_OK;
+        }
+    }
+
+    return HAL_OK;
 }

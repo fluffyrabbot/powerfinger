@@ -611,6 +611,68 @@ hal_status_t ble_central_find_ring_index_by_mac(const uint8_t mac[6],
     return HAL_ERR_NOT_FOUND;
 }
 
+hal_status_t ble_central_disconnect_ring_by_mac(const uint8_t mac[6])
+{
+    if (!mac) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+#ifdef ESP_PLATFORM
+    uint16_t conn_handle = 0;
+    bool found = false;
+
+    RINGS_LOCK();
+    for (uint8_t i = 0; i < HUB_MAX_RINGS; i++) {
+        if (s_rings[i].connected && memcmp(s_rings[i].mac, mac, 6) == 0) {
+            conn_handle = s_rings[i].conn_handle;
+            found = true;
+            break;
+        }
+    }
+    RINGS_UNLOCK();
+
+    if (!found) {
+        return HAL_ERR_NOT_FOUND;
+    }
+
+    int rc = ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+    if (rc == 0 || rc == BLE_HS_EALREADY) {
+        return HAL_OK;
+    }
+
+    ESP_LOGW(TAG, "disconnect by MAC failed: rc=%d", rc);
+    return HAL_ERR_IO;
+#else
+    (void)mac;
+    return HAL_ERR_NOT_FOUND;
+#endif
+}
+
+hal_status_t ble_central_delete_bond_by_mac(const uint8_t mac[6])
+{
+    if (!mac) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+#ifdef ESP_PLATFORM
+    // The current ring firmware advertises in public-address mode, so the MAC
+    // from the role engine is sufficient to target the bond entry pre-hardware.
+    // Revisit this path if privacy/random addresses are introduced.
+    ble_addr_t peer_addr = {0};
+    peer_addr.type = BLE_ADDR_PUBLIC;
+    memcpy(peer_addr.val, mac, 6);
+
+    int rc = ble_store_util_delete_peer(&peer_addr);
+    if (rc != 0) {
+        ESP_LOGW(TAG, "delete bond by MAC failed (public-address assumption): rc=%d", rc);
+    }
+#else
+    (void)mac;
+#endif
+
+    return HAL_OK;
+}
+
 uint8_t ble_central_connected_count(void)
 {
 #ifdef ESP_PLATFORM

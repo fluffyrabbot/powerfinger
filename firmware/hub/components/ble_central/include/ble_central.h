@@ -38,6 +38,13 @@ hal_status_t ble_central_get_mac(uint8_t ring_index, uint8_t mac_out[6]);
 hal_status_t ble_central_find_ring_index_by_mac(const uint8_t mac[6],
                                                 uint8_t *ring_index_out);
 
+// Disconnect a connected ring by MAC address.
+hal_status_t ble_central_disconnect_ring_by_mac(const uint8_t mac[6]);
+
+// Delete the current bond entry for a ring MAC.
+// The pre-hardware implementation targets the current public-address mode.
+hal_status_t ble_central_delete_bond_by_mac(const uint8_t mac[6]);
+
 // Get number of currently connected rings
 uint8_t ble_central_connected_count(void);
 

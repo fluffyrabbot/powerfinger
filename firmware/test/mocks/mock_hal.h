@@ -28,6 +28,9 @@ void mock_hal_inject_storage_commit_failure(hal_status_t status, int count);
 // --- Hub BLE central mock (for hub control / companion protocol tests) ---
 void mock_ble_central_clear_connected_rings(void);
 void mock_ble_central_set_connected_ring(uint8_t ring_index, const uint8_t mac[6]);
+void mock_ble_central_clear_bonds(void);
+void mock_ble_central_seed_bond(const uint8_t mac[6]);
+bool mock_ble_central_has_bond(const uint8_t mac[6]);
 
 // --- Failure injection ---
 // Set the return value for a specific HAL module's next N calls.

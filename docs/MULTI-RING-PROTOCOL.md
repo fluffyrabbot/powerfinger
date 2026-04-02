@@ -638,7 +638,6 @@ The following protocol pieces are still incomplete in the current codebase:
 | Function | Module | Purpose |
 |----------|--------|---------|
 | Companion command parser transport wiring | New module | Hook the existing parser core into USB CDC and extend the remaining hub commands beyond `GET_HUB_INFO` / `GET_ROLES` / `SET_ROLE` |
-| `FORGET_RING` dispatch path | Companion command task | Extend the existing live-sync control path to disconnect, forget, and delete bonds safely |
 
 ### 7.2 Thread Safety Summary
 

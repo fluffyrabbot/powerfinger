@@ -109,3 +109,38 @@ hal_status_t hub_control_swap_roles(const uint8_t mac_a[6], const uint8_t mac_b[
 
     return HAL_OK;
 }
+
+hal_status_t hub_control_forget_ring(const uint8_t mac[6])
+{
+    if (!mac) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    ring_role_t existing_role = ROLE_CURSOR;
+    hal_status_t rc = get_assigned_role(mac, &existing_role);
+    if (rc != HAL_OK) {
+        return rc;
+    }
+
+    uint8_t ring_index = 0;
+    rc = ble_central_find_ring_index_by_mac(mac, &ring_index);
+    if (rc == HAL_OK) {
+        // Drop live contribution immediately so the forget path cannot leave
+        // stale input active while the asynchronous BLE disconnect completes.
+        event_composer_ring_disconnected(ring_index);
+
+        hal_status_t disconnect_rc = ble_central_disconnect_ring_by_mac(mac);
+        if (disconnect_rc != HAL_OK && disconnect_rc != HAL_ERR_NOT_FOUND) {
+            return disconnect_rc;
+        }
+    } else if (rc != HAL_ERR_NOT_FOUND) {
+        return rc;
+    }
+
+    rc = ble_central_delete_bond_by_mac(mac);
+    if (rc != HAL_OK) {
+        return rc;
+    }
+
+    return role_engine_forget(mac);
+}

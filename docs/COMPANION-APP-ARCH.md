@@ -13,10 +13,11 @@ Information identity fields (model, firmware revision, hardware revision, and
 serial number) for bring-up and companion readback, plus a read-only
 diagnostic snapshot characteristic. On the hub side, the text command core now
 implements host-tested `GET_HUB_INFO`, `GET_ROLES`, `SET_ROLE`, and
-`SWAP_ROLES` handling behind a transport-agnostic parser, but USB CDC
-transport, the rest of the hub command set, and BLE relay writes are still
-deferred until after the first hardware validation gates unless the BDFL
-reprioritizes them.
+`SWAP_ROLES` handling behind a transport-agnostic parser, and `FORGET_RING`
+now tears down live input, removes the persisted role entry, and deletes the
+current public-address bond entry by MAC. USB CDC transport, the rest of the
+hub command set, and BLE relay writes are still deferred until after the first
+hardware validation gates unless the BDFL reprioritizes them.
 
 **What the app configures:**
 - Role assignment (which ring is cursor, which is scroll, which is modifier)
@@ -542,6 +543,10 @@ Remove a ring from the role engine and delete its bond.
 OK
 ```
 
+The current pre-hardware implementation deletes the bond entry by public MAC,
+which matches the ring firmware's current public-address mode. Revisit this if
+ring identity switches to privacy/random-address behavior later.
+
 #### OTA_BEGIN
 
 Start a firmware update. Target is `hub` or a ring MAC address.
@@ -1010,9 +1015,11 @@ requires changes to:
    `GET_ROLES` now exists as a transport-agnostic module, and `SET_ROLE` plus
    `SWAP_ROLES` already route through a shared hub-control helper so persistent
    role changes and the live event-composer cache stay aligned for active
-   rings. The remaining work is to wire this command core into a USB CDC task
-   on the ESP32-S3, then add the remaining mutating and relay commands from
-   section 3.
+   rings. `FORGET_RING` now also drops live input immediately, requests a BLE
+   disconnect if needed, deletes the current public-address bond entry by MAC,
+   and removes the persisted role assignment. The remaining work is to wire
+   this command core into a USB CDC task on the ESP32-S3, then add the
+   remaining mutating and relay commands from section 3.
 
 ### 7.2 Hub as Configuration Relay
 

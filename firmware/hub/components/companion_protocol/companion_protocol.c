@@ -403,6 +403,56 @@ static hal_status_t handle_swap_roles(char *args,
                                 "role_swap_failed");
 }
 
+static hal_status_t handle_forget_ring(char *args,
+                                       char *response_out,
+                                       size_t response_out_len)
+{
+    char *cursor = args;
+    char *mac_token = next_token(&cursor);
+
+    if (!mac_token) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_args");
+    }
+    if (next_token(&cursor) != NULL) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "unexpected_args");
+    }
+
+    uint8_t mac[6] = {0};
+    if (parse_mac_token(mac_token, mac) != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_mac");
+    }
+
+    hal_status_t rc = hub_control_forget_ring(mac);
+    if (rc == HAL_OK) {
+        response_builder_t builder = {
+            .buf = response_out,
+            .len = response_out_len,
+            .used = 0,
+        };
+        return append_format(&builder, "OK\n");
+    }
+    if (rc == HAL_ERR_NOT_FOUND) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    404,
+                                    "unknown_mac");
+    }
+
+    return write_protocol_error(response_out,
+                                response_out_len,
+                                500,
+                                "forget_failed");
+}
+
 hal_status_t companion_protocol_handle_line(const char *line,
                                             const companion_protocol_hub_info_t *hub_info,
                                             char *response_out,
@@ -462,6 +512,10 @@ hal_status_t companion_protocol_handle_line(const char *line,
     if (token_equals_ignore_case(command, "SWAP_ROLES") ||
         token_equals_ignore_case(command, "ROLE_SWAP")) {
         return handle_swap_roles(args, response_out, response_out_len);
+    }
+
+    if (token_equals_ignore_case(command, "FORGET_RING")) {
+        return handle_forget_ring(args, response_out, response_out_len);
     }
 
     return write_protocol_error(response_out,

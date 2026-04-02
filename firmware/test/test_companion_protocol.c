@@ -30,6 +30,7 @@ static void reset(void)
 {
     mock_hal_reset();
     mock_ble_central_clear_connected_rings();
+    mock_ble_central_clear_bonds();
     TEST_ASSERT_EQUAL(HAL_OK, role_engine_init());
 }
 
@@ -232,6 +233,52 @@ void test_swap_roles_rejects_unknown_mac(void)
     TEST_ASSERT_TRUE(strcmp("ERR 404 unknown_mac\n", response) == 0);
 }
 
+void test_forget_ring_forgets_known_ring(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    mock_ble_central_seed_bond(MAC_A);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("FORGET_RING 10:11:12:13:14:15",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("OK\n", response) == 0);
+    TEST_ASSERT_FALSE(mock_ble_central_has_bond(MAC_A));
+}
+
+void test_forget_ring_rejects_invalid_mac_format(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("FORGET_RING 10-11-12-13-14-15",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("ERR 400 invalid_mac\n", response) == 0);
+}
+
+void test_command_forget_ring_rejects_unknown_mac(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("FORGET_RING 10:11:12:13:14:15",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("ERR 404 unknown_mac\n", response) == 0);
+}
+
 void test_extra_args_are_rejected(void)
 {
     reset();
@@ -261,5 +308,8 @@ void run_companion_protocol_tests(void)
     RUN_TEST(test_role_swap_alias_is_accepted);
     RUN_TEST(test_swap_roles_rejects_identical_macs);
     RUN_TEST(test_swap_roles_rejects_unknown_mac);
+    RUN_TEST(test_forget_ring_forgets_known_ring);
+    RUN_TEST(test_forget_ring_rejects_invalid_mac_format);
+    RUN_TEST(test_command_forget_ring_rejects_unknown_mac);
     RUN_TEST(test_extra_args_are_rejected);
 }
