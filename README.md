@@ -114,8 +114,9 @@ See [docs/COMBINATORICS.md](docs/COMBINATORICS.md) for the full design space.
 ## Quick Start
 
 *Coming soon.* See [docs/COMBINATORICS.md](docs/COMBINATORICS.md) for what to
-build first and [docs/PROTOTYPE-SPEC.md](docs/PROTOTYPE-SPEC.md) for the EE/ME
-build spec.
+build first, [docs/PROTOTYPE-SPEC.md](docs/PROTOTYPE-SPEC.md) for the EE/ME
+build spec, and [docs/GO-NO-GO-RUBRIC.md](docs/GO-NO-GO-RUBRIC.md) for the
+validation gate order.
 
 ## Project Status
 
