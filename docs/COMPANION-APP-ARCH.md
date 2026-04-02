@@ -5,6 +5,13 @@ for basic operation. Rings work standalone over BLE HID, and multi-ring
 composition works through the hub with no software on the host. The companion
 app is how you customize, not how you use.
 
+**Status:** This document is post-validation architecture, not current P0 scope.
+Current firmware scope is the HID path, truthful battery reporting, and the
+minimum ring identity needed for hub discovery. Deferred until after the first
+hardware validation gates: custom BLE config services, gesture tables, OTA relay
+UX, charge-fault telemetry, and rich companion workflows unless the BDFL
+reprioritizes them.
+
 **What the app configures:**
 - Role assignment (which ring is cursor, which is scroll, which is modifier)
 - DPI/sensitivity per ring

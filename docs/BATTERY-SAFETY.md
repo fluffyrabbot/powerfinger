@@ -511,6 +511,11 @@ The firmware should track whether USB power is connected and the charge state:
   ring state machine. During charging, the device should remain awake (not enter
   deep sleep) to maintain temperature monitoring.
 
+**Pre-hardware scope note:** Before the real charging circuit and enclosure
+exist, the dev-board firmware only needs truthful battery reporting and
+low-voltage cutoff. VBUS/CHRG handling, charging states, and charge-disable
+control become blocking when actual ring charging hardware is on the bench.
+
 ### 7.4 Required: Watchdog coverage during charging
 
 The existing watchdog must remain active during charging. If the firmware crashes

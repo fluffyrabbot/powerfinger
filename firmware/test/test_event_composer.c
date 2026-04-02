@@ -12,6 +12,16 @@ static void reset(void)
     event_composer_init();
 }
 
+static void connect_ring(uint8_t ring_index, ring_role_t role)
+{
+    event_composer_mark_connected(ring_index, role);
+}
+
+static void feed_ring(uint8_t ring_index, uint8_t buttons, int8_t dx, int8_t dy)
+{
+    event_composer_feed(ring_index, buttons, dx, dy);
+}
+
 // --- Basic composition ---
 
 void test_empty_compose_is_zero(void)
@@ -29,8 +39,8 @@ void test_empty_compose_is_zero(void)
 void test_single_cursor_ring(void)
 {
     reset();
-    event_composer_mark_connected(0);
-    event_composer_feed(0, ROLE_CURSOR, 0x01, 10, -5);
+    connect_ring(0, ROLE_CURSOR);
+    feed_ring(0, 0x01, 10, -5);
 
     composed_report_t r;
     event_composer_compose(&r);
@@ -43,8 +53,8 @@ void test_single_cursor_ring(void)
 void test_single_scroll_ring(void)
 {
     reset();
-    event_composer_mark_connected(0);
-    event_composer_feed(0, ROLE_SCROLL, 0x01, 3, -7);
+    connect_ring(0, ROLE_SCROLL);
+    feed_ring(0, 0x01, 3, -7);
 
     composed_report_t r;
     event_composer_compose(&r);
@@ -57,10 +67,10 @@ void test_single_scroll_ring(void)
 void test_two_ring_composition(void)
 {
     reset();
-    event_composer_mark_connected(0);
-    event_composer_mark_connected(1);
-    event_composer_feed(0, ROLE_CURSOR, 0x01, 5, 3);
-    event_composer_feed(1, ROLE_SCROLL, 0x01, 0, 10);
+    connect_ring(0, ROLE_CURSOR);
+    connect_ring(1, ROLE_SCROLL);
+    feed_ring(0, 0x01, 5, 3);
+    feed_ring(1, 0x01, 0, 10);
 
     composed_report_t r;
     event_composer_compose(&r);
@@ -75,8 +85,8 @@ void test_two_ring_composition(void)
 void test_compose_clears_accumulators(void)
 {
     reset();
-    event_composer_mark_connected(0);
-    event_composer_feed(0, ROLE_CURSOR, 0x00, 10, 10);
+    connect_ring(0, ROLE_CURSOR);
+    feed_ring(0, 0x00, 10, 10);
 
     composed_report_t r;
     event_composer_compose(&r);
@@ -93,8 +103,8 @@ void test_compose_clears_accumulators(void)
 void test_disconnect_releases_buttons(void)
 {
     reset();
-    event_composer_mark_connected(0);
-    event_composer_feed(0, ROLE_CURSOR, 0x01, 5, 3);
+    connect_ring(0, ROLE_CURSOR);
+    feed_ring(0, 0x01, 5, 3);
 
     // Disconnect while button held
     event_composer_ring_disconnected(0);
@@ -109,8 +119,8 @@ void test_disconnect_releases_buttons(void)
 void test_disconnect_zeroes_deltas(void)
 {
     reset();
-    event_composer_mark_connected(0);
-    event_composer_feed(0, ROLE_CURSOR, 0x00, 50, 50);
+    connect_ring(0, ROLE_CURSOR);
+    feed_ring(0, 0x00, 50, 50);
 
     event_composer_ring_disconnected(0);
 
@@ -123,10 +133,10 @@ void test_disconnect_zeroes_deltas(void)
 void test_disconnect_one_ring_keeps_other(void)
 {
     reset();
-    event_composer_mark_connected(0);
-    event_composer_mark_connected(1);
-    event_composer_feed(0, ROLE_CURSOR, 0x01, 5, 5);
-    event_composer_feed(1, ROLE_SCROLL, 0x01, 0, 10);
+    connect_ring(0, ROLE_CURSOR);
+    connect_ring(1, ROLE_SCROLL);
+    feed_ring(0, 0x01, 5, 5);
+    feed_ring(1, 0x01, 0, 10);
 
     // Disconnect ring 0 only
     event_composer_ring_disconnected(0);
@@ -143,13 +153,13 @@ void test_disconnect_one_ring_keeps_other(void)
 void test_feed_after_disconnect_rejected(void)
 {
     reset();
-    event_composer_mark_connected(0);
-    event_composer_feed(0, ROLE_CURSOR, 0x01, 5, 3);
+    connect_ring(0, ROLE_CURSOR);
+    feed_ring(0, 0x01, 5, 3);
 
     event_composer_ring_disconnected(0);
 
     // Stale notification arrives after disconnect
-    event_composer_feed(0, ROLE_CURSOR, 0x01, 2, 1);
+    feed_ring(0, 0x01, 2, 1);
 
     composed_report_t r;
     event_composer_compose(&r);
@@ -163,7 +173,7 @@ void test_feed_without_connect_rejected(void)
 {
     reset();
     // Never called mark_connected — feed should be silently dropped
-    event_composer_feed(0, ROLE_CURSOR, 0x01, 10, 10);
+    feed_ring(0, 0x01, 10, 10);
 
     composed_report_t r;
     event_composer_compose(&r);
@@ -176,10 +186,10 @@ void test_feed_without_connect_rejected(void)
 void test_deltas_accumulate_across_feeds(void)
 {
     reset();
-    event_composer_mark_connected(0);
-    event_composer_feed(0, ROLE_CURSOR, 0x00, 10, 5);
-    event_composer_feed(0, ROLE_CURSOR, 0x00, 10, 5);
-    event_composer_feed(0, ROLE_CURSOR, 0x00, 10, 5);
+    connect_ring(0, ROLE_CURSOR);
+    feed_ring(0, 0x00, 10, 5);
+    feed_ring(0, 0x00, 10, 5);
+    feed_ring(0, 0x00, 10, 5);
 
     composed_report_t r;
     event_composer_compose(&r);
@@ -192,11 +202,11 @@ void test_deltas_accumulate_across_feeds(void)
 void test_accumulator_saturates_positive(void)
 {
     reset();
-    event_composer_mark_connected(0);
+    connect_ring(0, ROLE_CURSOR);
 
     // Feed 300 times with max positive delta — should saturate, not wrap
     for (int i = 0; i < 300; i++) {
-        event_composer_feed(0, ROLE_CURSOR, 0x00, 127, 0);
+        feed_ring(0, 0x00, 127, 0);
     }
 
     composed_report_t r;
@@ -209,10 +219,10 @@ void test_accumulator_saturates_positive(void)
 void test_accumulator_saturates_negative(void)
 {
     reset();
-    event_composer_mark_connected(0);
+    connect_ring(0, ROLE_CURSOR);
 
     for (int i = 0; i < 300; i++) {
-        event_composer_feed(0, ROLE_CURSOR, 0x00, -128, 0);
+        feed_ring(0, 0x00, -128, 0);
     }
 
     composed_report_t r;
@@ -225,8 +235,8 @@ void test_accumulator_saturates_negative(void)
 void test_modifier_ring_middle_click(void)
 {
     reset();
-    event_composer_mark_connected(0);
-    event_composer_feed(0, ROLE_MODIFIER, 0x01, 10, 10);
+    connect_ring(0, ROLE_MODIFIER);
+    feed_ring(0, 0x01, 10, 10);
 
     composed_report_t r;
     event_composer_compose(&r);
@@ -239,8 +249,8 @@ void test_modifier_ring_middle_click(void)
 void test_invalid_ring_index_ignored(void)
 {
     reset();
-    event_composer_mark_connected(99);    // out of bounds — should be no-op
-    event_composer_feed(99, ROLE_CURSOR, 0x01, 10, 10);
+    event_composer_mark_connected(99, ROLE_CURSOR);  // out of bounds — should be no-op
+    event_composer_feed(99, 0x01, 10, 10);
 
     composed_report_t r;
     event_composer_compose(&r);
@@ -253,15 +263,15 @@ void test_reconnect_after_disconnect_works(void)
 {
     reset();
     // First connection
-    event_composer_mark_connected(0);
-    event_composer_feed(0, ROLE_CURSOR, 0x01, 10, 10);
+    connect_ring(0, ROLE_CURSOR);
+    feed_ring(0, 0x01, 10, 10);
 
     // Disconnect
     event_composer_ring_disconnected(0);
 
     // Reconnect
-    event_composer_mark_connected(0);
-    event_composer_feed(0, ROLE_CURSOR, 0x00, 5, 5);
+    connect_ring(0, ROLE_CURSOR);
+    feed_ring(0, 0x00, 5, 5);
 
     composed_report_t r;
     event_composer_compose(&r);
@@ -272,13 +282,46 @@ void test_reconnect_after_disconnect_works(void)
 void test_buttons_reflect_latest_feed(void)
 {
     reset();
-    event_composer_mark_connected(0);
-    event_composer_feed(0, ROLE_CURSOR, 0x01, 0, 0);  // press
-    event_composer_feed(0, ROLE_CURSOR, 0x00, 0, 0);  // release
+    connect_ring(0, ROLE_CURSOR);
+    feed_ring(0, 0x01, 0, 0);  // press
+    feed_ring(0, 0x00, 0, 0);  // release
 
     composed_report_t r;
     event_composer_compose(&r);
     TEST_ASSERT_EQUAL(0, r.buttons);  // last feed wins for buttons
+}
+
+void test_role_change_clears_old_mapping_before_new_role_applies(void)
+{
+    reset();
+    connect_ring(0, ROLE_CURSOR);
+    feed_ring(0, 0x01, 5, 3);
+
+    event_composer_set_role(0, ROLE_SCROLL);
+
+    composed_report_t r;
+    event_composer_compose(&r);
+    TEST_ASSERT_EQUAL(0, r.buttons);
+    TEST_ASSERT_EQUAL(0, r.cursor_dx);
+    TEST_ASSERT_EQUAL(0, r.scroll_v);
+
+    feed_ring(0, 0x01, 0, 7);
+    event_composer_compose(&r);
+    TEST_ASSERT_EQUAL(0x02, r.buttons);  // scroll-role click -> right click
+    TEST_ASSERT_EQUAL(7, r.scroll_v);
+}
+
+void test_mark_connected_seeds_cached_role(void)
+{
+    reset();
+    connect_ring(0, ROLE_SCROLL);
+    feed_ring(0, 0x01, 4, -6);
+
+    composed_report_t r;
+    event_composer_compose(&r);
+    TEST_ASSERT_EQUAL(0x02, r.buttons);
+    TEST_ASSERT_EQUAL(4, r.scroll_h);
+    TEST_ASSERT_EQUAL(-6, r.scroll_v);
 }
 
 // --- Test runner ---
@@ -303,4 +346,6 @@ void run_event_composer_tests(void)
     RUN_TEST(test_invalid_ring_index_ignored);
     RUN_TEST(test_reconnect_after_disconnect_works);
     RUN_TEST(test_buttons_reflect_latest_feed);
+    RUN_TEST(test_role_change_clears_old_mapping_before_new_role_applies);
+    RUN_TEST(test_mark_connected_seeds_cached_role);
 }

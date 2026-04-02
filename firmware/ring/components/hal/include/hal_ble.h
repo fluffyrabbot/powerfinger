@@ -67,5 +67,9 @@ hal_status_t hal_ble_request_conn_params(uint16_t min_1_25ms, uint16_t max_1_25m
 // Delete all stored bonds. Used for factory reset or bond recovery.
 hal_status_t hal_ble_delete_all_bonds(void);
 
+// Update the Battery Service value exposed over GATT.
+// level_percent is clamped to 0..100 and may be an approximate estimate.
+void hal_ble_set_battery_level(uint8_t level_percent);
+
 // Check if currently connected to a host
 bool hal_ble_is_connected(void);

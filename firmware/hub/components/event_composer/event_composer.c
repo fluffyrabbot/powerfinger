@@ -65,19 +65,45 @@ hal_status_t event_composer_init(void)
     return HAL_OK;
 }
 
-void event_composer_mark_connected(uint8_t ring_index)
+static void clear_ring_state(ring_state_t *r)
+{
+    r->buttons = 0;
+    r->acc_dx = 0;
+    r->acc_dy = 0;
+}
+
+void event_composer_mark_connected(uint8_t ring_index, ring_role_t role)
 {
     if (ring_index >= HUB_MAX_RINGS) return;
     LOCK();
     s_rings[ring_index].connected = true;
-    s_rings[ring_index].buttons = 0;
-    s_rings[ring_index].acc_dx = 0;
-    s_rings[ring_index].acc_dy = 0;
+    s_rings[ring_index].role = role;
+    clear_ring_state(&s_rings[ring_index]);
     UNLOCK();
 }
 
-void event_composer_feed(uint8_t ring_index, ring_role_t role,
-                         uint8_t buttons, int8_t dx, int8_t dy)
+void event_composer_set_role(uint8_t ring_index, ring_role_t role)
+{
+    if (ring_index >= HUB_MAX_RINGS || role >= ROLE_COUNT) return;
+
+    LOCK();
+    ring_state_t *r = &s_rings[ring_index];
+    if (!r->connected) {
+        UNLOCK();
+        return;
+    }
+
+    if (r->role != role) {
+        // If a live role changes while a button is held, the mapping changes
+        // (CURSOR bit0=left, SCROLL bit0=right, MODIFIER bit0=middle). Clear
+        // buffered state so the host never sees a silent left->right remap.
+        clear_ring_state(r);
+        r->role = role;
+    }
+    UNLOCK();
+}
+
+void event_composer_feed(uint8_t ring_index, uint8_t buttons, int8_t dx, int8_t dy)
 {
     if (ring_index >= HUB_MAX_RINGS) return;
 
@@ -89,20 +115,9 @@ void event_composer_feed(uint8_t ring_index, ring_role_t role,
         UNLOCK();
         return;
     }
-    // C4 fix: if the role changes while buttons are held, the button-to-bit
-    // mapping changes (CURSOR bit0=left, SCROLL bit0→right, MODIFIER bit0→middle).
-    // Without clearing, a held left-click instantly becomes a held right-click
-    // with no release event for left-click — same stuck-button hazard class
-    // as the disconnect invariant. Zero buttons and accumulators on role change.
-    if (r->role != role) {
-        r->buttons = 0;
-        r->acc_dx = 0;
-        r->acc_dy = 0;
-    }
     r->buttons = buttons;
     r->acc_dx = sat_add_i16(r->acc_dx, dx);
     r->acc_dy = sat_add_i16(r->acc_dy, dy);
-    r->role = role;
     UNLOCK();
 }
 
@@ -121,9 +136,7 @@ void event_composer_ring_disconnected(uint8_t ring_index)
 #endif
 
     // Immediately release all buttons and zero deltas
-    r->buttons = 0;
-    r->acc_dx = 0;
-    r->acc_dy = 0;
+    clear_ring_state(r);
     r->connected = false;
     UNLOCK();
 }

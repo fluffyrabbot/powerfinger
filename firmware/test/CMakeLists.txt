@@ -13,6 +13,7 @@ cmake_minimum_required(VERSION 3.16)
 project(powerfinger_tests C)
 
 set(CMAKE_C_STANDARD 11)
+enable_testing()
 
 # Unity test framework (single-file, vendored)
 add_library(unity STATIC unity/unity.c)
@@ -39,6 +40,17 @@ add_library(dead_zone STATIC
 )
 target_include_directories(dead_zone PUBLIC
     ../ring/components/click/include
+    ../ring/components/state_machine/include
+    ../ring/components/hal/include
+)
+
+add_library(power_manager STATIC
+    ../ring/components/power/power_manager.c
+    ../ring/components/ble_hid/ble_gap_handler.c
+)
+target_include_directories(power_manager PUBLIC
+    ../ring/components/power/include
+    ../ring/components/ble_hid/include
     ../ring/components/state_machine/include
     ../ring/components/hal/include
 )
@@ -71,6 +83,7 @@ target_include_directories(usb_hid PUBLIC
 add_executable(powerfinger_tests
     test_state_machine.c
     test_dead_zone.c
+    test_power_manager.c
     test_event_composer.c
     test_usb_hid.c
     test_main.c
@@ -80,12 +93,15 @@ target_link_libraries(powerfinger_tests
     mock_hal
     state_machine
     dead_zone
+    power_manager
     event_composer
     usb_hid
 )
 target_include_directories(powerfinger_tests PRIVATE
     ../ring/components/state_machine/include
     ../ring/components/click/include
+    ../ring/components/power/include
+    ../ring/components/ble_hid/include
     ../ring/components/hal/include
     ../hub/components/event_composer/include
     ../hub/components/usb_hid/include
@@ -93,3 +109,5 @@ target_include_directories(powerfinger_tests PRIVATE
     ../hub/components/ble_central/include
     mocks
 )
+
+add_test(NAME powerfinger_tests COMMAND powerfinger_tests)

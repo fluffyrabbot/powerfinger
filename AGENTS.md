@@ -31,6 +31,9 @@ Repository: https://github.com/fluffyrabbot/powerfinger
   tracks surface compatibility per variant.
 - **No time estimates.** Never add timelines or duration projections to docs or
   design documents.
+- **No GitHub Actions by default.** Never add `.github/workflows/*`, GitHub
+  Actions, workflow badges, or workflow-driven automation unless the BDFL
+  explicitly requests it. Prefer local scripts, `ctest`, and documentation.
 - **Explore agents use Opus.** Always set `model: "opus"` when spawning Explore
   subagents. Smaller models are prone to inference and imprecision.
 

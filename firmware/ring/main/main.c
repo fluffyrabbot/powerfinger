@@ -224,6 +224,7 @@ void app_main(void)
         power_manager_enter_sleep(true);
         return;
     }
+    hal_ble_set_battery_level(power_manager_get_battery_level());
 
     // Confirm this firmware is valid — cancels automatic rollback.
     // Placed after all critical init (BLE + power manager) and before the
@@ -236,8 +237,9 @@ void app_main(void)
     phase0_fake_motion_loop();
 #else
     // --- Main loop: state machine driven ---
-    uint32_t last_motion_ms = hal_timer_get_ms();
+    uint32_t last_activity_ms = hal_timer_get_ms();
     uint32_t adv_start_ms = hal_timer_get_ms();  // track advertising timeout
+    uint8_t prev_buttons = 0;
 
     // Consecutive sensor failures — after 50 failures (~750ms at 15ms poll),
     // enter deep sleep and reboot. Eliminates false positives from surface lift.
@@ -256,12 +258,15 @@ void app_main(void)
 
             if (queued_evt == RING_EVT_BLE_CONNECTED) {
                 adv_start_ms = 0;
+                last_activity_ms = now;
                 // Reset conn param rejection — new central may accept 7.5ms
                 power_manager_on_connect();
+                prev_buttons = 0;
             }
             if (queued_evt == RING_EVT_BLE_DISCONNECTED) {
                 dead_zone_reset();
                 adv_start_ms = now;
+                prev_buttons = 0;
             }
         }
 
@@ -286,7 +291,7 @@ void app_main(void)
                 memset(&actions, 0, sizeof(actions));
                 ring_state_dispatch(RING_EVT_MOTION_DETECTED, &actions);
                 execute_actions(&actions);
-                last_motion_ms = now;
+                last_activity_ms = now;
                 power_manager_on_motion();
             }
         } else if (sensor_ok) {
@@ -302,21 +307,38 @@ void app_main(void)
         bool clicked = click_ok ? click_is_pressed() : false;
         uint8_t buttons = clicked ? 0x01 : 0x00;
 
+        // Clicks are real user activity even if the sensor is perfectly still.
+        // Promote a stationary click from IDLE to ACTIVE so press/release
+        // reports are not dropped waiting for motion.
+        if (clicked) {
+            last_activity_ms = now;
+            power_manager_on_click();
+            if (ring_state_get() == RING_STATE_CONNECTED_IDLE) {
+                memset(&actions, 0, sizeof(actions));
+                ring_state_dispatch(RING_EVT_CLICK_ACTIVITY, &actions);
+                execute_actions(&actions);
+            }
+        }
+
         if (sensor_valid) {
             dead_zone_update(clicked, &reading.dx, &reading.dy, now);
         }
 
         // --- Send HID report if in active state ---
-        if (ring_state_get() == RING_STATE_CONNECTED_ACTIVE && sensor_valid) {
+        bool button_changed = (buttons != prev_buttons);
+        if (ring_state_get() == RING_STATE_CONNECTED_ACTIVE &&
+            (sensor_valid || button_changed)) {
             ble_hid_mouse_send(buttons,
-                               clamp_i8(reading.dx),
-                               clamp_i8(reading.dy),
+                               sensor_valid ? clamp_i8(reading.dx) : 0,
+                               sensor_valid ? clamp_i8(reading.dy) : 0,
                                0);
         }
+        prev_buttons = buttons;
 
         // --- Idle transition ---
         if (ring_state_get() == RING_STATE_CONNECTED_ACTIVE &&
-            (now - last_motion_ms) >= IDLE_TRANSITION_MS) {
+            !clicked &&
+            (now - last_activity_ms) >= IDLE_TRANSITION_MS) {
             memset(&actions, 0, sizeof(actions));
             ring_state_dispatch(RING_EVT_IDLE_TIMEOUT, &actions);
             execute_actions(&actions);
@@ -336,6 +358,7 @@ void app_main(void)
                 execute_actions(&actions);
             }
         }
+        hal_ble_set_battery_level(power_manager_get_battery_level());
 
         power_manager_feed_watchdog();
 

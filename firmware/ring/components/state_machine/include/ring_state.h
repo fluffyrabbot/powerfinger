@@ -29,6 +29,7 @@ typedef enum {
     RING_EVT_BLE_DISCONNECTED,      // BLE link lost
     RING_EVT_BLE_ADV_TIMEOUT,       // Advertising timed out with no connection
     RING_EVT_MOTION_DETECTED,       // Sensor delta above noise threshold
+    RING_EVT_CLICK_ACTIVITY,        // Click press while connected idle
     RING_EVT_IDLE_TIMEOUT,          // No motion for IDLE_TRANSITION_MS
     RING_EVT_SLEEP_TIMEOUT,         // No activity for SLEEP_TIMEOUT_MS
     RING_EVT_LOW_BATTERY,           // VBAT below LOW_VOLTAGE_CUTOFF_MV

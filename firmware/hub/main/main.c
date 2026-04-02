@@ -42,15 +42,9 @@ static void on_ring_report(uint8_t ring_index, const hub_ring_report_t *report, 
 {
     (void)arg;
 
-    // Look up this ring's role
-    uint8_t mac[6];
-    if (ble_central_get_mac(ring_index, mac) != HAL_OK) return;
-
-    ring_role_t role = role_engine_get_role(mac);
-
-    // Feed into event composer
-    event_composer_feed(ring_index, role,
-                        report->buttons, report->dx, report->dy);
+    // Feed into event composer. Role is cached on connect so the hot path does
+    // not take the role-engine mutex for every BLE notification.
+    event_composer_feed(ring_index, report->buttons, report->dx, report->dy);
 }
 
 static void on_ring_connection(uint8_t ring_index, bool connected, void *arg)
@@ -58,13 +52,17 @@ static void on_ring_connection(uint8_t ring_index, bool connected, void *arg)
     (void)arg;
 
     if (connected) {
-        event_composer_mark_connected(ring_index);
+        ring_role_t role = ROLE_CURSOR;
         uint8_t mac[6];
         if (ble_central_get_mac(ring_index, mac) == HAL_OK) {
-            ring_role_t role = role_engine_get_role(mac);
-            ESP_LOGI(TAG, "ring %d connected, role=%s",
-                     ring_index, role_engine_role_name(role));
+            role = role_engine_get_role(mac);
+        } else {
+            ESP_LOGW(TAG, "ring %d connected but MAC lookup failed, defaulting role to CURSOR",
+                     ring_index);
         }
+        event_composer_mark_connected(ring_index, role);
+        ESP_LOGI(TAG, "ring %d connected, role=%s",
+                 ring_index, role_engine_role_name(role));
     } else {
         ESP_LOGI(TAG, "ring %d disconnected", ring_index);
         // Critical: immediately release buttons to prevent stuck state

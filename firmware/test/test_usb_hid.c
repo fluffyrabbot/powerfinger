@@ -249,10 +249,10 @@ static bool report_is_nonzero(const composed_report_t *r)
 void test_zero_report_sent_on_transition(void)
 {
     reset();
-    event_composer_mark_connected(0);
+    event_composer_mark_connected(0, ROLE_CURSOR);
 
     // Simulate main loop: non-zero report, then disconnect
-    event_composer_feed(0, ROLE_CURSOR, 0x01, 10, 5);
+    event_composer_feed(0, 0x01, 10, 5);
     composed_report_t r;
     event_composer_compose(&r);
     bool prev_nonzero = report_is_nonzero(&r);

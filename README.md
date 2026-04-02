@@ -23,14 +23,15 @@ redundant ways people have to control things the way they find most natural, the
 better as a common good. We design for:
 
 - **Affordability.** $9–$25 BOM depending on variant. The cheapest ring is under
-  $10 in components. A complete two-ring mouse system is ~$24.
+  $10 in components. The first two-ring validation lane targets ~$24 total.
 - **Universal design.** Every device works for able-bodied users at their desk
   AND for users with specific accessibility needs. No separate "disability"
   product line.
 - **Surface agnosticism as a spectrum.** The optical ring works on most opaque
-  surfaces (not glass). The ball+Hall variants work on any surface including
-  glass, fabric, and skin. The IMU variant needs no surface at all. Each
-  variant's limitations are documented honestly — see
+  surfaces (not glass). The ball+Hall variants are intended for glass, fabric,
+  and skin, but those claims stay provisional until the surface protocol is run.
+  The IMU variant needs no surface at all. Each variant's limitations are
+  documented honestly — see
   [docs/COMBINATORICS.md](docs/COMBINATORICS.md).
 - **Composability.** One ring is a mouse. Two rings are a mouse + scroll wheel.
   Three rings are a configurable control surface. The system grows with the
@@ -44,10 +45,11 @@ better as a common good. We design for:
 
 ### Ring
 
-Every ring has a tracking sensor + a click switch + BLE. One ring is a mouse.
-Two identical rings are a **complete mouse replacement**: cursor + left click on
-one finger, scroll + right click on the other. Roles are assigned in software,
-not hardware.
+Every ring has a tracking sensor + a click switch + BLE. One ring is the
+single-device control loop. Two identical rings plus the hub are the primary
+validation lane for the no-host-remapping workflow: cursor + left click on one
+finger, scroll + right click on the other. Roles are assigned in software, not
+hardware.
 
 ```
 Middle finger (Ring 1):  move cursor + left click
@@ -60,22 +62,24 @@ software-defined combinations of those four primitives.
 | Variant | BOM | Surface | Resolution |
 |---------|-----|---------|------------|
 | Optical ring (P0) | ~$9 | Most opaque surfaces (not glass) | 800–2000 CPI |
-| Ball+Hall ring (P1) | ~$11 | Any surface including glass | ~15–60 DPI |
-| Optical-on-ball ring (Pro) | ~$17 | Any surface including glass | Up to 12,000 CPI |
+| Ball+Hall ring (P1) | ~$11 | Target: glass, fabric, skin, and other hard cases | ~15–60 DPI |
+| Optical-on-ball ring (Pro) | ~$17 | Target: any rollable surface, pending validation | Up to 12,000 CPI |
 
-A USB hub dongle (~$6) composes two or more rings into a single USB HID mouse
-that works on any OS without drivers or a companion app.
+A USB hub dongle (~$6) is the intended path for composing two or more rings into
+a single USB HID mouse without host-side remapping software.
 
 ### Wand
 
-A pen-shaped BLE HID pointing device with a ball+Hall sensor at the tip. Hold it
-like a pen, drag it across any surface — desk, glass, tray table, blanket, wall,
-your knee. ~$14 BOM.
+A pen-shaped BLE HID pointing device with a ball+Hall sensor at the tip. This
+is the hedge lane: a handheld form factor designed for the surfaces and angles
+that defeat optical pen mice. ~$14 BOM.
 
 No existing product fills this space. Commercial pen mice ($35–150) use optical
 sensors that fail on glass and degrade past ~20 degrees of pen tilt. Assistive
-styluses only work on touchscreens. The wand works on any surface, at any
-natural pen angle (30–70 degrees), over BLE HID with no dongle required.
+styluses only work on touchscreens. The wand is designed to work across glass,
+fabric, blankets, tray tables, and other accessibility-relevant surfaces at
+natural pen angles (30–70 degrees), but those claims stay gated until the
+hardware protocol is run.
 
 Pen grip reduces forearm pronation from ~42 degrees (flat mouse) to ~28 degrees
 — clinically significant for carpal tunnel and RSI. An aluminum or stainless
@@ -98,10 +102,10 @@ See [docs/COMBINATORICS.md](docs/COMBINATORICS.md) for the full design space.
 
 | Mechanism | Surface Agnostic? | Moving Parts | BOM | Resolution |
 |-----------|-------------------|-------------|-----|-----------|
-| Mechanical ball + Hall effect | Yes — anything | Yes | ~$2 | Low (9–36 ticks/rev) |
+| Mechanical ball + Hall effect | Target: glass, fabric, skin, and other rollable surfaces | Yes | ~$2 | Low (9–36 ticks/rev) |
 | Direct optical (LED) | Most opaque surfaces | None | ~$0.50–4 | Good (800–2000 CPI) |
 | Direct laser (VCSEL) | More surfaces than LED | None | ~$2–5 | Good (2000+ CPI) |
-| Optical on captive ball | Yes — anything | Ball only | ~$5–8 | Excellent (12K CPI) |
+| Optical on captive ball | Target: any rollable surface, pending validation | Ball only | ~$5–8 | Excellent (12K CPI) |
 
 ## Optional Capabilities
 
@@ -121,7 +125,8 @@ validation gate order.
 ## Project Status
 
 **Pre-prototype.** Architecture, design space, power budget, and competitive
-analysis documented. Hardware prototyping next. See
+analysis documented. Active scope is frozen to the optical ring pair + hub
+validation lane, with the wand as the hedge lane. Hardware prototyping next. See
 [docs/FIRMWARE-ROADMAP.md](docs/FIRMWARE-ROADMAP.md) for the firmware build
 order — every phase runs on a $3 ESP32-C3 dev board before prototype hardware
 arrives.

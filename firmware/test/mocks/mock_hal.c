@@ -13,25 +13,53 @@
 
 static uint32_t s_time_ms = 0;
 static uint32_t s_adc_mv = 3700;  // default: healthy battery
+static hal_status_t s_adc_status = HAL_OK;
 static hal_status_t s_ble_send_status = HAL_OK;
 static int s_ble_send_fail_count = 0;
+static hal_status_t s_ble_conn_param_status = HAL_OK;
+static int s_ble_conn_param_request_count = 0;
+static uint16_t s_ble_conn_param_min = 0;
+static uint16_t s_ble_conn_param_max = 0;
 
 void mock_hal_reset(void)
 {
     s_time_ms = 0;
     s_adc_mv = 3700;
+    s_adc_status = HAL_OK;
     s_ble_send_status = HAL_OK;
     s_ble_send_fail_count = 0;
+    s_ble_conn_param_status = HAL_OK;
+    s_ble_conn_param_request_count = 0;
+    s_ble_conn_param_min = 0;
+    s_ble_conn_param_max = 0;
 }
 
 void mock_hal_set_time_ms(uint32_t ms) { s_time_ms = ms; }
 void mock_hal_advance_time_ms(uint32_t ms) { s_time_ms += ms; }
 void mock_hal_set_adc_mv(uint32_t mv) { s_adc_mv = mv; }
+void mock_hal_set_adc_status(hal_status_t status) { s_adc_status = status; }
 
 void mock_hal_inject_ble_send_failure(hal_status_t status, int count)
 {
     s_ble_send_status = status;
     s_ble_send_fail_count = count;
+}
+
+void mock_hal_set_ble_conn_param_status(hal_status_t status)
+{
+    s_ble_conn_param_status = status;
+}
+
+int mock_hal_get_ble_conn_param_request_count(void)
+{
+    return s_ble_conn_param_request_count;
+}
+
+void mock_hal_get_last_ble_conn_param_request(uint16_t *min_1_25ms,
+                                              uint16_t *max_1_25ms)
+{
+    if (min_1_25ms) *min_1_25ms = s_ble_conn_param_min;
+    if (max_1_25ms) *max_1_25ms = s_ble_conn_param_max;
 }
 
 // --- hal_timer ---
@@ -51,7 +79,12 @@ hal_status_t hal_gpio_set_interrupt(hal_pin_t p, hal_gpio_intr_t e, hal_isr_call
 
 // --- hal_adc (configurable for battery tests) ---
 hal_status_t hal_adc_init(hal_adc_channel_t ch) { (void)ch; return HAL_OK; }
-hal_status_t hal_adc_read_mv(hal_adc_channel_t ch, uint32_t *mv) { (void)ch; if(mv) *mv = s_adc_mv; return HAL_OK; }
+hal_status_t hal_adc_read_mv(hal_adc_channel_t ch, uint32_t *mv) {
+    (void)ch;
+    if (s_adc_status != HAL_OK) return s_adc_status;
+    if (mv) *mv = s_adc_mv;
+    return HAL_OK;
+}
 hal_status_t hal_adc_deinit(hal_adc_channel_t ch) { (void)ch; return HAL_OK; }
 
 // --- hal_sleep ---
@@ -85,8 +118,14 @@ hal_status_t hal_ble_send_mouse_report(const hal_hid_mouse_report_t *r) {
     }
     return HAL_OK;
 }
-hal_status_t hal_ble_request_conn_params(uint16_t mn, uint16_t mx) { (void)mn;(void)mx; return HAL_OK; }
+hal_status_t hal_ble_request_conn_params(uint16_t mn, uint16_t mx) {
+    s_ble_conn_param_request_count++;
+    s_ble_conn_param_min = mn;
+    s_ble_conn_param_max = mx;
+    return s_ble_conn_param_status;
+}
 hal_status_t hal_ble_delete_all_bonds(void) { return HAL_OK; }
+void hal_ble_set_battery_level(uint8_t level_percent) { (void)level_percent; }
 bool hal_ble_is_connected(void) { return false; }
 
 // --- hal_ota ---

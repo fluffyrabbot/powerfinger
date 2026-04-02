@@ -38,6 +38,15 @@ static uint16_t s_conn_handle = BLE_HS_CONN_HANDLE_NONE;
 static atomic_bool s_connected = false;
 static const char *s_device_name = "PowerFinger";
 static uint32_t s_adv_timeout_ms = 0;
+static uint8_t s_battery_level = 0;
+
+// PowerFinger discovery marker carried in the HID Service Data AD field.
+// Layout: [0x12, 0x18, 'P', 'F', 'R', 0x01]
+// This stays within the 31-byte advertisement budget with the current
+// 11-byte device name and lets the hub reject generic BLE HID mice.
+static const uint8_t s_powerfinger_service_data[] = {
+    0x12, 0x18, 'P', 'F', 'R', 0x01,
+};
 
 // HID report characteristic value handle (set during GATT registration)
 static uint16_t s_hid_report_handle = 0;
@@ -224,9 +233,7 @@ static int ble_hid_info_access(uint16_t conn_handle, uint16_t attr_handle,
             uint8_t pnp_id[] = { 0x02, 0xFF, 0xFF, 0x01, 0x00, 0x01, 0x00 };
             rc = os_mbuf_append(ctxt->om, pnp_id, sizeof(pnp_id));
         } else if (ble_uuid_cmp(uuid, BLE_UUID16_DECLARE(0x2A19)) == 0) {
-            // Battery Level: placeholder 100%
-            uint8_t level = 100;
-            rc = os_mbuf_append(ctxt->om, &level, 1);
+            rc = os_mbuf_append(ctxt->om, &s_battery_level, 1);
         }
         return (rc == 0) ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
     }
@@ -393,6 +400,8 @@ static int start_advertising(void)
     fields.uuids16 = &hid_uuid;
     fields.num_uuids16 = 1;
     fields.uuids16_is_complete = 1;
+    fields.svc_data_uuid16 = s_powerfinger_service_data;
+    fields.svc_data_uuid16_len = sizeof(s_powerfinger_service_data);
 
     // H7: check advertising field return values — if the advertising data
     // exceeds 31 bytes (e.g. long device name), the hub cannot discover this ring.
@@ -592,6 +601,11 @@ hal_status_t hal_ble_delete_all_bonds(void)
 {
     int rc = ble_store_util_delete_all();
     return (rc == 0) ? HAL_OK : HAL_ERR_IO;
+}
+
+void hal_ble_set_battery_level(uint8_t level_percent)
+{
+    s_battery_level = (level_percent > 100) ? 100 : level_percent;
 }
 
 bool hal_ble_is_connected(void)

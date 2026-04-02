@@ -2,8 +2,9 @@
 // PowerFinger Hub — BLE central implementation
 //
 // Scans for PowerFinger ring peripherals advertising the HID service UUID
-// (0x1812), connects, pairs, bonds, and subscribes to HID report
-// notifications. Forwards incoming reports to the event composer.
+// (0x1812) plus a PowerFinger-specific service-data marker, connects, pairs,
+// bonds, and subscribes to HID report notifications. Forwards incoming reports
+// to the event composer.
 
 #include "ble_central.h"
 #include "hal_types.h"
@@ -26,7 +27,6 @@
 #include <string.h>
 
 static const char *TAG = "ble_central";
-
 // BLE timing constants
 // 30s gives slow hosts time to complete the connection procedure.
 #define BLE_CONNECT_TIMEOUT_MS    30000
@@ -60,6 +60,15 @@ static void *s_cb_arg = NULL;
 // 10s is generous: typical discovery + CCCD write completes in <2s.
 #define GATT_DISCOVERY_TIMEOUT_MS 10000
 
+// PowerFinger discovery marker carried in the HID Service Data AD field.
+// Layout: [0x12, 0x18, 'P', 'F', 'R', 0x01]
+//         ^ HID service UUID LE ^ magic/version payload
+// This lets the hub reject generic BLE HID mice without depending on a
+// spoofable local-name match or inventing a fake manufacturer company ID.
+static const uint8_t POWERFINGER_SERVICE_DATA[] = {
+    0x12, 0x18, 'P', 'F', 'R', 0x01,
+};
+
 // Per-ring connection state
 typedef struct {
     uint16_t conn_handle;
@@ -92,6 +101,15 @@ static int find_free_slot(void)
         if (!s_rings[i].connected) return i;
     }
     return -1;
+}
+
+static bool adv_has_powerfinger_identity(const struct ble_hs_adv_fields *fields)
+{
+    return fields->svc_data_uuid16 != NULL &&
+           fields->svc_data_uuid16_len == sizeof(POWERFINGER_SERVICE_DATA) &&
+           memcmp(fields->svc_data_uuid16,
+                  POWERFINGER_SERVICE_DATA,
+                  sizeof(POWERFINGER_SERVICE_DATA)) == 0;
 }
 
 // --- Forward declarations ---
@@ -235,15 +253,17 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
             break;
         }
 
-        bool is_powerfinger = false;
+        bool has_hid_service = false;
         for (int i = 0; i < fields.num_uuids16; i++) {
             if (ble_uuid_u16(&fields.uuids16[i].u) == 0x1812) {
-                is_powerfinger = true;
+                has_hid_service = true;
                 break;
             }
         }
 
-        if (!is_powerfinger) break;
+        if (!has_hid_service || !adv_has_powerfinger_identity(&fields)) {
+            break;
+        }
 
         // Check if we have a free slot
         int slot = find_free_slot();

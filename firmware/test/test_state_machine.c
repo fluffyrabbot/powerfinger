@@ -62,6 +62,19 @@ void test_motion_transitions_idle_to_active(void)
     TEST_ASSERT_TRUE(a.enable_hid_reports);
 }
 
+void test_click_activity_transitions_idle_to_active(void)
+{
+    reset();
+    ring_actions_t a;
+    ring_state_dispatch(RING_EVT_CALIBRATION_DONE, &a);
+    ring_state_dispatch(RING_EVT_BLE_CONNECTED, &a);
+
+    ring_state_t s = ring_state_dispatch(RING_EVT_CLICK_ACTIVITY, &a);
+    TEST_ASSERT_EQUAL(RING_STATE_CONNECTED_ACTIVE, s);
+    TEST_ASSERT_TRUE(a.request_active_conn_params);
+    TEST_ASSERT_TRUE(a.enable_hid_reports);
+}
+
 void test_idle_timeout_transitions_active_to_idle(void)
 {
     reset();
@@ -186,6 +199,16 @@ void test_motion_ignored_in_advertising(void)
     TEST_ASSERT_EQUAL(RING_STATE_ADVERTISING, s);
 }
 
+void test_click_activity_ignored_in_advertising(void)
+{
+    reset();
+    ring_actions_t a;
+    ring_state_dispatch(RING_EVT_CALIBRATION_DONE, &a);
+
+    ring_state_t s = ring_state_dispatch(RING_EVT_CLICK_ACTIVITY, &a);
+    TEST_ASSERT_EQUAL(RING_STATE_ADVERTISING, s);
+}
+
 void test_state_names_not_null(void)
 {
     for (int i = 0; i < RING_STATE_COUNT; i++) {
@@ -254,6 +277,7 @@ void run_state_machine_tests(void)
     RUN_TEST(test_calibration_failed_still_transitions_to_advertising);
     RUN_TEST(test_ble_connected_transitions_to_idle);
     RUN_TEST(test_motion_transitions_idle_to_active);
+    RUN_TEST(test_click_activity_transitions_idle_to_active);
     RUN_TEST(test_idle_timeout_transitions_active_to_idle);
     RUN_TEST(test_sleep_timeout_transitions_idle_to_deep_sleep);
     RUN_TEST(test_adv_timeout_transitions_to_deep_sleep);
@@ -264,6 +288,7 @@ void run_state_machine_tests(void)
     RUN_TEST(test_low_battery_from_connected_active);
     RUN_TEST(test_low_battery_from_connected_idle);
     RUN_TEST(test_motion_ignored_in_advertising);
+    RUN_TEST(test_click_activity_ignored_in_advertising);
     RUN_TEST(test_state_names_not_null);
     RUN_TEST(test_low_battery_from_deep_sleep);
     RUN_TEST(test_no_hid_enable_on_cal_done);

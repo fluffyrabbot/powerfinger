@@ -24,6 +24,8 @@ Standard CSV. Columns follow OSHWA/KiCad convention:
 - **Notes** column lists acceptable alternatives and constraints.
 - Supplier part numbers are provided where known; `—` means "search by MPN."
 - All components must be sourceable from multiple vendors (project hard rule).
+- Battery line items must meet [BATTERY-SAFETY.md](../../docs/BATTERY-SAFETY.md):
+  integrated PCM, UN 38.3 documentation, and no harvested cells.
 
 ## Suppliers Referenced
 

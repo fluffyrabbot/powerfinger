@@ -26,13 +26,21 @@ static const char *TAG = "power_mgr";
 // ADC errors, short enough to protect against a permanently broken ADC.
 #define ADC_FAIL_THRESHOLD 5
 
+// Approximate loaded-voltage state-of-charge mapping for a single-cell LiPo.
+// This is intentionally conservative: the device cuts off at 3.2V for cell
+// protection, so values near that threshold are reported as effectively empty.
+#define BATTERY_EMPTY_MV 3200
+#define BATTERY_FULL_MV  4200
+
 // --- State ---
 
-static uint32_t s_last_motion_ms = 0;
+static uint32_t s_last_activity_ms = 0;
 static uint32_t s_last_battery_check_ms = 0;
 static bool s_active_params_requested = false;
 static bool s_conn_param_rejected = false;  // don't retry if central rejected
 static uint8_t s_adc_fail_count = 0;        // consecutive VBAT read failures
+static uint32_t s_last_vbat_mv = 0;
+static uint8_t s_last_battery_pct = 0;
 
 #ifdef CONFIG_POWERFINGER_HALL_POWER_PIN
 #define PIN_HALL_POWER ((hal_pin_t)CONFIG_POWERFINGER_HALL_POWER_PIN)
@@ -54,15 +62,53 @@ static void hall_power_set(bool on)
     hal_gpio_set(PIN_HALL_POWER, on);
 }
 
+static uint8_t battery_percent_from_mv(uint32_t vbat_mv)
+{
+    if (vbat_mv <= BATTERY_EMPTY_MV) return 0;
+    if (vbat_mv >= BATTERY_FULL_MV) return 100;
+    return (uint8_t)(((vbat_mv - BATTERY_EMPTY_MV) * 100U) /
+                     (BATTERY_FULL_MV - BATTERY_EMPTY_MV));
+}
+
+static void update_battery_cache(uint32_t vbat_mv)
+{
+    s_last_vbat_mv = vbat_mv;
+    s_last_battery_pct = battery_percent_from_mv(vbat_mv);
+}
+
+static void note_activity(void)
+{
+    s_last_activity_ms = hal_timer_get_ms();
+
+    // Request active (7.5ms) connection parameters if not already active.
+    // If there is no connection yet, the HAL will reject the request and we
+    // simply remain in the current state.
+    if (!s_active_params_requested && !s_conn_param_rejected) {
+        hal_status_t ret = ble_gap_request_active_params();
+        if (ret == HAL_OK) {
+            s_active_params_requested = true;
+        } else if (ret == HAL_ERR_REJECTED) {
+            // Central rejected 7.5ms — don't retry this connection
+            s_conn_param_rejected = true;
+        }
+    }
+
+    // Ensure Hall sensors are powered during user activity
+    hall_power_set(true);
+}
+
 // --- Public API ---
 
 hal_status_t power_manager_init(void)
 {
     uint32_t now = hal_timer_get_ms();
-    s_last_motion_ms = now;
+    s_last_activity_ms = now;
     s_last_battery_check_ms = now;
     s_active_params_requested = false;
     s_conn_param_rejected = false;
+    s_adc_fail_count = 0;
+    s_last_vbat_mv = 0;
+    s_last_battery_pct = 0;
 
     // Initialize battery ADC — failure is fatal for LiPo safety
     hal_status_t adc_rc = hal_adc_init(VBAT_ADC_CHANNEL);
@@ -79,6 +125,12 @@ hal_status_t power_manager_init(void)
         hall_power_set(true);  // power on by default during active use
     }
 
+    // Prime the battery cache so the Battery Service is truthful from boot.
+    uint32_t vbat_mv = 0;
+    if (hal_adc_read_mv(VBAT_ADC_CHANNEL, &vbat_mv) == HAL_OK) {
+        update_battery_cache(vbat_mv);
+    }
+
     // Register with task watchdog
 #ifdef ESP_PLATFORM
     esp_task_wdt_add(NULL);  // add current task to WDT
@@ -93,6 +145,7 @@ hal_status_t power_manager_init(void)
 
 void power_manager_on_connect(void)
 {
+    s_last_activity_ms = hal_timer_get_ms();
     // Reset connection parameter rejection state so the new central gets
     // asked for 7.5ms active params. A previous central may have rejected
     // them, but a new one may accept.
@@ -102,28 +155,19 @@ void power_manager_on_connect(void)
 
 void power_manager_on_motion(void)
 {
-    s_last_motion_ms = hal_timer_get_ms();
+    note_activity();
+}
 
-    // Request active (7.5ms) connection parameters if not already active
-    if (!s_active_params_requested && !s_conn_param_rejected) {
-        hal_status_t ret = ble_gap_request_active_params();
-        if (ret == HAL_OK) {
-            s_active_params_requested = true;
-        } else if (ret == HAL_ERR_REJECTED) {
-            // Central rejected 7.5ms — don't retry this connection
-            s_conn_param_rejected = true;
-        }
-    }
-
-    // Ensure Hall sensors are powered during motion
-    hall_power_set(true);
+void power_manager_on_click(void)
+{
+    note_activity();
 }
 
 power_event_t power_manager_tick(uint32_t now_ms)
 {
-    // --- Adaptive connection interval: revert to idle after 250ms ---
+    // --- Adaptive connection interval: revert to idle after 250ms of no activity ---
     if (s_active_params_requested &&
-        (now_ms - s_last_motion_ms) >= IDLE_TRANSITION_MS) {
+        (now_ms - s_last_activity_ms) >= IDLE_TRANSITION_MS) {
         ble_gap_request_idle_params();
         s_active_params_requested = false;
     }
@@ -135,6 +179,7 @@ power_event_t power_manager_tick(uint32_t now_ms)
         uint32_t vbat_mv = 0;
         if (hal_adc_read_mv(VBAT_ADC_CHANNEL, &vbat_mv) == HAL_OK) {
             s_adc_fail_count = 0;
+            update_battery_cache(vbat_mv);
             if (vbat_mv < LOW_VOLTAGE_CUTOFF_MV) {
 #ifdef ESP_PLATFORM
                 ESP_LOGW(TAG, "low battery: %lu mV < %d mV cutoff",
@@ -163,12 +208,22 @@ power_event_t power_manager_tick(uint32_t now_ms)
     }
 
     // --- Sleep timeout check ---
-    if ((now_ms - s_last_motion_ms) >= SLEEP_TIMEOUT_MS) {
+    if ((now_ms - s_last_activity_ms) >= SLEEP_TIMEOUT_MS) {
         hall_power_set(false);
         return POWER_EVT_SLEEP_TIMEOUT;
     }
 
     return POWER_EVT_NONE;
+}
+
+uint8_t power_manager_get_battery_level(void)
+{
+    return s_last_battery_pct;
+}
+
+uint32_t power_manager_get_last_battery_mv(void)
+{
+    return s_last_vbat_mv;
 }
 
 void power_manager_feed_watchdog(void)

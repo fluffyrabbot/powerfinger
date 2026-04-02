@@ -40,6 +40,7 @@ static const char *s_event_names[] = {
     [RING_EVT_BLE_DISCONNECTED]   = "BLE_DISCONNECTED",
     [RING_EVT_BLE_ADV_TIMEOUT]    = "BLE_ADV_TIMEOUT",
     [RING_EVT_MOTION_DETECTED]    = "MOTION_DETECTED",
+    [RING_EVT_CLICK_ACTIVITY]     = "CLICK_ACTIVITY",
     [RING_EVT_IDLE_TIMEOUT]       = "IDLE_TIMEOUT",
     [RING_EVT_SLEEP_TIMEOUT]      = "SLEEP_TIMEOUT",
     [RING_EVT_LOW_BATTERY]        = "LOW_BATTERY",
@@ -163,6 +164,7 @@ static const handler_t s_table[RING_STATE_COUNT][RING_EVT_COUNT] = {
     // CONNECTED_IDLE
     [RING_STATE_CONNECTED_IDLE] = {
         [RING_EVT_MOTION_DETECTED]  = h_idle_motion,
+        [RING_EVT_CLICK_ACTIVITY]   = h_idle_motion,
         [RING_EVT_SLEEP_TIMEOUT]    = h_idle_sleep_timeout,
         [RING_EVT_BLE_DISCONNECTED] = h_idle_disconnected,
     },

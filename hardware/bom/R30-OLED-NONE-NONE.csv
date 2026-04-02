@@ -4,7 +4,7 @@ U2,1,Optical mouse sensor (LED illumination),PAW3204DB-TJ3L,8-pin optical,PixArt
 LED1,1,IR/red LED for sensor illumination,—,0603 or axial,—,—,—,—,$0.02,"Paired with sensor — some sensors include LED in package. Check sensor datasheet."
 LENS1,1,Sensor lens + clip,—,sensor-specific,PixArt,—,AliExpress,—,$0.10–0.30,"Usually sold as sensor + lens kit. Must match sensor package."
 SW1,1,Metal snap dome switch,5mm 200gf,5mm round,Snaptron,SQ-05400N,DigiKey,—,$0.05–0.15,"Alt: any 4–6mm metal dome, 150–250gf actuation. Murata, C&K also supply."
-BT1,1,LiPo battery,80–100mAh 3.7V,pouch cell,—,—,AliExpress,—,$0.80–1.50,"Size constraint: must fit in ring shell. Target ≤20x15x4mm. Alt: harvest from disposable vape."
+BT1,1,LiPo battery,80–100mAh 3.7V,pouch cell with integrated PCM,—,—,AliExpress,—,$0.80–1.50,"Size constraint: must fit in ring shell. Target ≤20x15x4mm. Must include integrated PCM and UN 38.3 documentation. No harvested cells."
 U3,1,LiPo charge controller,TP4054,SOT-23-5,—,TP4054,LCSC,C32574,$0.05,"Alt: LTC4054ES5-4.2 (Analog Devices, DigiKey 960438 — true pin-compatible). TP4056 requires SOP-8 footprint (NOT drop-in). MCP73831 SOT-23-5 has different pinout (verify PCB layout). No NTC input — see NTC/MOSFET lines below."
 U4,1,3.3V ultra-low-Iq LDO regulator,RT9080-33GJ5,SOT-23-5,Richtek,RT9080-33GJ5,LCSC,C882092,$0.15,"0.5µA quiescent — critical for deep sleep (AP2112K's 55µA dominates sleep budget 11:1). Alt: XC6220B331MR (8µA Iq). NOT AP2112K."
 J1,1,USB-C connector (charging only),USB-C 2.0 receptacle,SMD 16-pin,—,—,LCSC,—,$0.10–0.30,"Charging + serial flash. 2-pin (power only) acceptable for production; 16-pin for dev/debug."

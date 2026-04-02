@@ -32,9 +32,18 @@ void power_manager_on_connect(void);
 // Manages adaptive connection interval transitions.
 void power_manager_on_motion(void);
 
+// Called from main loop while the click is held.
+// Keeps the device awake and preserves low-latency button release behavior.
+void power_manager_on_click(void);
+
 // Called from main loop periodically.
 // Checks battery voltage, manages idle/sleep timers.
 power_event_t power_manager_tick(uint32_t now_ms);
+
+// Last sampled battery status, derived from VBAT.
+// Battery percentage is an approximate loaded-voltage estimate.
+uint8_t power_manager_get_battery_level(void);
+uint32_t power_manager_get_last_battery_mv(void);
 
 // Feed the watchdog timer. Must be called periodically from main loop.
 void power_manager_feed_watchdog(void);

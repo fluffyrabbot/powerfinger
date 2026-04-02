@@ -5,7 +5,7 @@ BALL1,1,Steel ball,5mm diameter,—,—,—,AliExpress/McMaster,—,$0.05–0.10
 ROLLER1,4,Roller spindle with magnet,~2mm diameter,custom or modified,—,—,—,—,$0.20–0.50,"Roller + small magnet (1x1mm N52 neodymium). May need to be custom-assembled from magnet + metal rod."
 MAG1,4,Neodymium magnet for roller,1x1mm disc N52,—,—,—,AliExpress,—,$0.05–0.10,"Epoxied to roller spindle. Alt: magnetized roller (single piece)."
 SW1,1,Metal snap dome switch,5mm 200gf,5mm round,Snaptron,SQ-05400N,DigiKey,—,$0.05–0.15,"Same as optical ring."
-BT1,1,LiPo battery,80–100mAh 3.7V,pouch cell,—,—,AliExpress,—,$0.80–1.50,"Same as optical ring."
+BT1,1,LiPo battery,80–100mAh 3.7V,pouch cell with integrated PCM,—,—,AliExpress,—,$0.80–1.50,"Same constraints as optical ring: integrated PCM, UN 38.3 documentation, no harvested cells."
 U3,1,LiPo charge controller,TP4054,SOT-23-5,—,TP4054,LCSC,C32574,$0.05,"Alt: LTC4054ES5-4.2 (Analog Devices, DigiKey 960438 — true pin-compatible). No NTC input — see NTC/MOSFET lines below."
 U4,1,3.3V ultra-low-Iq LDO regulator,RT9080-33GJ5,SOT-23-5,Richtek,RT9080-33GJ5,LCSC,C882092,$0.15,"0.5µA Iq. See optical ring BOM for rationale."
 J1,1,USB-C connector (charging only),USB-C 2.0 receptacle,SMD,—,—,LCSC,—,$0.10–0.30,"Same as optical ring."

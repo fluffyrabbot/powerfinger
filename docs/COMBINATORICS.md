@@ -2,19 +2,20 @@
 
 ## What to Build
 
-**Build R30-OLED-NONE-NONE with dome click. Buy two. That's a complete mouse
-for ~$18.**
+**Build `R30-OLED-NONE-NONE` with dome click. Buy two. This is the first
+validation lane, targeting a two-ring mouse workflow for ~$18 plus the hub.**
 
 Two identical rings, software-assigned roles: cursor + left click on one finger,
-scroll + right click on the other. Everything is the same device — same PCB, same
-firmware, same BOM. The companion app or USB hub dongle assigns meaning.
+scroll + right click on the other. Everything is the same device — same PCB,
+same firmware, same BOM. The USB hub dongle assigns the default meaning; the
+companion app can reassign later.
 
 | Priority | What to Build | Qty | BOM Each | Why |
 |----------|--------------|-----|----------|-----|
-| **P0** | R30-OLED-NONE-NONE (dome click) | **×2** | ~$9 | Two identical rings = complete mouse |
+| **P0** | R30-OLED-NONE-NONE (dome click) | **×2** | ~$9 | Cheapest first proof of the ring control loop |
 | **P0** | USB hub dongle (ESP32-S3) | ×1 | ~$6 | Multi-ring composition — two rings = one USB mouse |
-| **P1** | R30-BALL-NONE-NONE (dome click) | ×2 | ~$11 | Surface-agnostic pair (glass, fabric, skin) |
-| **P1** | WSTD-BALL-NONE-NONE (wand) | ×1 | ~$14 | Pen-on-any-surface, angle-independent |
+| **P1** | R30-BALL-NONE-NONE (dome click) | ×2 | ~$11 | Surface-agnostic ring hypothesis (glass, fabric, skin) |
+| **P1** | WSTD-BALL-NONE-NONE (wand) | ×1 | ~$14 | Hedge lane for pen-grip / off-desk use |
 
 P0 is the gate. If the optical ring pair works as a mouse through the hub,
 everything else follows. See [PROTOTYPE-SPEC.md](PROTOTYPE-SPEC.md) for the
@@ -786,7 +787,7 @@ of PowerFinger devices.
 ## Canonical Setup: Two Identical Rings + Hub
 
 The opinionated default for PowerFinger is **two identical rings on two
-fingers**, with roles assigned in software:
+fingers** as the intended first full workflow, with roles assigned in software:
 
 | Finger | Role | Move | Click |
 |--------|------|------|-------|
@@ -795,10 +796,10 @@ fingers**, with roles assigned in software:
 
 **Total BOM: ~$24** (two R30-OLED-NONE-NONE rings with dome click + USB hub).
 
-This is a **complete mouse replacement** from two copies of the same $9 device
-and a $6 USB hub. The hub pairs with both rings over BLE, assigns roles, and
-presents to the host OS as one standard USB HID mouse. No companion app needed.
-No drivers. Plug in the hub, the rings auto-connect, and you have a mouse.
+This is the target two-ring workflow: two copies of the same $9 device and a $6
+USB hub. If Gates 1-4 pass, the hub pairs with both rings over BLE, assigns
+roles, and presents to the host OS as one standard USB HID mouse with no
+host-side remapping software.
 
 A single ring also works without the hub — it pairs directly with the host as
 a standard BLE HID mouse for basic cursor + click.

@@ -84,8 +84,8 @@ states describe the hub's view of the ring, not the ring's own state.
 
 | From | Trigger | Guard | To | Action |
 |------|---------|-------|----|--------|
-| EMPTY | BLE_GAP_EVENT_DISC | `find_free_slot() >= 0` AND MAC advertises HID UUID 0x1812 | CONNECTING | Cancel scan, initiate `ble_gap_connect()` |
-| CONNECTING | BLE_GAP_EVENT_CONNECT (status=0) | Slot available | ACTIVE | Copy MAC, call `event_composer_mark_connected()`, call `role_engine_get_role()` (assigns default if new), initiate security + GATT discovery, resume scan |
+| EMPTY | BLE_GAP_EVENT_DISC | `find_free_slot() >= 0` AND advertisement carries HID UUID 0x1812 + PowerFinger HID service-data marker | CONNECTING | Cancel scan, initiate `ble_gap_connect()` |
+| CONNECTING | BLE_GAP_EVENT_CONNECT (status=0) | Slot available | ACTIVE | Copy MAC, call `role_engine_get_role()` (assigns default if new), call `event_composer_mark_connected(ring_index, role)`, initiate security + GATT discovery, resume scan |
 | CONNECTING | BLE_GAP_EVENT_CONNECT (status!=0) | -- | EMPTY | Resume scan |
 | ACTIVE | BLE_GAP_EVENT_DISCONNECT | -- | KNOWN_DISCONNECTED | Call `event_composer_ring_disconnected()`, clear slot `connected` flag, decrement count, resume scan |
 | ACTIVE | companion: `role_set` or `role_swap` | Target ring is ACTIVE | ROLE_SWAPPING | See section 4 |
@@ -308,30 +308,29 @@ Assign a specific role to a specific ring.
 2. Call `role_engine_set_role(mac, new_role)`. Return `NOT_FOUND` if MAC unknown.
 3. If the ring is currently ACTIVE:
    a. Transition ring to ROLE_SWAPPING.
-   b. Wait for the next `event_composer_compose()` cycle to drain buffered
-      deltas under the old role (at most 1ms at USB poll rate).
-   c. Update the role in the event composer's per-ring state.
+   b. Call `event_composer_set_role(ring_index, new_role)`.
+   c. Allow `event_composer_set_role()` to clear any buffered deltas and
+      button state for that ring.
    d. Transition ring back to ACTIVE.
 4. Return OK.
 
-**Postcondition:** NVS updated. Subsequent `event_composer_feed()` calls for
-this ring use the new role.
+**Postcondition:** NVS updated. If the ring is ACTIVE and the hub also calls
+`event_composer_set_role(ring_index, new_role)`, subsequent
+`event_composer_feed()` calls for this ring use the new cached role.
 
 **Atomicity:** The role change in the role engine is mutex-protected. The event
-composer sees the new role on the next `event_composer_feed()` call because the
-role is passed as a parameter (looked up fresh from the role engine on each BLE
-notification in `on_ring_report()` in `main.c`). There is no cached role in the
-event composer that needs invalidation -- the role is a feed-time parameter.
+composer has its own cached role per ring, so ACTIVE rings require an explicit
+`event_composer_set_role()` update when the companion app changes roles.
+`event_composer_set_role()` clears buttons and accumulated deltas before
+switching roles so a held click cannot silently remap from left to right or
+middle click.
 
-**Implication for ROLE_SWAPPING state:** Because `event_composer_feed()` receives
-the role as a parameter on each call, and `role_engine_set_role()` is
-mutex-protected, the role change is effectively atomic from the composition
-perspective. The ROLE_SWAPPING state is therefore a logical state for the
-companion app's UI (to show a brief transition indicator) rather than a
-firmware-enforced pause. Buffered deltas in `acc_dx`/`acc_dy` that were
-accumulated under the old role will be composed under the new role on the next
-`event_composer_compose()` call. At 1ms poll rate, the maximum stale-role delta
-window is 1ms of accumulated motion -- imperceptible to the user.
+**Implication for ROLE_SWAPPING state:** Cached-role architecture removes the
+per-notification role-engine lookup from the BLE hot path. The tradeoff is that
+ROLE_SWAPPING now has real firmware work to do: update the cached role and drop
+any buffered deltas at the swap point. This intentionally favors safety over
+perfect continuity. Losing a few milliseconds of motion is preferable to
+misclassifying a held click or buffered deltas under the wrong role.
 
 #### `ROLE_SWAP` (0x03)
 
@@ -405,7 +404,8 @@ merged into the single `composed_report_t` sent via USB HID at 1ms intervals.
 For each connected ring `i` (where `s_rings[i].connected == true`):
 - `buttons_i`: last button state received via `event_composer_feed()`
 - `acc_dx_i`, `acc_dy_i`: accumulated deltas since last `event_composer_compose()`
-- `role_i`: role passed to the most recent `event_composer_feed()` call
+- `role_i`: cached role stored in the event composer when the ring connected or
+  when `event_composer_set_role()` last updated it
 
 ### 5.2 Composition Algorithm
 
@@ -490,20 +490,19 @@ When a ring's role changes (via companion app command) while it is actively
 producing deltas:
 
 1. The role engine's in-memory state changes atomically (mutex-protected).
-2. The next BLE notification from this ring triggers `on_ring_report()` in
-   `main.c`, which calls `role_engine_get_role(mac)` to get the new role.
-3. `event_composer_feed()` is called with the new role.
-4. Any deltas accumulated in `acc_dx`/`acc_dy` under the old role but not yet
-   consumed by `event_composer_compose()` will be composed under the new role.
+2. The hub calls `event_composer_set_role(ring_index, new_role)` for the ACTIVE
+   ring.
+3. `event_composer_set_role()` clears `buttons`, `acc_dx`, and `acc_dy`, then
+   stores the new cached role.
+4. Subsequent `event_composer_feed()` calls are composed under the new role.
 
-**Impact analysis:** At 1ms USB poll rate and ~15ms BLE connection interval,
-at most one BLE notification's worth of deltas (typically 1-2ms of motion) may
-be composed under the wrong role. This produces at most a few pixels of cursor
-movement appearing as scroll or vice versa -- imperceptible in practice.
+**Impact analysis:** At the swap point, one compose window's worth of buffered
+deltas may be intentionally dropped. This is acceptable: it avoids a more
+serious accessibility hazard where a held click silently changes semantic
+meaning across roles.
 
-**No pause is required.** The feed-time role parameter architecture
-(as opposed to a cached role in the composer) makes role changes inherently
-non-disruptive.
+**A brief pause is acceptable.** Cached-role architecture optimizes the BLE hot
+path and makes the role swap behavior explicit instead of implicit.
 
 ---
 
@@ -608,8 +607,8 @@ ACTIVE and ring B is KNOWN_DISCONNECTED.
 
 **Specified behavior:** The swap proceeds normally. Both entries exist in the
 role engine regardless of connection state. Ring A immediately begins operating
-under its new role (next BLE notification). Ring B will use its new role when
-it reconnects.
+under its new role after the hub updates the event composer's cached role.
+Ring B will use its new role when it reconnects.
 
 ### 6.8 Rapid Disconnect-Reconnect
 
@@ -619,8 +618,8 @@ it reconnects.
 **Specified behavior:**
 1. Disconnect handler fires: buttons released, deltas zeroed, `connected = false`.
 2. Scan resumes, ring is rediscovered.
-3. New connection established: `event_composer_mark_connected()` called, which
-   resets buttons to 0 and deltas to 0.
+3. New connection established: `event_composer_mark_connected(ring_index, role)`
+   is called, which resets buttons to 0, deltas to 0, and seeds the cached role.
 4. Role is re-read from role engine (same as before disconnect).
 5. User experiences a brief tracking dropout. No stuck buttons, no stale state.
 
@@ -659,24 +658,25 @@ NimBLE task, and both call `role_engine_set_role()` concurrently, the NVS write
 `flush_to_nvs()` call. Fix: either serialize companion commands onto the NimBLE
 task, or add a separate NVS write mutex.
 
-### 7.3 Design Decision: Role as Feed-Time Parameter
+### 7.3 Design Decision: Role Cached In Event Composer
 
-The current architecture passes the role as a parameter to `event_composer_feed()`
-on every BLE notification, rather than caching it in the event composer. This
-was a deliberate choice:
+The current architecture caches each ring's role in the event composer at
+connect time and updates it explicitly on role changes. `event_composer_feed()`
+therefore stays on the hot path without taking the role-engine mutex.
 
 **Advantages:**
-- Role changes take effect immediately (next BLE notification) without an
-  explicit "invalidate cache" step.
-- The event composer has no dependency on the role engine -- it receives roles
-  as opaque values.
-- No role-change notification mechanism needed between role engine and composer.
+- Removes one `role_engine_get_role()` call from every BLE HID notification.
+- Keeps the BLE notification path deterministic and cheap.
+- Makes live role changes explicit via `event_composer_set_role()`, where
+  button-release safety can be enforced in one place.
 
 **Disadvantage:**
-- One extra `role_engine_get_role()` call per BLE notification (linear scan of
-  up to 4 entries, trivially fast).
+- Companion-driven role changes now require an explicit cache update in the
+  event composer for ACTIVE rings.
+- Buffered motion at the swap point is intentionally discarded.
 
-This architecture is correct and should be preserved.
+This architecture is the right tradeoff for accessibility and should be
+preserved unless profiling shows the hot-path simplification is unnecessary.
 
 ---
 
@@ -736,8 +736,9 @@ Call `role_engine_init()`. Verify only one entry survives (the last one).
 
 **T-EC-1: Role change mid-stream.**
 Connect ring 0 as CURSOR. Feed 3 reports with dx=10. Compose (expect
-cursor_dx=30). Feed 3 more reports but with role=SCROLL. Compose. Verify
-cursor_dx=0, scroll_h=30.
+cursor_dx=30). Call `event_composer_set_role(0, ROLE_SCROLL)`. Compose. Verify
+the compose immediately after the swap is zeroed (old state cleared). Feed 3
+more reports. Compose. Verify cursor_dx=0, scroll_h=30.
 
 **T-EC-2: Two rings same role.**
 Connect ring 0 and ring 1 both as CURSOR. Feed dx=10 to ring 0, dx=5 to

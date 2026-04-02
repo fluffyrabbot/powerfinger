@@ -27,14 +27,17 @@ hal_status_t event_composer_init(void);
 // The connected flag is managed exclusively by mark_connected / ring_disconnected.
 // feed() does NOT set connected — prevents stale BLE notifications from
 // resurrecting a disconnected ring.
-void event_composer_mark_connected(uint8_t ring_index);
+void event_composer_mark_connected(uint8_t ring_index, ring_role_t role);
+
+// Update a connected ring's cached role.
+// On role change, buttons and accumulated deltas are cleared so a held click
+// cannot change meaning across roles (e.g. left -> right) without a release.
+void event_composer_set_role(uint8_t ring_index, ring_role_t role);
 
 // Feed a ring's HID report into the composer.
 // ring_index: which ring (0-3)
-// role: the ring's assigned role
 // buttons, dx, dy: from the ring's BLE HID notification
-void event_composer_feed(uint8_t ring_index, ring_role_t role,
-                         uint8_t buttons, int8_t dx, int8_t dy);
+void event_composer_feed(uint8_t ring_index, uint8_t buttons, int8_t dx, int8_t dy);
 
 // Handle ring disconnection. Immediately releases all buttons and
 // zeroes deltas contributed by this ring.

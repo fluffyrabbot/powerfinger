@@ -8,6 +8,10 @@ the links below — this document is the concise build spec.
 - Glide system: [GLIDE-SYSTEM.md](GLIDE-SYSTEM.md)
 - IP landscape: [IP-STRATEGY.md](IP-STRATEGY.md)
 
+This spec follows the active scope freeze in
+[GO-NO-GO-RUBRIC.md](GO-NO-GO-RUBRIC.md): the optical ring pair + hub is the
+primary validation lane, and the wand is the hedge lane.
+
 ---
 
 ## Prototype 1 — Optical Ring Pair (x2 identical units)
@@ -26,8 +30,9 @@ the links below — this document is the concise build spec.
 | Sensor cavity | Matte black interior (prevent LED wash-out) |
 | BOM target | ~$9 each |
 
-Two identical units. Companion app assigns roles (cursor + left click on one,
-scroll + right click on the other). Together they are a complete mouse for ~$18.
+Two identical units. The hub assigns the default roles (cursor + left click on
+one, scroll + right click on the other); a companion app may reassign later.
+This pair is the first concept-validation lane, not a proven product claim yet.
 
 This is the P0 build. Everything else depends on this working.
 
@@ -47,9 +52,9 @@ This is the P0 build. Everything else depends on this working.
 | Glide | No raised rim needed — ball protrudes below shell, contacts surface directly |
 | BOM target | ~$11 each |
 
-Surface-agnostic: works on glass, fabric, skin, mirror, anything. Validates
-whether the Hall sensor array can resolve usable cursor deltas from a 5mm ball
-at finger-pressure force levels.
+Surface-agnostic target: glass, fabric, skin, mirror, and other hard cases.
+This prototype exists to validate whether the Hall sensor array can actually
+resolve usable cursor deltas from a 5mm ball at finger-pressure force levels.
 
 ---
 
@@ -66,12 +71,11 @@ at finger-pressure force levels.
 | Protocol | BLE HID mouse |
 | BOM target | ~$14 |
 
-Pen grip, drag on any surface. The ball at the tip must accommodate 30–70
-degree pen angles from horizontal. The ball+Hall sensor is angle-independent —
-unlike optical pen mice that fail past ~20 degrees, this works at any natural
-pen grip angle. No commercial pen mouse offers surface agnosticism + angle
-independence + BLE HID (no dongle). See [WAND-COMPETITIVE.md](WAND-COMPETITIVE.md)
-for the full competitive analysis.
+Pen-grip hedge lane. The ball at the tip must accommodate 30–70 degree pen
+angles from horizontal. The ball+Hall sensor is intended to be angle-independent
+and surface-flexible, unlike optical pen mice that fail past ~20 degrees, but
+those claims remain hypotheses until bench testing is complete. See
+[WAND-COMPETITIVE.md](WAND-COMPETITIVE.md) for the full competitive analysis.
 
 ---
 
@@ -86,10 +90,11 @@ for the full competitive analysis.
 | Enclosure | 3D-printed, small USB-stick form factor |
 | BOM target | ~$5-6 |
 
-The hub pairs with multiple PowerFinger devices over BLE, assigns roles
-(first ring = cursor + left click, second = scroll + right click), composes
-their events into a single USB HID mouse report, and presents to the OS as
-one mouse. No companion app required. No drivers. Works on any OS with USB.
+The hub is the intended P0 composition path: it pairs with multiple PowerFinger
+devices over BLE, assigns roles (first ring = cursor + left click, second =
+scroll + right click), composes their events into a single USB HID mouse
+report, and presents to the OS as one mouse. No host-side remapping software is
+required if this path validates cleanly.
 
 A single ring also works without the hub — pairs directly with the host as a
 standard BLE HID mouse for basic cursor + click.
@@ -145,7 +150,7 @@ These are non-negotiable — see CLAUDE.md and the design docs for full rational
   power-gated via MOSFET in sleep.
 - **BOM ceiling:** No single variant may exceed $25. The cheapest ring must stay
   under $10.
-- **BLE HID latency < 15ms.** Default 15ms connection interval with adaptive
+- **BLE HID latency < 20ms.** Default 15ms connection interval with adaptive
   switch to 7.5ms during active tracking.
 - **Ring height budget: ~10mm** finger-to-surface. Sensor + PCB + battery must
   fit in ~7-8mm above surface with 2.5-3mm air gap below.
