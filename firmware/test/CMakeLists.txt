@@ -91,6 +91,13 @@ target_include_directories(ring_settings PUBLIC
     ../ring/components/state_machine/include
 )
 
+add_library(ring_identity STATIC
+    ../ring/components/hal/ring_identity.c
+)
+target_include_directories(ring_identity PUBLIC
+    ../ring/components/hal/include
+)
+
 add_library(role_engine STATIC
     ../hub/components/role_engine/role_engine.c
 )
@@ -133,6 +140,7 @@ add_executable(powerfinger_tests
     test_power_manager.c
     test_ring_runtime_health.c
     test_ring_settings.c
+    test_ring_identity.c
     test_role_engine.c
     test_event_composer.c
     test_usb_hid.c
@@ -148,6 +156,7 @@ target_link_libraries(powerfinger_tests
     power_manager
     ring_runtime_health
     ring_settings
+    ring_identity
     role_engine
     event_composer
     usb_hid

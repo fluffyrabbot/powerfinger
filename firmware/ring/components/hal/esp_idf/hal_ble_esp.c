@@ -5,8 +5,10 @@
 // interface exposes only HID-level operations.
 
 #include "hal_ble.h"
+#include "ring_identity.h"
 #include "ring_settings.h"
 #include "esp_log.h"
+#include "esp_mac.h"
 #include "esp_nimble_hci.h"
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
@@ -40,7 +42,7 @@ static atomic_bool s_connected = false;
 static const char *s_device_name = "PowerFinger";
 static uint32_t s_adv_timeout_ms = 0;
 static uint8_t s_battery_level = 0;
-static const uint8_t s_firmware_version[] = { 0x00, 0x01, 0x00 };
+static char s_serial_number[18] = "UNKNOWN";
 
 // PowerFinger discovery marker carried in the HID Service Data AD field.
 // Layout: [0x12, 0x18, 'P', 'F', 'R', 0x01]
@@ -176,6 +178,30 @@ static const struct ble_gatt_svc_def s_gatt_svcs[] = {
                 .flags = BLE_GATT_CHR_F_READ,
             },
             {
+                // Model Number
+                .uuid = BLE_UUID16_DECLARE(0x2A24),
+                .access_cb = ble_hid_info_access,
+                .flags = BLE_GATT_CHR_F_READ,
+            },
+            {
+                // Serial Number
+                .uuid = BLE_UUID16_DECLARE(0x2A25),
+                .access_cb = ble_hid_info_access,
+                .flags = BLE_GATT_CHR_F_READ,
+            },
+            {
+                // Firmware Revision
+                .uuid = BLE_UUID16_DECLARE(0x2A26),
+                .access_cb = ble_hid_info_access,
+                .flags = BLE_GATT_CHR_F_READ,
+            },
+            {
+                // Hardware Revision
+                .uuid = BLE_UUID16_DECLARE(0x2A27),
+                .access_cb = ble_hid_info_access,
+                .flags = BLE_GATT_CHR_F_READ,
+            },
+            {
                 // PnP ID
                 .uuid = BLE_UUID16_DECLARE(0x2A50),
                 .access_cb = ble_hid_info_access,
@@ -279,6 +305,17 @@ static int ble_hid_info_access(uint16_t conn_handle, uint16_t attr_handle,
             // Manufacturer Name
             const char *name = "PowerFinger";
             rc = os_mbuf_append(ctxt->om, name, strlen(name));
+        } else if (ble_uuid_cmp(uuid, BLE_UUID16_DECLARE(0x2A24)) == 0) {
+            const char *model = ring_identity_model_number();
+            rc = os_mbuf_append(ctxt->om, model, strlen(model));
+        } else if (ble_uuid_cmp(uuid, BLE_UUID16_DECLARE(0x2A25)) == 0) {
+            rc = os_mbuf_append(ctxt->om, s_serial_number, strlen(s_serial_number));
+        } else if (ble_uuid_cmp(uuid, BLE_UUID16_DECLARE(0x2A26)) == 0) {
+            const char *fw_rev = ring_identity_firmware_revision();
+            rc = os_mbuf_append(ctxt->om, fw_rev, strlen(fw_rev));
+        } else if (ble_uuid_cmp(uuid, BLE_UUID16_DECLARE(0x2A27)) == 0) {
+            const char *hw_rev = ring_identity_hardware_revision();
+            rc = os_mbuf_append(ctxt->om, hw_rev, strlen(hw_rev));
         } else if (ble_uuid_cmp(uuid, BLE_UUID16_DECLARE(0x2A50)) == 0) {
             // PnP ID: Bluetooth SIG vendor source (0x02), no assigned VID/PID yet
             uint8_t pnp_id[] = { 0x02, 0xFF, 0xFF, 0x01, 0x00, 0x01, 0x00 };
@@ -329,6 +366,8 @@ static int ble_pf_config_access(uint16_t conn_handle, uint16_t attr_handle,
     const ble_uuid_t *uuid = ctxt->chr->uuid;
 
     if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
+        uint8_t firmware_version[3] = {0};
+
         if (ble_uuid_cmp(uuid, PF_UUID128_DPI) == 0) {
             return ble_append_u8(ctxt, ring_settings_get_dpi_multiplier());
         }
@@ -339,7 +378,8 @@ static int ble_pf_config_access(uint16_t conn_handle, uint16_t attr_handle,
             return ble_append_u8(ctxt, ring_settings_get_dead_zone_distance());
         }
         if (ble_uuid_cmp(uuid, PF_UUID128_FIRMWARE_VERSION) == 0) {
-            return ble_append_bytes(ctxt, s_firmware_version, sizeof(s_firmware_version));
+            ring_identity_firmware_version(firmware_version);
+            return ble_append_bytes(ctxt, firmware_version, sizeof(firmware_version));
         }
         return BLE_ATT_ERR_UNLIKELY;
     }
@@ -642,6 +682,21 @@ hal_status_t hal_ble_init(const char *device_name, hal_ble_event_cb_t cb, void *
     s_app_cb_arg = arg;
     if (device_name) {
         s_device_name = device_name;
+    }
+
+    uint8_t bt_mac[6] = {0};
+    esp_err_t mac_rc = esp_read_mac(bt_mac, ESP_MAC_BT);
+    if (mac_rc == ESP_OK) {
+        if (ring_identity_format_serial(bt_mac,
+                                        s_serial_number,
+                                        sizeof(s_serial_number)) != HAL_OK) {
+            strncpy(s_serial_number, "UNKNOWN", sizeof(s_serial_number) - 1);
+            s_serial_number[sizeof(s_serial_number) - 1] = '\0';
+        }
+    } else {
+        ESP_LOGW(TAG, "esp_read_mac failed: %s", esp_err_to_name(mac_rc));
+        strncpy(s_serial_number, "UNKNOWN", sizeof(s_serial_number) - 1);
+        s_serial_number[sizeof(s_serial_number) - 1] = '\0';
     }
 
     esp_err_t ret = nimble_port_init();

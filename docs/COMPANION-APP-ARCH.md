@@ -8,10 +8,11 @@ app is how you customize, not how you use.
 **Status:** This document is still mostly post-validation architecture, but the
 ring now ships a minimal pre-hardware config surface: BLE characteristics for
 DPI multiplier, dead-zone time, dead-zone distance, and firmware version, all
-backed by deferred NVS persistence. Deferred until after the first hardware
-validation gates: gesture tables, OTA relay UX, expanded Device Information
-metadata, charge-fault telemetry, and rich companion workflows unless the BDFL
-reprioritizes them.
+backed by deferred NVS persistence. It also now exposes the standard Device
+Information identity fields (model, firmware revision, hardware revision, and
+serial number) for bring-up and companion readback. Deferred until after the
+first hardware validation gates: gesture tables, OTA relay UX, charge-fault
+telemetry, and rich companion workflows unless the BDFL reprioritizes them.
 
 **What the app configures:**
 - Role assignment (which ring is cursor, which is scroll, which is modifier)
@@ -140,22 +141,21 @@ scanners. The `xxxx` field differentiates services and characteristics.
 
 ### 2.2 Standard Services (Already Implemented)
 
-These already exist in `hal_ble_esp.c` and require no changes:
+These now exist in `hal_ble_esp.c`:
 
 | Service | UUID | Characteristics |
 |---------|------|----------------|
 | Battery Service | 0x180F | Battery Level (0x2A19): Read, Notify. uint8_t 0-100 percent. |
-| Device Information | 0x180A | Manufacturer Name (0x2A29): Read. PnP ID (0x2A50): Read. |
+| Device Information | 0x180A | Manufacturer Name (0x2A29), Model Number (0x2A24), Serial Number (0x2A25), Firmware Revision (0x2A26), Hardware Revision (0x2A27), PnP ID (0x2A50): Read |
 
-**Addition to Device Information Service (still deferred):** Add these standard
-characteristics to the existing 0x180A service:
+The ring now exposes these standard Device Information characteristics:
 
 | Characteristic | UUID | Properties | Format | Notes |
 |---------------|------|------------|--------|-------|
-| Model Number | 0x2A24 | Read | UTF-8 string | "Ring-S" (standard), "Ring-P" (pro), "Hub" |
-| Firmware Revision | 0x2A26 | Read | UTF-8 string | SemVer, e.g. "1.2.3" |
-| Hardware Revision | 0x2A27 | Read | UTF-8 string | PCB revision, e.g. "P0-R2" |
-| Serial Number | 0x2A25 | Read | UTF-8 string | Unique per device, derived from ESP32 MAC |
+| Model Number | 0x2A24 | Read | UTF-8 string | `Ring-Dev` for bare Phase 0 dev-board builds, `Ring-S` for standard builds, `Ring-P` for pro builds |
+| Firmware Revision | 0x2A26 | Read | UTF-8 string | Current pre-hardware value: `0.1.0` |
+| Hardware Revision | 0x2A27 | Read | UTF-8 string | Current pre-PCB value: `DEVBOARD-C3`; replace with board spin strings such as `P0-R1` once hardware exists |
+| Serial Number | 0x2A25 | Read | UTF-8 string | Unique 12-digit uppercase hex string derived from the ring's Bluetooth MAC |
 
 ### 2.3 PowerFinger Config Service (0x0001) -- Characteristic Details
 
@@ -947,7 +947,8 @@ requires changes to:
 
 3. **Device Information Service** -- Add Model Number (0x2A24), Firmware
    Revision (0x2A26), Hardware Revision (0x2A27), and Serial Number
-   (0x2A25) characteristics to the existing 0x180A service. Still deferred.
+   (0x2A25) characteristics to the existing 0x180A service. This is now done
+   for the ring, with `DEVBOARD-C3` used until real PCB revisions exist.
 
 4. **Hub firmware** -- Add a USB CDC serial command parser that dispatches
    the commands from section 3. The parser runs in a dedicated FreeRTOS

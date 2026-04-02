@@ -2,6 +2,7 @@
 # PowerFinger — Platform Hardware Abstraction Layer
 
 set(HAL_SRCS
+    "ring_identity.c"
     "ring_settings.c"
     "esp_idf/hal_gpio_esp.c"
     "esp_idf/hal_spi_esp.c"
@@ -16,6 +17,6 @@ set(HAL_SRCS
 idf_component_register(
     SRCS ${HAL_SRCS}
     INCLUDE_DIRS "include"
-    REQUIRES driver nvs_flash esp_timer esp_adc esp_pm bt esp_app_format
+    REQUIRES driver nvs_flash esp_timer esp_adc esp_pm bt esp_app_format esp_hw_support
     PRIV_REQUIRES app_update
 )
