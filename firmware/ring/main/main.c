@@ -56,6 +56,34 @@ static hal_status_t attempt_sensor_recovery(bool had_working_sensor)
     return sensor_init();
 }
 
+static bool try_late_calibration(bool sensor_ok,
+                                 bool *sensor_calibrated,
+                                 uint32_t *next_calibration_attempt_ms,
+                                 uint32_t now_ms)
+{
+    if (!sensor_ok || !sensor_calibrated || !next_calibration_attempt_ms) {
+        return false;
+    }
+    if (*sensor_calibrated || hal_ble_is_connected() ||
+        now_ms < *next_calibration_attempt_ms) {
+        return false;
+    }
+
+    hal_status_t cal_rc = calibration_attempt_once();
+    if (cal_rc == HAL_OK) {
+        *sensor_calibrated = calibration_is_valid();
+        *next_calibration_attempt_ms = 0;
+        ESP_LOGI(TAG, "late calibration succeeded — motion input ready");
+        return *sensor_calibrated;
+    }
+
+    calibration_reset();
+    *next_calibration_attempt_ms = now_ms + CALIBRATION_RETRY_DELAY_MS;
+    ESP_LOGW(TAG, "late calibration failed — retrying in %d ms while disconnected",
+             CALIBRATION_RETRY_DELAY_MS);
+    return false;
+}
+
 static void handle_hid_send_result(ring_runtime_health_t *runtime_health,
                                    hal_status_t send_rc,
                                    uint32_t now_ms)
@@ -232,9 +260,12 @@ void app_main(void)
 
     ring_runtime_health_t runtime_health;
     ring_runtime_health_init(&runtime_health);
+    calibration_reset();
 
     // Initialize sensor (check for failure)
     bool sensor_ok = (sensor_init() == HAL_OK);
+    bool sensor_calibrated = false;
+    uint32_t next_calibration_attempt_ms = 0;
     if (!sensor_ok) {
         ESP_LOGE(TAG, "sensor init failed — motion input disabled, click path still available");
         ring_runtime_health_mark_sensor_unavailable(&runtime_health, hal_timer_get_ms());
@@ -252,6 +283,10 @@ void app_main(void)
     hal_status_t cal_ret = HAL_ERR_TIMEOUT;
     if (sensor_ok) {
         cal_ret = calibration_run();
+        sensor_calibrated = calibration_is_valid();
+        if (!sensor_calibrated) {
+            next_calibration_attempt_ms = hal_timer_get_ms() + CALIBRATION_RETRY_DELAY_MS;
+        }
     } else {
         ESP_LOGW(TAG, "skipping calibration until sensor recovers");
     }
@@ -337,7 +372,10 @@ void app_main(void)
 
             if (recovery_rc == HAL_OK) {
                 sensor_ok = true;
-                if (recovery_update.event == RING_SENSOR_HEALTH_RECOVERED) {
+                if (!sensor_calibrated) {
+                    next_calibration_attempt_ms = now;
+                    ESP_LOGI(TAG, "sensor recovered — waiting for late calibration before motion resumes");
+                } else if (recovery_update.event == RING_SENSOR_HEALTH_RECOVERED) {
                     ESP_LOGI(TAG, "sensor recovery succeeded — motion input restored");
                 }
             } else {
@@ -346,7 +384,14 @@ void app_main(void)
             }
         }
 
-        if (sensor_ok) {
+        if (try_late_calibration(sensor_ok,
+                                 &sensor_calibrated,
+                                 &next_calibration_attempt_ms,
+                                 now)) {
+            dead_zone_reset();
+        }
+
+        if (sensor_ok && sensor_calibrated) {
             hal_status_t sensor_rc = sensor_read(&reading);
             ring_sensor_health_update_t sensor_update =
                 ring_runtime_health_note_sensor_result(&runtime_health, sensor_rc, now);

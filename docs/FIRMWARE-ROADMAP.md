@@ -74,7 +74,9 @@ perceptible threshold (~20ms end-to-end). Drift at rest < 1 pixel per 10 seconds
   from mounting angle doesn't bias the cursor. If standard deviation of sensor
   readings during calibration exceeds `CALIBRATION_MOTION_THRESHOLD`, re-run
   calibration after 500ms (device was moving during boot). Max 3 retries; on
-  failure, use zero offset and log a warning.
+  failure, use zero offset and log a warning. If the sensor later recovers
+  after a boot-time fault or failed motiony startup, retry single calibration
+  passes while disconnected until a valid baseline is captured.
 - **Click-and-drag.** When dome is held and finger moves beyond dead zone exit
   conditions above, re-enable delta reporting for intentional drag.
 
@@ -132,7 +134,10 @@ Open links, close tabs, select text.
   HID notify failures should trigger a restart after a bounded window of
   continuous failure so the ring does not stay connected-but-dead.
   `HAL_ERR_BUSY` is treated as transient and does not count toward that
-  restart window.
+  restart window. If motion input comes back without a valid calibration
+  baseline, keep cursor motion disabled and retry one-shot calibration while
+  disconnected rather than blocking the connected hot path for a full
+  multi-retry calibration cycle.
 - **Hall sensor power gating** (ball variants only). The DRV5053 has no sleep
   mode — four sensors draw ~12mA continuously. Add a MOSFET or load switch on
   the Hall sensor VCC rail, controlled by a GPIO. Gate off in idle/deep sleep.
