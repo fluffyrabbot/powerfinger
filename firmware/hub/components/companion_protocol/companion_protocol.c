@@ -4,6 +4,7 @@
 #include "companion_protocol.h"
 
 #include "ble_central.h"
+#include "hub_control.h"
 #include "role_engine.h"
 
 #include <ctype.h>
@@ -110,6 +111,42 @@ static char *skip_spaces(char *cursor)
     return cursor;
 }
 
+static char *next_token(char **cursor)
+{
+    if (!cursor || !*cursor) {
+        return NULL;
+    }
+
+    char *token = skip_spaces(*cursor);
+    if (*token == '\0') {
+        *cursor = token;
+        return NULL;
+    }
+
+    char *end = token;
+    while (*end != '\0' && !isspace((unsigned char)*end)) {
+        end++;
+    }
+
+    if (*end != '\0') {
+        *end++ = '\0';
+    }
+    *cursor = end;
+    return token;
+}
+
+static int hex_nibble(char c)
+{
+    if (c >= '0' && c <= '9') {
+        return c - '0';
+    }
+    c = (char)toupper((unsigned char)c);
+    if (c >= 'A' && c <= 'F') {
+        return 10 + (c - 'A');
+    }
+    return -1;
+}
+
 static hal_status_t format_mac(const uint8_t mac[6],
                                char *mac_out,
                                size_t mac_out_len)
@@ -127,6 +164,55 @@ static hal_status_t format_mac(const uint8_t mac[6],
     }
 
     return HAL_OK;
+}
+
+static hal_status_t parse_mac_token(const char *token, uint8_t mac_out[6])
+{
+    if (!token || !mac_out) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    if (strlen(token) != 17) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    for (int i = 0; i < 6; i++) {
+        int hi = hex_nibble(token[i * 3]);
+        int lo = hex_nibble(token[i * 3 + 1]);
+        if (hi < 0 || lo < 0) {
+            return HAL_ERR_INVALID_ARG;
+        }
+
+        mac_out[i] = (uint8_t)((hi << 4) | lo);
+
+        if (i < 5 && token[i * 3 + 2] != ':') {
+            return HAL_ERR_INVALID_ARG;
+        }
+    }
+
+    return HAL_OK;
+}
+
+static hal_status_t parse_role_token(const char *token, ring_role_t *role_out)
+{
+    if (!token || !role_out) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    if (token_equals_ignore_case(token, "CURSOR")) {
+        *role_out = ROLE_CURSOR;
+        return HAL_OK;
+    }
+    if (token_equals_ignore_case(token, "SCROLL")) {
+        *role_out = ROLE_SCROLL;
+        return HAL_OK;
+    }
+    if (token_equals_ignore_case(token, "MODIFIER")) {
+        *role_out = ROLE_MODIFIER;
+        return HAL_OK;
+    }
+
+    return HAL_ERR_INVALID_ARG;
 }
 
 static hal_status_t handle_get_hub_info(const companion_protocol_hub_info_t *hub_info,
@@ -199,6 +285,65 @@ static hal_status_t handle_get_roles(char *response_out, size_t response_out_len
     return append_format(&builder, "OK\n");
 }
 
+static hal_status_t handle_set_role(char *args,
+                                    char *response_out,
+                                    size_t response_out_len)
+{
+    char *cursor = args;
+    char *mac_token = next_token(&cursor);
+    char *role_token = next_token(&cursor);
+
+    if (!mac_token || !role_token) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_args");
+    }
+    if (next_token(&cursor) != NULL) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "unexpected_args");
+    }
+
+    uint8_t mac[6] = {0};
+    if (parse_mac_token(mac_token, mac) != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_mac");
+    }
+
+    ring_role_t role = ROLE_CURSOR;
+    if (parse_role_token(role_token, &role) != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_role");
+    }
+
+    hal_status_t rc = hub_control_set_role(mac, role);
+    if (rc == HAL_OK) {
+        response_builder_t builder = {
+            .buf = response_out,
+            .len = response_out_len,
+            .used = 0,
+        };
+        return append_format(&builder, "OK\n");
+    }
+    if (rc == HAL_ERR_NOT_FOUND) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    404,
+                                    "unknown_mac");
+    }
+
+    return write_protocol_error(response_out,
+                                response_out_len,
+                                500,
+                                "role_write_failed");
+}
+
 hal_status_t companion_protocol_handle_line(const char *line,
                                             const companion_protocol_hub_info_t *hub_info,
                                             char *response_out,
@@ -249,6 +394,10 @@ hal_status_t companion_protocol_handle_line(const char *line,
                                         "unexpected_args");
         }
         return handle_get_roles(response_out, response_out_len);
+    }
+
+    if (token_equals_ignore_case(command, "SET_ROLE")) {
+        return handle_set_role(args, response_out, response_out_len);
     }
 
     return write_protocol_error(response_out,

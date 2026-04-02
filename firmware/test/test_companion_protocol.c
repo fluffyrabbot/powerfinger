@@ -29,6 +29,7 @@ static companion_protocol_hub_info_t default_hub_info(uint8_t connected_rings)
 static void reset(void)
 {
     mock_hal_reset();
+    mock_ble_central_clear_connected_rings();
     TEST_ASSERT_EQUAL(HAL_OK, role_engine_init());
 }
 
@@ -104,6 +105,67 @@ void test_unknown_command_returns_protocol_error(void)
     TEST_ASSERT_TRUE(strcmp("ERR 400 unknown_command\n", response) == 0);
 }
 
+void test_set_role_reassigns_known_ring(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("SET_ROLE 10:11:12:13:14:15 modifier",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("OK\n", response) == 0);
+    TEST_ASSERT_EQUAL(ROLE_MODIFIER, role_engine_get_role(MAC_A));
+}
+
+void test_command_set_role_rejects_unknown_mac(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("SET_ROLE 10:11:12:13:14:15 SCROLL",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("ERR 404 unknown_mac\n", response) == 0);
+}
+
+void test_set_role_rejects_invalid_role_name(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("SET_ROLE 10:11:12:13:14:15 FOOBAR",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("ERR 400 invalid_role\n", response) == 0);
+}
+
+void test_set_role_rejects_invalid_mac_format(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("SET_ROLE 10-11-12-13-14-15 SCROLL",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("ERR 400 invalid_mac\n", response) == 0);
+}
+
 void test_extra_args_are_rejected(void)
 {
     reset();
@@ -125,5 +187,9 @@ void run_companion_protocol_tests(void)
     RUN_TEST(test_get_roles_formats_known_assignments);
     RUN_TEST(test_get_roles_returns_ok_when_empty);
     RUN_TEST(test_unknown_command_returns_protocol_error);
+    RUN_TEST(test_set_role_reassigns_known_ring);
+    RUN_TEST(test_command_set_role_rejects_unknown_mac);
+    RUN_TEST(test_set_role_rejects_invalid_role_name);
+    RUN_TEST(test_set_role_rejects_invalid_mac_format);
     RUN_TEST(test_extra_args_are_rejected);
 }

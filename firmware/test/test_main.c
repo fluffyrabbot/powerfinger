@@ -15,6 +15,7 @@ extern void run_ring_settings_tests(void);
 extern void run_ring_identity_tests(void);
 extern void run_hub_identity_tests(void);
 extern void run_role_engine_tests(void);
+extern void run_hub_control_tests(void);
 extern void run_companion_protocol_tests(void);
 extern void run_event_composer_tests(void);
 extern void run_usb_hid_tests(void);
@@ -33,6 +34,7 @@ int main(void)
     run_ring_identity_tests();
     run_hub_identity_tests();
     run_role_engine_tests();
+    run_hub_control_tests();
     run_companion_protocol_tests();
     run_event_composer_tests();
     run_usb_hid_tests();

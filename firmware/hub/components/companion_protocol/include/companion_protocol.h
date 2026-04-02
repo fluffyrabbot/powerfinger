@@ -3,8 +3,9 @@
 //
 // This transport-agnostic parser handles the text protocol used by the future
 // USB CDC task and other hub-side control surfaces. Pre-hardware it supports
-// the read-only GET_HUB_INFO and GET_ROLES commands so companion tooling can
-// be developed against a real command contract before serial transport exists.
+// GET_HUB_INFO, GET_ROLES, and the first mutating hub command (SET_ROLE) so
+// companion tooling can exercise both read and write role flows before serial
+// transport exists.
 
 #pragma once
 

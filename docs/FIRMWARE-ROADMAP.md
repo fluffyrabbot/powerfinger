@@ -283,9 +283,10 @@ app is the configuration UI — a luxury, not a requirement. It's how you
 customize, not how you use.
 
 **Pre-hardware status:** The hub now has shared identity strings plus a
-host-tested text command core for `GET_HUB_INFO` and `GET_ROLES`, so the
-command contract no longer lives only in docs. USB CDC transport, write-side
-commands, and BLE relay operations are still pending.
+host-tested text command core for `GET_HUB_INFO`, `GET_ROLES`, and `SET_ROLE`,
+so the command contract no longer lives only in docs and the first write-side
+role path is real before transport arrives. USB CDC transport, the rest of the
+hub command set, and BLE relay operations are still pending.
 
 **Platform priority:**
 1. **Web Serial** (Chrome/Edge) — talks to hub over USB serial from a webpage.

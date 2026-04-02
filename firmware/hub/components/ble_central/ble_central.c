@@ -587,6 +587,30 @@ hal_status_t ble_central_get_mac(uint8_t ring_index, uint8_t mac_out[6])
 #endif
 }
 
+hal_status_t ble_central_find_ring_index_by_mac(const uint8_t mac[6],
+                                                uint8_t *ring_index_out)
+{
+    if (!mac || !ring_index_out) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+#ifdef ESP_PLATFORM
+    RINGS_LOCK();
+    for (uint8_t i = 0; i < HUB_MAX_RINGS; i++) {
+        if (s_rings[i].connected && memcmp(s_rings[i].mac, mac, 6) == 0) {
+            *ring_index_out = i;
+            RINGS_UNLOCK();
+            return HAL_OK;
+        }
+    }
+    RINGS_UNLOCK();
+#else
+    (void)mac;
+#endif
+
+    return HAL_ERR_NOT_FOUND;
+}
+
 uint8_t ble_central_connected_count(void)
 {
 #ifdef ESP_PLATFORM

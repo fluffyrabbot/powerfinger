@@ -10,6 +10,7 @@
 #include "hal_spi.h"
 #include "hal_ble.h"
 #include "hal_ota.h"
+#include "ble_central.h"
 
 #include <string.h>
 
@@ -38,6 +39,8 @@ static hal_status_t s_storage_set_status = HAL_OK;
 static int s_storage_set_fail_count = 0;
 static hal_status_t s_storage_commit_status = HAL_OK;
 static int s_storage_commit_fail_count = 0;
+static bool s_mock_ring_present[HUB_MAX_RINGS] = {0};
+static uint8_t s_mock_ring_macs[HUB_MAX_RINGS][6] = {{0}};
 
 void mock_hal_reset(void)
 {
@@ -63,6 +66,8 @@ void mock_hal_reset(void)
     s_storage_set_fail_count = 0;
     s_storage_commit_status = HAL_OK;
     s_storage_commit_fail_count = 0;
+    memset(s_mock_ring_present, 0, sizeof(s_mock_ring_present));
+    memset(s_mock_ring_macs, 0, sizeof(s_mock_ring_macs));
 }
 
 void mock_hal_set_time_ms(uint32_t ms) { s_time_ms = ms; }
@@ -101,6 +106,22 @@ void mock_hal_inject_storage_commit_failure(hal_status_t status, int count)
 {
     s_storage_commit_status = status;
     s_storage_commit_fail_count = count;
+}
+
+void mock_ble_central_clear_connected_rings(void)
+{
+    memset(s_mock_ring_present, 0, sizeof(s_mock_ring_present));
+    memset(s_mock_ring_macs, 0, sizeof(s_mock_ring_macs));
+}
+
+void mock_ble_central_set_connected_ring(uint8_t ring_index, const uint8_t mac[6])
+{
+    if (ring_index >= HUB_MAX_RINGS || !mac) {
+        return;
+    }
+
+    s_mock_ring_present[ring_index] = true;
+    memcpy(s_mock_ring_macs[ring_index], mac, sizeof(s_mock_ring_macs[ring_index]));
 }
 
 int mock_hal_get_ble_conn_param_request_count(void)
@@ -258,3 +279,22 @@ hal_status_t hal_ota_finish(hal_ota_handle_t h) { (void)h; return HAL_OK; }
 void hal_ota_reboot(void) {}
 hal_status_t hal_ota_confirm(void) { return HAL_OK; }
 void hal_ota_rollback(void) {}
+
+// --- ble_central mock helpers used by host-side hub tests ---
+hal_status_t ble_central_find_ring_index_by_mac(const uint8_t mac[6],
+                                                uint8_t *ring_index_out)
+{
+    if (!mac || !ring_index_out) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    for (uint8_t i = 0; i < HUB_MAX_RINGS; i++) {
+        if (s_mock_ring_present[i] &&
+            memcmp(s_mock_ring_macs[i], mac, sizeof(s_mock_ring_macs[i])) == 0) {
+            *ring_index_out = i;
+            return HAL_OK;
+        }
+    }
+
+    return HAL_ERR_NOT_FOUND;
+}

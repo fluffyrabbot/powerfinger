@@ -638,8 +638,8 @@ The following protocol pieces are still incomplete in the current codebase:
 | Function | Module | Purpose |
 |----------|--------|---------|
 | `role_engine_swap(mac_a, mac_b)` | `role_engine.c` | Atomic role swap under single mutex acquisition |
-| Companion command parser transport wiring | New module | Hook the existing read-only parser into USB CDC and extend it beyond `GET_HUB_INFO` / `GET_ROLES` |
-| `SET_ROLE`, `ROLE_SWAP`, `FORGET_RING` dispatch path | Companion command task | Apply live role mutations and keep the event-composer cache in sync |
+| Companion command parser transport wiring | New module | Hook the existing parser core into USB CDC and extend the remaining hub commands beyond `GET_HUB_INFO` / `GET_ROLES` / `SET_ROLE` |
+| `ROLE_SWAP`, `FORGET_RING` dispatch path | Companion command task | Extend the existing `SET_ROLE` live-sync path to swap / forget semantics |
 
 ### 7.2 Thread Safety Summary
 

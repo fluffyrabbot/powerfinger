@@ -34,6 +34,10 @@ hal_status_t ble_central_init(hub_ring_report_cb_t report_cb,
 // Get the BLE MAC address of a connected ring (for role engine)
 hal_status_t ble_central_get_mac(uint8_t ring_index, uint8_t mac_out[6]);
 
+// Find the active ring slot for a connected MAC address.
+hal_status_t ble_central_find_ring_index_by_mac(const uint8_t mac[6],
+                                                uint8_t *ring_index_out);
+
 // Get number of currently connected rings
 uint8_t ble_central_connected_count(void);
 

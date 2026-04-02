@@ -7,6 +7,7 @@
 #pragma once
 
 #include "hal_types.h"
+#include <stdint.h>
 
 // Reset all mock state between tests
 void mock_hal_reset(void);
@@ -23,6 +24,10 @@ void mock_hal_set_adc_status(hal_status_t status);
 void mock_hal_storage_seed(const char *key, const void *data, size_t len);
 void mock_hal_inject_storage_set_failure(hal_status_t status, int count);
 void mock_hal_inject_storage_commit_failure(hal_status_t status, int count);
+
+// --- Hub BLE central mock (for hub control / companion protocol tests) ---
+void mock_ble_central_clear_connected_rings(void);
+void mock_ble_central_set_connected_ring(uint8_t ring_index, const uint8_t mac[6]);
 
 // --- Failure injection ---
 // Set the return value for a specific HAL module's next N calls.

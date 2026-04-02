@@ -23,6 +23,7 @@ target_include_directories(unity PUBLIC unity)
 add_library(mock_hal STATIC mocks/mock_hal.c)
 target_include_directories(mock_hal PUBLIC
     mocks
+    ../hub/components/ble_central/include
     ../ring/components/hal/include
 )
 
@@ -115,11 +116,23 @@ target_include_directories(role_engine PUBLIC
     ../ring/components/hal/include
 )
 
+add_library(hub_control STATIC
+    ../hub/components/hub_control/hub_control.c
+)
+target_include_directories(hub_control PUBLIC
+    ../hub/components/hub_control/include
+    ../hub/components/event_composer/include
+    ../hub/components/role_engine/include
+    ../hub/components/ble_central/include
+    ../ring/components/hal/include
+)
+
 add_library(companion_protocol STATIC
     ../hub/components/companion_protocol/companion_protocol.c
 )
 target_include_directories(companion_protocol PUBLIC
     ../hub/components/companion_protocol/include
+    ../hub/components/hub_control/include
     ../hub/components/role_engine/include
     ../hub/components/ble_central/include
     ../ring/components/hal/include
@@ -161,6 +174,7 @@ add_executable(powerfinger_tests
     test_ring_identity.c
     test_hub_identity.c
     test_role_engine.c
+    test_hub_control.c
     test_companion_protocol.c
     test_event_composer.c
     test_usb_hid.c
@@ -179,6 +193,7 @@ target_link_libraries(powerfinger_tests
     ring_identity
     hub_identity
     role_engine
+    hub_control
     companion_protocol
     event_composer
     usb_hid
@@ -194,6 +209,7 @@ target_include_directories(powerfinger_tests PRIVATE
     ../ring/components/hal/include
     ../hub/components/hub_identity/include
     ../hub/components/role_engine/include
+    ../hub/components/hub_control/include
     ../hub/components/companion_protocol/include
     ../hub/components/ble_central/include
     ../hub/components/event_composer/include

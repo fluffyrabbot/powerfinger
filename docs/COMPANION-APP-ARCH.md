@@ -12,10 +12,10 @@ backed by deferred NVS persistence. It also now exposes the standard Device
 Information identity fields (model, firmware revision, hardware revision, and
 serial number) for bring-up and companion readback, plus a read-only
 diagnostic snapshot characteristic. On the hub side, the text command core now
-implements host-tested `GET_HUB_INFO` and `GET_ROLES` handling behind a
-transport-agnostic parser, but USB CDC transport, mutating hub commands, and
-BLE relay writes are still deferred until after the first hardware validation
-gates unless the BDFL reprioritizes them.
+implements host-tested `GET_HUB_INFO`, `GET_ROLES`, and `SET_ROLE` handling
+behind a transport-agnostic parser, but USB CDC transport, the rest of the hub
+command set, and BLE relay writes are still deferred until after the first
+hardware validation gates unless the BDFL reprioritizes them.
 
 **What the app configures:**
 - Role assignment (which ring is cursor, which is scroll, which is modifier)
@@ -980,9 +980,11 @@ requires changes to:
    for the ring, with `DEVBOARD-C3` used until real PCB revisions exist.
 
 5. **Hub firmware** -- The text command parser core for `GET_HUB_INFO` and
-   `GET_ROLES` now exists as a transport-agnostic module. The remaining work
-   is to wire it into a USB CDC task on the ESP32-S3, then add the mutating
-   and relay commands from section 3 on top of that transport.
+   `GET_ROLES` now exists as a transport-agnostic module, and `SET_ROLE`
+   already routes through a shared hub-control helper so persistent role
+   changes and the live event-composer cache stay aligned for active rings.
+   The remaining work is to wire this command core into a USB CDC task on the
+   ESP32-S3, then add the remaining mutating and relay commands from section 3.
 
 ### 7.2 Hub as Configuration Relay
 
