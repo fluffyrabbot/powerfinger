@@ -476,12 +476,12 @@ Every ring device has exactly one active state at any time:
        │◄──────────────────────────────────└──────┬───────┘     (from any connected)
        │                                          │ ble_connected
        │                                          ▼
-       │                     no motion      ┌─────────────────┐
+       │                    no activity     ┌─────────────────┐
        │      ┌──────────── for 250ms ──────│CONNECTED_ACTIVE │
        │      ▼                             └────────▲────────┘
   ┌────────────────────┐                             │
-  │ CONNECTED_IDLE     │────── motion > ─────────────┘
-  └────────────────────┘    NOISE_THRESHOLD
+  │ CONNECTED_IDLE     │──── motion or click ─────────┘
+  └────────────────────┘
 ```
 
 **Key transitions:**
@@ -493,10 +493,10 @@ Every ring device has exactly one active state at any time:
 - `ADVERTISING → CONNECTED_IDLE`: BLE connection established.
 - `ADVERTISING → DEEP_SLEEP`: if no connection within `RECONNECT_TIMEOUT`
   (default 60s). Prevents battery drain from indefinite advertising.
-- `CONNECTED_IDLE → CONNECTED_ACTIVE`: sensor delta exceeds `NOISE_THRESHOLD`.
-  Request 7.5ms connection interval.
-- `CONNECTED_ACTIVE → CONNECTED_IDLE`: no delta above `NOISE_THRESHOLD` for
-  250ms. Revert to 15ms connection interval.
+- `CONNECTED_IDLE → CONNECTED_ACTIVE`: sensor delta exceeds `NOISE_THRESHOLD`
+  or a click occurs while stationary. This keeps press/release usable even
+  when the sensor sees no motion.
+- `CONNECTED_ACTIVE → CONNECTED_IDLE`: no activity for 250ms.
 - `CONNECTED_IDLE → DEEP_SLEEP`: no activity for `SLEEP_TIMEOUT` (30–60s).
 - `CONNECTED_* → ADVERTISING`: BLE disconnected. Advertise for
   `RECONNECT_TIMEOUT`, then deep sleep.
@@ -504,6 +504,9 @@ Every ring device has exactly one active state at any time:
 
 **Invariants:**
 - HID reports are never sent before calibration completes.
+- `power_manager` owns active/idle timeout generation and BLE connection
+  parameter requests so those policy decisions stay out of the pure state
+  machine.
 - Advertising never runs indefinitely (bounded by `RECONNECT_TIMEOUT`).
 - VBAT < `LOW_VOLTAGE_CUTOFF` always results in deep sleep, from any state.
 

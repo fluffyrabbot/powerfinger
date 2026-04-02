@@ -36,6 +36,8 @@ static const char *TAG = "power_mgr";
 
 static uint32_t s_last_activity_ms = 0;
 static uint32_t s_last_battery_check_ms = 0;
+static bool s_connected = false;
+static bool s_interaction_active = false;
 static bool s_active_params_requested = false;
 static bool s_conn_param_rejected = false;  // don't retry if central rejected
 static uint8_t s_adc_fail_count = 0;        // consecutive VBAT read failures
@@ -79,10 +81,15 @@ static void update_battery_cache(uint32_t vbat_mv)
 static void note_activity(void)
 {
     s_last_activity_ms = hal_timer_get_ms();
+    hall_power_set(true);
+
+    if (!s_connected) {
+        return;
+    }
+
+    s_interaction_active = true;
 
     // Request active (7.5ms) connection parameters if not already active.
-    // If there is no connection yet, the HAL will reject the request and we
-    // simply remain in the current state.
     if (!s_active_params_requested && !s_conn_param_rejected) {
         hal_status_t ret = ble_gap_request_active_params();
         if (ret == HAL_OK) {
@@ -92,9 +99,6 @@ static void note_activity(void)
             s_conn_param_rejected = true;
         }
     }
-
-    // Ensure Hall sensors are powered during user activity
-    hall_power_set(true);
 }
 
 // --- Public API ---
@@ -104,6 +108,8 @@ hal_status_t power_manager_init(void)
     uint32_t now = hal_timer_get_ms();
     s_last_activity_ms = now;
     s_last_battery_check_ms = now;
+    s_connected = false;
+    s_interaction_active = false;
     s_active_params_requested = false;
     s_conn_param_rejected = false;
     s_adc_fail_count = 0;
@@ -145,12 +151,22 @@ hal_status_t power_manager_init(void)
 
 void power_manager_on_connect(void)
 {
+    s_connected = true;
+    s_interaction_active = false;
     s_last_activity_ms = hal_timer_get_ms();
     // Reset connection parameter rejection state so the new central gets
     // asked for 7.5ms active params. A previous central may have rejected
     // them, but a new one may accept.
     s_conn_param_rejected = false;
     s_active_params_requested = false;
+}
+
+void power_manager_on_disconnect(void)
+{
+    s_connected = false;
+    s_interaction_active = false;
+    s_active_params_requested = false;
+    s_conn_param_rejected = false;
 }
 
 void power_manager_on_motion(void)
@@ -165,11 +181,15 @@ void power_manager_on_click(void)
 
 power_event_t power_manager_tick(uint32_t now_ms)
 {
-    // --- Adaptive connection interval: revert to idle after 250ms of no activity ---
-    if (s_active_params_requested &&
+    // --- Active -> idle transition ---
+    if (s_connected && s_interaction_active &&
         (now_ms - s_last_activity_ms) >= IDLE_TRANSITION_MS) {
-        ble_gap_request_idle_params();
+        if (s_active_params_requested) {
+            ble_gap_request_idle_params();
+        }
+        s_interaction_active = false;
         s_active_params_requested = false;
+        return POWER_EVT_IDLE_TIMEOUT;
     }
 
     // --- Battery voltage check ---
@@ -207,8 +227,10 @@ power_event_t power_manager_tick(uint32_t now_ms)
         }
     }
 
-    // --- Sleep timeout check ---
-    if ((now_ms - s_last_activity_ms) >= SLEEP_TIMEOUT_MS) {
+    // --- Sleep timeout check (idle only) ---
+    if (s_connected &&
+        !s_interaction_active &&
+        (now_ms - s_last_activity_ms) >= SLEEP_TIMEOUT_MS) {
         hall_power_set(false);
         return POWER_EVT_SLEEP_TIMEOUT;
     }

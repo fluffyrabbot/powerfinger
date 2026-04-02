@@ -17,7 +17,6 @@
 #include "hal_timer.h"
 #include "hal_ble.h"
 #include "ble_hid_mouse.h"
-#include "ble_gap_handler.h"
 #include "ble_config.h"
 #include "ring_state.h"
 #include "ring_config.h"
@@ -87,12 +86,6 @@ static void execute_actions(const ring_actions_t *a)
             return;
         }
     }
-    if (a->request_active_conn_params) {
-        ble_gap_request_active_params();
-    }
-    if (a->request_idle_conn_params) {
-        ble_gap_request_idle_params();
-    }
     if (a->enter_deep_sleep) {
         power_manager_enter_sleep(true);
         // Does not return for deep sleep
@@ -128,6 +121,7 @@ static void phase0_fake_motion_loop(void)
             }
             if (queued_evt == RING_EVT_BLE_DISCONNECTED) {
                 adv_start_ms = hal_timer_get_ms();
+                power_manager_on_disconnect();
             }
         }
 
@@ -237,7 +231,6 @@ void app_main(void)
     phase0_fake_motion_loop();
 #else
     // --- Main loop: state machine driven ---
-    uint32_t last_activity_ms = hal_timer_get_ms();
     uint32_t adv_start_ms = hal_timer_get_ms();  // track advertising timeout
     uint8_t prev_buttons = 0;
 
@@ -258,14 +251,13 @@ void app_main(void)
 
             if (queued_evt == RING_EVT_BLE_CONNECTED) {
                 adv_start_ms = 0;
-                last_activity_ms = now;
-                // Reset conn param rejection — new central may accept 7.5ms
                 power_manager_on_connect();
                 prev_buttons = 0;
             }
             if (queued_evt == RING_EVT_BLE_DISCONNECTED) {
                 dead_zone_reset();
                 adv_start_ms = now;
+                power_manager_on_disconnect();
                 prev_buttons = 0;
             }
         }
@@ -291,7 +283,6 @@ void app_main(void)
                 memset(&actions, 0, sizeof(actions));
                 ring_state_dispatch(RING_EVT_MOTION_DETECTED, &actions);
                 execute_actions(&actions);
-                last_activity_ms = now;
                 power_manager_on_motion();
             }
         } else if (sensor_ok) {
@@ -311,7 +302,6 @@ void app_main(void)
         // Promote a stationary click from IDLE to ACTIVE so press/release
         // reports are not dropped waiting for motion.
         if (clicked) {
-            last_activity_ms = now;
             power_manager_on_click();
             if (ring_state_get() == RING_STATE_CONNECTED_IDLE) {
                 memset(&actions, 0, sizeof(actions));
@@ -335,20 +325,12 @@ void app_main(void)
         }
         prev_buttons = buttons;
 
-        // --- Idle transition ---
-        if (ring_state_get() == RING_STATE_CONNECTED_ACTIVE &&
-            !clicked &&
-            (now - last_activity_ms) >= IDLE_TRANSITION_MS) {
-            memset(&actions, 0, sizeof(actions));
-            ring_state_dispatch(RING_EVT_IDLE_TIMEOUT, &actions);
-            execute_actions(&actions);
-        }
-
         // --- Power management tick ---
         power_event_t pwr_evt = power_manager_tick(now);
         if (pwr_evt != POWER_EVT_NONE) {
             // Map power events to ring state machine events
             ring_event_t ring_evt = RING_EVT_NONE;
+            if (pwr_evt == POWER_EVT_IDLE_TIMEOUT)   ring_evt = RING_EVT_IDLE_TIMEOUT;
             if (pwr_evt == POWER_EVT_LOW_BATTERY)    ring_evt = RING_EVT_LOW_BATTERY;
             if (pwr_evt == POWER_EVT_SLEEP_TIMEOUT)  ring_evt = RING_EVT_SLEEP_TIMEOUT;
 

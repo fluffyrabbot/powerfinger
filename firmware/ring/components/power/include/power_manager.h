@@ -15,8 +15,9 @@
 // Power management events (mapped to ring_event_t by the caller)
 typedef enum {
     POWER_EVT_NONE = 0,         // No event this tick
+    POWER_EVT_IDLE_TIMEOUT,     // No activity for IDLE_TRANSITION_MS while active
     POWER_EVT_LOW_BATTERY,      // VBAT below cutoff — must enter deep sleep
-    POWER_EVT_SLEEP_TIMEOUT,    // No activity for SLEEP_TIMEOUT_MS
+    POWER_EVT_SLEEP_TIMEOUT,    // No activity for SLEEP_TIMEOUT_MS while idle
 } power_event_t;
 
 // Initialize power management subsystem.
@@ -28,16 +29,20 @@ hal_status_t power_manager_init(void);
 // can be re-requested — the new central may accept them even if the last one didn't.
 void power_manager_on_connect(void);
 
+// Called when the BLE connection is lost.
+// Clears active/idle tracking so connected-only timeouts stop firing.
+void power_manager_on_disconnect(void);
+
 // Called from main loop on sensor motion events.
-// Manages adaptive connection interval transitions.
+// Marks the link active and requests low-latency connection parameters.
 void power_manager_on_motion(void);
 
 // Called from main loop while the click is held.
-// Keeps the device awake and preserves low-latency button release behavior.
+// Marks the link active and preserves low-latency button release behavior.
 void power_manager_on_click(void);
 
 // Called from main loop periodically.
-// Checks battery voltage, manages idle/sleep timers.
+// Checks battery voltage and emits idle/sleep timeout events.
 power_event_t power_manager_tick(uint32_t now_ms);
 
 // Last sampled battery status, derived from VBAT.

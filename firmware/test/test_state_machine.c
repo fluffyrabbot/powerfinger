@@ -46,7 +46,6 @@ void test_ble_connected_transitions_to_idle(void)
     ring_state_t s = ring_state_dispatch(RING_EVT_BLE_CONNECTED, &a);
     TEST_ASSERT_EQUAL(RING_STATE_CONNECTED_IDLE, s);
     TEST_ASSERT_TRUE(a.stop_advertising);
-    TEST_ASSERT_TRUE(a.request_idle_conn_params);
 }
 
 void test_motion_transitions_idle_to_active(void)
@@ -58,8 +57,6 @@ void test_motion_transitions_idle_to_active(void)
 
     ring_state_t s = ring_state_dispatch(RING_EVT_MOTION_DETECTED, &a);
     TEST_ASSERT_EQUAL(RING_STATE_CONNECTED_ACTIVE, s);
-    TEST_ASSERT_TRUE(a.request_active_conn_params);
-    TEST_ASSERT_TRUE(a.enable_hid_reports);
 }
 
 void test_click_activity_transitions_idle_to_active(void)
@@ -71,8 +68,6 @@ void test_click_activity_transitions_idle_to_active(void)
 
     ring_state_t s = ring_state_dispatch(RING_EVT_CLICK_ACTIVITY, &a);
     TEST_ASSERT_EQUAL(RING_STATE_CONNECTED_ACTIVE, s);
-    TEST_ASSERT_TRUE(a.request_active_conn_params);
-    TEST_ASSERT_TRUE(a.enable_hid_reports);
 }
 
 void test_idle_timeout_transitions_active_to_idle(void)
@@ -85,8 +80,6 @@ void test_idle_timeout_transitions_active_to_idle(void)
 
     ring_state_t s = ring_state_dispatch(RING_EVT_IDLE_TIMEOUT, &a);
     TEST_ASSERT_EQUAL(RING_STATE_CONNECTED_IDLE, s);
-    TEST_ASSERT_TRUE(a.request_idle_conn_params);
-    TEST_ASSERT_TRUE(a.disable_hid_reports);
 }
 
 void test_sleep_timeout_transitions_idle_to_deep_sleep(void)
@@ -124,7 +117,6 @@ void test_disconnect_from_active_goes_to_advertising(void)
     ring_state_t s = ring_state_dispatch(RING_EVT_BLE_DISCONNECTED, &a);
     TEST_ASSERT_EQUAL(RING_STATE_ADVERTISING, s);
     TEST_ASSERT_TRUE(a.start_advertising);
-    TEST_ASSERT_TRUE(a.disable_hid_reports);
 }
 
 void test_disconnect_from_idle_goes_to_advertising(void)
@@ -172,7 +164,6 @@ void test_low_battery_from_connected_active(void)
     ring_state_t s = ring_state_dispatch(RING_EVT_LOW_BATTERY, &a);
     TEST_ASSERT_EQUAL(RING_STATE_DEEP_SLEEP, s);
     TEST_ASSERT_TRUE(a.enter_deep_sleep);
-    TEST_ASSERT_TRUE(a.disable_hid_reports);
 }
 
 void test_low_battery_from_connected_idle(void)
@@ -237,34 +228,40 @@ void test_low_battery_from_deep_sleep(void)
     TEST_ASSERT_TRUE(a.enter_deep_sleep);
 }
 
-// --- HID must NOT be enabled on non-ACTIVE transitions ---
-
-void test_no_hid_enable_on_cal_done(void)
-{
-    reset();
-    ring_actions_t a;
-    ring_state_dispatch(RING_EVT_CALIBRATION_DONE, &a);
-    TEST_ASSERT_FALSE(a.enable_hid_reports);
-}
-
-void test_no_hid_enable_on_ble_connected(void)
-{
-    reset();
-    ring_actions_t a;
-    ring_state_dispatch(RING_EVT_CALIBRATION_DONE, &a);
-    ring_state_dispatch(RING_EVT_BLE_CONNECTED, &a);
-    TEST_ASSERT_FALSE(a.enable_hid_reports);
-}
-
-void test_no_hid_enable_on_disconnect(void)
+void test_sleep_timeout_ignored_in_connected_active(void)
 {
     reset();
     ring_actions_t a;
     ring_state_dispatch(RING_EVT_CALIBRATION_DONE, &a);
     ring_state_dispatch(RING_EVT_BLE_CONNECTED, &a);
     ring_state_dispatch(RING_EVT_MOTION_DETECTED, &a);
-    ring_state_dispatch(RING_EVT_BLE_DISCONNECTED, &a);
-    TEST_ASSERT_FALSE(a.enable_hid_reports);
+
+    ring_state_t s = ring_state_dispatch(RING_EVT_SLEEP_TIMEOUT, &a);
+    TEST_ASSERT_EQUAL(RING_STATE_CONNECTED_ACTIVE, s);
+    TEST_ASSERT_FALSE(a.enter_deep_sleep);
+}
+
+void test_low_battery_from_active_stops_advertising(void)
+{
+    reset();
+    ring_actions_t a;
+    ring_state_dispatch(RING_EVT_CALIBRATION_DONE, &a);
+    ring_state_dispatch(RING_EVT_BLE_CONNECTED, &a);
+    ring_state_dispatch(RING_EVT_MOTION_DETECTED, &a);
+
+    ring_state_dispatch(RING_EVT_LOW_BATTERY, &a);
+    TEST_ASSERT_TRUE(a.stop_advertising);
+}
+
+void test_low_battery_from_idle_stops_advertising(void)
+{
+    reset();
+    ring_actions_t a;
+    ring_state_dispatch(RING_EVT_CALIBRATION_DONE, &a);
+    ring_state_dispatch(RING_EVT_BLE_CONNECTED, &a);
+
+    ring_state_dispatch(RING_EVT_LOW_BATTERY, &a);
+    TEST_ASSERT_TRUE(a.stop_advertising);
 }
 
 // --- Test runner ---
@@ -291,7 +288,7 @@ void run_state_machine_tests(void)
     RUN_TEST(test_click_activity_ignored_in_advertising);
     RUN_TEST(test_state_names_not_null);
     RUN_TEST(test_low_battery_from_deep_sleep);
-    RUN_TEST(test_no_hid_enable_on_cal_done);
-    RUN_TEST(test_no_hid_enable_on_ble_connected);
-    RUN_TEST(test_no_hid_enable_on_disconnect);
+    RUN_TEST(test_sleep_timeout_ignored_in_connected_active);
+    RUN_TEST(test_low_battery_from_active_stops_advertising);
+    RUN_TEST(test_low_battery_from_idle_stops_advertising);
 }

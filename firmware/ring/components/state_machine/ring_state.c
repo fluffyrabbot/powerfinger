@@ -6,7 +6,8 @@
 //
 // Invariants enforced at dispatch level:
 //   - LOW_BATTERY forces DEEP_SLEEP from any state
-//   - HID reports are never enabled before CONNECTED_ACTIVE
+//   - CONNECTED_ACTIVE is the only state where the main loop may emit HID reports
+//   - power_manager owns activity timing and BLE connection-parameter requests
 
 #include "ring_state.h"
 #include <string.h>
@@ -86,7 +87,6 @@ static ring_state_t h_boot_cal_failed(ring_actions_t *a)
 static ring_state_t h_adv_connected(ring_actions_t *a)
 {
     a->stop_advertising = true;
-    a->request_idle_conn_params = true;
     return RING_STATE_CONNECTED_IDLE;
 }
 
@@ -99,22 +99,17 @@ static ring_state_t h_adv_timeout(ring_actions_t *a)
 
 static ring_state_t h_active_idle_timeout(ring_actions_t *a)
 {
-    a->request_idle_conn_params = true;
-    a->disable_hid_reports = true;
     return RING_STATE_CONNECTED_IDLE;
 }
 
 static ring_state_t h_active_disconnected(ring_actions_t *a)
 {
-    a->disable_hid_reports = true;
     a->start_advertising = true;
     return RING_STATE_ADVERTISING;
 }
 
 static ring_state_t h_idle_motion(ring_actions_t *a)
 {
-    a->request_active_conn_params = true;
-    a->enable_hid_reports = true;
     return RING_STATE_CONNECTED_ACTIVE;
 }
 
@@ -133,7 +128,6 @@ static ring_state_t h_idle_disconnected(ring_actions_t *a)
 static ring_state_t h_force_deep_sleep(ring_actions_t *a)
 {
     a->enter_deep_sleep = true;
-    a->disable_hid_reports = true;
     a->stop_advertising = true;
     return RING_STATE_DEEP_SLEEP;
 }

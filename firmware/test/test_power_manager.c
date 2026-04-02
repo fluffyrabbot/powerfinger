@@ -50,10 +50,12 @@ void test_idle_transition_requests_default_conn_params(void)
     power_manager_on_connect();
     power_manager_on_motion();
 
-    TEST_ASSERT_EQUAL(POWER_EVT_NONE, power_manager_tick(IDLE_TRANSITION_MS - 1));
+    power_event_t evt = power_manager_tick(IDLE_TRANSITION_MS - 1);
+    TEST_ASSERT_EQUAL(POWER_EVT_NONE, evt);
     TEST_ASSERT_EQUAL(1, mock_hal_get_ble_conn_param_request_count());
 
-    TEST_ASSERT_EQUAL(POWER_EVT_NONE, power_manager_tick(IDLE_TRANSITION_MS));
+    evt = power_manager_tick(IDLE_TRANSITION_MS);
+    TEST_ASSERT_EQUAL(POWER_EVT_IDLE_TIMEOUT, evt);
     TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
 
     uint16_t min_itvl = 0;
@@ -67,15 +69,51 @@ void test_click_resets_sleep_timer(void)
 {
     reset();
     TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
+    power_manager_on_connect();
 
-    TEST_ASSERT_EQUAL(POWER_EVT_NONE, power_manager_tick(SLEEP_TIMEOUT_MS - 1));
+    power_event_t evt = power_manager_tick(SLEEP_TIMEOUT_MS - 1);
+    TEST_ASSERT_EQUAL(POWER_EVT_NONE, evt);
 
     mock_hal_set_time_ms(SLEEP_TIMEOUT_MS - 1);
     power_manager_on_click();
 
-    TEST_ASSERT_EQUAL(POWER_EVT_NONE, power_manager_tick(SLEEP_TIMEOUT_MS + 10));
-    TEST_ASSERT_EQUAL(POWER_EVT_SLEEP_TIMEOUT,
-                      power_manager_tick((SLEEP_TIMEOUT_MS - 1) + SLEEP_TIMEOUT_MS));
+    evt = power_manager_tick(SLEEP_TIMEOUT_MS + 10);
+    TEST_ASSERT_EQUAL(POWER_EVT_NONE, evt);
+    evt = power_manager_tick((SLEEP_TIMEOUT_MS - 1) + IDLE_TRANSITION_MS);
+    TEST_ASSERT_EQUAL(POWER_EVT_IDLE_TIMEOUT, evt);
+    evt = power_manager_tick((SLEEP_TIMEOUT_MS - 1) + SLEEP_TIMEOUT_MS);
+    TEST_ASSERT_EQUAL(POWER_EVT_SLEEP_TIMEOUT, evt);
+}
+
+void test_sleep_timeout_requires_idle_first(void)
+{
+    reset();
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
+
+    power_manager_on_connect();
+    power_manager_on_motion();
+
+    power_event_t evt = power_manager_tick(IDLE_TRANSITION_MS - 1);
+    TEST_ASSERT_EQUAL(POWER_EVT_NONE, evt);
+
+    evt = power_manager_tick(IDLE_TRANSITION_MS);
+    TEST_ASSERT_EQUAL(POWER_EVT_IDLE_TIMEOUT, evt);
+
+    evt = power_manager_tick(SLEEP_TIMEOUT_MS - 1);
+    TEST_ASSERT_EQUAL(POWER_EVT_NONE, evt);
+}
+
+void test_disconnect_suppresses_connected_timeouts(void)
+{
+    reset();
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
+
+    power_manager_on_connect();
+    power_manager_on_motion();
+    power_manager_on_disconnect();
+
+    power_event_t evt = power_manager_tick(SLEEP_TIMEOUT_MS + 100);
+    TEST_ASSERT_EQUAL(POWER_EVT_NONE, evt);
 }
 
 void test_low_battery_cutoff_triggers_shutdown(void)
@@ -84,8 +122,8 @@ void test_low_battery_cutoff_triggers_shutdown(void)
     TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
 
     mock_hal_set_adc_mv(LOW_VOLTAGE_CUTOFF_MV - 1);
-    TEST_ASSERT_EQUAL(POWER_EVT_LOW_BATTERY,
-                      power_manager_tick(BATTERY_CHECK_INTERVAL_MS));
+    power_event_t evt = power_manager_tick(BATTERY_CHECK_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(POWER_EVT_LOW_BATTERY, evt);
 }
 
 void test_adc_failure_threshold_forces_shutdown(void)
@@ -97,14 +135,14 @@ void test_adc_failure_threshold_forces_shutdown(void)
     for (int i = 1; i < 5; i++) {
         mock_hal_set_time_ms(((uint32_t)i * BATTERY_CHECK_INTERVAL_MS) - 1U);
         power_manager_on_connect();
-        TEST_ASSERT_EQUAL(POWER_EVT_NONE,
-                          power_manager_tick((uint32_t)i * BATTERY_CHECK_INTERVAL_MS));
+        power_event_t evt = power_manager_tick((uint32_t)i * BATTERY_CHECK_INTERVAL_MS);
+        TEST_ASSERT_EQUAL(POWER_EVT_NONE, evt);
     }
 
     mock_hal_set_time_ms((5U * BATTERY_CHECK_INTERVAL_MS) - 1U);
     power_manager_on_connect();
-    TEST_ASSERT_EQUAL(POWER_EVT_LOW_BATTERY,
-                      power_manager_tick(5U * BATTERY_CHECK_INTERVAL_MS));
+    power_event_t evt = power_manager_tick(5U * BATTERY_CHECK_INTERVAL_MS);
+    TEST_ASSERT_EQUAL(POWER_EVT_LOW_BATTERY, evt);
 }
 
 void test_rejected_active_params_retry_after_new_connection(void)
@@ -117,6 +155,8 @@ void test_rejected_active_params_retry_after_new_connection(void)
     power_manager_on_motion();
     power_manager_on_motion();
     TEST_ASSERT_EQUAL(1, mock_hal_get_ble_conn_param_request_count());
+    power_event_t evt = power_manager_tick(IDLE_TRANSITION_MS);
+    TEST_ASSERT_EQUAL(POWER_EVT_IDLE_TIMEOUT, evt);
 
     mock_hal_set_ble_conn_param_status(HAL_OK);
     power_manager_on_connect();
@@ -131,6 +171,8 @@ void run_power_manager_tests(void)
     RUN_TEST(test_motion_requests_active_conn_params_once_per_connection);
     RUN_TEST(test_idle_transition_requests_default_conn_params);
     RUN_TEST(test_click_resets_sleep_timer);
+    RUN_TEST(test_sleep_timeout_requires_idle_first);
+    RUN_TEST(test_disconnect_suppresses_connected_timeouts);
     RUN_TEST(test_low_battery_cutoff_triggers_shutdown);
     RUN_TEST(test_adc_failure_threshold_forces_shutdown);
     RUN_TEST(test_rejected_active_params_retry_after_new_connection);

@@ -30,22 +30,19 @@ typedef enum {
     RING_EVT_BLE_ADV_TIMEOUT,       // Advertising timed out with no connection
     RING_EVT_MOTION_DETECTED,       // Sensor delta above noise threshold
     RING_EVT_CLICK_ACTIVITY,        // Click press while connected idle
-    RING_EVT_IDLE_TIMEOUT,          // No motion for IDLE_TRANSITION_MS
-    RING_EVT_SLEEP_TIMEOUT,         // No activity for SLEEP_TIMEOUT_MS
+    RING_EVT_IDLE_TIMEOUT,          // No activity for IDLE_TRANSITION_MS while active
+    RING_EVT_SLEEP_TIMEOUT,         // No activity for SLEEP_TIMEOUT_MS while idle
     RING_EVT_LOW_BATTERY,           // VBAT below LOW_VOLTAGE_CUTOFF_MV
     RING_EVT_COUNT,
 } ring_event_t;
 
 // Action flags — what the main loop should do after a transition.
-// Multiple flags can be set simultaneously.
+// Timing and connection-parameter policy live in power_manager; the state
+// machine only controls advertising and deep-sleep side effects.
 typedef struct {
     bool start_advertising;
     bool stop_advertising;
     bool enter_deep_sleep;
-    bool request_active_conn_params;    // 7.5ms
-    bool request_idle_conn_params;      // 15ms
-    bool enable_hid_reports;
-    bool disable_hid_reports;
 } ring_actions_t;
 
 // Initialize the state machine. Call once at startup.
