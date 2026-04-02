@@ -14,9 +14,22 @@ void ring_runtime_health_init(ring_runtime_health_t *state)
     memset(state, 0, sizeof(*state));
 }
 
+void ring_runtime_health_mark_sensor_unavailable(
+    ring_runtime_health_t *state,
+    uint32_t now_ms)
+{
+    if (!state) {
+        return;
+    }
+
+    state->sensor_unavailable = true;
+    state->next_sensor_recovery_attempt_ms = now_ms;
+}
+
 ring_sensor_health_update_t ring_runtime_health_note_sensor_result(
     ring_runtime_health_t *state,
-    hal_status_t status)
+    hal_status_t status,
+    uint32_t now_ms)
 {
     ring_sensor_health_update_t update = {
         .event = RING_SENSOR_HEALTH_STABLE,
@@ -28,11 +41,13 @@ ring_sensor_health_update_t ring_runtime_health_note_sensor_result(
     }
 
     if (status == HAL_OK) {
-        bool was_degraded = state->sensor_degraded;
+        bool was_recovering = state->sensor_degraded || state->sensor_unavailable;
         state->consecutive_sensor_failures = 0;
         state->sensor_degraded = false;
-        update.event = was_degraded ? RING_SENSOR_HEALTH_RECOVERED
-                                    : RING_SENSOR_HEALTH_STABLE;
+        state->sensor_unavailable = false;
+        state->next_sensor_recovery_attempt_ms = 0;
+        update.event = was_recovering ? RING_SENSOR_HEALTH_RECOVERED
+                                      : RING_SENSOR_HEALTH_STABLE;
         return update;
     }
 
@@ -44,10 +59,55 @@ ring_sensor_health_update_t ring_runtime_health_note_sensor_result(
     if (!state->sensor_degraded &&
         state->consecutive_sensor_failures >= SENSOR_READ_FAIL_DEGRADE_THRESHOLD) {
         state->sensor_degraded = true;
+        state->sensor_unavailable = true;
+        state->next_sensor_recovery_attempt_ms = now_ms;
         update.event = RING_SENSOR_HEALTH_DEGRADED;
     }
 
     return update;
+}
+
+ring_sensor_health_update_t ring_runtime_health_note_sensor_recovery_attempt(
+    ring_runtime_health_t *state,
+    hal_status_t status,
+    uint32_t now_ms)
+{
+    ring_sensor_health_update_t update = {
+        .event = RING_SENSOR_HEALTH_STABLE,
+        .consecutive_failures = 0,
+    };
+
+    if (!state) {
+        return update;
+    }
+
+    if (status == HAL_OK) {
+        bool was_recovering = state->sensor_degraded || state->sensor_unavailable;
+        state->consecutive_sensor_failures = 0;
+        state->sensor_degraded = false;
+        state->sensor_unavailable = false;
+        state->next_sensor_recovery_attempt_ms = 0;
+        update.event = was_recovering ? RING_SENSOR_HEALTH_RECOVERED
+                                      : RING_SENSOR_HEALTH_STABLE;
+        return update;
+    }
+
+    state->sensor_unavailable = true;
+    state->next_sensor_recovery_attempt_ms = now_ms + SENSOR_RECOVERY_ATTEMPT_MS;
+    update.consecutive_failures = state->consecutive_sensor_failures;
+    return update;
+}
+
+bool ring_runtime_health_sensor_recovery_due(
+    const ring_runtime_health_t *state,
+    uint32_t now_ms)
+{
+    if (!state) {
+        return false;
+    }
+
+    return (state->sensor_unavailable || state->sensor_degraded) &&
+           now_ms >= state->next_sensor_recovery_attempt_ms;
 }
 
 ring_hid_health_update_t ring_runtime_health_note_hid_send_result(
@@ -104,4 +164,9 @@ void ring_runtime_health_reset_hid_send(ring_runtime_health_t *state)
 bool ring_runtime_health_sensor_degraded(const ring_runtime_health_t *state)
 {
     return state ? state->sensor_degraded : false;
+}
+
+bool ring_runtime_health_sensor_unavailable(const ring_runtime_health_t *state)
+{
+    return state ? state->sensor_unavailable : false;
 }

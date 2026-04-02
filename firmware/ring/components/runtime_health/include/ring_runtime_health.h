@@ -36,6 +36,8 @@ typedef struct {
 typedef struct {
     uint16_t consecutive_sensor_failures;
     bool sensor_degraded;
+    bool sensor_unavailable;
+    uint32_t next_sensor_recovery_attempt_ms;
     bool hid_fault_active;
     uint32_t hid_fault_start_ms;
     hal_status_t hid_fault_status;
@@ -43,9 +45,23 @@ typedef struct {
 
 void ring_runtime_health_init(ring_runtime_health_t *state);
 
+void ring_runtime_health_mark_sensor_unavailable(
+    ring_runtime_health_t *state,
+    uint32_t now_ms);
+
 ring_sensor_health_update_t ring_runtime_health_note_sensor_result(
     ring_runtime_health_t *state,
-    hal_status_t status);
+    hal_status_t status,
+    uint32_t now_ms);
+
+ring_sensor_health_update_t ring_runtime_health_note_sensor_recovery_attempt(
+    ring_runtime_health_t *state,
+    hal_status_t status,
+    uint32_t now_ms);
+
+bool ring_runtime_health_sensor_recovery_due(
+    const ring_runtime_health_t *state,
+    uint32_t now_ms);
 
 ring_hid_health_update_t ring_runtime_health_note_hid_send_result(
     ring_runtime_health_t *state,
@@ -54,3 +70,4 @@ ring_hid_health_update_t ring_runtime_health_note_hid_send_result(
 
 void ring_runtime_health_reset_hid_send(ring_runtime_health_t *state);
 bool ring_runtime_health_sensor_degraded(const ring_runtime_health_t *state);
+bool ring_runtime_health_sensor_unavailable(const ring_runtime_health_t *state);

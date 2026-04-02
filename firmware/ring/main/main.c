@@ -44,6 +44,18 @@ static inline int8_t clamp_i8(int16_t v)
     return (int8_t)v;
 }
 
+static hal_status_t attempt_sensor_recovery(bool had_working_sensor)
+{
+    hal_status_t rc = had_working_sensor ? sensor_wake() : sensor_init();
+    if (rc == HAL_OK || had_working_sensor == false) {
+        return rc;
+    }
+
+    // If the sensor stopped responding after a previously healthy session,
+    // fall back to a full re-init before giving up.
+    return sensor_init();
+}
+
 static void handle_hid_send_result(ring_runtime_health_t *runtime_health,
                                    hal_status_t send_rc,
                                    uint32_t now_ms)
@@ -76,9 +88,20 @@ static void ble_event_callback(const hal_ble_event_data_t *evt, void *arg)
     case HAL_BLE_EVT_DISCONNECTED:
         ring_evt = RING_EVT_BLE_DISCONNECTED;
         break;
+    case HAL_BLE_EVT_BOND_RESTORED:
+        ESP_LOGI(TAG, "bond restored");
+        return;
     case HAL_BLE_EVT_BOND_FAILED:
         // Bond recovery: HAL already deleted the stale bond and terminated.
         // The disconnect event will follow via GAP handler.
+        ESP_LOGW(TAG, "bond failed — waiting for disconnect/re-pair");
+        return;
+    case HAL_BLE_EVT_CONN_PARAMS_UPDATED:
+        ESP_LOGI(TAG, "connection interval updated to %u x 1.25ms",
+                 evt->data.conn_params.conn_interval_1_25ms);
+        return;
+    case HAL_BLE_EVT_CONN_PARAMS_REJECTED:
+        ESP_LOGW(TAG, "connection parameter request rejected by central");
         return;
     default:
         return;
@@ -207,10 +230,14 @@ void app_main(void)
     // Initialize state machine
     ring_state_init();
 
+    ring_runtime_health_t runtime_health;
+    ring_runtime_health_init(&runtime_health);
+
     // Initialize sensor (check for failure)
     bool sensor_ok = (sensor_init() == HAL_OK);
     if (!sensor_ok) {
         ESP_LOGE(TAG, "sensor init failed — motion input disabled, click path still available");
+        ring_runtime_health_mark_sensor_unavailable(&runtime_health, hal_timer_get_ms());
     }
 
     // Initialize click (check for failure)
@@ -222,7 +249,12 @@ void app_main(void)
 
     // Run calibration (blocks until complete)
     ring_actions_t actions;
-    hal_status_t cal_ret = calibration_run();
+    hal_status_t cal_ret = HAL_ERR_TIMEOUT;
+    if (sensor_ok) {
+        cal_ret = calibration_run();
+    } else {
+        ESP_LOGW(TAG, "skipping calibration until sensor recovers");
+    }
     if (cal_ret == HAL_OK) {
         ring_state_dispatch(RING_EVT_CALIBRATION_DONE, &actions);
     } else {
@@ -259,8 +291,6 @@ void app_main(void)
     // --- Main loop: state machine driven ---
     uint32_t adv_start_ms = hal_timer_get_ms();  // track advertising timeout
     uint8_t prev_buttons = 0;
-    ring_runtime_health_t runtime_health;
-    ring_runtime_health_init(&runtime_health);
 
     while (1) {
         uint32_t now = hal_timer_get_ms();
@@ -299,10 +329,27 @@ void app_main(void)
         // --- Read sensor ---
         sensor_reading_t reading = {0};
         bool sensor_valid = false;
+        if (ring_runtime_health_sensor_recovery_due(&runtime_health, now)) {
+            hal_status_t recovery_rc = attempt_sensor_recovery(sensor_ok);
+            ring_sensor_health_update_t recovery_update =
+                ring_runtime_health_note_sensor_recovery_attempt(
+                    &runtime_health, recovery_rc, now);
+
+            if (recovery_rc == HAL_OK) {
+                sensor_ok = true;
+                if (recovery_update.event == RING_SENSOR_HEALTH_RECOVERED) {
+                    ESP_LOGI(TAG, "sensor recovery succeeded — motion input restored");
+                }
+            } else {
+                sensor_ok = false;
+                ESP_LOGW(TAG, "sensor recovery attempt failed: %d", recovery_rc);
+            }
+        }
+
         if (sensor_ok) {
             hal_status_t sensor_rc = sensor_read(&reading);
             ring_sensor_health_update_t sensor_update =
-                ring_runtime_health_note_sensor_result(&runtime_health, sensor_rc);
+                ring_runtime_health_note_sensor_result(&runtime_health, sensor_rc, now);
 
             if (sensor_rc == HAL_OK) {
                 if (sensor_update.event == RING_SENSOR_HEALTH_RECOVERED) {
@@ -327,6 +374,7 @@ void app_main(void)
                              "sensor read failed %u consecutive times — degrading to click-only until recovery",
                              sensor_update.consecutive_failures);
                     dead_zone_reset();
+                    sensor_ok = false;
                 }
             }
         }

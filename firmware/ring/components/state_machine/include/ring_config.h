@@ -24,6 +24,10 @@
 // is about 750ms of continuous failure before falling back to click-only mode.
 #define SENSOR_READ_FAIL_DEGRADE_THRESHOLD 50
 
+// Once motion input is unavailable, attempt sensor wake/reinit at a human
+// timescale instead of hammering the bus on every 15ms main-loop iteration.
+#define SENSOR_RECOVERY_ATTEMPT_MS 1000
+
 // If HID notifications fail continuously for this long, restart to recover the
 // BLE stack instead of silently staying connected but unusable.
 #define BLE_HID_SEND_RESTART_MS    5000

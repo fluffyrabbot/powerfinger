@@ -126,10 +126,13 @@ Open links, close tabs, select text.
   below ~3.0V.
 - **Runtime fault policy.** Repeated sensor read failures should degrade to a
   click-only mode until the sensor recovers instead of forcing deep sleep
-  during normal use. Repeated hard BLE HID notify failures should trigger a
-  restart after a bounded window of continuous failure so the ring does not
-  stay connected-but-dead. `HAL_ERR_BUSY` is treated as transient and does not
-  count toward that restart window.
+  during normal use. When motion input is unavailable at boot or after runtime
+  degradation, the firmware should attempt sensor wake/reinit on a bounded
+  retry interval instead of hammering the bus every poll. Repeated hard BLE
+  HID notify failures should trigger a restart after a bounded window of
+  continuous failure so the ring does not stay connected-but-dead.
+  `HAL_ERR_BUSY` is treated as transient and does not count toward that
+  restart window.
 - **Hall sensor power gating** (ball variants only). The DRV5053 has no sleep
   mode — four sensors draw ~12mA continuously. Add a MOSFET or load switch on
   the Hall sensor VCC rail, controlled by a GPIO. Gate off in idle/deep sleep.
