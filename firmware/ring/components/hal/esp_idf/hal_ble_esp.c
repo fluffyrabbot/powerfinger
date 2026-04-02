@@ -42,6 +42,8 @@ static atomic_bool s_connected = false;
 static const char *s_device_name = "PowerFinger";
 static uint32_t s_adv_timeout_ms = 0;
 static uint8_t s_battery_level = 0;
+static uint8_t s_diagnostic_payload[HAL_BLE_DIAGNOSTIC_MAX_LEN] = {0};
+static size_t s_diagnostic_payload_len = 0;
 static char s_serial_number[18] = "UNKNOWN";
 
 // PowerFinger discovery marker carried in the HID Service Data AD field.
@@ -73,6 +75,9 @@ static uint16_t s_hid_report_handle = 0;
 #define PF_UUID128_FIRMWARE_VERSION \
     BLE_UUID128_DECLARE(0x66, 0x72, 0x65, 0x77, 0x6F, 0x70, 0x54, 0xB0, \
                         0x67, 0x6E, 0x69, 0x72, 0x01, 0x02, 0x46, 0x50)
+#define PF_UUID128_DIAGNOSTICS \
+    BLE_UUID128_DECLARE(0x66, 0x72, 0x65, 0x77, 0x6F, 0x70, 0x54, 0xB0, \
+                        0x67, 0x6E, 0x69, 0x72, 0x01, 0x04, 0x46, 0x50)
 
 // --- HID Report Descriptor ---
 // Standard mouse: 3 buttons + X + Y + wheel (4-byte report)
@@ -249,6 +254,11 @@ static const struct ble_gatt_svc_def s_gatt_svcs[] = {
                 .access_cb = ble_pf_config_access,
                 .flags = BLE_GATT_CHR_F_READ,
             },
+            {
+                .uuid = PF_UUID128_DIAGNOSTICS,
+                .access_cb = ble_pf_config_access,
+                .flags = BLE_GATT_CHR_F_READ,
+            },
             { 0 },
         },
     },
@@ -380,6 +390,9 @@ static int ble_pf_config_access(uint16_t conn_handle, uint16_t attr_handle,
         if (ble_uuid_cmp(uuid, PF_UUID128_FIRMWARE_VERSION) == 0) {
             ring_identity_firmware_version(firmware_version);
             return ble_append_bytes(ctxt, firmware_version, sizeof(firmware_version));
+        }
+        if (ble_uuid_cmp(uuid, PF_UUID128_DIAGNOSTICS) == 0) {
+            return ble_append_bytes(ctxt, s_diagnostic_payload, s_diagnostic_payload_len);
         }
         return BLE_ATT_ERR_UNLIKELY;
     }
@@ -820,6 +833,22 @@ hal_status_t hal_ble_delete_all_bonds(void)
 void hal_ble_set_battery_level(uint8_t level_percent)
 {
     s_battery_level = (level_percent > 100) ? 100 : level_percent;
+}
+
+void hal_ble_set_diagnostic_payload(const uint8_t *data, size_t len)
+{
+    if (!data || len == 0) {
+        memset(s_diagnostic_payload, 0, sizeof(s_diagnostic_payload));
+        s_diagnostic_payload_len = 0;
+        return;
+    }
+
+    if (len > sizeof(s_diagnostic_payload)) {
+        len = sizeof(s_diagnostic_payload);
+    }
+
+    memcpy(s_diagnostic_payload, data, len);
+    s_diagnostic_payload_len = len;
 }
 
 bool hal_ble_is_connected(void)

@@ -142,7 +142,7 @@ Open links, close tabs, select text.
   current ring state, sensor path status (`unavailable`, `calibration_pending`,
   `ready`), calibration validity, battery estimate, bond result, current BLE
   interval, and whether the central rejected low-latency params. Local logs and
-  any future BLE diagnostic characteristic should read from this same snapshot
+  the current BLE diagnostic characteristic should read from this same snapshot
   instead of reconstructing state ad hoc.
 - **Hall sensor power gating** (ball variants only). The DRV5053 has no sleep
   mode — four sensors draw ~12mA continuously. Add a MOSFET or load switch on

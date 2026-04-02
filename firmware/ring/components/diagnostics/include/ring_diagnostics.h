@@ -7,8 +7,12 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include "ring_state.h"
+
+#define RING_DIAG_BLE_PAYLOAD_VERSION 1U
+#define RING_DIAG_BLE_PAYLOAD_LEN     10U
 
 typedef enum {
     RING_DIAG_SENSOR_UNAVAILABLE = 0,
@@ -55,5 +59,8 @@ void ring_diagnostics_note_battery(ring_diagnostics_t *state,
                                    uint8_t battery_pct);
 
 ring_diag_snapshot_t ring_diagnostics_snapshot(const ring_diagnostics_t *state);
+size_t ring_diagnostics_encode_ble_payload(const ring_diagnostics_t *state,
+                                           uint8_t *buf,
+                                           size_t buf_len);
 const char *ring_diag_sensor_state_name(ring_diag_sensor_state_t state);
 const char *ring_diag_bond_state_name(ring_diag_bond_state_t state);

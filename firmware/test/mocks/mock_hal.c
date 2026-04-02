@@ -244,6 +244,11 @@ hal_status_t hal_ble_request_conn_params(uint16_t mn, uint16_t mx) {
 }
 hal_status_t hal_ble_delete_all_bonds(void) { return HAL_OK; }
 void hal_ble_set_battery_level(uint8_t level_percent) { (void)level_percent; }
+void hal_ble_set_diagnostic_payload(const uint8_t *data, size_t len)
+{
+    (void)data;
+    (void)len;
+}
 bool hal_ble_is_connected(void) { return false; }
 
 // --- hal_ota ---

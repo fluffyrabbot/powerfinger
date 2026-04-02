@@ -110,6 +110,21 @@ static void log_diagnostics_snapshot(const char *reason,
              (unsigned long)snapshot.battery_mv);
 }
 
+static void publish_ble_diagnostics(const ring_diagnostics_t *diagnostics)
+{
+    uint8_t payload[RING_DIAG_BLE_PAYLOAD_LEN] = {0};
+    size_t payload_len = ring_diagnostics_encode_ble_payload(diagnostics,
+                                                             payload,
+                                                             sizeof(payload));
+
+    if (payload_len == 0) {
+        hal_ble_set_diagnostic_payload(NULL, 0);
+        return;
+    }
+
+    hal_ble_set_diagnostic_payload(payload, payload_len);
+}
+
 static hal_status_t attempt_sensor_recovery(bool had_working_sensor)
 {
     hal_status_t rc = had_working_sensor ? sensor_wake() : sensor_init();
@@ -249,6 +264,7 @@ static void phase0_fake_motion_loop(void)
     ring_diagnostics_init(&diagnostics);
     ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
     sync_battery_diagnostics(&diagnostics);
+    publish_ble_diagnostics(&diagnostics);
 
     while (1) {
         hal_timer_delay_ms(FAKE_MOTION_PERIOD_MS);
@@ -302,6 +318,8 @@ static void phase0_fake_motion_loop(void)
             execute_actions(&actions);
             log_diagnostics_snapshot("adv-timeout", &diagnostics);
         }
+
+        publish_ble_diagnostics(&diagnostics);
 
         // Feed watchdog even in Phase 0
         power_manager_feed_watchdog();
@@ -422,6 +440,7 @@ void app_main(void)
     }
     hal_ble_set_battery_level(power_manager_get_battery_level());
     sync_battery_diagnostics(&diagnostics);
+    publish_ble_diagnostics(&diagnostics);
 
     // Confirm this firmware is valid — cancels automatic rollback.
     // Placed after all critical init (BLE + power manager) and before the
@@ -628,6 +647,7 @@ void app_main(void)
         }
         hal_ble_set_battery_level(power_manager_get_battery_level());
         sync_battery_diagnostics(&diagnostics);
+        publish_ble_diagnostics(&diagnostics);
 
         if (ring_settings_needs_flush() &&
             ring_state_get() != RING_STATE_CONNECTED_ACTIVE &&

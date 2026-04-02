@@ -3,6 +3,7 @@
 
 #include "ring_diagnostics.h"
 
+#include <limits.h>
 #include <string.h>
 
 static const char *s_sensor_state_names[] = {
@@ -139,6 +140,44 @@ ring_diag_snapshot_t ring_diagnostics_snapshot(const ring_diagnostics_t *state)
         return snapshot;
     }
     return state->snapshot;
+}
+
+size_t ring_diagnostics_encode_ble_payload(const ring_diagnostics_t *state,
+                                           uint8_t *buf,
+                                           size_t buf_len)
+{
+    ring_diag_snapshot_t snapshot = ring_diagnostics_snapshot(state);
+    uint16_t battery_mv = (snapshot.battery_mv > UINT16_MAX)
+        ? UINT16_MAX
+        : (uint16_t)snapshot.battery_mv;
+    uint8_t flags = 0;
+
+    if (!buf || buf_len < RING_DIAG_BLE_PAYLOAD_LEN) {
+        return 0;
+    }
+
+    if (snapshot.connected) {
+        flags |= 0x01;
+    }
+    if (snapshot.calibration_valid) {
+        flags |= 0x02;
+    }
+    if (snapshot.conn_param_rejected) {
+        flags |= 0x04;
+    }
+
+    buf[0] = RING_DIAG_BLE_PAYLOAD_VERSION;
+    buf[1] = (uint8_t)snapshot.ring_state;
+    buf[2] = (uint8_t)snapshot.sensor_state;
+    buf[3] = (uint8_t)snapshot.bond_state;
+    buf[4] = flags;
+    buf[5] = snapshot.battery_pct;
+    buf[6] = (uint8_t)(battery_mv & 0xFFU);
+    buf[7] = (uint8_t)((battery_mv >> 8) & 0xFFU);
+    buf[8] = (uint8_t)(snapshot.conn_interval_1_25ms & 0xFFU);
+    buf[9] = (uint8_t)((snapshot.conn_interval_1_25ms >> 8) & 0xFFU);
+
+    return RING_DIAG_BLE_PAYLOAD_LEN;
 }
 
 const char *ring_diag_sensor_state_name(ring_diag_sensor_state_t state)

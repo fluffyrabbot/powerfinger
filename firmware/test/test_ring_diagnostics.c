@@ -94,6 +94,55 @@ void test_name_helpers_return_stable_strings(void)
     TEST_ASSERT_TRUE(ring_diag_bond_state_name(RING_DIAG_BOND_FAILED) != NULL);
 }
 
+void test_ble_payload_encodes_snapshot_flags_and_intervals(void)
+{
+    ring_diagnostics_t state;
+    uint8_t payload[RING_DIAG_BLE_PAYLOAD_LEN] = {0};
+
+    ring_diagnostics_init(&state);
+    ring_diagnostics_note_ring_state(&state, RING_STATE_CONNECTED_ACTIVE);
+    ring_diagnostics_note_connected(&state, 12);
+    ring_diagnostics_note_conn_param_rejected(&state);
+    ring_diagnostics_note_bond_failed(&state);
+    ring_diagnostics_note_sensor_path(&state, true, true);
+    ring_diagnostics_note_battery(&state, 3712, 48);
+
+    TEST_ASSERT_EQUAL(RING_DIAG_BLE_PAYLOAD_LEN,
+                      ring_diagnostics_encode_ble_payload(&state,
+                                                          payload,
+                                                          sizeof(payload)));
+    TEST_ASSERT_EQUAL(RING_DIAG_BLE_PAYLOAD_VERSION, payload[0]);
+    TEST_ASSERT_EQUAL(RING_STATE_CONNECTED_ACTIVE, payload[1]);
+    TEST_ASSERT_EQUAL(RING_DIAG_SENSOR_READY, payload[2]);
+    TEST_ASSERT_EQUAL(RING_DIAG_BOND_FAILED, payload[3]);
+    TEST_ASSERT_EQUAL(0x07, payload[4]);
+    TEST_ASSERT_EQUAL(48, payload[5]);
+    TEST_ASSERT_EQUAL(0x80, payload[6]);
+    TEST_ASSERT_EQUAL(0x0E, payload[7]);
+    TEST_ASSERT_EQUAL(12, payload[8]);
+    TEST_ASSERT_EQUAL(0, payload[9]);
+}
+
+void test_ble_payload_rejects_small_buffer_and_clamps_battery_mv(void)
+{
+    ring_diagnostics_t state;
+    uint8_t payload[RING_DIAG_BLE_PAYLOAD_LEN] = {0};
+
+    ring_diagnostics_init(&state);
+    ring_diagnostics_note_battery(&state, 70000, 100);
+
+    TEST_ASSERT_EQUAL(0,
+                      ring_diagnostics_encode_ble_payload(&state,
+                                                          payload,
+                                                          RING_DIAG_BLE_PAYLOAD_LEN - 1));
+    TEST_ASSERT_EQUAL(RING_DIAG_BLE_PAYLOAD_LEN,
+                      ring_diagnostics_encode_ble_payload(&state,
+                                                          payload,
+                                                          sizeof(payload)));
+    TEST_ASSERT_EQUAL(0xFF, payload[6]);
+    TEST_ASSERT_EQUAL(0xFF, payload[7]);
+}
+
 void run_ring_diagnostics_tests(void)
 {
     printf("Ring diagnostics tests:\n");
@@ -102,4 +151,6 @@ void run_ring_diagnostics_tests(void)
     RUN_TEST(test_sensor_path_distinguishes_pending_and_ready);
     RUN_TEST(test_ring_state_and_battery_snapshot_are_updated);
     RUN_TEST(test_name_helpers_return_stable_strings);
+    RUN_TEST(test_ble_payload_encodes_snapshot_flags_and_intervals);
+    RUN_TEST(test_ble_payload_rejects_small_buffer_and_clamps_battery_mv);
 }

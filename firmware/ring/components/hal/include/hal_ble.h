@@ -12,6 +12,8 @@
 
 #include "hal_types.h"
 
+#define HAL_BLE_DIAGNOSTIC_MAX_LEN 16U
+
 // HID mouse report — the ring's output to the host
 typedef struct {
     uint8_t buttons;    // bit 0 = left, bit 1 = right, bit 2 = middle
@@ -71,6 +73,10 @@ hal_status_t hal_ble_delete_all_bonds(void);
 // Update the Battery Service value exposed over GATT.
 // level_percent is clamped to 0..100 and may be an approximate estimate.
 void hal_ble_set_battery_level(uint8_t level_percent);
+
+// Update the diagnostic payload exposed over the custom config service.
+// A NULL payload or len=0 clears the characteristic value.
+void hal_ble_set_diagnostic_payload(const uint8_t *data, size_t len);
 
 // Check if currently connected to a host
 bool hal_ble_is_connected(void);

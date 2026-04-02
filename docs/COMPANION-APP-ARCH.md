@@ -10,9 +10,10 @@ ring now ships a minimal pre-hardware config surface: BLE characteristics for
 DPI multiplier, dead-zone time, dead-zone distance, and firmware version, all
 backed by deferred NVS persistence. It also now exposes the standard Device
 Information identity fields (model, firmware revision, hardware revision, and
-serial number) for bring-up and companion readback. Deferred until after the
-first hardware validation gates: gesture tables, OTA relay UX, charge-fault
-telemetry, and rich companion workflows unless the BDFL reprioritizes them.
+serial number) for bring-up and companion readback, plus a read-only
+diagnostic snapshot characteristic. Deferred until after the first hardware
+validation gates: gesture tables, OTA relay UX, charge-fault telemetry, and
+rich companion workflows unless the BDFL reprioritizes them.
 
 **What the app configures:**
 - Role assignment (which ring is cursor, which is scroll, which is modifier)
@@ -136,6 +137,7 @@ scanners. The `xxxx` field differentiates services and characteristics.
 | Dead Zone Time Characteristic | 0x0102 | `50460102-7269-6E67-B054-706F77657266` |
 | Dead Zone Distance Characteristic | 0x0103 | `50460103-7269-6E67-B054-706F77657266` |
 | Firmware Version Characteristic | 0x0201 | `50460201-7269-6E67-B054-706F77657266` |
+| Diagnostics Snapshot Characteristic | 0x0401 | `50460401-7269-6E67-B054-706F77657266` |
 | OTA Control Characteristic | 0x0301 | `50460301-7269-6E67-B054-706F77657266` |
 | OTA Data Characteristic | 0x0302 | `50460302-7269-6E67-B054-706F77657266` |
 
@@ -198,6 +200,27 @@ The ring now exposes these standard Device Information characteristics:
 | Properties | Read |
 | Format | 3x uint8_t (major, minor, patch) |
 | Example | `{ 0x01, 0x02, 0x03 }` = version 1.2.3 |
+
+#### Diagnostics Snapshot (0x0401)
+
+| Property | Value |
+|----------|-------|
+| Properties | Read |
+| Format | Fixed 10-byte binary payload |
+| Purpose | Exposes the ring's current bring-up snapshot without reading logs |
+
+Payload layout:
+
+| Byte(s) | Meaning |
+|---------|---------|
+| 0 | Payload version. Current value: `0x01` |
+| 1 | `ring_state_t` value |
+| 2 | `ring_diag_sensor_state_t` value (`0=unavailable`, `1=calibration_pending`, `2=ready`) |
+| 3 | `ring_diag_bond_state_t` value (`0=unknown`, `1=restored`, `2=failed`) |
+| 4 | Flags bitfield: bit 0 = connected, bit 1 = calibration valid, bit 2 = low-latency conn params rejected |
+| 5 | Battery percent |
+| 6-7 | Battery millivolts, little-endian, clamped to `0xFFFF` |
+| 8-9 | Current BLE connection interval in 1.25ms units, little-endian |
 
 #### OTA Control (0x0301)
 
@@ -938,19 +961,23 @@ requires changes to:
 
 1. **`hal_ble_esp.c`** -- Add the PowerFinger Config Service to the
    `s_gatt_svcs[]` array. This is now done for the minimal pre-hardware
-   surface: DPI multiplier, dead zone time, dead zone distance, and firmware
-   version.
+   surface: DPI multiplier, dead zone time, dead zone distance, firmware
+   version, and a read-only diagnostics snapshot.
 
 2. **`ring_settings.c` / `ring_settings.h`** -- Persist the runtime config in a
    versioned NVS blob and expose lock-free getters so the sensor processing
    loop and BLE callbacks share one source of truth without duplicating state.
 
-3. **Device Information Service** -- Add Model Number (0x2A24), Firmware
+3. **`ring_diagnostics.c` / `ring_diagnostics.h`** -- Keep the in-memory
+   bring-up snapshot and encode it into a stable versioned BLE payload so logs
+   and the diagnostic characteristic expose the same facts.
+
+4. **Device Information Service** -- Add Model Number (0x2A24), Firmware
    Revision (0x2A26), Hardware Revision (0x2A27), and Serial Number
    (0x2A25) characteristics to the existing 0x180A service. This is now done
    for the ring, with `DEVBOARD-C3` used until real PCB revisions exist.
 
-4. **Hub firmware** -- Add a USB CDC serial command parser that dispatches
+5. **Hub firmware** -- Add a USB CDC serial command parser that dispatches
    the commands from section 3. The parser runs in a dedicated FreeRTOS
    task, communicates with the role engine and BLE central via their
    existing APIs.
