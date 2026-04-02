@@ -12,10 +12,11 @@ backed by deferred NVS persistence. It also now exposes the standard Device
 Information identity fields (model, firmware revision, hardware revision, and
 serial number) for bring-up and companion readback, plus a read-only
 diagnostic snapshot characteristic. On the hub side, the text command core now
-implements host-tested `GET_HUB_INFO`, `GET_ROLES`, and `SET_ROLE` handling
-behind a transport-agnostic parser, but USB CDC transport, the rest of the hub
-command set, and BLE relay writes are still deferred until after the first
-hardware validation gates unless the BDFL reprioritizes them.
+implements host-tested `GET_HUB_INFO`, `GET_ROLES`, `SET_ROLE`, and
+`SWAP_ROLES` handling behind a transport-agnostic parser, but USB CDC
+transport, the rest of the hub command set, and BLE relay writes are still
+deferred until after the first hardware validation gates unless the BDFL
+reprioritizes them.
 
 **What the app configures:**
 - Role assignment (which ring is cursor, which is scroll, which is modifier)
@@ -419,6 +420,32 @@ ERR 400 invalid_role
 
 Valid role names: `CURSOR`, `SCROLL`, `MODIFIER` (case-insensitive on input,
 uppercase on output).
+
+#### SWAP_ROLES
+
+Swap roles between two known rings atomically.
+
+```
+> SWAP_ROLES AA:BB:CC:DD:EE:01 AA:BB:CC:DD:EE:02
+OK
+```
+
+Error if either MAC is not known:
+
+```
+> SWAP_ROLES AA:BB:CC:DD:EE:01 AA:BB:CC:DD:EE:FF
+ERR 404 unknown_mac
+```
+
+Error if the same MAC is provided twice:
+
+```
+> SWAP_ROLES AA:BB:CC:DD:EE:01 AA:BB:CC:DD:EE:01
+ERR 400 identical_macs
+```
+
+The text command `SWAP_ROLES` maps to the binary protocol's `ROLE_SWAP`
+semantics from the multi-ring protocol document.
 
 #### GET_RING_INFO
 
@@ -980,11 +1007,12 @@ requires changes to:
    for the ring, with `DEVBOARD-C3` used until real PCB revisions exist.
 
 5. **Hub firmware** -- The text command parser core for `GET_HUB_INFO` and
-   `GET_ROLES` now exists as a transport-agnostic module, and `SET_ROLE`
-   already routes through a shared hub-control helper so persistent role
-   changes and the live event-composer cache stay aligned for active rings.
-   The remaining work is to wire this command core into a USB CDC task on the
-   ESP32-S3, then add the remaining mutating and relay commands from section 3.
+   `GET_ROLES` now exists as a transport-agnostic module, and `SET_ROLE` plus
+   `SWAP_ROLES` already route through a shared hub-control helper so persistent
+   role changes and the live event-composer cache stay aligned for active
+   rings. The remaining work is to wire this command core into a USB CDC task
+   on the ESP32-S3, then add the remaining mutating and relay commands from
+   section 3.
 
 ### 7.2 Hub as Configuration Relay
 

@@ -324,6 +324,34 @@ void test_mark_connected_seeds_cached_role(void)
     TEST_ASSERT_EQUAL(-6, r.scroll_v);
 }
 
+void test_role_swap_clears_old_mapping_before_new_roles_apply(void)
+{
+    reset();
+    connect_ring(0, ROLE_CURSOR);
+    connect_ring(1, ROLE_SCROLL);
+    feed_ring(0, 0x01, 5, 3);
+    feed_ring(1, 0x01, 2, -4);
+
+    event_composer_swap_roles(0, ROLE_SCROLL, 1, ROLE_CURSOR);
+
+    composed_report_t r;
+    event_composer_compose(&r);
+    TEST_ASSERT_EQUAL(0, r.buttons);
+    TEST_ASSERT_EQUAL(0, r.cursor_dx);
+    TEST_ASSERT_EQUAL(0, r.cursor_dy);
+    TEST_ASSERT_EQUAL(0, r.scroll_h);
+    TEST_ASSERT_EQUAL(0, r.scroll_v);
+
+    feed_ring(0, 0x01, 6, -2);
+    feed_ring(1, 0x01, -3, 9);
+    event_composer_compose(&r);
+    TEST_ASSERT_EQUAL(0x03, r.buttons);
+    TEST_ASSERT_EQUAL(-3, r.cursor_dx);
+    TEST_ASSERT_EQUAL(9, r.cursor_dy);
+    TEST_ASSERT_EQUAL(6, r.scroll_h);
+    TEST_ASSERT_EQUAL(-2, r.scroll_v);
+}
+
 // --- Test runner ---
 
 void run_event_composer_tests(void)
@@ -347,5 +375,6 @@ void run_event_composer_tests(void)
     RUN_TEST(test_reconnect_after_disconnect_works);
     RUN_TEST(test_buttons_reflect_latest_feed);
     RUN_TEST(test_role_change_clears_old_mapping_before_new_role_applies);
+    RUN_TEST(test_role_swap_clears_old_mapping_before_new_roles_apply);
     RUN_TEST(test_mark_connected_seeds_cached_role);
 }

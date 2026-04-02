@@ -40,6 +40,11 @@ hal_status_t role_engine_get_all(role_engine_entry_t *entries_out,
 // Persists asynchronously via the role engine's background flush path.
 hal_status_t role_engine_set_role(const uint8_t mac[6], ring_role_t role);
 
+// Swap the roles for two known rings under one mutex acquisition.
+// This avoids the transient double-role state that two sequential set_role
+// calls would create during a companion-driven swap.
+hal_status_t role_engine_swap(const uint8_t mac_a[6], const uint8_t mac_b[6]);
+
 // Remove a ring's role assignment (frees a slot for a new ring).
 // Call when a ring is physically replaced or factory-reset.
 hal_status_t role_engine_forget(const uint8_t mac[6]);

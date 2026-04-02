@@ -34,6 +34,14 @@ void event_composer_mark_connected(uint8_t ring_index, ring_role_t role);
 // cannot change meaning across roles (e.g. left -> right) without a release.
 void event_composer_set_role(uint8_t ring_index, ring_role_t role);
 
+// Atomically update the cached roles for two connected rings.
+// Both rings have buttons and buffered deltas cleared under one lock so a
+// companion-driven swap does not leave an intermediate mixed-role window.
+void event_composer_swap_roles(uint8_t ring_index_a,
+                               ring_role_t role_a,
+                               uint8_t ring_index_b,
+                               ring_role_t role_b);
+
 // Feed a ring's HID report into the composer.
 // ring_index: which ring (0-3)
 // buttons, dx, dy: from the ring's BLE HID notification

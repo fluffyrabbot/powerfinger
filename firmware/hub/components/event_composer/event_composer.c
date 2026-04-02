@@ -103,6 +103,32 @@ void event_composer_set_role(uint8_t ring_index, ring_role_t role)
     UNLOCK();
 }
 
+void event_composer_swap_roles(uint8_t ring_index_a,
+                               ring_role_t role_a,
+                               uint8_t ring_index_b,
+                               ring_role_t role_b)
+{
+    if (ring_index_a >= HUB_MAX_RINGS || ring_index_b >= HUB_MAX_RINGS ||
+        ring_index_a == ring_index_b ||
+        role_a >= ROLE_COUNT || role_b >= ROLE_COUNT) {
+        return;
+    }
+
+    LOCK();
+    ring_state_t *a = &s_rings[ring_index_a];
+    ring_state_t *b = &s_rings[ring_index_b];
+    if (!a->connected || !b->connected) {
+        UNLOCK();
+        return;
+    }
+
+    clear_ring_state(a);
+    clear_ring_state(b);
+    a->role = role_a;
+    b->role = role_b;
+    UNLOCK();
+}
+
 void event_composer_feed(uint8_t ring_index, uint8_t buttons, int8_t dx, int8_t dy)
 {
     if (ring_index >= HUB_MAX_RINGS) return;

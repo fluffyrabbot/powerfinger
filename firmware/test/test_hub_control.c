@@ -9,6 +9,7 @@
 #include "event_composer.h"
 
 static const uint8_t MAC_A[6] = { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15 };
+static const uint8_t MAC_B[6] = { 0x20, 0x21, 0x22, 0x23, 0x24, 0x25 };
 
 static void reset(void)
 {
@@ -63,10 +64,66 @@ void test_set_role_rejects_unknown_mac(void)
     TEST_ASSERT_EQUAL(HAL_ERR_NOT_FOUND, hub_control_set_role(MAC_A, ROLE_SCROLL));
 }
 
+void test_swap_roles_persists_for_disconnected_rings(void)
+{
+    reset();
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    TEST_ASSERT_EQUAL(ROLE_SCROLL, role_engine_get_role(MAC_B));
+
+    TEST_ASSERT_EQUAL(HAL_OK, hub_control_swap_roles(MAC_A, MAC_B));
+    TEST_ASSERT_EQUAL(ROLE_SCROLL, role_engine_get_role(MAC_A));
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_B));
+}
+
+void test_swap_roles_updates_live_event_composer_cache_for_two_active_rings(void)
+{
+    reset();
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    TEST_ASSERT_EQUAL(ROLE_SCROLL, role_engine_get_role(MAC_B));
+    event_composer_mark_connected(0, ROLE_CURSOR);
+    event_composer_mark_connected(1, ROLE_SCROLL);
+    event_composer_feed(0, 0x01, 8, 4);
+    event_composer_feed(1, 0x01, 2, -5);
+    mock_ble_central_set_connected_ring(0, MAC_A);
+    mock_ble_central_set_connected_ring(1, MAC_B);
+
+    TEST_ASSERT_EQUAL(HAL_OK, hub_control_swap_roles(MAC_A, MAC_B));
+
+    composed_report_t report;
+    event_composer_compose(&report);
+    TEST_ASSERT_EQUAL(0, report.buttons);
+    TEST_ASSERT_EQUAL(0, report.cursor_dx);
+    TEST_ASSERT_EQUAL(0, report.cursor_dy);
+    TEST_ASSERT_EQUAL(0, report.scroll_h);
+    TEST_ASSERT_EQUAL(0, report.scroll_v);
+
+    event_composer_feed(0, 0x01, 6, -2);
+    event_composer_feed(1, 0x01, -3, 9);
+    event_composer_compose(&report);
+    TEST_ASSERT_EQUAL(0x03, report.buttons);
+    TEST_ASSERT_EQUAL(-3, report.cursor_dx);
+    TEST_ASSERT_EQUAL(9, report.cursor_dy);
+    TEST_ASSERT_EQUAL(6, report.scroll_h);
+    TEST_ASSERT_EQUAL(-2, report.scroll_v);
+}
+
+void test_swap_roles_rejects_identical_mac(void)
+{
+    reset();
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    TEST_ASSERT_EQUAL(HAL_ERR_INVALID_ARG, hub_control_swap_roles(MAC_A, MAC_A));
+}
+
 void run_hub_control_tests(void)
 {
     printf("Hub control tests:\n");
     RUN_TEST(test_set_role_persists_for_disconnected_ring);
     RUN_TEST(test_set_role_updates_live_event_composer_cache);
     RUN_TEST(test_set_role_rejects_unknown_mac);
+    RUN_TEST(test_swap_roles_persists_for_disconnected_rings);
+    RUN_TEST(test_swap_roles_updates_live_event_composer_cache_for_two_active_rings);
+    RUN_TEST(test_swap_roles_rejects_identical_mac);
 }

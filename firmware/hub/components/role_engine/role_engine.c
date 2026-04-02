@@ -141,6 +141,16 @@ static void stage_pending_blob_locked(int count)
     s_dirty = true;
 }
 
+static int find_entry_index_locked(const uint8_t mac[6])
+{
+    for (int i = 0; i < s_entry_count; i++) {
+        if (memcmp(s_entries[i].mac, mac, 6) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 static role_flush_result_t flush_pending_once(void)
 {
     bool need_flush = false;
@@ -359,17 +369,15 @@ hal_status_t role_engine_set_role(const uint8_t mac[6], ring_role_t role)
 
     LOCK();
 
-    for (int i = 0; i < s_entry_count; i++) {
-        if (memcmp(s_entries[i].mac, mac, 6) == 0) {
-            s_entries[i].role = role;
-            found = true;
-            stage_pending_blob_locked(s_entry_count);
-            marked_dirty = true;
+    int idx = find_entry_index_locked(mac);
+    if (idx >= 0) {
+        s_entries[idx].role = role;
+        found = true;
+        stage_pending_blob_locked(s_entry_count);
+        marked_dirty = true;
 #ifdef ESP_PLATFORM
-            ESP_LOGI(TAG, "reassigned ring %d to %s", i, s_role_names[role]);
+        ESP_LOGI(TAG, "reassigned ring %d to %s", idx, s_role_names[role]);
 #endif
-            break;
-        }
     }
 
     UNLOCK();
@@ -379,6 +387,42 @@ hal_status_t role_engine_set_role(const uint8_t mac[6], ring_role_t role)
     }
 
     return found ? HAL_OK : HAL_ERR_NOT_FOUND;
+}
+
+hal_status_t role_engine_swap(const uint8_t mac_a[6], const uint8_t mac_b[6])
+{
+    if (!mac_a || !mac_b || memcmp(mac_a, mac_b, 6) == 0) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    bool swapped = false;
+    bool marked_dirty = false;
+
+    LOCK();
+
+    int idx_a = find_entry_index_locked(mac_a);
+    int idx_b = find_entry_index_locked(mac_b);
+    if (idx_a >= 0 && idx_b >= 0) {
+        swapped = true;
+        if (s_entries[idx_a].role != s_entries[idx_b].role) {
+            ring_role_t tmp = s_entries[idx_a].role;
+            s_entries[idx_a].role = s_entries[idx_b].role;
+            s_entries[idx_b].role = tmp;
+            stage_pending_blob_locked(s_entry_count);
+            marked_dirty = true;
+        }
+#ifdef ESP_PLATFORM
+        ESP_LOGI(TAG, "swapped roles for rings %d and %d", idx_a, idx_b);
+#endif
+    }
+
+    UNLOCK();
+
+    if (marked_dirty) {
+        signal_flush_task();
+    }
+
+    return swapped ? HAL_OK : HAL_ERR_NOT_FOUND;
 }
 
 hal_status_t role_engine_forget(const uint8_t mac[6])

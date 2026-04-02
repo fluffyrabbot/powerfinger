@@ -166,6 +166,72 @@ void test_set_role_rejects_invalid_mac_format(void)
     TEST_ASSERT_TRUE(strcmp("ERR 400 invalid_mac\n", response) == 0);
 }
 
+void test_swap_roles_swaps_known_assignments(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    TEST_ASSERT_EQUAL(ROLE_SCROLL, role_engine_get_role(MAC_B));
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("SWAP_ROLES 10:11:12:13:14:15 20:21:22:23:24:25",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("OK\n", response) == 0);
+    TEST_ASSERT_EQUAL(ROLE_SCROLL, role_engine_get_role(MAC_A));
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_B));
+}
+
+void test_role_swap_alias_is_accepted(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    TEST_ASSERT_EQUAL(ROLE_SCROLL, role_engine_get_role(MAC_B));
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("ROLE_SWAP 10:11:12:13:14:15 20:21:22:23:24:25",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("OK\n", response) == 0);
+}
+
+void test_swap_roles_rejects_identical_macs(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("SWAP_ROLES 10:11:12:13:14:15 10:11:12:13:14:15",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("ERR 400 identical_macs\n", response) == 0);
+}
+
+void test_swap_roles_rejects_unknown_mac(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("SWAP_ROLES 10:11:12:13:14:15 20:21:22:23:24:25",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("ERR 404 unknown_mac\n", response) == 0);
+}
+
 void test_extra_args_are_rejected(void)
 {
     reset();
@@ -191,5 +257,9 @@ void run_companion_protocol_tests(void)
     RUN_TEST(test_command_set_role_rejects_unknown_mac);
     RUN_TEST(test_set_role_rejects_invalid_role_name);
     RUN_TEST(test_set_role_rejects_invalid_mac_format);
+    RUN_TEST(test_swap_roles_swaps_known_assignments);
+    RUN_TEST(test_role_swap_alias_is_accepted);
+    RUN_TEST(test_swap_roles_rejects_identical_macs);
+    RUN_TEST(test_swap_roles_rejects_unknown_mac);
     RUN_TEST(test_extra_args_are_rejected);
 }

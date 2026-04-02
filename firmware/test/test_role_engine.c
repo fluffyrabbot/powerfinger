@@ -140,6 +140,41 @@ void test_get_all_rejects_too_small_output_buffer(void)
     TEST_ASSERT_EQUAL(2, count);
 }
 
+void test_swap_exchanges_roles_and_persists(void)
+{
+    reset();
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    TEST_ASSERT_EQUAL(ROLE_SCROLL, role_engine_get_role(MAC_B));
+
+    TEST_ASSERT_EQUAL(HAL_OK, role_engine_swap(MAC_A, MAC_B));
+    TEST_ASSERT_EQUAL(ROLE_SCROLL, role_engine_get_role(MAC_A));
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_B));
+
+    role_engine_flush_if_dirty();
+
+    TEST_ASSERT_EQUAL(HAL_OK, role_engine_init());
+    TEST_ASSERT_EQUAL(ROLE_SCROLL, role_engine_get_role(MAC_A));
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_B));
+}
+
+void test_swap_rejects_identical_mac(void)
+{
+    reset();
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    TEST_ASSERT_EQUAL(HAL_ERR_INVALID_ARG, role_engine_swap(MAC_A, MAC_A));
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+}
+
+void test_swap_rejects_unknown_mac(void)
+{
+    reset();
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    TEST_ASSERT_EQUAL(HAL_ERR_NOT_FOUND, role_engine_swap(MAC_A, MAC_B));
+}
+
 void run_role_engine_tests(void)
 {
     printf("Role engine tests:\n");
@@ -149,4 +184,7 @@ void run_role_engine_tests(void)
     RUN_TEST(test_get_all_returns_entries_in_assignment_order);
     RUN_TEST(test_get_all_supports_count_query_without_output_buffer);
     RUN_TEST(test_get_all_rejects_too_small_output_buffer);
+    RUN_TEST(test_swap_exchanges_roles_and_persists);
+    RUN_TEST(test_swap_rejects_identical_mac);
+    RUN_TEST(test_swap_rejects_unknown_mac);
 }
