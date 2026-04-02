@@ -11,6 +11,11 @@
 #include "hal_ble.h"
 #include "hal_ota.h"
 
+#include <string.h>
+
+#define MOCK_STORAGE_MAX_KEY_LEN   32
+#define MOCK_STORAGE_MAX_BLOB_LEN  128
+
 static uint32_t s_time_ms = 0;
 static uint32_t s_adc_mv = 3700;  // default: healthy battery
 static hal_status_t s_adc_status = HAL_OK;
@@ -20,6 +25,19 @@ static hal_status_t s_ble_conn_param_status = HAL_OK;
 static int s_ble_conn_param_request_count = 0;
 static uint16_t s_ble_conn_param_min = 0;
 static uint16_t s_ble_conn_param_max = 0;
+static bool s_storage_committed_present = false;
+static char s_storage_committed_key[MOCK_STORAGE_MAX_KEY_LEN] = {0};
+static uint8_t s_storage_committed_blob[MOCK_STORAGE_MAX_BLOB_LEN] = {0};
+static size_t s_storage_committed_len = 0;
+static bool s_storage_pending_present = false;
+static bool s_storage_pending_delete = false;
+static char s_storage_pending_key[MOCK_STORAGE_MAX_KEY_LEN] = {0};
+static uint8_t s_storage_pending_blob[MOCK_STORAGE_MAX_BLOB_LEN] = {0};
+static size_t s_storage_pending_len = 0;
+static hal_status_t s_storage_set_status = HAL_OK;
+static int s_storage_set_fail_count = 0;
+static hal_status_t s_storage_commit_status = HAL_OK;
+static int s_storage_commit_fail_count = 0;
 
 void mock_hal_reset(void)
 {
@@ -32,6 +50,19 @@ void mock_hal_reset(void)
     s_ble_conn_param_request_count = 0;
     s_ble_conn_param_min = 0;
     s_ble_conn_param_max = 0;
+    s_storage_committed_present = false;
+    memset(s_storage_committed_key, 0, sizeof(s_storage_committed_key));
+    memset(s_storage_committed_blob, 0, sizeof(s_storage_committed_blob));
+    s_storage_committed_len = 0;
+    s_storage_pending_present = false;
+    s_storage_pending_delete = false;
+    memset(s_storage_pending_key, 0, sizeof(s_storage_pending_key));
+    memset(s_storage_pending_blob, 0, sizeof(s_storage_pending_blob));
+    s_storage_pending_len = 0;
+    s_storage_set_status = HAL_OK;
+    s_storage_set_fail_count = 0;
+    s_storage_commit_status = HAL_OK;
+    s_storage_commit_fail_count = 0;
 }
 
 void mock_hal_set_time_ms(uint32_t ms) { s_time_ms = ms; }
@@ -48,6 +79,28 @@ void mock_hal_inject_ble_send_failure(hal_status_t status, int count)
 void mock_hal_set_ble_conn_param_status(hal_status_t status)
 {
     s_ble_conn_param_status = status;
+}
+
+void mock_hal_storage_seed(const char *key, const void *data, size_t len)
+{
+    if (!key || !data || len > MOCK_STORAGE_MAX_BLOB_LEN) return;
+    s_storage_committed_present = true;
+    memset(s_storage_committed_key, 0, sizeof(s_storage_committed_key));
+    strncpy(s_storage_committed_key, key, sizeof(s_storage_committed_key) - 1);
+    memcpy(s_storage_committed_blob, data, len);
+    s_storage_committed_len = len;
+}
+
+void mock_hal_inject_storage_set_failure(hal_status_t status, int count)
+{
+    s_storage_set_status = status;
+    s_storage_set_fail_count = count;
+}
+
+void mock_hal_inject_storage_commit_failure(hal_status_t status, int count)
+{
+    s_storage_commit_status = status;
+    s_storage_commit_fail_count = count;
 }
 
 int mock_hal_get_ble_conn_param_request_count(void)
@@ -94,10 +147,75 @@ hal_status_t hal_sleep_configure_wake_timer(uint32_t us) { (void)us; return HAL_
 
 // --- hal_storage ---
 hal_status_t hal_storage_init(void) { return HAL_OK; }
-hal_status_t hal_storage_set(const char *k, const void *d, size_t l) { (void)k;(void)d;(void)l; return HAL_OK; }
-hal_status_t hal_storage_get(const char *k, void *d, size_t *l) { (void)k;(void)d;(void)l; return HAL_ERR_NOT_FOUND; }
-hal_status_t hal_storage_delete(const char *k) { (void)k; return HAL_OK; }
-hal_status_t hal_storage_commit(void) { return HAL_OK; }
+hal_status_t hal_storage_set(const char *k, const void *d, size_t l) {
+    if (!k || !d || l > MOCK_STORAGE_MAX_BLOB_LEN) return HAL_ERR_INVALID_ARG;
+    if (s_storage_set_fail_count > 0) {
+        s_storage_set_fail_count--;
+        return s_storage_set_status;
+    }
+    s_storage_pending_present = true;
+    s_storage_pending_delete = false;
+    memset(s_storage_pending_key, 0, sizeof(s_storage_pending_key));
+    strncpy(s_storage_pending_key, k, sizeof(s_storage_pending_key) - 1);
+    memcpy(s_storage_pending_blob, d, l);
+    s_storage_pending_len = l;
+    return HAL_OK;
+}
+hal_status_t hal_storage_get(const char *k, void *d, size_t *l) {
+    if (!k || !l) return HAL_ERR_INVALID_ARG;
+    if (!s_storage_committed_present || strcmp(s_storage_committed_key, k) != 0) {
+        return HAL_ERR_NOT_FOUND;
+    }
+    if (*l < s_storage_committed_len) {
+        *l = s_storage_committed_len;
+        return HAL_ERR_INVALID_ARG;
+    }
+    if (d && s_storage_committed_len > 0) {
+        memcpy(d, s_storage_committed_blob, s_storage_committed_len);
+    }
+    *l = s_storage_committed_len;
+    return HAL_OK;
+}
+hal_status_t hal_storage_delete(const char *k) {
+    if (!k) return HAL_ERR_INVALID_ARG;
+    s_storage_pending_present = true;
+    s_storage_pending_delete = true;
+    memset(s_storage_pending_key, 0, sizeof(s_storage_pending_key));
+    strncpy(s_storage_pending_key, k, sizeof(s_storage_pending_key) - 1);
+    s_storage_pending_len = 0;
+    return HAL_OK;
+}
+hal_status_t hal_storage_commit(void) {
+    if (s_storage_commit_fail_count > 0) {
+        s_storage_commit_fail_count--;
+        return s_storage_commit_status;
+    }
+    if (!s_storage_pending_present) {
+        return HAL_OK;
+    }
+
+    if (s_storage_pending_delete) {
+        if (s_storage_committed_present && strcmp(s_storage_committed_key, s_storage_pending_key) == 0) {
+            s_storage_committed_present = false;
+            memset(s_storage_committed_key, 0, sizeof(s_storage_committed_key));
+            memset(s_storage_committed_blob, 0, sizeof(s_storage_committed_blob));
+            s_storage_committed_len = 0;
+        }
+    } else {
+        s_storage_committed_present = true;
+        memset(s_storage_committed_key, 0, sizeof(s_storage_committed_key));
+        strncpy(s_storage_committed_key, s_storage_pending_key, sizeof(s_storage_committed_key) - 1);
+        memcpy(s_storage_committed_blob, s_storage_pending_blob, s_storage_pending_len);
+        s_storage_committed_len = s_storage_pending_len;
+    }
+
+    s_storage_pending_present = false;
+    s_storage_pending_delete = false;
+    memset(s_storage_pending_key, 0, sizeof(s_storage_pending_key));
+    memset(s_storage_pending_blob, 0, sizeof(s_storage_pending_blob));
+    s_storage_pending_len = 0;
+    return HAL_OK;
+}
 
 // --- hal_spi ---
 hal_status_t hal_spi_init(const hal_spi_config_t *c, hal_spi_handle_t *h) { (void)c;(void)h; return HAL_OK; }

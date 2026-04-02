@@ -6,8 +6,9 @@
 // Reassignment is atomic (mutex-protected).
 // Roles persist to NVS across power cycles.
 //
-// NVS writes happen outside the mutex to avoid blocking the NimBLE task
-// for up to 200ms during flash sector erase/garbage collection.
+// NVS writes happen outside the mutex to avoid blocking the NimBLE task.
+// On ESP targets, a low-priority background task performs the flash commit so
+// the hub's 1ms USB HID loop never absorbs the ~20-200ms erase stall.
 
 #include "role_engine.h"
 #include "ble_central.h"
@@ -17,6 +18,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "freertos/task.h"
 static const char *TAG = "role_engine";
 static SemaphoreHandle_t s_mutex = NULL;
 #define LOCK()   if (s_mutex) xSemaphoreTake(s_mutex, portMAX_DELAY)
@@ -31,6 +33,15 @@ static SemaphoreHandle_t s_mutex = NULL;
 // NVS blob format: version byte + array of role_entry_t
 #define ROLE_NVS_KEY     "roles"
 #define ROLE_NVS_VERSION 1
+
+#ifdef ESP_PLATFORM
+// Background NVS flush task. Low priority is intentional: USB HID delivery and
+// NimBLE should preempt this worker, because role persistence is important but
+// not latency-critical once the in-memory assignment exists.
+#define ROLE_FLUSH_TASK_STACK_BYTES 3072
+#define ROLE_FLUSH_TASK_PRIORITY    1
+#define ROLE_FLUSH_RETRY_DELAY_MS   250
+#endif
 
 // Role assignment entry
 typedef struct {
@@ -50,11 +61,30 @@ static int s_entry_count = 0;
 static bool s_dirty = false;          // deferred NVS write pending
 static role_blob_t s_pending_blob;    // snapshot to write when s_dirty is consumed
 
+#ifdef ESP_PLATFORM
+static TaskHandle_t s_flush_task = NULL;
+#endif
+
 static const char *s_role_names[] = {
     [ROLE_CURSOR]   = "CURSOR",
     [ROLE_SCROLL]   = "SCROLL",
     [ROLE_MODIFIER] = "MODIFIER",
 };
+
+typedef enum {
+    ROLE_FLUSH_NONE,
+    ROLE_FLUSH_OK,
+    ROLE_FLUSH_RETRY,
+} role_flush_result_t;
+
+static void signal_flush_task(void)
+{
+#ifdef ESP_PLATFORM
+    if (s_flush_task) {
+        xTaskNotifyGive(s_flush_task);
+    }
+#endif
+}
 
 // Assign the first unoccupied role in priority order.
 // Called while mutex is held, before s_entry_count is incremented, so
@@ -109,12 +139,78 @@ static role_blob_t snapshot_entries_locked(int count)
     return blob;
 }
 
+static void stage_pending_blob_locked(int count)
+{
+    s_pending_blob = snapshot_entries_locked(count);
+    s_dirty = true;
+}
+
+static role_flush_result_t flush_pending_once(void)
+{
+    bool need_flush = false;
+    role_blob_t snapshot;
+
+    LOCK();
+    if (s_dirty) {
+        snapshot = s_pending_blob;
+        s_dirty = false;
+        need_flush = true;
+    }
+    UNLOCK();
+
+    if (!need_flush) {
+        return ROLE_FLUSH_NONE;
+    }
+
+    if (!flush_to_nvs(&snapshot)) {
+        // M8: re-set dirty so the next flush attempt retries.
+        // Without this, a transient NVS failure permanently loses the role
+        // assignment — it works in RAM but never persists.
+        LOCK();
+        s_dirty = true;
+        UNLOCK();
+        return ROLE_FLUSH_RETRY;
+    }
+
+    return ROLE_FLUSH_OK;
+}
+
+#ifdef ESP_PLATFORM
+static void role_flush_task(void *arg)
+{
+    (void)arg;
+
+    while (1) {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+        while (1) {
+            role_flush_result_t result = flush_pending_once();
+            if (result == ROLE_FLUSH_NONE) {
+                break;
+            }
+            if (result == ROLE_FLUSH_RETRY) {
+                vTaskDelay(pdMS_TO_TICKS(ROLE_FLUSH_RETRY_DELAY_MS));
+            }
+        }
+    }
+}
+#endif
+
 hal_status_t role_engine_init(void)
 {
 #ifdef ESP_PLATFORM
-    s_mutex = xSemaphoreCreateMutex();
-    if (!s_mutex) return HAL_ERR_NO_MEM;
+    if (!s_mutex) {
+        s_mutex = xSemaphoreCreateMutex();
+        if (!s_mutex) return HAL_ERR_NO_MEM;
+    }
 #endif
+
+    // Reset process-local state so host tests and warm re-inits do not inherit
+    // stale in-memory assignments or dirty flags from a prior session.
+    memset(s_entries, 0, sizeof(s_entries));
+    s_entry_count = 0;
+    s_dirty = false;
+    memset(&s_pending_blob, 0, sizeof(s_pending_blob));
 
     hal_storage_init();
 
@@ -123,10 +219,27 @@ hal_status_t role_engine_init(void)
     size_t len = sizeof(blob);
     if (hal_storage_get(ROLE_NVS_KEY, &blob, &len) == HAL_OK) {
         if (len >= 2 && blob.version == ROLE_NVS_VERSION && blob.count <= HUB_MAX_RINGS) {
-            // Validate each entry
-            s_entry_count = 0;
+            // Validate each entry and deduplicate by MAC, keeping the last
+            // entry encountered so the most recently written assignment wins.
             for (int i = 0; i < blob.count; i++) {
-                if (blob.entries[i].role < ROLE_COUNT) {
+                if (blob.entries[i].role >= ROLE_COUNT) {
+                    continue;
+                }
+
+                int existing = -1;
+                for (int j = 0; j < s_entry_count; j++) {
+                    if (memcmp(s_entries[j].mac, blob.entries[i].mac, sizeof(blob.entries[i].mac)) == 0) {
+                        existing = j;
+                        break;
+                    }
+                }
+
+                if (existing >= 0) {
+                    s_entries[existing] = blob.entries[i];
+#ifdef ESP_PLATFORM
+                    ESP_LOGW(TAG, "duplicate MAC in NVS role blob, keeping last entry");
+#endif
+                } else {
                     s_entries[s_entry_count++] = blob.entries[i];
                 }
             }
@@ -147,12 +260,30 @@ hal_status_t role_engine_init(void)
 #endif
     }
 
+#ifdef ESP_PLATFORM
+    if (!s_flush_task) {
+        BaseType_t task_rc = xTaskCreate(
+            role_flush_task,
+            "role_flush",
+            ROLE_FLUSH_TASK_STACK_BYTES,
+            NULL,
+            ROLE_FLUSH_TASK_PRIORITY,
+            &s_flush_task
+        );
+        if (task_rc != pdPASS) {
+            s_flush_task = NULL;
+            return HAL_ERR_NO_MEM;
+        }
+    }
+#endif
+
     return HAL_OK;
 }
 
 ring_role_t role_engine_get_role(const uint8_t mac[6])
 {
     ring_role_t result;
+    bool marked_dirty = false;
 
     LOCK();
 
@@ -173,10 +304,9 @@ ring_role_t role_engine_get_role(const uint8_t mac[6])
         s_entry_count++;
         result = s_entries[idx].role;
         // Capture snapshot and mark dirty while lock is held.
-        // Actual NVS write is deferred to role_engine_flush_if_dirty(),
-        // called from the main loop — keeps the NimBLE task unblocked.
-        s_pending_blob = snapshot_entries_locked(s_entry_count);
-        s_dirty = true;
+        // The background flush worker persists it without blocking the caller.
+        stage_pending_blob_locked(s_entry_count);
+        marked_dirty = true;
 #ifdef ESP_PLATFORM
         ESP_LOGI(TAG, "assigned %s to new ring (index %d)", s_role_names[result], idx);
 #endif
@@ -186,6 +316,10 @@ ring_role_t role_engine_get_role(const uint8_t mac[6])
 
     UNLOCK();
 
+    if (marked_dirty) {
+        signal_flush_task();
+    }
+
     return result;
 }
 
@@ -194,6 +328,7 @@ hal_status_t role_engine_set_role(const uint8_t mac[6], ring_role_t role)
     if (role >= ROLE_COUNT) return HAL_ERR_INVALID_ARG;
 
     bool found = false;
+    bool marked_dirty = false;
 
     LOCK();
 
@@ -201,8 +336,8 @@ hal_status_t role_engine_set_role(const uint8_t mac[6], ring_role_t role)
         if (memcmp(s_entries[i].mac, mac, 6) == 0) {
             s_entries[i].role = role;
             found = true;
-            s_pending_blob = snapshot_entries_locked(s_entry_count);
-            s_dirty = true;
+            stage_pending_blob_locked(s_entry_count);
+            marked_dirty = true;
 #ifdef ESP_PLATFORM
             ESP_LOGI(TAG, "reassigned ring %d to %s", i, s_role_names[role]);
 #endif
@@ -212,12 +347,17 @@ hal_status_t role_engine_set_role(const uint8_t mac[6], ring_role_t role)
 
     UNLOCK();
 
+    if (marked_dirty) {
+        signal_flush_task();
+    }
+
     return found ? HAL_OK : HAL_ERR_NOT_FOUND;
 }
 
 hal_status_t role_engine_forget(const uint8_t mac[6])
 {
     bool found = false;
+    bool marked_dirty = false;
 
     LOCK();
 
@@ -229,8 +369,8 @@ hal_status_t role_engine_forget(const uint8_t mac[6])
             }
             s_entry_count--;
             found = true;
-            s_pending_blob = snapshot_entries_locked(s_entry_count);
-            s_dirty = true;
+            stage_pending_blob_locked(s_entry_count);
+            marked_dirty = true;
 #ifdef ESP_PLATFORM
             ESP_LOGI(TAG, "forgot ring at index %d, %d entries remain", i, s_entry_count);
 #endif
@@ -239,6 +379,10 @@ hal_status_t role_engine_forget(const uint8_t mac[6])
     }
 
     UNLOCK();
+
+    if (marked_dirty) {
+        signal_flush_task();
+    }
 
     return found ? HAL_OK : HAL_ERR_NOT_FOUND;
 }
@@ -251,29 +395,5 @@ const char *role_engine_role_name(ring_role_t role)
 
 void role_engine_flush_if_dirty(void)
 {
-    bool need_flush = false;
-    role_blob_t snapshot;
-
-    LOCK();
-    if (s_dirty) {
-        snapshot = s_pending_blob;
-        s_dirty = false;
-        need_flush = true;
-    }
-    UNLOCK();
-
-    // NVS write outside mutex — blocks ~200ms on flash erase.
-    // Must be called from main loop task, never from NimBLE task context.
-    if (need_flush) {
-        if (!flush_to_nvs(&snapshot)) {
-            // M8: re-set dirty so the next flush interval retries.
-            // Without this, a transient NVS failure permanently loses
-            // the role assignment — it works in RAM but never persists.
-            LOCK();
-            s_dirty = true;
-            // s_pending_blob is still valid (snapshot captured under lock
-            // earlier), so we don't need to re-snapshot.
-            UNLOCK();
-        }
-    }
+    (void)flush_pending_once();
 }

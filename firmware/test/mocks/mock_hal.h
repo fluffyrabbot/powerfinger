@@ -19,6 +19,11 @@ void mock_hal_advance_time_ms(uint32_t ms);
 void mock_hal_set_adc_mv(uint32_t mv);
 void mock_hal_set_adc_status(hal_status_t status);
 
+// --- Storage mock (for role engine persistence tests) ---
+void mock_hal_storage_seed(const char *key, const void *data, size_t len);
+void mock_hal_inject_storage_set_failure(hal_status_t status, int count);
+void mock_hal_inject_storage_commit_failure(hal_status_t status, int count);
+
 // --- Failure injection ---
 // Set the return value for a specific HAL module's next N calls.
 // After N calls, reverts to HAL_OK.

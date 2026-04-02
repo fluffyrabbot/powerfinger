@@ -24,10 +24,9 @@ static const char *TAG = "powerfinger_hub";
 // USB HID poll interval (1ms for USB full-speed)
 #define USB_POLL_INTERVAL_MS 1
 
-// Flush pending NVS role changes every ~1s (~1000 ticks at 1ms/tick).
-// Absorbs the ~200ms flash erase stall in the main loop rather than on
-// the NimBLE task. Assumes loop period ≈ USB_POLL_INTERVAL_MS.
-#define NVS_FLUSH_INTERVAL_TICKS 1000
+// Poll for rings stuck in GATT discovery at a human timescale, not every
+// USB tick. 1s granularity is plenty for a 10s discovery timeout.
+#define DISCOVERY_TIMEOUT_CHECK_MS 1000
 
 // H1: USB HID send failure escalation.
 // After this many consecutive send errors (excluding HAL_ERR_BUSY which is
@@ -120,10 +119,7 @@ void app_main(void)
     // accessibility hazard the event composer is designed to prevent.
     bool prev_report_nonzero = false;
 
-    // NVS flush counter: role_engine_flush_if_dirty() every NVS_FLUSH_INTERVAL_TICKS.
-    // Assumes loop runs at ~1ms/tick — valid as long as USB HID timing holds.
-    // If the loop gains variable-duration work, switch to hal_timer_get_ms().
-    uint32_t flush_ticks = 0;
+    uint32_t last_discovery_check_ms = hal_timer_get_ms();
 
     // H1: consecutive USB HID send failure counter
     uint32_t usb_fail_count = 0;
@@ -156,13 +152,10 @@ void app_main(void)
 
         prev_report_nonzero = report_nonzero;
 
-        // Deferred NVS flush — absorbs the ~200ms flash erase stall here
-        // rather than blocking the NimBLE task when a new ring first connects.
-        if (++flush_ticks >= NVS_FLUSH_INTERVAL_TICKS) {
-            role_engine_flush_if_dirty();
+        if ((now - last_discovery_check_ms) >= DISCOVERY_TIMEOUT_CHECK_MS) {
             // H8: disconnect rings stuck in GATT discovery
             ble_central_check_discovery_timeout();
-            flush_ticks = 0;
+            last_discovery_check_ms = now;
         }
 
         esp_task_wdt_reset();

@@ -650,13 +650,12 @@ current codebase:
 | `s_entries[]` (role engine) | FreeRTOS mutex | NimBLE task (via `role_engine_get_role`), companion command task |
 | `s_rings[]` (event composer) | portMUX spinlock | NimBLE task (via `feed`, `ring_disconnected`), main loop (via `compose`) |
 | `s_rings[]` (BLE central) | Single-task access | NimBLE task only (all GAP callbacks run on same task) |
-| NVS writes | Unprotected (single writer assumed) | Whichever task called a role_engine mutator |
+| NVS writes | Single background flush task | Role engine flush worker only |
 
-**Concern:** If the companion command parser runs on a different task than the
-NimBLE task, and both call `role_engine_set_role()` concurrently, the NVS write
-(outside the mutex) could race. The mutex protects in-memory state but not the
-`flush_to_nvs()` call. Fix: either serialize companion commands onto the NimBLE
-task, or add a separate NVS write mutex.
+**Current behavior:** Companion or NimBLE callers mutate in-memory role state
+under the role-engine mutex and stage a new blob snapshot. A dedicated
+background task performs the blocking `flush_to_nvs()` commit later, so callers
+do not become concurrent NVS writers.
 
 ### 7.3 Design Decision: Role Cached In Event Composer
 
@@ -814,7 +813,9 @@ These items require BDFL decision before implementation:
    Requiring manual disconnect is an unnecessary friction point, especially for
    accessibility users.
 
-4. **NVS write race (section 7.2).** If companion commands run on a separate
-   task, the NVS write path needs a second mutex or task serialization.
-   **Recommendation:** Route all companion commands through a FreeRTOS queue
-   consumed by the main loop task, avoiding concurrent NVS writers entirely.
+4. **Companion command serialization.** NVS writes are already centralized in a
+   background flush worker, but companion commands still need a coherent policy
+   for applying live role changes to connected rings.
+   **Recommendation:** Route companion role changes through one command task or
+   queue so role-engine mutation and `event_composer_set_role()` happen as one
+   ordered operation.

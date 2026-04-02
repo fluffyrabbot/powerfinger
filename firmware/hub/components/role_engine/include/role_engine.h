@@ -25,7 +25,7 @@ hal_status_t role_engine_init(void);
 ring_role_t role_engine_get_role(const uint8_t mac[6]);
 
 // Reassign a ring's role. Atomic — no intermediate state.
-// Persists to NVS during idle.
+// Persists asynchronously via the role engine's background flush path.
 hal_status_t role_engine_set_role(const uint8_t mac[6], ring_role_t role);
 
 // Remove a ring's role assignment (frees a slot for a new ring).
@@ -35,6 +35,7 @@ hal_status_t role_engine_forget(const uint8_t mac[6]);
 // Get role name as string (for logging)
 const char *role_engine_role_name(ring_role_t role);
 
-// Flush any pending role changes to NVS. Call from main loop, not from
-// NimBLE task context — NVS writes block up to ~200ms on flash erase.
+// Flush any pending role changes to NVS.
+// On ESP targets this is normally handled by the role engine's background
+// worker task; this entry point remains for host-side tests and non-RTOS paths.
 void role_engine_flush_if_dirty(void);
