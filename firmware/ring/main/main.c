@@ -11,6 +11,7 @@
 #include <string.h>
 #include "esp_log.h"
 #include "esp_ota_ops.h"
+#include "esp_system.h"
 #include "nvs_flash.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -25,6 +26,7 @@
 #include "dead_zone.h"
 #include "calibration.h"
 #include "power_manager.h"
+#include "ring_runtime_health.h"
 
 static const char *TAG = "powerfinger";
 
@@ -40,6 +42,24 @@ static inline int8_t clamp_i8(int16_t v)
     if (v > 127) return 127;
     if (v < -127) return -127;
     return (int8_t)v;
+}
+
+static void handle_hid_send_result(ring_runtime_health_t *runtime_health,
+                                   hal_status_t send_rc,
+                                   uint32_t now_ms)
+{
+    ring_hid_health_update_t update =
+        ring_runtime_health_note_hid_send_result(runtime_health, send_rc, now_ms);
+
+    if (update.event == RING_HID_HEALTH_FAULT_STARTED) {
+        ESP_LOGW(TAG, "BLE HID send error: %d — monitoring for recovery", update.status);
+    } else if (update.event == RING_HID_HEALTH_RECOVERED) {
+        ESP_LOGI(TAG, "BLE HID send path recovered");
+    } else if (update.event == RING_HID_HEALTH_RESTART_REQUIRED) {
+        ESP_LOGE(TAG, "BLE HID send failed for %lu ms (last=%d) — restarting",
+                 (unsigned long)update.fault_elapsed_ms, update.status);
+        esp_restart();
+    }
 }
 
 // --- BLE event callback (posts to queue, never dispatches directly) ---
@@ -105,6 +125,8 @@ static void phase0_fake_motion_loop(void)
 
     uint32_t tick = 0;
     uint32_t adv_start_ms = hal_timer_get_ms();
+    ring_runtime_health_t runtime_health;
+    ring_runtime_health_init(&runtime_health);
 
     while (1) {
         hal_timer_delay_ms(FAKE_MOTION_PERIOD_MS);
@@ -118,10 +140,12 @@ static void phase0_fake_motion_loop(void)
             if (queued_evt == RING_EVT_BLE_CONNECTED) {
                 adv_start_ms = 0;  // connected, stop tracking adv timeout
                 power_manager_on_connect();
+                ring_runtime_health_reset_hid_send(&runtime_health);
             }
             if (queued_evt == RING_EVT_BLE_DISCONNECTED) {
                 adv_start_ms = hal_timer_get_ms();
                 power_manager_on_disconnect();
+                ring_runtime_health_reset_hid_send(&runtime_health);
             }
         }
 
@@ -148,7 +172,9 @@ static void phase0_fake_motion_loop(void)
 
         uint8_t buttons = ((tick % 200) < 10) ? 0x01 : 0x00;
 
-        ble_hid_mouse_send(buttons, dx, dy, 0);
+        handle_hid_send_result(&runtime_health,
+                               ble_hid_mouse_send(buttons, dx, dy, 0),
+                               now);
         tick++;
     }
 }
@@ -184,7 +210,7 @@ void app_main(void)
     // Initialize sensor (check for failure)
     bool sensor_ok = (sensor_init() == HAL_OK);
     if (!sensor_ok) {
-        ESP_LOGE(TAG, "sensor init failed — HID reports will be suppressed");
+        ESP_LOGE(TAG, "sensor init failed — motion input disabled, click path still available");
     }
 
     // Initialize click (check for failure)
@@ -233,11 +259,8 @@ void app_main(void)
     // --- Main loop: state machine driven ---
     uint32_t adv_start_ms = hal_timer_get_ms();  // track advertising timeout
     uint8_t prev_buttons = 0;
-
-    // Consecutive sensor failures — after 50 failures (~750ms at 15ms poll),
-    // enter deep sleep and reboot. Eliminates false positives from surface lift.
-    #define SENSOR_FAILURE_THRESHOLD 50
-    uint8_t consecutive_sensor_failures = 0;
+    ring_runtime_health_t runtime_health;
+    ring_runtime_health_init(&runtime_health);
 
     while (1) {
         uint32_t now = hal_timer_get_ms();
@@ -252,12 +275,14 @@ void app_main(void)
             if (queued_evt == RING_EVT_BLE_CONNECTED) {
                 adv_start_ms = 0;
                 power_manager_on_connect();
+                ring_runtime_health_reset_hid_send(&runtime_health);
                 prev_buttons = 0;
             }
             if (queued_evt == RING_EVT_BLE_DISCONNECTED) {
                 dead_zone_reset();
                 adv_start_ms = now;
                 power_manager_on_disconnect();
+                ring_runtime_health_reset_hid_send(&runtime_health);
                 prev_buttons = 0;
             }
         }
@@ -274,23 +299,35 @@ void app_main(void)
         // --- Read sensor ---
         sensor_reading_t reading = {0};
         bool sensor_valid = false;
-        if (sensor_ok && sensor_read(&reading) == HAL_OK) {
-            calibration_apply(&reading.dx, &reading.dy);
-            sensor_valid = true;
-            consecutive_sensor_failures = 0;
+        if (sensor_ok) {
+            hal_status_t sensor_rc = sensor_read(&reading);
+            ring_sensor_health_update_t sensor_update =
+                ring_runtime_health_note_sensor_result(&runtime_health, sensor_rc);
 
-            if (reading.motion_detected) {
-                memset(&actions, 0, sizeof(actions));
-                ring_state_dispatch(RING_EVT_MOTION_DETECTED, &actions);
-                execute_actions(&actions);
-                power_manager_on_motion();
-            }
-        } else if (sensor_ok) {
-            consecutive_sensor_failures++;
-            if (consecutive_sensor_failures >= SENSOR_FAILURE_THRESHOLD) {
-                ESP_LOGE(TAG, "sensor failed %d consecutive reads — rebooting",
-                         SENSOR_FAILURE_THRESHOLD);
-                power_manager_enter_sleep(true);
+            if (sensor_rc == HAL_OK) {
+                if (sensor_update.event == RING_SENSOR_HEALTH_RECOVERED) {
+                    ESP_LOGI(TAG, "sensor recovered — motion input restored");
+                }
+
+                calibration_apply(&reading.dx, &reading.dy);
+                sensor_valid = true;
+
+                if (reading.motion_detected) {
+                    memset(&actions, 0, sizeof(actions));
+                    ring_state_dispatch(RING_EVT_MOTION_DETECTED, &actions);
+                    execute_actions(&actions);
+                    power_manager_on_motion();
+                }
+            } else {
+                if (sensor_update.consecutive_failures == 1) {
+                    ESP_LOGW(TAG, "sensor read error: %d", sensor_rc);
+                }
+                if (sensor_update.event == RING_SENSOR_HEALTH_DEGRADED) {
+                    ESP_LOGE(TAG,
+                             "sensor read failed %u consecutive times — degrading to click-only until recovery",
+                             sensor_update.consecutive_failures);
+                    dead_zone_reset();
+                }
             }
         }
 
@@ -318,10 +355,12 @@ void app_main(void)
         bool button_changed = (buttons != prev_buttons);
         if (ring_state_get() == RING_STATE_CONNECTED_ACTIVE &&
             (sensor_valid || button_changed)) {
-            ble_hid_mouse_send(buttons,
-                               sensor_valid ? clamp_i8(reading.dx) : 0,
-                               sensor_valid ? clamp_i8(reading.dy) : 0,
-                               0);
+            handle_hid_send_result(&runtime_health,
+                                   ble_hid_mouse_send(buttons,
+                                                      sensor_valid ? clamp_i8(reading.dx) : 0,
+                                                      sensor_valid ? clamp_i8(reading.dy) : 0,
+                                                      0),
+                                   now);
         }
         prev_buttons = buttons;
 

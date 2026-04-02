@@ -19,6 +19,15 @@
 // up to 15ms on most hosts) and keeps CPU load proportional to HID report rate.
 #define SENSOR_POLL_INTERVAL_MS     15
 
+// Repeated sensor read failures should degrade motion input instead of
+// immediately rebooting the device out from under the user. 50 polls at 15ms
+// is about 750ms of continuous failure before falling back to click-only mode.
+#define SENSOR_READ_FAIL_DEGRADE_THRESHOLD 50
+
+// If HID notifications fail continuously for this long, restart to recover the
+// BLE stack instead of silently staying connected but unusable.
+#define BLE_HID_SEND_RESTART_MS    5000
+
 // --- State machine timing ---
 // Duration of no motion before transitioning from ACTIVE to IDLE.
 // At this point, connection interval reverts from 7.5ms to 15ms.

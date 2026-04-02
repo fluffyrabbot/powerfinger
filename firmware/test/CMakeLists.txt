@@ -55,6 +55,15 @@ target_include_directories(power_manager PUBLIC
     ../ring/components/hal/include
 )
 
+add_library(ring_runtime_health STATIC
+    ../ring/components/runtime_health/ring_runtime_health.c
+)
+target_include_directories(ring_runtime_health PUBLIC
+    ../ring/components/runtime_health/include
+    ../ring/components/state_machine/include
+    ../ring/components/hal/include
+)
+
 add_library(role_engine STATIC
     ../hub/components/role_engine/role_engine.c
 )
@@ -93,6 +102,7 @@ add_executable(powerfinger_tests
     test_state_machine.c
     test_dead_zone.c
     test_power_manager.c
+    test_ring_runtime_health.c
     test_role_engine.c
     test_event_composer.c
     test_usb_hid.c
@@ -104,6 +114,7 @@ target_link_libraries(powerfinger_tests
     state_machine
     dead_zone
     power_manager
+    ring_runtime_health
     role_engine
     event_composer
     usb_hid
@@ -112,6 +123,7 @@ target_include_directories(powerfinger_tests PRIVATE
     ../ring/components/state_machine/include
     ../ring/components/click/include
     ../ring/components/power/include
+    ../ring/components/runtime_health/include
     ../ring/components/ble_hid/include
     ../ring/components/hal/include
     ../hub/components/role_engine/include
