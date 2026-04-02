@@ -17,6 +17,7 @@
 #include "ble_central.h"
 #include "role_engine.h"
 #include "event_composer.h"
+#include "hub_identity.h"
 #include "usb_hid_mouse.h"
 
 static const char *TAG = "powerfinger_hub";
@@ -111,6 +112,9 @@ void app_main(void)
     esp_ota_mark_app_valid_cancel_rollback();
 
     ESP_LOGI(TAG, "hub ready, scanning for rings...");
+    ESP_LOGI(TAG, "hub identity: fw=%s hw=%s",
+             hub_identity_firmware_revision(),
+             hub_identity_hardware_revision());
 
     // --- Main loop: compose and send USB HID reports at 1ms ---
     // Track whether the previous report was non-zero so we always send
@@ -125,6 +129,7 @@ void app_main(void)
     uint32_t usb_fail_count = 0;
 
     while (1) {
+        uint32_t now = hal_timer_get_ms();
         composed_report_t report;
         event_composer_compose(&report);
 

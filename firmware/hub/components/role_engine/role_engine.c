@@ -30,7 +30,7 @@ static SemaphoreHandle_t s_mutex = NULL;
 
 #include <string.h>
 
-// NVS blob format: version byte + array of role_entry_t
+// NVS blob format: version byte + array of role_engine_entry_t
 #define ROLE_NVS_KEY     "roles"
 #define ROLE_NVS_VERSION 1
 
@@ -44,19 +44,14 @@ static SemaphoreHandle_t s_mutex = NULL;
 #endif
 
 // Role assignment entry
-typedef struct {
-    uint8_t mac[6];
-    ring_role_t role;
-} role_entry_t;
-
 // NVS blob layout
 typedef struct {
     uint8_t version;
     uint8_t count;
-    role_entry_t entries[HUB_MAX_RINGS];
+    role_engine_entry_t entries[HUB_MAX_RINGS];
 } role_blob_t;
 
-static role_entry_t s_entries[HUB_MAX_RINGS];
+static role_engine_entry_t s_entries[HUB_MAX_RINGS];
 static int s_entry_count = 0;
 static bool s_dirty = false;          // deferred NVS write pending
 static role_blob_t s_pending_blob;    // snapshot to write when s_dirty is consumed
@@ -111,7 +106,8 @@ static ring_role_t default_role_for_new_ring(void)
 // M8: returns true on success, false on failure (caller should re-set dirty flag).
 static bool flush_to_nvs(const role_blob_t *snapshot)
 {
-    size_t len = sizeof(uint8_t) * 2 + sizeof(role_entry_t) * snapshot->count;
+    size_t len = sizeof(uint8_t) * 2 +
+                 sizeof(role_engine_entry_t) * snapshot->count;
     hal_status_t rc = hal_storage_set(ROLE_NVS_KEY, snapshot, len);
     if (rc != HAL_OK) {
 #ifdef ESP_PLATFORM
@@ -135,7 +131,7 @@ static role_blob_t snapshot_entries_locked(int count)
     role_blob_t blob;
     blob.version = ROLE_NVS_VERSION;
     blob.count = (uint8_t)count;
-    memcpy(blob.entries, s_entries, sizeof(role_entry_t) * count);
+    memcpy(blob.entries, s_entries, sizeof(role_engine_entry_t) * count);
     return blob;
 }
 
@@ -321,6 +317,37 @@ ring_role_t role_engine_get_role(const uint8_t mac[6])
     }
 
     return result;
+}
+
+hal_status_t role_engine_get_all(role_engine_entry_t *entries_out,
+                                 size_t max_entries,
+                                 size_t *count_out)
+{
+    if (!count_out) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    LOCK();
+
+    size_t entry_count = (size_t)s_entry_count;
+    *count_out = entry_count;
+
+    if (!entries_out) {
+        if (max_entries != 0) {
+            UNLOCK();
+            return HAL_ERR_INVALID_ARG;
+        }
+    } else if (max_entries < entry_count) {
+        UNLOCK();
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    if (entries_out && entry_count > 0) {
+        memcpy(entries_out, s_entries, sizeof(s_entries[0]) * entry_count);
+    }
+
+    UNLOCK();
+    return HAL_OK;
 }
 
 hal_status_t role_engine_set_role(const uint8_t mac[6], ring_role_t role)

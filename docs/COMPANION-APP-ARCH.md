@@ -11,9 +11,11 @@ DPI multiplier, dead-zone time, dead-zone distance, and firmware version, all
 backed by deferred NVS persistence. It also now exposes the standard Device
 Information identity fields (model, firmware revision, hardware revision, and
 serial number) for bring-up and companion readback, plus a read-only
-diagnostic snapshot characteristic. Deferred until after the first hardware
-validation gates: gesture tables, OTA relay UX, charge-fault telemetry, and
-rich companion workflows unless the BDFL reprioritizes them.
+diagnostic snapshot characteristic. On the hub side, the text command core now
+implements host-tested `GET_HUB_INFO` and `GET_ROLES` handling behind a
+transport-agnostic parser, but USB CDC transport, mutating hub commands, and
+BLE relay writes are still deferred until after the first hardware validation
+gates unless the BDFL reprioritizes them.
 
 **What the app configures:**
 - Role assignment (which ring is cursor, which is scroll, which is modifier)
@@ -43,7 +45,7 @@ MAC address to role mapping, identical to the existing `role_engine.h`
 interface:
 
 ```
-role_entry_t {
+role_engine_entry_t {
     uint8_t mac[6];       // Ring BLE MAC address
     ring_role_t role;     // CURSOR (0), SCROLL (1), MODIFIER (2)
 }
@@ -365,8 +367,8 @@ Returns hub firmware version, hardware revision, and connected ring count.
 
 ```
 > GET_HUB_INFO
-+ fw=1.2.3
-+ hw=P0-R1
++ fw=0.1.0
++ hw=DEVBOARD-S3
 + rings=2
 + max_rings=4
 + usb_poll_ms=1
@@ -977,10 +979,10 @@ requires changes to:
    (0x2A25) characteristics to the existing 0x180A service. This is now done
    for the ring, with `DEVBOARD-C3` used until real PCB revisions exist.
 
-5. **Hub firmware** -- Add a USB CDC serial command parser that dispatches
-   the commands from section 3. The parser runs in a dedicated FreeRTOS
-   task, communicates with the role engine and BLE central via their
-   existing APIs.
+5. **Hub firmware** -- The text command parser core for `GET_HUB_INFO` and
+   `GET_ROLES` now exists as a transport-agnostic module. The remaining work
+   is to wire it into a USB CDC task on the ESP32-S3, then add the mutating
+   and relay commands from section 3 on top of that transport.
 
 ### 7.2 Hub as Configuration Relay
 

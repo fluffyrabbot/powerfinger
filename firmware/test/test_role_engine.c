@@ -20,7 +20,7 @@ typedef struct {
 typedef struct {
     uint8_t version;
     uint8_t count;
-    role_entry_t entries[HUB_MAX_RINGS];
+    role_engine_entry_t entries[HUB_MAX_RINGS];
 } role_blob_t;
 
 static const uint8_t MAC_A[6] = { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15 };
@@ -94,10 +94,59 @@ void test_duplicate_mac_load_keeps_last_entry(void)
     TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_B));
 }
 
+void test_get_all_returns_entries_in_assignment_order(void)
+{
+    reset();
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    TEST_ASSERT_EQUAL(ROLE_SCROLL, role_engine_get_role(MAC_B));
+
+    role_engine_entry_t entries[HUB_MAX_RINGS] = {0};
+    size_t count = 0;
+
+    TEST_ASSERT_EQUAL(HAL_OK, role_engine_get_all(entries,
+                                                  HUB_MAX_RINGS,
+                                                  &count));
+    TEST_ASSERT_EQUAL(2, count);
+    TEST_ASSERT_TRUE(memcmp(MAC_A, entries[0].mac, sizeof(MAC_A)) == 0);
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, entries[0].role);
+    TEST_ASSERT_TRUE(memcmp(MAC_B, entries[1].mac, sizeof(MAC_B)) == 0);
+    TEST_ASSERT_EQUAL(ROLE_SCROLL, entries[1].role);
+}
+
+void test_get_all_supports_count_query_without_output_buffer(void)
+{
+    reset();
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    TEST_ASSERT_EQUAL(ROLE_SCROLL, role_engine_get_role(MAC_B));
+
+    size_t count = 0;
+    TEST_ASSERT_EQUAL(HAL_OK, role_engine_get_all(NULL, 0, &count));
+    TEST_ASSERT_EQUAL(2, count);
+}
+
+void test_get_all_rejects_too_small_output_buffer(void)
+{
+    reset();
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    TEST_ASSERT_EQUAL(ROLE_SCROLL, role_engine_get_role(MAC_B));
+
+    role_engine_entry_t entry = {0};
+    size_t count = 0;
+
+    TEST_ASSERT_EQUAL(HAL_ERR_INVALID_ARG, role_engine_get_all(&entry, 1, &count));
+    TEST_ASSERT_EQUAL(2, count);
+}
+
 void run_role_engine_tests(void)
 {
     printf("Role engine tests:\n");
     RUN_TEST(test_roles_persist_after_flush_and_reload);
     RUN_TEST(test_flush_failure_retries_dirty_snapshot);
     RUN_TEST(test_duplicate_mac_load_keeps_last_entry);
+    RUN_TEST(test_get_all_returns_entries_in_assignment_order);
+    RUN_TEST(test_get_all_supports_count_query_without_output_buffer);
+    RUN_TEST(test_get_all_rejects_too_small_output_buffer);
 }

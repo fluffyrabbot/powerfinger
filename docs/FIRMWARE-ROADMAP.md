@@ -282,6 +282,11 @@ hubless single-ring use). Provides:
 app is the configuration UI — a luxury, not a requirement. It's how you
 customize, not how you use.
 
+**Pre-hardware status:** The hub now has shared identity strings plus a
+host-tested text command core for `GET_HUB_INFO` and `GET_ROLES`, so the
+command contract no longer lives only in docs. USB CDC transport, write-side
+commands, and BLE relay operations are still pending.
+
 **Platform priority:**
 1. **Web Serial** (Chrome/Edge) — talks to hub over USB serial from a webpage.
    Zero install, works on any desktop OS with a modern browser. MVP path.

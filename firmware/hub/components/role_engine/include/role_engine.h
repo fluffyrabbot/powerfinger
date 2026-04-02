@@ -8,6 +8,7 @@
 
 #include "hal_types.h"
 #include <stdint.h>
+#include <stddef.h>
 
 typedef enum {
     ROLE_CURSOR,    // X/Y → cursor, click → left click
@@ -16,6 +17,11 @@ typedef enum {
     ROLE_COUNT,
 } ring_role_t;
 
+typedef struct {
+    uint8_t mac[6];
+    ring_role_t role;
+} role_engine_entry_t;
+
 // Initialize role engine. Loads saved roles from NVS.
 // Default: first ring = CURSOR, second = SCROLL.
 hal_status_t role_engine_init(void);
@@ -23,6 +29,12 @@ hal_status_t role_engine_init(void);
 // Get the role for a ring by its MAC address.
 // Returns ROLE_CURSOR as default if MAC is not assigned.
 ring_role_t role_engine_get_role(const uint8_t mac[6]);
+
+// Bulk-read all persisted role assignments in insertion order.
+// Pass entries_out=NULL and max_entries=0 to query the current count only.
+hal_status_t role_engine_get_all(role_engine_entry_t *entries_out,
+                                 size_t max_entries,
+                                 size_t *count_out);
 
 // Reassign a ring's role. Atomic — no intermediate state.
 // Persists asynchronously via the role engine's background flush path.

@@ -631,17 +631,15 @@ to composition.
 
 ## 7. Implementation Notes
 
-### 7.1 Functions Not Yet Implemented
+### 7.1 Functions Not Yet Fully Implemented
 
-The following functions are specified by this protocol but do not exist in the
-current codebase:
+The following protocol pieces are still incomplete in the current codebase:
 
 | Function | Module | Purpose |
 |----------|--------|---------|
 | `role_engine_swap(mac_a, mac_b)` | `role_engine.c` | Atomic role swap under single mutex acquisition |
-| `role_engine_get_all(entries_out, count_out)` | `role_engine.c` | Bulk read for `GET_ROLES` command |
-| Companion command parser | New module | Parse and dispatch `GET_ROLES`, `ROLE_SET`, `ROLE_SWAP`, `FORGET_RING` |
-| NVS deduplication in `role_engine_init()` | `role_engine.c` | Remove duplicate MAC entries on load |
+| Companion command parser transport wiring | New module | Hook the existing read-only parser into USB CDC and extend it beyond `GET_HUB_INFO` / `GET_ROLES` |
+| `SET_ROLE`, `ROLE_SWAP`, `FORGET_RING` dispatch path | Companion command task | Apply live role mutations and keep the event-composer cache in sync |
 
 ### 7.2 Thread Safety Summary
 
