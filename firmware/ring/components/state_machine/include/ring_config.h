@@ -56,9 +56,12 @@
 // --- Click dead zone ---
 // Pressing the finger down causes micro-movement of the sensor.
 // Dead zone suppresses X/Y deltas while the dome is actuated.
-// Dead zone exit requires BOTH conditions to be met.
+// Dead zone exit requires BOTH conditions to be met. These are the persisted
+// first-boot defaults; runtime values may be changed over BLE and stored in NVS.
 #define DEAD_ZONE_TIME_MS           50   // minimum hold time before exit
+#define DEAD_ZONE_TIME_MS_MAX       2000 // BLE-configurable upper bound
 #define DEAD_ZONE_DISTANCE          10   // minimum accumulated counts before exit
+#define DEAD_ZONE_DISTANCE_MAX      255  // BLE-configurable upper bound
 #define DEAD_ZONE_DISTANCE_PRO      15   // Pro: account for LRA vibration contribution (A6 analysis)
 
 // Additional suppression during haptic pulse (Pro tier, piezo+LRA click)
@@ -82,3 +85,13 @@
 
 // Maximum calibration attempts before using zero offset
 #define CALIBRATION_MAX_RETRIES     3
+
+// --- Runtime settings ---
+// DPI multiplier uses 0.1x units so the ring can scale deltas without float.
+#define DPI_MULTIPLIER_DEFAULT      10   // 1.0x native sensor scale
+#define DPI_MULTIPLIER_MIN          1    // 0.1x
+#define DPI_MULTIPLIER_MAX          255  // 25.5x
+
+// Flash erase/commit can take tens to hundreds of milliseconds, so settings
+// writes stay in RAM until the ring leaves the active HID path.
+#define SETTINGS_FLUSH_RETRY_MS     1000

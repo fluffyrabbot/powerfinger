@@ -5,11 +5,12 @@ for basic operation. Rings work standalone over BLE HID, and multi-ring
 composition works through the hub with no software on the host. The companion
 app is how you customize, not how you use.
 
-**Status:** This document is post-validation architecture, not current P0 scope.
-Current firmware scope is the HID path, truthful battery reporting, and the
-minimum ring identity needed for hub discovery. Deferred until after the first
-hardware validation gates: custom BLE config services, gesture tables, OTA relay
-UX, charge-fault telemetry, and rich companion workflows unless the BDFL
+**Status:** This document is still mostly post-validation architecture, but the
+ring now ships a minimal pre-hardware config surface: BLE characteristics for
+DPI multiplier, dead-zone time, dead-zone distance, and firmware version, all
+backed by deferred NVS persistence. Deferred until after the first hardware
+validation gates: gesture tables, OTA relay UX, expanded Device Information
+metadata, charge-fault telemetry, and rich companion workflows unless the BDFL
 reprioritizes them.
 
 **What the app configures:**
@@ -29,9 +30,10 @@ reprioritizes them.
 
 ## 1. Configuration Data Model
 
-All configuration is stored on the hub in NVS. The companion app reads and
-writes configuration over USB serial (or BLE for hubless single-ring use).
-The hub is the source of truth. The app is a stateless UI.
+Hub-owned multi-ring configuration is stored on the hub in NVS. Per-ring
+runtime settings are stored on each ring in NVS and exposed over BLE. The
+companion app reads and writes configuration over USB serial (or BLE for
+hubless single-ring use). The app is a stateless UI.
 
 ### 1.1 Role Assignment
 
@@ -115,25 +117,26 @@ Maximum 8 gesture entries. Stored in hub NVS as a versioned blob.
 This service runs on each ring alongside the existing HID (0x1812), Device
 Information (0x180A), and Battery (0x180F) services defined in
 `hal_ble_esp.c`. It uses a custom 128-bit UUID base to avoid collision with
-Bluetooth SIG assigned numbers.
+Bluetooth SIG assigned numbers. The current firmware implements the settings
+and firmware-version characteristics below; OTA remains deferred.
 
 ### 2.1 UUID Scheme
 
-**Base UUID:** `PF00xxxx-7269-6E67-B054-706F77657266`
+**Base UUID:** `5046xxxx-7269-6E67-B054-706F77657266`
 
-The base encodes "ring" (0x7269 0x6E67) and "powerf" (0x706F 0x7765 0x7266)
-in ASCII for easy identification in BLE scanners. The `xxxx` field
-differentiates services and characteristics.
+The base encodes "PF" (`0x50 0x46`) plus "ring" (`0x7269 0x6E67`) and
+"powerf" (`0x706F 0x7765 0x7266`) in ASCII for easy identification in BLE
+scanners. The `xxxx` field differentiates services and characteristics.
 
 | Entity | UUID (short) | Full 128-bit UUID |
 |--------|-------------|-------------------|
-| PowerFinger Config Service | 0x0001 | `PF000001-7269-6E67-B054-706F77657266` |
-| DPI Multiplier Characteristic | 0x0101 | `PF000101-7269-6E67-B054-706F77657266` |
-| Dead Zone Time Characteristic | 0x0102 | `PF000102-7269-6E67-B054-706F77657266` |
-| Dead Zone Distance Characteristic | 0x0103 | `PF000103-7269-6E67-B054-706F77657266` |
-| Firmware Version Characteristic | 0x0201 | `PF000201-7269-6E67-B054-706F77657266` |
-| OTA Control Characteristic | 0x0301 | `PF000301-7269-6E67-B054-706F77657266` |
-| OTA Data Characteristic | 0x0302 | `PF000302-7269-6E67-B054-706F77657266` |
+| PowerFinger Config Service | 0x0001 | `50460001-7269-6E67-B054-706F77657266` |
+| DPI Multiplier Characteristic | 0x0101 | `50460101-7269-6E67-B054-706F77657266` |
+| Dead Zone Time Characteristic | 0x0102 | `50460102-7269-6E67-B054-706F77657266` |
+| Dead Zone Distance Characteristic | 0x0103 | `50460103-7269-6E67-B054-706F77657266` |
+| Firmware Version Characteristic | 0x0201 | `50460201-7269-6E67-B054-706F77657266` |
+| OTA Control Characteristic | 0x0301 | `50460301-7269-6E67-B054-706F77657266` |
+| OTA Data Characteristic | 0x0302 | `50460302-7269-6E67-B054-706F77657266` |
 
 ### 2.2 Standard Services (Already Implemented)
 
@@ -144,8 +147,8 @@ These already exist in `hal_ble_esp.c` and require no changes:
 | Battery Service | 0x180F | Battery Level (0x2A19): Read, Notify. uint8_t 0-100 percent. |
 | Device Information | 0x180A | Manufacturer Name (0x2A29): Read. PnP ID (0x2A50): Read. |
 
-**Addition to Device Information Service:** Add these standard characteristics
-to the existing 0x180A service:
+**Addition to Device Information Service (still deferred):** Add these standard
+characteristics to the existing 0x180A service:
 
 | Characteristic | UUID | Properties | Format | Notes |
 |---------------|------|------------|--------|-------|
@@ -164,7 +167,7 @@ to the existing 0x180A service:
 | Format | uint8_t |
 | Valid range | 1-255 |
 | Default | 10 (1.0x native DPI) |
-| Write error | 0 rejected with ATT error 0x0D (Value Not Allowed) |
+| Write error | 0 rejected with ATT error 0x13 (Value Not Allowed) |
 | Persistence | Written to ring NVS on change, deferred to idle period |
 
 #### Dead Zone Time (0x0102)
@@ -175,7 +178,7 @@ to the existing 0x180A service:
 | Format | uint16_t, little-endian |
 | Valid range | 0-2000 |
 | Default | 50 (ms) |
-| Write error | Values > 2000 rejected with ATT error 0x0D |
+| Write error | Values > 2000 rejected with ATT error 0x13 |
 | Persistence | Written to ring NVS on change, deferred to idle period |
 
 #### Dead Zone Distance (0x0103)
@@ -934,18 +937,17 @@ Adding the GATT configuration service (section 2) to the ring firmware
 requires changes to:
 
 1. **`hal_ble_esp.c`** -- Add the PowerFinger Config Service to the
-   `s_gatt_svcs[]` array. Add access callbacks for each characteristic.
-   Add static variables for DPI multiplier, dead zone time, and dead zone
-   distance that are read/written by the callbacks and by the sensor
-   processing loop.
+   `s_gatt_svcs[]` array. This is now done for the minimal pre-hardware
+   surface: DPI multiplier, dead zone time, dead zone distance, and firmware
+   version.
 
-2. **`hal_ble.h`** -- Add `hal_ble_get_dpi()` and `hal_ble_get_dead_zone()`
-   functions so the sensor processing loop can read current config values
-   without directly accessing BLE internals.
+2. **`ring_settings.c` / `ring_settings.h`** -- Persist the runtime config in a
+   versioned NVS blob and expose lock-free getters so the sensor processing
+   loop and BLE callbacks share one source of truth without duplicating state.
 
 3. **Device Information Service** -- Add Model Number (0x2A24), Firmware
    Revision (0x2A26), Hardware Revision (0x2A27), and Serial Number
-   (0x2A25) characteristics to the existing 0x180A service.
+   (0x2A25) characteristics to the existing 0x180A service. Still deferred.
 
 4. **Hub firmware** -- Add a USB CDC serial command parser that dispatches
    the commands from section 3. The parser runs in a dedicated FreeRTOS

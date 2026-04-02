@@ -11,6 +11,7 @@ extern void run_ring_diagnostics_tests(void);
 extern void run_calibration_tests(void);
 extern void run_power_manager_tests(void);
 extern void run_ring_runtime_health_tests(void);
+extern void run_ring_settings_tests(void);
 extern void run_role_engine_tests(void);
 extern void run_event_composer_tests(void);
 extern void run_usb_hid_tests(void);
@@ -25,6 +26,7 @@ int main(void)
     run_calibration_tests();
     run_power_manager_tests();
     run_ring_runtime_health_tests();
+    run_ring_settings_tests();
     run_role_engine_tests();
     run_event_composer_tests();
     run_usb_hid_tests();

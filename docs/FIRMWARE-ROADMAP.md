@@ -359,19 +359,25 @@ use (< 1 pixel/second at rest after high-pass filter).
 
 ## Phase 8 — DPI/Sensitivity Configuration
 
-**What:** Expose a BLE GATT characteristic for DPI/sensitivity adjustment. The
-companion app (or any BLE tool) can read and write the sensitivity multiplier.
-Valid range: 1–255 (0 is reserved, writes outside range rejected with
-ATT_ERR_VALUE_NOT_ALLOWED). Persisted to NVS (ESP32 non-volatile storage) so
-it survives power cycles. NVS writes should be deferred to idle periods (flash
-erase takes 20–200ms and can interfere with BLE timing).
+**What:** Expose BLE GATT characteristics for ring runtime settings. The
+companion app (or any BLE tool) can read and write the DPI multiplier,
+dead-zone time, and dead-zone distance over the valid `5046xxxx-7269-6E67-B054-706F77657266`
+PowerFinger config service. Valid ranges: DPI 1–255 (0 reserved), dead-zone
+time 0–2000ms, dead-zone distance 0–255. Persist to NVS (ESP32 non-volatile
+storage) so settings survive power cycles. NVS writes should be deferred to
+idle periods (flash erase takes 20–200ms and can interfere with BLE timing).
 
-**Why:** Hard-coded DPI is a project hard rule violation. Different users, different
-surfaces, and different use contexts need different sensitivity. This must be
-configurable without reflashing.
+**Status:** The ring-side config service and deferred persistence path are now
+implemented pre-hardware. Hub relay commands, OTA characteristics, and richer
+companion workflows still belong to later phases.
 
-**Done when:** Companion app can adjust cursor speed on a paired ring in real
-time. Setting persists across reboots.
+**Why:** Hard-coded DPI and dead-zone behavior are project hard rule violations.
+Different users, different surfaces, and different accessibility needs require
+different sensitivity and click filtering. This must be configurable without
+reflashing.
+
+**Done when:** Companion app can adjust cursor speed and click dead-zone
+behavior on a paired ring in real time. Settings persist across reboots.
 
 ---
 

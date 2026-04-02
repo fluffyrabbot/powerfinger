@@ -174,6 +174,27 @@ void test_reset_clears_state(void)
     TEST_ASSERT_EQUAL(5, dx);
 }
 
+void test_runtime_config_thresholds_are_applied(void)
+{
+    reset();
+    int16_t dx = 0;
+    int16_t dy = 0;
+
+    dead_zone_update_with_config(true, &dx, &dy, 0, 120, 20);
+
+    dx = 12;
+    dy = 10;
+    TEST_ASSERT_TRUE(dead_zone_update_with_config(true, &dx, &dy, 60, 120, 20));
+    TEST_ASSERT_EQUAL(0, dx);
+    TEST_ASSERT_EQUAL(0, dy);
+
+    dx = 5;
+    dy = 5;
+    TEST_ASSERT_FALSE(dead_zone_update_with_config(true, &dx, &dy, 130, 120, 20));
+    TEST_ASSERT_EQUAL(5, dx);
+    TEST_ASSERT_EQUAL(5, dy);
+}
+
 // --- Test runner ---
 
 void run_dead_zone_tests(void)
@@ -188,4 +209,5 @@ void run_dead_zone_tests(void)
     RUN_TEST(test_drag_mode_passes_deltas);
     RUN_TEST(test_drag_ends_on_release);
     RUN_TEST(test_reset_clears_state);
+    RUN_TEST(test_runtime_config_thresholds_are_applied);
 }

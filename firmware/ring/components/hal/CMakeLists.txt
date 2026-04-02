@@ -2,6 +2,7 @@
 # PowerFinger — Platform Hardware Abstraction Layer
 
 set(HAL_SRCS
+    "ring_settings.c"
     "esp_idf/hal_gpio_esp.c"
     "esp_idf/hal_spi_esp.c"
     "esp_idf/hal_adc_esp.c"

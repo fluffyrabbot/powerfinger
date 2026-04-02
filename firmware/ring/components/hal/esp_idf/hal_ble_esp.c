@@ -5,6 +5,7 @@
 // interface exposes only HID-level operations.
 
 #include "hal_ble.h"
+#include "ring_settings.h"
 #include "esp_log.h"
 #include "esp_nimble_hci.h"
 #include "nimble/nimble_port.h"
@@ -39,6 +40,7 @@ static atomic_bool s_connected = false;
 static const char *s_device_name = "PowerFinger";
 static uint32_t s_adv_timeout_ms = 0;
 static uint8_t s_battery_level = 0;
+static const uint8_t s_firmware_version[] = { 0x00, 0x01, 0x00 };
 
 // PowerFinger discovery marker carried in the HID Service Data AD field.
 // Layout: [0x12, 0x18, 'P', 'F', 'R', 0x01]
@@ -50,6 +52,25 @@ static const uint8_t s_powerfinger_service_data[] = {
 
 // HID report characteristic value handle (set during GATT registration)
 static uint16_t s_hid_report_handle = 0;
+
+// PowerFinger config UUIDs use a valid hex prefix "5046" ("PF" in ASCII):
+//   5046xxxx-7269-6E67-B054-706F77657266
+// NimBLE expects BLE_UUID128_DECLARE bytes in little-endian order.
+#define PF_UUID128_CONFIG_SERVICE \
+    BLE_UUID128_DECLARE(0x66, 0x72, 0x65, 0x77, 0x6F, 0x70, 0x54, 0xB0, \
+                        0x67, 0x6E, 0x69, 0x72, 0x01, 0x00, 0x46, 0x50)
+#define PF_UUID128_DPI \
+    BLE_UUID128_DECLARE(0x66, 0x72, 0x65, 0x77, 0x6F, 0x70, 0x54, 0xB0, \
+                        0x67, 0x6E, 0x69, 0x72, 0x01, 0x01, 0x46, 0x50)
+#define PF_UUID128_DEAD_ZONE_TIME \
+    BLE_UUID128_DECLARE(0x66, 0x72, 0x65, 0x77, 0x6F, 0x70, 0x54, 0xB0, \
+                        0x67, 0x6E, 0x69, 0x72, 0x02, 0x01, 0x46, 0x50)
+#define PF_UUID128_DEAD_ZONE_DISTANCE \
+    BLE_UUID128_DECLARE(0x66, 0x72, 0x65, 0x77, 0x6F, 0x70, 0x54, 0xB0, \
+                        0x67, 0x6E, 0x69, 0x72, 0x03, 0x01, 0x46, 0x50)
+#define PF_UUID128_FIRMWARE_VERSION \
+    BLE_UUID128_DECLARE(0x66, 0x72, 0x65, 0x77, 0x6F, 0x70, 0x54, 0xB0, \
+                        0x67, 0x6E, 0x69, 0x72, 0x01, 0x02, 0x46, 0x50)
 
 // --- HID Report Descriptor ---
 // Standard mouse: 3 buttons + X + Y + wheel (4-byte report)
@@ -94,6 +115,8 @@ static int ble_hid_report_access(uint16_t conn_handle, uint16_t attr_handle,
                                  struct ble_gatt_access_ctxt *ctxt, void *arg);
 static int ble_hid_info_access(uint16_t conn_handle, uint16_t attr_handle,
                                struct ble_gatt_access_ctxt *ctxt, void *arg);
+static int ble_pf_config_access(uint16_t conn_handle, uint16_t attr_handle,
+                                struct ble_gatt_access_ctxt *ctxt, void *arg);
 
 // HID Report Reference descriptor: Report ID 0, Input
 static const uint8_t s_report_ref_input[] = { 0x00, 0x01 };
@@ -175,6 +198,34 @@ static const struct ble_gatt_svc_def s_gatt_svcs[] = {
             { 0 },
         },
     },
+    {
+        // PowerFinger Config Service
+        .type = BLE_GATT_SVC_TYPE_PRIMARY,
+        .uuid = PF_UUID128_CONFIG_SERVICE,
+        .characteristics = (struct ble_gatt_chr_def[]) {
+            {
+                .uuid = PF_UUID128_DPI,
+                .access_cb = ble_pf_config_access,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE,
+            },
+            {
+                .uuid = PF_UUID128_DEAD_ZONE_TIME,
+                .access_cb = ble_pf_config_access,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE,
+            },
+            {
+                .uuid = PF_UUID128_DEAD_ZONE_DISTANCE,
+                .access_cb = ble_pf_config_access,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE,
+            },
+            {
+                .uuid = PF_UUID128_FIRMWARE_VERSION,
+                .access_cb = ble_pf_config_access,
+                .flags = BLE_GATT_CHR_F_READ,
+            },
+            { 0 },
+        },
+    },
     { 0 }, // terminator
 };
 
@@ -241,6 +292,103 @@ static int ble_hid_info_access(uint16_t conn_handle, uint16_t attr_handle,
         // Protocol Mode write (switch between Boot and Report protocol)
         return 0;
     }
+    return BLE_ATT_ERR_UNLIKELY;
+}
+
+static int ble_append_u8(struct ble_gatt_access_ctxt *ctxt, uint8_t value)
+{
+    int rc = os_mbuf_append(ctxt->om, &value, sizeof(value));
+    return (rc == 0) ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
+}
+
+static int ble_append_u16_le(struct ble_gatt_access_ctxt *ctxt, uint16_t value)
+{
+    uint8_t buf[2] = {
+        (uint8_t)(value & 0xFFU),
+        (uint8_t)((value >> 8) & 0xFFU),
+    };
+    int rc = os_mbuf_append(ctxt->om, buf, sizeof(buf));
+    return (rc == 0) ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
+}
+
+static int ble_append_bytes(struct ble_gatt_access_ctxt *ctxt,
+                            const void *data,
+                            size_t len)
+{
+    int rc = os_mbuf_append(ctxt->om, data, len);
+    return (rc == 0) ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
+}
+
+static int ble_pf_config_access(uint16_t conn_handle, uint16_t attr_handle,
+                                struct ble_gatt_access_ctxt *ctxt, void *arg)
+{
+    (void)conn_handle;
+    (void)attr_handle;
+    (void)arg;
+
+    const ble_uuid_t *uuid = ctxt->chr->uuid;
+
+    if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
+        if (ble_uuid_cmp(uuid, PF_UUID128_DPI) == 0) {
+            return ble_append_u8(ctxt, ring_settings_get_dpi_multiplier());
+        }
+        if (ble_uuid_cmp(uuid, PF_UUID128_DEAD_ZONE_TIME) == 0) {
+            return ble_append_u16_le(ctxt, ring_settings_get_dead_zone_time_ms());
+        }
+        if (ble_uuid_cmp(uuid, PF_UUID128_DEAD_ZONE_DISTANCE) == 0) {
+            return ble_append_u8(ctxt, ring_settings_get_dead_zone_distance());
+        }
+        if (ble_uuid_cmp(uuid, PF_UUID128_FIRMWARE_VERSION) == 0) {
+            return ble_append_bytes(ctxt, s_firmware_version, sizeof(s_firmware_version));
+        }
+        return BLE_ATT_ERR_UNLIKELY;
+    }
+
+    if (ctxt->op == BLE_GATT_ACCESS_OP_WRITE_CHR) {
+        size_t value_len = OS_MBUF_PKTLEN(ctxt->om);
+
+        if (ble_uuid_cmp(uuid, PF_UUID128_DPI) == 0) {
+            uint8_t value = 0;
+
+            if (value_len != sizeof(value) ||
+                os_mbuf_copydata(ctxt->om, 0, sizeof(value), &value) != 0) {
+                return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
+            }
+            return (ring_settings_set_dpi_multiplier(value) == HAL_OK)
+                ? 0
+                : BLE_ATT_ERR_VALUE_NOT_ALLOWED;
+        }
+
+        if (ble_uuid_cmp(uuid, PF_UUID128_DEAD_ZONE_TIME) == 0) {
+            uint8_t buf[2] = {0};
+            uint16_t value = 0;
+
+            if (value_len != sizeof(buf) ||
+                os_mbuf_copydata(ctxt->om, 0, sizeof(buf), buf) != 0) {
+                return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
+            }
+
+            value = (uint16_t)buf[0] | ((uint16_t)buf[1] << 8);
+            return (ring_settings_set_dead_zone_time_ms(value) == HAL_OK)
+                ? 0
+                : BLE_ATT_ERR_VALUE_NOT_ALLOWED;
+        }
+
+        if (ble_uuid_cmp(uuid, PF_UUID128_DEAD_ZONE_DISTANCE) == 0) {
+            uint8_t value = 0;
+
+            if (value_len != sizeof(value) ||
+                os_mbuf_copydata(ctxt->om, 0, sizeof(value), &value) != 0) {
+                return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
+            }
+            return (ring_settings_set_dead_zone_distance(value) == HAL_OK)
+                ? 0
+                : BLE_ATT_ERR_VALUE_NOT_ALLOWED;
+        }
+
+        return BLE_ATT_ERR_UNLIKELY;
+    }
+
     return BLE_ATT_ERR_UNLIKELY;
 }
 

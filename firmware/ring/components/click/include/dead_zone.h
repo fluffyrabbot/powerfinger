@@ -25,5 +25,11 @@ void dead_zone_init(void);
 bool dead_zone_update(bool click_pressed, int16_t *dx, int16_t *dy,
                       uint32_t now_ms);
 
+// Same state machine, but with caller-supplied thresholds so runtime BLE
+// settings can override the compiled defaults.
+bool dead_zone_update_with_config(bool click_pressed, int16_t *dx, int16_t *dy,
+                                  uint32_t now_ms, uint16_t dead_zone_time_ms,
+                                  uint8_t dead_zone_distance);
+
 // Reset dead zone state (e.g. on disconnect)
 void dead_zone_reset(void);

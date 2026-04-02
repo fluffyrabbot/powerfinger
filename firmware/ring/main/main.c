@@ -17,6 +17,7 @@
 #include "freertos/queue.h"
 #include "hal_timer.h"
 #include "hal_ble.h"
+#include "ring_settings.h"
 #include "ble_hid_mouse.h"
 #include "ble_config.h"
 #include "ring_state.h"
@@ -359,6 +360,14 @@ void app_main(void)
     ring_runtime_health_init(&runtime_health);
     calibration_reset();
 
+    hal_status_t settings_rc = ring_settings_init();
+    if (settings_rc != HAL_OK && settings_rc != HAL_ERR_INVALID_ARG) {
+        ESP_LOGW(TAG, "ring settings init failed (%d) — using runtime defaults only",
+                 settings_rc);
+    } else if (settings_rc == HAL_ERR_INVALID_ARG) {
+        ESP_LOGW(TAG, "ring settings blob invalid — reverted to defaults and will repair on next idle flush");
+    }
+
     // Initialize sensor (check for failure)
     bool sensor_ok = (sensor_init() == HAL_OK);
     bool sensor_calibrated = false;
@@ -428,9 +437,11 @@ void app_main(void)
     // --- Main loop: state machine driven ---
     uint32_t adv_start_ms = hal_timer_get_ms();  // track advertising timeout
     uint8_t prev_buttons = 0;
+    uint32_t next_settings_flush_ms = 0;
 
     while (1) {
         uint32_t now = hal_timer_get_ms();
+        ring_settings_snapshot_t settings = ring_settings_snapshot();
         memset(&actions, 0, sizeof(actions));
 
         // --- Drain BLE event queue (serializes all state machine access) ---
@@ -532,6 +543,8 @@ void app_main(void)
                 }
 
                 calibration_apply(&reading.dx, &reading.dy);
+                reading.dx = ring_settings_scale_delta(reading.dx);
+                reading.dy = ring_settings_scale_delta(reading.dy);
                 sensor_valid = true;
 
                 if (reading.motion_detected) {
@@ -575,7 +588,12 @@ void app_main(void)
         }
 
         if (sensor_valid) {
-            dead_zone_update(clicked, &reading.dx, &reading.dy, now);
+            dead_zone_update_with_config(clicked,
+                                         &reading.dx,
+                                         &reading.dy,
+                                         now,
+                                         settings.dead_zone_time_ms,
+                                         settings.dead_zone_distance);
         }
 
         // --- Send HID report if in active state ---
@@ -610,6 +628,19 @@ void app_main(void)
         }
         hal_ble_set_battery_level(power_manager_get_battery_level());
         sync_battery_diagnostics(&diagnostics);
+
+        if (ring_settings_needs_flush() &&
+            ring_state_get() != RING_STATE_CONNECTED_ACTIVE &&
+            now >= next_settings_flush_ms) {
+            hal_status_t flush_rc = ring_settings_flush();
+            if (flush_rc == HAL_OK) {
+                next_settings_flush_ms = 0;
+            } else {
+                next_settings_flush_ms = now + SETTINGS_FLUSH_RETRY_MS;
+                ESP_LOGW(TAG, "ring settings flush failed (%d) — retrying in %d ms",
+                         flush_rc, SETTINGS_FLUSH_RETRY_MS);
+            }
+        }
 
         power_manager_feed_watchdog();
 

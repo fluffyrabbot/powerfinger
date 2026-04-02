@@ -83,6 +83,14 @@ target_include_directories(ring_runtime_health PUBLIC
     ../ring/components/hal/include
 )
 
+add_library(ring_settings STATIC
+    ../ring/components/hal/ring_settings.c
+)
+target_include_directories(ring_settings PUBLIC
+    ../ring/components/hal/include
+    ../ring/components/state_machine/include
+)
+
 add_library(role_engine STATIC
     ../hub/components/role_engine/role_engine.c
 )
@@ -124,6 +132,7 @@ add_executable(powerfinger_tests
     test_calibration.c
     test_power_manager.c
     test_ring_runtime_health.c
+    test_ring_settings.c
     test_role_engine.c
     test_event_composer.c
     test_usb_hid.c
@@ -138,6 +147,7 @@ target_link_libraries(powerfinger_tests
     calibration
     power_manager
     ring_runtime_health
+    ring_settings
     role_engine
     event_composer
     usb_hid

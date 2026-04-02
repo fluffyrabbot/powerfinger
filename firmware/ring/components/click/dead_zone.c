@@ -25,6 +25,18 @@ void dead_zone_init(void)
 bool dead_zone_update(bool click_pressed, int16_t *dx, int16_t *dy,
                       uint32_t now_ms)
 {
+    return dead_zone_update_with_config(click_pressed,
+                                        dx,
+                                        dy,
+                                        now_ms,
+                                        DEAD_ZONE_TIME_MS,
+                                        DEAD_ZONE_DISTANCE);
+}
+
+bool dead_zone_update_with_config(bool click_pressed, int16_t *dx, int16_t *dy,
+                                  uint32_t now_ms, uint16_t dead_zone_time_ms,
+                                  uint8_t dead_zone_distance)
+{
     if (!dx || !dy) return false;
 
     switch (s_state) {
@@ -53,8 +65,8 @@ bool dead_zone_update(bool click_pressed, int16_t *dx, int16_t *dy,
         s_accumulated_distance += (uint32_t)(abs(*dx) + abs(*dy));
 
         uint32_t elapsed = now_ms - s_click_start_ms;
-        bool time_met = (elapsed >= DEAD_ZONE_TIME_MS);
-        bool distance_met = (s_accumulated_distance >= DEAD_ZONE_DISTANCE);
+        bool time_met = (elapsed >= dead_zone_time_ms);
+        bool distance_met = (s_accumulated_distance >= dead_zone_distance);
 
         if (time_met && distance_met) {
             // Both exit conditions met — transition to drag mode
