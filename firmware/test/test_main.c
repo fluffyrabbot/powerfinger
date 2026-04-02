@@ -7,6 +7,7 @@
 // Test suite entry points
 extern void run_state_machine_tests(void);
 extern void run_dead_zone_tests(void);
+extern void run_ring_diagnostics_tests(void);
 extern void run_calibration_tests(void);
 extern void run_power_manager_tests(void);
 extern void run_ring_runtime_health_tests(void);
@@ -20,6 +21,7 @@ int main(void)
 
     run_state_machine_tests();
     run_dead_zone_tests();
+    run_ring_diagnostics_tests();
     run_calibration_tests();
     run_power_manager_tests();
     run_ring_runtime_health_tests();

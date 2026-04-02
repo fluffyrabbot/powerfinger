@@ -45,7 +45,8 @@ typedef void (*hal_ble_event_cb_t)(const hal_ble_event_data_t *evt, void *arg);
 
 // Initialize BLE stack and register HID service.
 // device_name: advertised name (e.g. "PowerFinger")
-// cb: application callback for connection/disconnection events
+// cb: application callback for connection/disconnection events.
+// CONNECTED and CONN_PARAMS_UPDATED may populate data.conn_params.
 hal_status_t hal_ble_init(const char *device_name, hal_ble_event_cb_t cb, void *arg);
 
 // Start BLE advertising. Stops automatically after timeout_ms (0 = no timeout).

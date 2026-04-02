@@ -254,6 +254,17 @@ static void notify_app(hal_ble_event_t type)
     }
 }
 
+static void notify_app_conn_interval(hal_ble_event_t type, uint16_t conn_interval_1_25ms)
+{
+    if (s_app_cb) {
+        hal_ble_event_data_t evt = {
+            .type = type,
+            .data.conn_params.conn_interval_1_25ms = conn_interval_1_25ms,
+        };
+        s_app_cb(&evt, s_app_cb_arg);
+    }
+}
+
 static int start_advertising(void);
 
 static int ble_gap_event_handler(struct ble_gap_event *event, void *arg)
@@ -266,6 +277,12 @@ static int ble_gap_event_handler(struct ble_gap_event *event, void *arg)
             s_conn_handle = event->connect.conn_handle;
             s_connected = true;
             ESP_LOGI(TAG, "connected, handle=%d", s_conn_handle);
+            uint16_t conn_interval_1_25ms = 0;
+
+            struct ble_gap_conn_desc desc;
+            if (ble_gap_conn_find(s_conn_handle, &desc) == 0) {
+                conn_interval_1_25ms = desc.conn_itvl;
+            }
 
             // Request encryption (triggers bonding).
             // H3: log on failure; connection proceeds but some centrals
@@ -278,7 +295,7 @@ static int ble_gap_event_handler(struct ble_gap_event *event, void *arg)
                 }
             }
 
-            notify_app(HAL_BLE_EVT_CONNECTED);
+            notify_app_conn_interval(HAL_BLE_EVT_CONNECTED, conn_interval_1_25ms);
         } else {
             ESP_LOGW(TAG, "connection failed, status=%d", event->connect.status);
             s_connected = false;
@@ -342,13 +359,7 @@ static int ble_gap_event_handler(struct ble_gap_event *event, void *arg)
             ble_gap_conn_find(event->conn_update.conn_handle, &desc);
             ESP_LOGI(TAG, "conn params updated: interval=%d",
                      desc.conn_itvl);
-            if (s_app_cb) {
-                hal_ble_event_data_t evt = {
-                    .type = HAL_BLE_EVT_CONN_PARAMS_UPDATED,
-                    .data.conn_params.conn_interval_1_25ms = desc.conn_itvl,
-                };
-                s_app_cb(&evt, s_app_cb_arg);
-            }
+            notify_app_conn_interval(HAL_BLE_EVT_CONN_PARAMS_UPDATED, desc.conn_itvl);
         } else {
             ESP_LOGW(TAG, "conn param update rejected");
             notify_app(HAL_BLE_EVT_CONN_PARAMS_REJECTED);

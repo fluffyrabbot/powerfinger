@@ -44,6 +44,15 @@ target_include_directories(dead_zone PUBLIC
     ../ring/components/hal/include
 )
 
+add_library(ring_diagnostics STATIC
+    ../ring/components/diagnostics/ring_diagnostics.c
+)
+target_include_directories(ring_diagnostics PUBLIC
+    ../ring/components/diagnostics/include
+    ../ring/components/state_machine/include
+    ../ring/components/hal/include
+)
+
 add_library(calibration STATIC
     ../ring/components/click/calibration.c
 )
@@ -111,6 +120,7 @@ target_include_directories(usb_hid PUBLIC
 add_executable(powerfinger_tests
     test_state_machine.c
     test_dead_zone.c
+    test_ring_diagnostics.c
     test_calibration.c
     test_power_manager.c
     test_ring_runtime_health.c
@@ -124,6 +134,7 @@ target_link_libraries(powerfinger_tests
     mock_hal
     state_machine
     dead_zone
+    ring_diagnostics
     calibration
     power_manager
     ring_runtime_health
@@ -134,6 +145,7 @@ target_link_libraries(powerfinger_tests
 target_include_directories(powerfinger_tests PRIVATE
     ../ring/components/state_machine/include
     ../ring/components/click/include
+    ../ring/components/diagnostics/include
     ../ring/components/sensors/include
     ../ring/components/power/include
     ../ring/components/runtime_health/include

@@ -25,6 +25,7 @@
 #include "click_interface.h"
 #include "dead_zone.h"
 #include "calibration.h"
+#include "ring_diagnostics.h"
 #include "power_manager.h"
 #include "ring_runtime_health.h"
 
@@ -34,6 +35,20 @@ static const char *TAG = "powerfinger";
 
 #define EVT_QUEUE_LEN 8
 
+typedef enum {
+    APP_EVT_RING_STATE = 0,
+    APP_EVT_BOND_RESTORED,
+    APP_EVT_BOND_FAILED,
+    APP_EVT_CONN_PARAMS_UPDATED,
+    APP_EVT_CONN_PARAMS_REJECTED,
+} app_event_type_t;
+
+typedef struct {
+    app_event_type_t type;
+    ring_event_t ring_evt;
+    uint16_t conn_interval_1_25ms;
+} app_event_t;
+
 static QueueHandle_t s_evt_queue = NULL;
 
 // --- Clamp int16_t to int8_t range (prevents direction reversal on overflow) ---
@@ -42,6 +57,56 @@ static inline int8_t clamp_i8(int16_t v)
     if (v > 127) return 127;
     if (v < -127) return -127;
     return (int8_t)v;
+}
+
+static void sync_sensor_diagnostics(ring_diagnostics_t *diagnostics,
+                                    bool sensor_ok,
+                                    bool sensor_calibrated)
+{
+    ring_diagnostics_note_sensor_path(diagnostics, sensor_ok, sensor_calibrated);
+}
+
+static void sync_battery_diagnostics(ring_diagnostics_t *diagnostics)
+{
+    ring_diagnostics_note_battery(diagnostics,
+                                  power_manager_get_last_battery_mv(),
+                                  power_manager_get_battery_level());
+}
+
+static void log_diagnostics_snapshot(const char *reason,
+                                     const ring_diagnostics_t *diagnostics)
+{
+    ring_diag_snapshot_t snapshot = ring_diagnostics_snapshot(diagnostics);
+    uint32_t interval_centims = (uint32_t)snapshot.conn_interval_1_25ms * 125U;
+    uint32_t interval_ms_whole = interval_centims / 100U;
+    uint32_t interval_ms_frac = interval_centims % 100U;
+
+    if (snapshot.conn_interval_1_25ms == 0) {
+        ESP_LOGI(TAG,
+                 "diag[%s]: state=%s sensor=%s cal=%s bond=%s conn=unknown rejected=%s batt=%u%% (%lumV)",
+                 reason,
+                 ring_state_name(snapshot.ring_state),
+                 ring_diag_sensor_state_name(snapshot.sensor_state),
+                 snapshot.calibration_valid ? "valid" : "pending",
+                 ring_diag_bond_state_name(snapshot.bond_state),
+                 snapshot.conn_param_rejected ? "yes" : "no",
+                 snapshot.battery_pct,
+                 (unsigned long)snapshot.battery_mv);
+        return;
+    }
+
+    ESP_LOGI(TAG,
+             "diag[%s]: state=%s sensor=%s cal=%s bond=%s conn=%lu.%02lums rejected=%s batt=%u%% (%lumV)",
+             reason,
+             ring_state_name(snapshot.ring_state),
+             ring_diag_sensor_state_name(snapshot.sensor_state),
+             snapshot.calibration_valid ? "valid" : "pending",
+             ring_diag_bond_state_name(snapshot.bond_state),
+             (unsigned long)interval_ms_whole,
+             (unsigned long)interval_ms_frac,
+             snapshot.conn_param_rejected ? "yes" : "no",
+             snapshot.battery_pct,
+             (unsigned long)snapshot.battery_mv);
 }
 
 static hal_status_t attempt_sensor_recovery(bool had_working_sensor)
@@ -107,30 +172,31 @@ static void handle_hid_send_result(ring_runtime_health_t *runtime_health,
 static void ble_event_callback(const hal_ble_event_data_t *evt, void *arg)
 {
     (void)arg;
-    ring_event_t ring_evt;
+    app_event_t app_evt = {0};
 
     switch (evt->type) {
     case HAL_BLE_EVT_CONNECTED:
-        ring_evt = RING_EVT_BLE_CONNECTED;
+        app_evt.type = APP_EVT_RING_STATE;
+        app_evt.ring_evt = RING_EVT_BLE_CONNECTED;
+        app_evt.conn_interval_1_25ms = evt->data.conn_params.conn_interval_1_25ms;
         break;
     case HAL_BLE_EVT_DISCONNECTED:
-        ring_evt = RING_EVT_BLE_DISCONNECTED;
+        app_evt.type = APP_EVT_RING_STATE;
+        app_evt.ring_evt = RING_EVT_BLE_DISCONNECTED;
         break;
     case HAL_BLE_EVT_BOND_RESTORED:
-        ESP_LOGI(TAG, "bond restored");
-        return;
+        app_evt.type = APP_EVT_BOND_RESTORED;
+        break;
     case HAL_BLE_EVT_BOND_FAILED:
-        // Bond recovery: HAL already deleted the stale bond and terminated.
-        // The disconnect event will follow via GAP handler.
-        ESP_LOGW(TAG, "bond failed — waiting for disconnect/re-pair");
-        return;
+        app_evt.type = APP_EVT_BOND_FAILED;
+        break;
     case HAL_BLE_EVT_CONN_PARAMS_UPDATED:
-        ESP_LOGI(TAG, "connection interval updated to %u x 1.25ms",
-                 evt->data.conn_params.conn_interval_1_25ms);
-        return;
+        app_evt.type = APP_EVT_CONN_PARAMS_UPDATED;
+        app_evt.conn_interval_1_25ms = evt->data.conn_params.conn_interval_1_25ms;
+        break;
     case HAL_BLE_EVT_CONN_PARAMS_REJECTED:
-        ESP_LOGW(TAG, "connection parameter request rejected by central");
-        return;
+        app_evt.type = APP_EVT_CONN_PARAMS_REJECTED;
+        break;
     default:
         return;
     }
@@ -138,8 +204,8 @@ static void ble_event_callback(const hal_ble_event_data_t *evt, void *arg)
     // Post to queue (non-blocking; NimBLE callbacks are task context, not ISR).
     // If the queue is full the event is dropped. Under normal operation the
     // main loop drains faster than events arrive, so this should not fire.
-    if (xQueueSend(s_evt_queue, &ring_evt, 0) != pdTRUE) {
-        ESP_LOGW(TAG, "BLE event queue full — event %d dropped", (int)ring_evt);
+    if (xQueueSend(s_evt_queue, &app_evt, 0) != pdTRUE) {
+        ESP_LOGW(TAG, "BLE event queue full — event type %d dropped", (int)app_evt.type);
     }
 }
 
@@ -178,25 +244,50 @@ static void phase0_fake_motion_loop(void)
     uint32_t adv_start_ms = hal_timer_get_ms();
     ring_runtime_health_t runtime_health;
     ring_runtime_health_init(&runtime_health);
+    ring_diagnostics_t diagnostics;
+    ring_diagnostics_init(&diagnostics);
+    ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
+    sync_battery_diagnostics(&diagnostics);
 
     while (1) {
         hal_timer_delay_ms(FAKE_MOTION_PERIOD_MS);
 
         // Drain BLE event queue (connection/disconnection)
-        ring_event_t queued_evt;
+        app_event_t queued_evt;
         ring_actions_t actions;
         while (xQueueReceive(s_evt_queue, &queued_evt, 0) == pdTRUE) {
-            ring_state_dispatch(queued_evt, &actions);
-            execute_actions(&actions);
-            if (queued_evt == RING_EVT_BLE_CONNECTED) {
-                adv_start_ms = 0;  // connected, stop tracking adv timeout
-                power_manager_on_connect();
-                ring_runtime_health_reset_hid_send(&runtime_health);
-            }
-            if (queued_evt == RING_EVT_BLE_DISCONNECTED) {
-                adv_start_ms = hal_timer_get_ms();
-                power_manager_on_disconnect();
-                ring_runtime_health_reset_hid_send(&runtime_health);
+            if (queued_evt.type == APP_EVT_RING_STATE) {
+                ring_state_dispatch(queued_evt.ring_evt, &actions);
+                ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
+                execute_actions(&actions);
+                if (queued_evt.ring_evt == RING_EVT_BLE_CONNECTED) {
+                    adv_start_ms = 0;  // connected, stop tracking adv timeout
+                    power_manager_on_connect();
+                    ring_runtime_health_reset_hid_send(&runtime_health);
+                    ring_diagnostics_note_connected(&diagnostics,
+                                                    queued_evt.conn_interval_1_25ms);
+                    log_diagnostics_snapshot("connect", &diagnostics);
+                }
+                if (queued_evt.ring_evt == RING_EVT_BLE_DISCONNECTED) {
+                    adv_start_ms = hal_timer_get_ms();
+                    power_manager_on_disconnect();
+                    ring_runtime_health_reset_hid_send(&runtime_health);
+                    ring_diagnostics_note_disconnected(&diagnostics);
+                    log_diagnostics_snapshot("disconnect", &diagnostics);
+                }
+            } else if (queued_evt.type == APP_EVT_BOND_RESTORED) {
+                ring_diagnostics_note_bond_restored(&diagnostics);
+                log_diagnostics_snapshot("bond-restored", &diagnostics);
+            } else if (queued_evt.type == APP_EVT_BOND_FAILED) {
+                ring_diagnostics_note_bond_failed(&diagnostics);
+                log_diagnostics_snapshot("bond-failed", &diagnostics);
+            } else if (queued_evt.type == APP_EVT_CONN_PARAMS_UPDATED) {
+                ring_diagnostics_note_conn_params_updated(&diagnostics,
+                                                          queued_evt.conn_interval_1_25ms);
+                log_diagnostics_snapshot("conn-update", &diagnostics);
+            } else if (queued_evt.type == APP_EVT_CONN_PARAMS_REJECTED) {
+                ring_diagnostics_note_conn_param_rejected(&diagnostics);
+                log_diagnostics_snapshot("conn-rejected", &diagnostics);
             }
         }
 
@@ -206,7 +297,9 @@ static void phase0_fake_motion_loop(void)
             ring_state_get() == RING_STATE_ADVERTISING &&
             (now - adv_start_ms) >= RECONNECT_TIMEOUT_MS) {
             ring_state_dispatch(RING_EVT_BLE_ADV_TIMEOUT, &actions);
+            ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
             execute_actions(&actions);
+            log_diagnostics_snapshot("adv-timeout", &diagnostics);
         }
 
         // Feed watchdog even in Phase 0
@@ -249,7 +342,7 @@ void app_main(void)
     ESP_ERROR_CHECK(ret);
 
     // Create BLE event queue (must exist before BLE init)
-    s_evt_queue = xQueueCreate(EVT_QUEUE_LEN, sizeof(ring_event_t));
+    s_evt_queue = xQueueCreate(EVT_QUEUE_LEN, sizeof(app_event_t));
     if (!s_evt_queue) {
         ESP_LOGE(TAG, "BLE event queue alloc failed — restarting");
         esp_restart();
@@ -257,6 +350,10 @@ void app_main(void)
 
     // Initialize state machine
     ring_state_init();
+
+    ring_diagnostics_t diagnostics;
+    ring_diagnostics_init(&diagnostics);
+    ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
 
     ring_runtime_health_t runtime_health;
     ring_runtime_health_init(&runtime_health);
@@ -270,6 +367,7 @@ void app_main(void)
         ESP_LOGE(TAG, "sensor init failed — motion input disabled, click path still available");
         ring_runtime_health_mark_sensor_unavailable(&runtime_health, hal_timer_get_ms());
     }
+    sync_sensor_diagnostics(&diagnostics, sensor_ok, sensor_calibrated);
 
     // Initialize click (check for failure)
     bool click_ok = (click_init() == HAL_OK);
@@ -295,6 +393,8 @@ void app_main(void)
     } else {
         ring_state_dispatch(RING_EVT_CALIBRATION_FAILED, &actions);
     }
+    ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
+    sync_sensor_diagnostics(&diagnostics, sensor_ok, sensor_calibrated);
     execute_actions(&actions);
 
     // Initialize BLE HID (state machine already set ADVERTISING + action flag)
@@ -312,6 +412,7 @@ void app_main(void)
         return;
     }
     hal_ble_set_battery_level(power_manager_get_battery_level());
+    sync_battery_diagnostics(&diagnostics);
 
     // Confirm this firmware is valid — cancels automatic rollback.
     // Placed after all critical init (BLE + power manager) and before the
@@ -319,6 +420,7 @@ void app_main(void)
     esp_ota_mark_app_valid_cancel_rollback();
 
     ESP_LOGI(TAG, "PowerFinger ring firmware ready");
+    log_diagnostics_snapshot("boot", &diagnostics);
 
 #if defined(CONFIG_SENSOR_NONE) && defined(CONFIG_CLICK_NONE)
     phase0_fake_motion_loop();
@@ -332,23 +434,44 @@ void app_main(void)
         memset(&actions, 0, sizeof(actions));
 
         // --- Drain BLE event queue (serializes all state machine access) ---
-        ring_event_t queued_evt;
+        app_event_t queued_evt;
         while (xQueueReceive(s_evt_queue, &queued_evt, 0) == pdTRUE) {
-            ring_state_dispatch(queued_evt, &actions);
-            execute_actions(&actions);
+            if (queued_evt.type == APP_EVT_RING_STATE) {
+                ring_state_dispatch(queued_evt.ring_evt, &actions);
+                ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
+                execute_actions(&actions);
 
-            if (queued_evt == RING_EVT_BLE_CONNECTED) {
-                adv_start_ms = 0;
-                power_manager_on_connect();
-                ring_runtime_health_reset_hid_send(&runtime_health);
-                prev_buttons = 0;
-            }
-            if (queued_evt == RING_EVT_BLE_DISCONNECTED) {
-                dead_zone_reset();
-                adv_start_ms = now;
-                power_manager_on_disconnect();
-                ring_runtime_health_reset_hid_send(&runtime_health);
-                prev_buttons = 0;
+                if (queued_evt.ring_evt == RING_EVT_BLE_CONNECTED) {
+                    adv_start_ms = 0;
+                    power_manager_on_connect();
+                    ring_runtime_health_reset_hid_send(&runtime_health);
+                    ring_diagnostics_note_connected(&diagnostics,
+                                                    queued_evt.conn_interval_1_25ms);
+                    prev_buttons = 0;
+                    log_diagnostics_snapshot("connect", &diagnostics);
+                }
+                if (queued_evt.ring_evt == RING_EVT_BLE_DISCONNECTED) {
+                    dead_zone_reset();
+                    adv_start_ms = now;
+                    power_manager_on_disconnect();
+                    ring_runtime_health_reset_hid_send(&runtime_health);
+                    ring_diagnostics_note_disconnected(&diagnostics);
+                    prev_buttons = 0;
+                    log_diagnostics_snapshot("disconnect", &diagnostics);
+                }
+            } else if (queued_evt.type == APP_EVT_BOND_RESTORED) {
+                ring_diagnostics_note_bond_restored(&diagnostics);
+                log_diagnostics_snapshot("bond-restored", &diagnostics);
+            } else if (queued_evt.type == APP_EVT_BOND_FAILED) {
+                ring_diagnostics_note_bond_failed(&diagnostics);
+                log_diagnostics_snapshot("bond-failed", &diagnostics);
+            } else if (queued_evt.type == APP_EVT_CONN_PARAMS_UPDATED) {
+                ring_diagnostics_note_conn_params_updated(&diagnostics,
+                                                          queued_evt.conn_interval_1_25ms);
+                log_diagnostics_snapshot("conn-update", &diagnostics);
+            } else if (queued_evt.type == APP_EVT_CONN_PARAMS_REJECTED) {
+                ring_diagnostics_note_conn_param_rejected(&diagnostics);
+                log_diagnostics_snapshot("conn-rejected", &diagnostics);
             }
         }
 
@@ -358,7 +481,9 @@ void app_main(void)
             (now - adv_start_ms) >= RECONNECT_TIMEOUT_MS) {
             memset(&actions, 0, sizeof(actions));
             ring_state_dispatch(RING_EVT_BLE_ADV_TIMEOUT, &actions);
+            ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
             execute_actions(&actions);
+            log_diagnostics_snapshot("adv-timeout", &diagnostics);
         }
 
         // --- Read sensor ---
@@ -378,9 +503,12 @@ void app_main(void)
                 } else if (recovery_update.event == RING_SENSOR_HEALTH_RECOVERED) {
                     ESP_LOGI(TAG, "sensor recovery succeeded — motion input restored");
                 }
+                sync_sensor_diagnostics(&diagnostics, sensor_ok, sensor_calibrated);
+                log_diagnostics_snapshot("sensor-recovered", &diagnostics);
             } else {
                 sensor_ok = false;
                 ESP_LOGW(TAG, "sensor recovery attempt failed: %d", recovery_rc);
+                sync_sensor_diagnostics(&diagnostics, sensor_ok, sensor_calibrated);
             }
         }
 
@@ -389,6 +517,8 @@ void app_main(void)
                                  &next_calibration_attempt_ms,
                                  now)) {
             dead_zone_reset();
+            sync_sensor_diagnostics(&diagnostics, sensor_ok, sensor_calibrated);
+            log_diagnostics_snapshot("late-calibration", &diagnostics);
         }
 
         if (sensor_ok && sensor_calibrated) {
@@ -407,6 +537,7 @@ void app_main(void)
                 if (reading.motion_detected) {
                     memset(&actions, 0, sizeof(actions));
                     ring_state_dispatch(RING_EVT_MOTION_DETECTED, &actions);
+                    ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
                     execute_actions(&actions);
                     power_manager_on_motion();
                 }
@@ -420,6 +551,8 @@ void app_main(void)
                              sensor_update.consecutive_failures);
                     dead_zone_reset();
                     sensor_ok = false;
+                    sync_sensor_diagnostics(&diagnostics, sensor_ok, sensor_calibrated);
+                    log_diagnostics_snapshot("sensor-degraded", &diagnostics);
                 }
             }
         }
@@ -436,6 +569,7 @@ void app_main(void)
             if (ring_state_get() == RING_STATE_CONNECTED_IDLE) {
                 memset(&actions, 0, sizeof(actions));
                 ring_state_dispatch(RING_EVT_CLICK_ACTIVITY, &actions);
+                ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
                 execute_actions(&actions);
             }
         }
@@ -469,10 +603,13 @@ void app_main(void)
             if (ring_evt != RING_EVT_NONE) {
                 memset(&actions, 0, sizeof(actions));
                 ring_state_dispatch(ring_evt, &actions);
+                ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
                 execute_actions(&actions);
+                log_diagnostics_snapshot("power-event", &diagnostics);
             }
         }
         hal_ble_set_battery_level(power_manager_get_battery_level());
+        sync_battery_diagnostics(&diagnostics);
 
         power_manager_feed_watchdog();
 
