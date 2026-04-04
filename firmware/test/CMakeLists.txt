@@ -68,6 +68,11 @@ add_library(power_manager STATIC
     ../ring/components/power/power_manager.c
     ../ring/components/ble_hid/ble_gap_handler.c
 )
+target_compile_definitions(power_manager PUBLIC
+    CONFIG_POWERFINGER_WAKE_GPIO_MASK=0x100
+    CONFIG_POWERFINGER_HALL_POWER_PIN=9
+    CONFIG_POWERFINGER_VBAT_ADC_CHANNEL=0
+)
 target_include_directories(power_manager PUBLIC
     ../ring/components/power/include
     ../ring/components/ble_hid/include

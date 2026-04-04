@@ -43,11 +43,20 @@ static bool s_conn_param_rejected = false;  // don't retry if central rejected
 static uint8_t s_adc_fail_count = 0;        // consecutive VBAT read failures
 static uint32_t s_last_vbat_mv = 0;
 static uint8_t s_last_battery_pct = 0;
+static bool s_hall_power_ready = false;
+static bool s_hall_power_state_known = false;
+static bool s_hall_power_enabled = false;
 
 #ifdef CONFIG_POWERFINGER_HALL_POWER_PIN
 #define PIN_HALL_POWER ((hal_pin_t)CONFIG_POWERFINGER_HALL_POWER_PIN)
 #else
 #define PIN_HALL_POWER HAL_PIN_NONE
+#endif
+
+#ifdef CONFIG_POWERFINGER_HALL_POWER_ACTIVE_LOW
+#define HALL_POWER_ACTIVE_LOW true
+#else
+#define HALL_POWER_ACTIVE_LOW false
 #endif
 
 #ifdef CONFIG_POWERFINGER_VBAT_ADC_CHANNEL
@@ -56,12 +65,51 @@ static uint8_t s_last_battery_pct = 0;
 #define VBAT_ADC_CHANNEL 0
 #endif
 
+#if defined(CONFIG_POWERFINGER_WAKE_GPIO_MASK) && (CONFIG_POWERFINGER_WAKE_GPIO_MASK > 0)
+#define WAKE_GPIO_MASK ((uint64_t)CONFIG_POWERFINGER_WAKE_GPIO_MASK)
+#elif defined(CONFIG_POWERFINGER_DOME_PIN)
+#define WAKE_GPIO_MASK (1ULL << CONFIG_POWERFINGER_DOME_PIN)
+#else
+#define WAKE_GPIO_MASK 0ULL
+#endif
+
 // --- Hall sensor power gating (ball variants only) ---
 
-static void hall_power_set(bool on)
+static hal_status_t hall_power_prepare(void)
 {
-    if (PIN_HALL_POWER == HAL_PIN_NONE) return;
-    hal_gpio_set(PIN_HALL_POWER, on);
+    if (PIN_HALL_POWER == HAL_PIN_NONE || s_hall_power_ready) {
+        return HAL_OK;
+    }
+
+    hal_status_t rc = hal_gpio_init(PIN_HALL_POWER, HAL_GPIO_OUTPUT);
+    if (rc == HAL_OK) {
+        s_hall_power_ready = true;
+    }
+    return rc;
+}
+
+static hal_status_t hall_power_set(bool on)
+{
+    if (PIN_HALL_POWER == HAL_PIN_NONE) {
+        return HAL_OK;
+    }
+
+    hal_status_t rc = hall_power_prepare();
+    if (rc != HAL_OK) {
+        return rc;
+    }
+
+    if (s_hall_power_state_known && s_hall_power_enabled == on) {
+        return HAL_OK;
+    }
+
+    bool gpio_level = HALL_POWER_ACTIVE_LOW ? !on : on;
+    rc = hal_gpio_set(PIN_HALL_POWER, gpio_level);
+    if (rc == HAL_OK) {
+        s_hall_power_state_known = true;
+        s_hall_power_enabled = on;
+    }
+    return rc;
 }
 
 static uint8_t battery_percent_from_mv(uint32_t vbat_mv)
@@ -81,7 +129,12 @@ static void update_battery_cache(uint32_t vbat_mv)
 static void note_activity(void)
 {
     s_last_activity_ms = hal_timer_get_ms();
-    hall_power_set(true);
+    hal_status_t power_rc = hall_power_set(true);
+#ifdef ESP_PLATFORM
+    if (power_rc != HAL_OK) {
+        ESP_LOGW(TAG, "failed to enable sensor power on activity: %d", power_rc);
+    }
+#endif
 
     if (!s_connected) {
         return;
@@ -115,6 +168,9 @@ hal_status_t power_manager_init(void)
     s_adc_fail_count = 0;
     s_last_vbat_mv = 0;
     s_last_battery_pct = 0;
+    s_hall_power_ready = false;
+    s_hall_power_state_known = false;
+    s_hall_power_enabled = false;
 
     // Initialize battery ADC — failure is fatal for LiPo safety
     hal_status_t adc_rc = hal_adc_init(VBAT_ADC_CHANNEL);
@@ -125,10 +181,14 @@ hal_status_t power_manager_init(void)
         return HAL_ERR_IO;
     }
 
-    // Initialize Hall power gate if configured
-    if (PIN_HALL_POWER != HAL_PIN_NONE) {
-        hal_gpio_init(PIN_HALL_POWER, HAL_GPIO_OUTPUT);
-        hall_power_set(true);  // power on by default during active use
+    // Initialize Hall power gate if configured.
+    // The sensor rail starts enabled so boot-time sensor init/calibration can run.
+    hal_status_t hall_rc = hall_power_set(true);
+    if (hall_rc != HAL_OK) {
+#ifdef ESP_PLATFORM
+        ESP_LOGE(TAG, "Hall power init failed (%d)", hall_rc);
+#endif
+        return hall_rc;
     }
 
     // Prime the battery cache so the Battery Service is truthful from boot.
@@ -231,7 +291,12 @@ power_event_t power_manager_tick(uint32_t now_ms)
     if (s_connected &&
         !s_interaction_active &&
         (now_ms - s_last_activity_ms) >= SLEEP_TIMEOUT_MS) {
-        hall_power_set(false);
+        hal_status_t power_rc = hall_power_set(false);
+#ifdef ESP_PLATFORM
+        if (power_rc != HAL_OK) {
+            ESP_LOGW(TAG, "failed to gate sensor power on sleep timeout: %d", power_rc);
+        }
+#endif
         return POWER_EVT_SLEEP_TIMEOUT;
     }
 
@@ -255,10 +320,20 @@ void power_manager_feed_watchdog(void)
 #endif
 }
 
+hal_status_t power_manager_set_sensor_power(bool enabled)
+{
+    return hall_power_set(enabled);
+}
+
 void power_manager_enter_sleep(bool deep)
 {
     // Power gate Hall sensors
-    hall_power_set(false);
+    hal_status_t power_rc = hall_power_set(false);
+#ifdef ESP_PLATFORM
+    if (power_rc != HAL_OK) {
+        ESP_LOGW(TAG, "failed to gate sensor power before sleep: %d", power_rc);
+    }
+#endif
 
     if (deep) {
 #ifdef ESP_PLATFORM
@@ -268,17 +343,18 @@ void power_manager_enter_sleep(bool deep)
         // least one succeeded to prevent entering an unwakeable deep sleep.
         bool has_wake_source = false;
 
-#ifdef CONFIG_POWERFINGER_DOME_PIN
-        hal_status_t gpio_rc = hal_sleep_configure_wake_gpio(
-            (hal_pin_t)CONFIG_POWERFINGER_DOME_PIN, false);
+        hal_status_t gpio_rc = HAL_ERR_NOT_SUPPORTED;
+        if (WAKE_GPIO_MASK != 0) {
+            gpio_rc = hal_sleep_configure_wake_gpio_mask(WAKE_GPIO_MASK, false);
+        }
         if (gpio_rc == HAL_OK) {
             has_wake_source = true;
-        } else {
+        } else if (WAKE_GPIO_MASK != 0) {
 #ifdef ESP_PLATFORM
-            ESP_LOGW(TAG, "wake GPIO config failed (%d) — timer wake only", gpio_rc);
+            ESP_LOGW(TAG, "wake GPIO mask 0x%llx config failed (%d) — timer wake only",
+                     (unsigned long long)WAKE_GPIO_MASK, gpio_rc);
 #endif
         }
-#endif
         // Safety net: timer wake so device eventually wakes even if dome pin
         // is unavailable (e.g. piezo variant). 60s — check USB charging voltage.
         hal_status_t timer_rc = hal_sleep_configure_wake_timer(60 * 1000 * 1000);
@@ -304,6 +380,11 @@ void power_manager_enter_sleep(bool deep)
     } else {
         hal_sleep_enter(HAL_SLEEP_LIGHT);
         // Returns after wake — restore Hall sensor power for motion detection
-        hall_power_set(true);
+        power_rc = hall_power_set(true);
+#ifdef ESP_PLATFORM
+        if (power_rc != HAL_OK) {
+            ESP_LOGW(TAG, "failed to restore sensor power after light sleep: %d", power_rc);
+        }
+#endif
     }
 }

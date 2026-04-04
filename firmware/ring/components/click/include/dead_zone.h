@@ -16,20 +16,27 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+typedef struct {
+    uint8_t state;
+    uint32_t click_start_ms;
+    uint32_t accumulated_distance;
+} dead_zone_ctx_t;
+
 // Initialize the dead zone state machine
-void dead_zone_init(void);
+void dead_zone_init(dead_zone_ctx_t *ctx);
 
 // Called every tick with the current click state and raw sensor deltas.
 // Modifies dx/dy in place (zeros them if suppressed).
 // Returns true if dead zone is currently active (deltas suppressed).
-bool dead_zone_update(bool click_pressed, int16_t *dx, int16_t *dy,
+bool dead_zone_update(dead_zone_ctx_t *ctx, bool click_pressed, int16_t *dx, int16_t *dy,
                       uint32_t now_ms);
 
 // Same state machine, but with caller-supplied thresholds so runtime BLE
 // settings can override the compiled defaults.
-bool dead_zone_update_with_config(bool click_pressed, int16_t *dx, int16_t *dy,
+bool dead_zone_update_with_config(dead_zone_ctx_t *ctx, bool click_pressed,
+                                  int16_t *dx, int16_t *dy,
                                   uint32_t now_ms, uint16_t dead_zone_time_ms,
                                   uint8_t dead_zone_distance);
 
 // Reset dead zone state (e.g. on disconnect)
-void dead_zone_reset(void);
+void dead_zone_reset(dead_zone_ctx_t *ctx);

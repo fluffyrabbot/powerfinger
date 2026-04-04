@@ -7,6 +7,7 @@
 #pragma once
 
 #include "hal_types.h"
+#include "hal_sleep.h"
 #include <stdint.h>
 
 // Reset all mock state between tests
@@ -15,10 +16,18 @@ void mock_hal_reset(void);
 // --- Timer mock ---
 void mock_hal_set_time_ms(uint32_t ms);
 void mock_hal_advance_time_ms(uint32_t ms);
+hal_sleep_mode_t mock_hal_get_last_sleep_mode(void);
+int mock_hal_get_sleep_enter_count(void);
 
 // --- ADC mock (for battery monitoring tests) ---
 void mock_hal_set_adc_mv(uint32_t mv);
 void mock_hal_set_adc_status(hal_status_t status);
+
+// --- GPIO / sleep mock ---
+void mock_hal_get_last_gpio_set(hal_pin_t *pin, bool *level);
+int mock_hal_get_gpio_set_count(void);
+void mock_hal_get_last_wake_gpio_mask(uint64_t *pin_mask, bool *level);
+int mock_hal_get_wake_gpio_config_count(void);
 
 // --- Storage mock (for role engine persistence tests) ---
 void mock_hal_storage_seed(const char *key, const void *data, size_t len);

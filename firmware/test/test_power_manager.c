@@ -164,6 +164,55 @@ void test_rejected_active_params_retry_after_new_connection(void)
     TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
 }
 
+void test_sensor_power_can_be_gated_for_calibration_failure(void)
+{
+    reset();
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
+
+    hal_pin_t pin = HAL_PIN_NONE;
+    bool level = false;
+    mock_hal_get_last_gpio_set(&pin, &level);
+    TEST_ASSERT_EQUAL(9, pin);
+    TEST_ASSERT_TRUE(level);
+
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_set_sensor_power(false));
+    mock_hal_get_last_gpio_set(&pin, &level);
+    TEST_ASSERT_EQUAL(9, pin);
+    TEST_ASSERT_FALSE(level);
+}
+
+void test_click_activity_restores_sensor_power_after_gate_off(void)
+{
+    reset();
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_set_sensor_power(false));
+
+    power_manager_on_click();
+
+    hal_pin_t pin = HAL_PIN_NONE;
+    bool level = false;
+    mock_hal_get_last_gpio_set(&pin, &level);
+    TEST_ASSERT_EQUAL(9, pin);
+    TEST_ASSERT_TRUE(level);
+}
+
+void test_deep_sleep_uses_configured_wake_gpio_mask(void)
+{
+    reset();
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
+
+    power_manager_enter_sleep(true);
+
+    uint64_t mask = 0;
+    bool level = true;
+    mock_hal_get_last_wake_gpio_mask(&mask, &level);
+    TEST_ASSERT_TRUE(mask == 0x100ULL);
+    TEST_ASSERT_FALSE(level);
+    TEST_ASSERT_EQUAL(1, mock_hal_get_wake_gpio_config_count());
+    TEST_ASSERT_EQUAL(HAL_SLEEP_DEEP, mock_hal_get_last_sleep_mode());
+    TEST_ASSERT_EQUAL(1, mock_hal_get_sleep_enter_count());
+}
+
 void run_power_manager_tests(void)
 {
     printf("Power manager tests:\n");
@@ -176,4 +225,7 @@ void run_power_manager_tests(void)
     RUN_TEST(test_low_battery_cutoff_triggers_shutdown);
     RUN_TEST(test_adc_failure_threshold_forces_shutdown);
     RUN_TEST(test_rejected_active_params_retry_after_new_connection);
+    RUN_TEST(test_sensor_power_can_be_gated_for_calibration_failure);
+    RUN_TEST(test_click_activity_restores_sensor_power_after_gate_off);
+    RUN_TEST(test_deep_sleep_uses_configured_wake_gpio_mask);
 }

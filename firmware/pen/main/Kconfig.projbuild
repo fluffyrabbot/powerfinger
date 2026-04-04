@@ -1,0 +1,143 @@
+# SPDX-License-Identifier: MIT
+# PowerPen — Project-level Kconfig
+#
+# Reuses the shared ring components. PP2 maps the existing single-click driver
+# to the barrel switch; PP3 will add the true dual-click path.
+
+menu "PowerFinger Configuration"
+
+    choice POWERFINGER_FORM_FACTOR
+        prompt "Form factor"
+        default POWERFINGER_FORM_FACTOR_PEN
+        help
+            Select the physical form factor for user-visible identity.
+
+        config POWERFINGER_FORM_FACTOR_RING
+            bool "Ring"
+
+        config POWERFINGER_FORM_FACTOR_PUCK
+            bool "Puck"
+
+        config POWERFINGER_FORM_FACTOR_PEN
+            bool "Pen"
+    endchoice
+
+    choice POWERFINGER_SENSOR_DRIVER
+        prompt "Sensor driver"
+        default SENSOR_BALL_HALL
+        help
+            Select the motion sensor driver for the current pen build.
+
+        config SENSOR_NONE
+            bool "None (fake data for Phase 0)"
+
+        config SENSOR_PAW3204
+            bool "PAW3204 optical (Standard tier)"
+
+        config SENSOR_PMW3360
+            bool "PMW3360 optical-on-ball (Pro tier)"
+
+        config SENSOR_BALL_HALL
+            bool "Ball+Hall 4x DRV5053 (ADC, surface-agnostic)"
+    endchoice
+
+    choice POWERFINGER_CLICK_INPUT
+        prompt "Click input"
+        default CLICK_SNAP_DOME
+        help
+            PP2 maps the shared single-click GPIO path to the barrel switch.
+
+        config CLICK_NONE
+            bool "None (no click)"
+
+        config CLICK_SNAP_DOME
+            bool "Single GPIO click (PP2 barrel compatibility)"
+
+        config CLICK_PIEZO_LRA
+            bool "Piezo + LRA haptic (Pro tier)"
+    endchoice
+
+    config POWERFINGER_HALL_ADC_CH_X_POS
+        int "Hall X+ ADC channel"
+        default 0
+        depends on SENSOR_BALL_HALL
+
+    config POWERFINGER_HALL_ADC_CH_X_NEG
+        int "Hall X- ADC channel"
+        default 1
+        depends on SENSOR_BALL_HALL
+
+    config POWERFINGER_HALL_ADC_CH_Y_POS
+        int "Hall Y+ ADC channel"
+        default 2
+        depends on SENSOR_BALL_HALL
+
+    config POWERFINGER_HALL_ADC_CH_Y_NEG
+        int "Hall Y- ADC channel"
+        default 3
+        depends on SENSOR_BALL_HALL
+
+    config POWERFINGER_HALL_SENSITIVITY
+        int "Hall sensor sensitivity (mv-to-counts scale factor x10)"
+        default 10
+        depends on SENSOR_BALL_HALL
+
+    config POWERFINGER_BARREL_PIN
+        int "Barrel switch GPIO pin"
+        default 4
+
+    config POWERFINGER_TIP_DOME_PIN
+        int "Tip dome GPIO pin"
+        default 5
+
+    config POWERFINGER_WAKE_SENSOR_PIN
+        int "DRV5032 wake sensor GPIO pin"
+        default 8
+
+    config POWERFINGER_DOME_PIN
+        int "Primary click GPIO pin"
+        default 4
+        depends on CLICK_SNAP_DOME
+        help
+            PP2 compatibility mapping for the existing single-click driver.
+            This should stay aligned with the barrel switch until PP3 lands.
+
+    config POWERFINGER_VBAT_ADC_CHANNEL
+        int "VBAT ADC channel number"
+        default 7
+
+    config POWERFINGER_HALL_POWER_PIN
+        int "Hall sensor power gate GPIO pin"
+        default 6
+        help
+            GPIO controlling the MOSFET for the Hall sensor VCC rail.
+
+    config POWERFINGER_HALL_POWER_ACTIVE_LOW
+        bool "Hall sensor power gate is active-low"
+        default y
+        help
+            The PowerPen uses a P-channel MOSFET on GPIO6, so driving the
+            gate low enables the Hall sensor rail.
+
+    config POWERFINGER_WAKE_GPIO_MASK
+        int "Deep sleep wake GPIO bitmask"
+        default 0x130
+        help
+            Bitmask of GPIOs enabled as deep sleep wake sources.
+            PowerPen default is GPIO4 | GPIO5 | GPIO8.
+
+    config POWERFINGER_DEVICE_NAME
+        string "BLE device name"
+        default "PowerPen"
+        help
+            BLE GAP device name advertised to hosts and displayed
+            during pairing.
+
+    config POWERFINGER_SLEEP_TIMEOUT_MS
+        int "Idle-to-sleep timeout (ms)"
+        default 45000
+        help
+            Duration of no activity before entering deep sleep from
+            CONNECTED_IDLE.
+
+endmenu

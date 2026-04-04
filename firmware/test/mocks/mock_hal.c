@@ -35,6 +35,14 @@ static hal_status_t s_ble_conn_param_status = HAL_OK;
 static int s_ble_conn_param_request_count = 0;
 static uint16_t s_ble_conn_param_min = 0;
 static uint16_t s_ble_conn_param_max = 0;
+static hal_pin_t s_last_gpio_set_pin = HAL_PIN_NONE;
+static bool s_last_gpio_set_level = false;
+static int s_gpio_set_count = 0;
+static uint64_t s_last_wake_gpio_mask = 0;
+static bool s_last_wake_gpio_level = false;
+static int s_wake_gpio_config_count = 0;
+static hal_sleep_mode_t s_last_sleep_mode = HAL_SLEEP_LIGHT;
+static int s_sleep_enter_count = 0;
 static bool s_storage_committed_present = false;
 static char s_storage_committed_key[MOCK_STORAGE_MAX_KEY_LEN] = {0};
 static uint8_t s_storage_committed_blob[MOCK_STORAGE_MAX_BLOB_LEN] = {0};
@@ -72,6 +80,14 @@ void mock_hal_reset(void)
     s_ble_conn_param_request_count = 0;
     s_ble_conn_param_min = 0;
     s_ble_conn_param_max = 0;
+    s_last_gpio_set_pin = HAL_PIN_NONE;
+    s_last_gpio_set_level = false;
+    s_gpio_set_count = 0;
+    s_last_wake_gpio_mask = 0;
+    s_last_wake_gpio_level = false;
+    s_wake_gpio_config_count = 0;
+    s_last_sleep_mode = HAL_SLEEP_LIGHT;
+    s_sleep_enter_count = 0;
     s_storage_committed_present = false;
     memset(s_storage_committed_key, 0, sizeof(s_storage_committed_key));
     memset(s_storage_committed_blob, 0, sizeof(s_storage_committed_blob));
@@ -95,6 +111,20 @@ void mock_hal_set_time_ms(uint32_t ms) { s_time_ms = ms; }
 void mock_hal_advance_time_ms(uint32_t ms) { s_time_ms += ms; }
 void mock_hal_set_adc_mv(uint32_t mv) { s_adc_mv = mv; }
 void mock_hal_set_adc_status(hal_status_t status) { s_adc_status = status; }
+hal_sleep_mode_t mock_hal_get_last_sleep_mode(void) { return s_last_sleep_mode; }
+int mock_hal_get_sleep_enter_count(void) { return s_sleep_enter_count; }
+void mock_hal_get_last_gpio_set(hal_pin_t *pin, bool *level)
+{
+    if (pin) *pin = s_last_gpio_set_pin;
+    if (level) *level = s_last_gpio_set_level;
+}
+int mock_hal_get_gpio_set_count(void) { return s_gpio_set_count; }
+void mock_hal_get_last_wake_gpio_mask(uint64_t *pin_mask, bool *level)
+{
+    if (pin_mask) *pin_mask = s_last_wake_gpio_mask;
+    if (level) *level = s_last_wake_gpio_level;
+}
+int mock_hal_get_wake_gpio_config_count(void) { return s_wake_gpio_config_count; }
 
 void mock_hal_inject_ble_send_failure(hal_status_t status, int count)
 {
@@ -246,7 +276,13 @@ hal_status_t hal_timer_delete(hal_timer_handle_t h) { (void)h; return HAL_OK; }
 
 // --- hal_gpio ---
 hal_status_t hal_gpio_init(hal_pin_t p, hal_gpio_mode_t m) { (void)p;(void)m; return HAL_OK; }
-hal_status_t hal_gpio_set(hal_pin_t p, bool l) { (void)p;(void)l; return HAL_OK; }
+hal_status_t hal_gpio_set(hal_pin_t p, bool l)
+{
+    s_last_gpio_set_pin = p;
+    s_last_gpio_set_level = l;
+    s_gpio_set_count++;
+    return HAL_OK;
+}
 bool hal_gpio_get(hal_pin_t p) { (void)p; return false; }
 hal_status_t hal_gpio_set_interrupt(hal_pin_t p, hal_gpio_intr_t e, hal_isr_callback_t cb, void *a) { (void)p;(void)e;(void)cb;(void)a; return HAL_OK; }
 
@@ -267,8 +303,23 @@ hal_status_t hal_adc_read_mv(hal_adc_channel_t ch, uint32_t *mv) {
 hal_status_t hal_adc_deinit(hal_adc_channel_t ch) { (void)ch; return HAL_OK; }
 
 // --- hal_sleep ---
-hal_status_t hal_sleep_enter(hal_sleep_mode_t m) { (void)m; return HAL_OK; }
-hal_status_t hal_sleep_configure_wake_gpio(hal_pin_t p, bool l) { (void)p;(void)l; return HAL_OK; }
+hal_status_t hal_sleep_enter(hal_sleep_mode_t m)
+{
+    s_last_sleep_mode = m;
+    s_sleep_enter_count++;
+    return HAL_OK;
+}
+hal_status_t hal_sleep_configure_wake_gpio(hal_pin_t p, bool l)
+{
+    return hal_sleep_configure_wake_gpio_mask((1ULL << p), l);
+}
+hal_status_t hal_sleep_configure_wake_gpio_mask(uint64_t pin_mask, bool level)
+{
+    s_last_wake_gpio_mask = pin_mask;
+    s_last_wake_gpio_level = level;
+    s_wake_gpio_config_count++;
+    return HAL_OK;
+}
 hal_status_t hal_sleep_configure_wake_timer(uint32_t us) { (void)us; return HAL_OK; }
 
 // --- hal_storage ---

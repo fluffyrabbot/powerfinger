@@ -62,8 +62,12 @@ hal_status_t click_init(void)
     return HAL_OK;
 }
 
-bool click_is_pressed(void)
+bool click_is_pressed(click_source_t source)
 {
+    if (source != CLICK_SOURCE_PRIMARY) {
+        return false;
+    }
+
     bool raw = atomic_load(&s_raw_pressed);
     uint32_t now = hal_timer_get_ms();
 

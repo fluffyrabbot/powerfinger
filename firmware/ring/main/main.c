@@ -30,7 +30,15 @@
 #include "power_manager.h"
 #include "ring_runtime_health.h"
 
-static const char *TAG = "powerfinger";
+#ifndef POWERFINGER_APP_LOG_TAG
+#define POWERFINGER_APP_LOG_TAG "powerfinger"
+#endif
+
+#ifndef POWERFINGER_APP_FIRMWARE_NAME
+#define POWERFINGER_APP_FIRMWARE_NAME "PowerFinger ring"
+#endif
+
+static const char *TAG = POWERFINGER_APP_LOG_TAG;
 
 // --- Event queue: BLE callback -> main loop ---
 
@@ -127,14 +135,30 @@ static void publish_ble_diagnostics(const ring_diagnostics_t *diagnostics)
 
 static hal_status_t attempt_sensor_recovery(bool had_working_sensor)
 {
+    hal_status_t power_rc = power_manager_set_sensor_power(true);
+    if (power_rc != HAL_OK) {
+        return power_rc;
+    }
+
     hal_status_t rc = had_working_sensor ? sensor_wake() : sensor_init();
-    if (rc == HAL_OK || had_working_sensor == false) {
+    if (rc == HAL_OK) {
         return rc;
     }
 
-    // If the sensor stopped responding after a previously healthy session,
-    // fall back to a full re-init before giving up.
-    return sensor_init();
+    if (had_working_sensor) {
+        // If the sensor stopped responding after a previously healthy session,
+        // fall back to a full re-init before giving up.
+        rc = sensor_init();
+    }
+
+    if (rc != HAL_OK) {
+        hal_status_t gate_rc = power_manager_set_sensor_power(false);
+        if (gate_rc != HAL_OK) {
+            ESP_LOGW(TAG, "failed to gate sensor power after recovery error: %d", gate_rc);
+        }
+    }
+
+    return rc;
 }
 
 static bool try_late_calibration(bool sensor_ok,
@@ -160,6 +184,10 @@ static bool try_late_calibration(bool sensor_ok,
 
     calibration_reset();
     *next_calibration_attempt_ms = now_ms + CALIBRATION_RETRY_DELAY_MS;
+    hal_status_t gate_rc = power_manager_set_sensor_power(false);
+    if (gate_rc != HAL_OK) {
+        ESP_LOGW(TAG, "failed to gate sensor power after calibration error: %d", gate_rc);
+    }
     ESP_LOGW(TAG, "late calibration failed — retrying in %d ms while disconnected",
              CALIBRATION_RETRY_DELAY_MS);
     return false;
@@ -348,7 +376,7 @@ static void phase0_fake_motion_loop(void)
 
 void app_main(void)
 {
-    ESP_LOGI(TAG, "PowerFinger ring firmware starting");
+    ESP_LOGI(TAG, "%s firmware starting", POWERFINGER_APP_FIRMWARE_NAME);
 
     // Initialize NVS (required for BLE bonding and settings persistence)
     esp_err_t ret = nvs_flash_init();
@@ -386,6 +414,14 @@ void app_main(void)
         ESP_LOGW(TAG, "ring settings blob invalid — reverted to defaults and will repair on next idle flush");
     }
 
+    // Initialize power management before sensor bring-up so the shared sensor
+    // rail is available for boot-time init and calibration.
+    if (power_manager_init() != HAL_OK) {
+        ESP_LOGE(TAG, "power manager init failed — entering deep sleep (LiPo safety)");
+        power_manager_enter_sleep(true);
+        return;
+    }
+
     // Initialize sensor (check for failure)
     bool sensor_ok = (sensor_init() == HAL_OK);
     bool sensor_calibrated = false;
@@ -401,7 +437,8 @@ void app_main(void)
     if (!click_ok) {
         ESP_LOGW(TAG, "click init failed — buttons disabled");
     }
-    dead_zone_init();
+    dead_zone_ctx_t dead_zone;
+    dead_zone_init(&dead_zone);
 
     // Run calibration (blocks until complete)
     ring_actions_t actions;
@@ -411,9 +448,18 @@ void app_main(void)
         sensor_calibrated = calibration_is_valid();
         if (!sensor_calibrated) {
             next_calibration_attempt_ms = hal_timer_get_ms() + CALIBRATION_RETRY_DELAY_MS;
+            hal_status_t gate_rc = power_manager_set_sensor_power(false);
+            if (gate_rc != HAL_OK) {
+                ESP_LOGW(TAG, "failed to gate sensor power after boot calibration error: %d",
+                         gate_rc);
+            }
         }
     } else {
         ESP_LOGW(TAG, "skipping calibration until sensor recovers");
+        hal_status_t gate_rc = power_manager_set_sensor_power(false);
+        if (gate_rc != HAL_OK) {
+            ESP_LOGW(TAG, "failed to gate sensor power after sensor init error: %d", gate_rc);
+        }
     }
     if (cal_ret == HAL_OK) {
         ring_state_dispatch(RING_EVT_CALIBRATION_DONE, &actions);
@@ -431,13 +477,6 @@ void app_main(void)
         return;  // unreachable after deep sleep
     }
 
-    // Initialize power management — battery monitoring is safety-critical
-    // for LiPo protection. Without it, the cell can be damaged by deep discharge.
-    if (power_manager_init() != HAL_OK) {
-        ESP_LOGE(TAG, "power manager init failed — entering deep sleep (LiPo safety)");
-        power_manager_enter_sleep(true);
-        return;
-    }
     hal_ble_set_battery_level(power_manager_get_battery_level());
     sync_battery_diagnostics(&diagnostics);
     publish_ble_diagnostics(&diagnostics);
@@ -447,7 +486,7 @@ void app_main(void)
     // main loop so a build that crashes during init still gets rolled back.
     esp_ota_mark_app_valid_cancel_rollback();
 
-    ESP_LOGI(TAG, "PowerFinger ring firmware ready");
+    ESP_LOGI(TAG, "%s firmware ready", POWERFINGER_APP_FIRMWARE_NAME);
     log_diagnostics_snapshot("boot", &diagnostics);
 
 #if defined(CONFIG_SENSOR_NONE) && defined(CONFIG_CLICK_NONE)
@@ -481,7 +520,7 @@ void app_main(void)
                     log_diagnostics_snapshot("connect", &diagnostics);
                 }
                 if (queued_evt.ring_evt == RING_EVT_BLE_DISCONNECTED) {
-                    dead_zone_reset();
+                    dead_zone_reset(&dead_zone);
                     adv_start_ms = now;
                     power_manager_on_disconnect();
                     ring_runtime_health_reset_hid_send(&runtime_health);
@@ -546,7 +585,7 @@ void app_main(void)
                                  &sensor_calibrated,
                                  &next_calibration_attempt_ms,
                                  now)) {
-            dead_zone_reset();
+            dead_zone_reset(&dead_zone);
             sync_sensor_diagnostics(&diagnostics, sensor_ok, sensor_calibrated);
             log_diagnostics_snapshot("late-calibration", &diagnostics);
         }
@@ -581,7 +620,7 @@ void app_main(void)
                     ESP_LOGE(TAG,
                              "sensor read failed %u consecutive times — degrading to click-only until recovery",
                              sensor_update.consecutive_failures);
-                    dead_zone_reset();
+                    dead_zone_reset(&dead_zone);
                     sensor_ok = false;
                     sync_sensor_diagnostics(&diagnostics, sensor_ok, sensor_calibrated);
                     log_diagnostics_snapshot("sensor-degraded", &diagnostics);
@@ -590,7 +629,7 @@ void app_main(void)
         }
 
         // --- Click + dead zone ---
-        bool clicked = click_ok ? click_is_pressed() : false;
+        bool clicked = click_ok ? click_is_pressed(CLICK_SOURCE_PRIMARY) : false;
         uint8_t buttons = clicked ? 0x01 : 0x00;
 
         // Clicks are real user activity even if the sensor is perfectly still.
@@ -607,7 +646,8 @@ void app_main(void)
         }
 
         if (sensor_valid) {
-            dead_zone_update_with_config(clicked,
+            dead_zone_update_with_config(&dead_zone,
+                                         clicked,
                                          &reading.dx,
                                          &reading.dy,
                                          now,

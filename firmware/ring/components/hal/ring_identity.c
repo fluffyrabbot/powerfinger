@@ -13,14 +13,22 @@ static const char *s_firmware_revision =
     RING_IDENTITY_STR(RING_IDENTITY_FW_VERSION_MINOR) "."
     RING_IDENTITY_STR(RING_IDENTITY_FW_VERSION_PATCH);
 
+#if defined(CONFIG_POWERFINGER_FORM_FACTOR_PEN)
+#define RING_IDENTITY_MODEL_PREFIX "Pen"
+#elif defined(CONFIG_POWERFINGER_FORM_FACTOR_PUCK)
+#define RING_IDENTITY_MODEL_PREFIX "Puck"
+#else
+#define RING_IDENTITY_MODEL_PREFIX "Ring"
+#endif
+
 const char *ring_identity_model_number(void)
 {
 #if defined(CONFIG_SENSOR_NONE) && defined(CONFIG_CLICK_NONE)
-    return "Ring-Dev";
+    return RING_IDENTITY_MODEL_PREFIX "-Dev";
 #elif defined(CONFIG_SENSOR_PMW3360) || defined(CONFIG_CLICK_PIEZO_LRA)
-    return "Ring-P";
+    return RING_IDENTITY_MODEL_PREFIX "-P";
 #else
-    return "Ring-S";
+    return RING_IDENTITY_MODEL_PREFIX "-S";
 #endif
 }
 

@@ -108,6 +108,15 @@ menu "PowerFinger Configuration"
             GPIO controlling MOSFET for Hall sensor VCC rail
             (ball variants only). Set to -1 if not used.
 
+    config POWERFINGER_WAKE_GPIO_MASK
+        int "Deep sleep wake GPIO bitmask"
+        default 0x100 if CLICK_SNAP_DOME
+        default 0
+        help
+            Bitmask of GPIOs enabled as deep sleep wake sources.
+            Bits correspond to GPIO numbers (for example GPIO8 = 0x100).
+            PowerPen will override this with a three-GPIO mask.
+
     config POWERFINGER_DEVICE_NAME
         string "BLE device name"
         default "PowerPuck"

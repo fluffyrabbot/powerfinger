@@ -19,5 +19,9 @@ hal_status_t hal_sleep_enter(hal_sleep_mode_t mode);
 // level: the GPIO level that triggers wake (true = high, false = low).
 hal_status_t hal_sleep_configure_wake_gpio(hal_pin_t pin, bool level);
 
+// Configure one or more GPIOs as a deep sleep wake source using a raw pin
+// bitmask. Bits correspond to GPIO numbers.
+hal_status_t hal_sleep_configure_wake_gpio_mask(uint64_t pin_mask, bool level);
+
 // Enable timer-based wake from light sleep (e.g. for next BLE event).
 hal_status_t hal_sleep_configure_wake_timer(uint32_t us);

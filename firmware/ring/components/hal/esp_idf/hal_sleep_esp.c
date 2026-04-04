@@ -34,13 +34,18 @@ hal_status_t hal_sleep_enter(hal_sleep_mode_t mode)
 
 hal_status_t hal_sleep_configure_wake_gpio(hal_pin_t pin, bool level)
 {
+    return hal_sleep_configure_wake_gpio_mask((1ULL << pin), level);
+}
+
+hal_status_t hal_sleep_configure_wake_gpio_mask(uint64_t pin_mask, bool level)
+{
     esp_err_t ret = esp_deep_sleep_enable_gpio_wakeup(
-        (1ULL << pin),
+        pin_mask,
         level ? ESP_GPIO_WAKEUP_GPIO_HIGH : ESP_GPIO_WAKEUP_GPIO_LOW
     );
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "configure wake GPIO %lu failed: %s",
-                 (unsigned long)pin, esp_err_to_name(ret));
+        ESP_LOGE(TAG, "configure wake GPIO mask 0x%llx failed: %s",
+                 (unsigned long long)pin_mask, esp_err_to_name(ret));
         return HAL_ERR_IO;
     }
     return HAL_OK;

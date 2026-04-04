@@ -8,8 +8,9 @@ hal_status_t click_init(void)
     return HAL_OK;
 }
 
-bool click_is_pressed(void)
+bool click_is_pressed(click_source_t source)
 {
+    (void)source;
     return false;
 }
 

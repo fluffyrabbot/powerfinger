@@ -11,21 +11,27 @@ typedef enum {
     DZ_DRAG,        // Click held past dead zone exit — deltas re-enabled
 } dz_state_t;
 
-static dz_state_t s_state;
-static uint32_t s_click_start_ms;
-static uint32_t s_accumulated_distance;
-
-void dead_zone_init(void)
+static void dead_zone_reset_state(dead_zone_ctx_t *ctx)
 {
-    s_state = DZ_IDLE;
-    s_click_start_ms = 0;
-    s_accumulated_distance = 0;
+    if (!ctx) {
+        return;
+    }
+
+    ctx->state = (uint8_t)DZ_IDLE;
+    ctx->click_start_ms = 0;
+    ctx->accumulated_distance = 0;
 }
 
-bool dead_zone_update(bool click_pressed, int16_t *dx, int16_t *dy,
+void dead_zone_init(dead_zone_ctx_t *ctx)
+{
+    dead_zone_reset_state(ctx);
+}
+
+bool dead_zone_update(dead_zone_ctx_t *ctx, bool click_pressed, int16_t *dx, int16_t *dy,
                       uint32_t now_ms)
 {
-    return dead_zone_update_with_config(click_pressed,
+    return dead_zone_update_with_config(ctx,
+                                        click_pressed,
                                         dx,
                                         dy,
                                         now_ms,
@@ -33,18 +39,21 @@ bool dead_zone_update(bool click_pressed, int16_t *dx, int16_t *dy,
                                         DEAD_ZONE_DISTANCE);
 }
 
-bool dead_zone_update_with_config(bool click_pressed, int16_t *dx, int16_t *dy,
+bool dead_zone_update_with_config(dead_zone_ctx_t *ctx, bool click_pressed,
+                                  int16_t *dx, int16_t *dy,
                                   uint32_t now_ms, uint16_t dead_zone_time_ms,
                                   uint8_t dead_zone_distance)
 {
-    if (!dx || !dy) return false;
+    if (!ctx || !dx || !dy) return false;
 
-    switch (s_state) {
+    dz_state_t state = (dz_state_t)ctx->state;
+
+    switch (state) {
     case DZ_IDLE:
         if (click_pressed) {
-            s_state = DZ_ACTIVE;
-            s_click_start_ms = now_ms;
-            s_accumulated_distance = 0;
+            ctx->state = (uint8_t)DZ_ACTIVE;
+            ctx->click_start_ms = now_ms;
+            ctx->accumulated_distance = 0;
             // Suppress this tick's deltas
             *dx = 0;
             *dy = 0;
@@ -55,22 +64,22 @@ bool dead_zone_update_with_config(bool click_pressed, int16_t *dx, int16_t *dy,
     case DZ_ACTIVE: {
         if (!click_pressed) {
             // Click released while still in dead zone — normal click complete
-            s_state = DZ_IDLE;
+            ctx->state = (uint8_t)DZ_IDLE;
             *dx = 0;
             *dy = 0;
             return false;
         }
 
         // Accumulate distance
-        s_accumulated_distance += (uint32_t)(abs(*dx) + abs(*dy));
+        ctx->accumulated_distance += (uint32_t)(abs(*dx) + abs(*dy));
 
-        uint32_t elapsed = now_ms - s_click_start_ms;
+        uint32_t elapsed = now_ms - ctx->click_start_ms;
         bool time_met = (elapsed >= dead_zone_time_ms);
-        bool distance_met = (s_accumulated_distance >= dead_zone_distance);
+        bool distance_met = (ctx->accumulated_distance >= dead_zone_distance);
 
         if (time_met && distance_met) {
             // Both exit conditions met — transition to drag mode
-            s_state = DZ_DRAG;
+            ctx->state = (uint8_t)DZ_DRAG;
             // Re-enable deltas (don't suppress this tick)
             return false;
         }
@@ -84,7 +93,7 @@ bool dead_zone_update_with_config(bool click_pressed, int16_t *dx, int16_t *dy,
     case DZ_DRAG:
         if (!click_pressed) {
             // Drag complete
-            s_state = DZ_IDLE;
+            ctx->state = (uint8_t)DZ_IDLE;
         }
         // Deltas flow through in drag mode
         return false;
@@ -93,7 +102,7 @@ bool dead_zone_update_with_config(bool click_pressed, int16_t *dx, int16_t *dy,
     return false;
 }
 
-void dead_zone_reset(void)
+void dead_zone_reset(dead_zone_ctx_t *ctx)
 {
-    dead_zone_init();
+    dead_zone_reset_state(ctx);
 }

@@ -53,5 +53,9 @@ uint32_t power_manager_get_last_battery_mv(void);
 // Feed the watchdog timer. Must be called periodically from main loop.
 void power_manager_feed_watchdog(void);
 
+// Power-gate the motion sensor rail when supported by the form factor.
+// No-op for variants without a dedicated sensor power pin.
+hal_status_t power_manager_set_sensor_power(bool enabled);
+
 // Enter sleep mode as directed by state machine actions.
 void power_manager_enter_sleep(bool deep);
