@@ -20,6 +20,15 @@
 static uint32_t s_time_ms = 0;
 static uint32_t s_adc_mv = 3700;  // default: healthy battery
 static hal_status_t s_adc_status = HAL_OK;
+static uint32_t s_adc_mv_per_channel[8] = {0};
+static bool s_adc_channel_configured[8] = {false};
+// SPI register mock
+static uint8_t s_spi_registers[256] = {0};
+static uint8_t s_spi_last_write_addr = 0;
+static uint8_t s_spi_last_write_value = 0;
+static int s_spi_write_count = 0;
+static hal_status_t s_spi_status = HAL_OK;
+static int s_spi_fail_count = 0;
 static hal_status_t s_ble_send_status = HAL_OK;
 static int s_ble_send_fail_count = 0;
 static hal_status_t s_ble_conn_param_status = HAL_OK;
@@ -48,6 +57,14 @@ void mock_hal_reset(void)
 {
     s_time_ms = 0;
     s_adc_mv = 3700;
+    memset(s_adc_mv_per_channel, 0, sizeof(s_adc_mv_per_channel));
+    memset(s_adc_channel_configured, 0, sizeof(s_adc_channel_configured));
+    memset(s_spi_registers, 0, sizeof(s_spi_registers));
+    s_spi_last_write_addr = 0;
+    s_spi_last_write_value = 0;
+    s_spi_write_count = 0;
+    s_spi_status = HAL_OK;
+    s_spi_fail_count = 0;
     s_adc_status = HAL_OK;
     s_ble_send_status = HAL_OK;
     s_ble_send_fail_count = 0;
@@ -110,6 +127,40 @@ void mock_hal_inject_storage_commit_failure(hal_status_t status, int count)
 {
     s_storage_commit_status = status;
     s_storage_commit_fail_count = count;
+}
+
+void mock_hal_set_adc_mv_channel(uint8_t channel, uint32_t mv)
+{
+    if (channel < 8) {
+        s_adc_mv_per_channel[channel] = mv;
+        s_adc_channel_configured[channel] = true;
+    }
+}
+
+void mock_hal_spi_set_register(uint8_t addr, uint8_t value)
+{
+    s_spi_registers[addr] = value;
+}
+
+uint8_t mock_hal_spi_get_last_write_addr(void)
+{
+    return s_spi_last_write_addr;
+}
+
+uint8_t mock_hal_spi_get_last_write_value(void)
+{
+    return s_spi_last_write_value;
+}
+
+int mock_hal_spi_get_write_count(void)
+{
+    return s_spi_write_count;
+}
+
+void mock_hal_inject_spi_failure(hal_status_t status, int count)
+{
+    s_spi_status = status;
+    s_spi_fail_count = count;
 }
 
 void mock_ble_central_clear_connected_rings(void)
@@ -199,12 +250,18 @@ hal_status_t hal_gpio_set(hal_pin_t p, bool l) { (void)p;(void)l; return HAL_OK;
 bool hal_gpio_get(hal_pin_t p) { (void)p; return false; }
 hal_status_t hal_gpio_set_interrupt(hal_pin_t p, hal_gpio_intr_t e, hal_isr_callback_t cb, void *a) { (void)p;(void)e;(void)cb;(void)a; return HAL_OK; }
 
-// --- hal_adc (configurable for battery tests) ---
+// --- hal_adc (configurable for battery and sensor tests) ---
 hal_status_t hal_adc_init(hal_adc_channel_t ch) { (void)ch; return HAL_OK; }
 hal_status_t hal_adc_read_mv(hal_adc_channel_t ch, uint32_t *mv) {
-    (void)ch;
     if (s_adc_status != HAL_OK) return s_adc_status;
-    if (mv) *mv = s_adc_mv;
+    if (mv) {
+        // Use per-channel value if configured, else global default
+        if (ch < 8 && s_adc_channel_configured[ch]) {
+            *mv = s_adc_mv_per_channel[ch];
+        } else {
+            *mv = s_adc_mv;
+        }
+    }
     return HAL_OK;
 }
 hal_status_t hal_adc_deinit(hal_adc_channel_t ch) { (void)ch; return HAL_OK; }
@@ -286,11 +343,40 @@ hal_status_t hal_storage_commit(void) {
     return HAL_OK;
 }
 
-// --- hal_spi ---
-hal_status_t hal_spi_init(const hal_spi_config_t *c, hal_spi_handle_t *h) { (void)c;(void)h; return HAL_OK; }
-hal_status_t hal_spi_transfer(hal_spi_handle_t h, const uint8_t *tx, uint8_t *rx, size_t l) { (void)h;(void)tx;(void)rx;(void)l; return HAL_OK; }
-hal_status_t hal_spi_write_reg(hal_spi_handle_t h, uint8_t a, uint8_t v) { (void)h;(void)a;(void)v; return HAL_OK; }
-hal_status_t hal_spi_read_reg(hal_spi_handle_t h, uint8_t a, uint8_t *v) { (void)h;(void)a; if(v) *v=0; return HAL_OK; }
+// --- hal_spi (with register file and failure injection) ---
+hal_status_t hal_spi_init(const hal_spi_config_t *c, hal_spi_handle_t *h) {
+    (void)c;
+    if (s_spi_fail_count > 0) { s_spi_fail_count--; return s_spi_status; }
+    if (h) *h = (hal_spi_handle_t)1;  // Non-null dummy handle
+    return HAL_OK;
+}
+hal_status_t hal_spi_transfer(hal_spi_handle_t h, const uint8_t *tx, uint8_t *rx, size_t l) {
+    (void)h;
+    if (s_spi_fail_count > 0) { s_spi_fail_count--; return s_spi_status; }
+    // For burst reads: tx[0] is address, rx[1..] filled from register file
+    if (tx && rx && l > 1) {
+        uint8_t addr = tx[0] & 0x7F;
+        for (size_t i = 1; i < l; i++) {
+            rx[i] = s_spi_registers[(addr + i - 1) & 0xFF];
+        }
+    }
+    return HAL_OK;
+}
+hal_status_t hal_spi_write_reg(hal_spi_handle_t h, uint8_t a, uint8_t v) {
+    (void)h;
+    if (s_spi_fail_count > 0) { s_spi_fail_count--; return s_spi_status; }
+    s_spi_registers[a & 0x7F] = v;
+    s_spi_last_write_addr = a;
+    s_spi_last_write_value = v;
+    s_spi_write_count++;
+    return HAL_OK;
+}
+hal_status_t hal_spi_read_reg(hal_spi_handle_t h, uint8_t a, uint8_t *v) {
+    (void)h;
+    if (s_spi_fail_count > 0) { s_spi_fail_count--; return s_spi_status; }
+    if (v) *v = s_spi_registers[a & 0x7F];
+    return HAL_OK;
+}
 hal_status_t hal_spi_deinit(hal_spi_handle_t h) { (void)h; return HAL_OK; }
 
 // --- hal_ble (with failure injection) ---

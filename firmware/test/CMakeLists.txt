@@ -162,7 +162,37 @@ target_include_directories(usb_hid PUBLIC
     ../ring/components/hal/include
 )
 
-# Test executable
+# Sensor driver tests: compiled as separate executables to avoid
+# symbol conflicts (all drivers define sensor_init/read/power_down/wake).
+# The main test suite uses sensor_none via the calibration component.
+
+add_executable(test_ball_hall
+    test_ball_hall.c
+    ../ring/components/sensors/ball_hall.c
+)
+target_include_directories(test_ball_hall PRIVATE
+    ../ring/components/sensors/include
+    ../ring/components/state_machine/include
+    ../ring/components/hal/include
+    mocks
+)
+target_link_libraries(test_ball_hall unity mock_hal)
+add_test(NAME test_ball_hall COMMAND test_ball_hall)
+
+add_executable(test_pmw3360
+    test_pmw3360.c
+    ../ring/components/sensors/pmw3360.c
+)
+target_include_directories(test_pmw3360 PRIVATE
+    ../ring/components/sensors/include
+    ../ring/components/state_machine/include
+    ../ring/components/hal/include
+    mocks
+)
+target_link_libraries(test_pmw3360 unity mock_hal)
+add_test(NAME test_pmw3360 COMMAND test_pmw3360)
+
+# Test executable (main suite — uses sensor_none via calibration)
 add_executable(powerfinger_tests
     test_state_machine.c
     test_dead_zone.c

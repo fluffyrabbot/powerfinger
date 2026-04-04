@@ -32,6 +32,16 @@ void mock_ble_central_clear_bonds(void);
 void mock_ble_central_seed_bond(const uint8_t mac[6]);
 bool mock_ble_central_has_bond(const uint8_t mac[6]);
 
+// --- ADC per-channel mock (for ball+Hall sensor tests) ---
+void mock_hal_set_adc_mv_channel(uint8_t channel, uint32_t mv);
+
+// --- SPI register mock (for PMW3360 sensor tests) ---
+void mock_hal_spi_set_register(uint8_t addr, uint8_t value);
+uint8_t mock_hal_spi_get_last_write_addr(void);
+uint8_t mock_hal_spi_get_last_write_value(void);
+int mock_hal_spi_get_write_count(void);
+void mock_hal_inject_spi_failure(hal_status_t status, int count);
+
 // --- Failure injection ---
 // Set the return value for a specific HAL module's next N calls.
 // After N calls, reverts to HAL_OK.
