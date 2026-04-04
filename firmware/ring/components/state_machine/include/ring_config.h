@@ -39,7 +39,12 @@
 
 // Duration of no activity (no motion above noise threshold, no click)
 // before entering deep sleep from IDLE.
+// Override via Kconfig POWERFINGER_SLEEP_TIMEOUT_MS per form factor.
+#ifdef CONFIG_POWERFINGER_SLEEP_TIMEOUT_MS
+#define SLEEP_TIMEOUT_MS            CONFIG_POWERFINGER_SLEEP_TIMEOUT_MS
+#else
 #define SLEEP_TIMEOUT_MS            45000  // 45 seconds
+#endif
 
 // Maximum time to advertise before giving up and entering deep sleep.
 // Prevents battery drain from indefinite advertising.

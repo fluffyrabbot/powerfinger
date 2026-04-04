@@ -21,5 +21,9 @@
 // Advertising timeout before giving up and entering deep sleep
 #define BLE_ADVERTISE_TIMEOUT_MS    60000
 
-// Device name
+// Device name — override via Kconfig POWERFINGER_DEVICE_NAME per form factor
+#ifdef CONFIG_POWERFINGER_DEVICE_NAME
+#define BLE_DEVICE_NAME             CONFIG_POWERFINGER_DEVICE_NAME
+#else
 #define BLE_DEVICE_NAME             "PowerFinger"
+#endif

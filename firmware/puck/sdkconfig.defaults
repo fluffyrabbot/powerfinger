@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: MIT
+# PowerPuck — Default Kconfig
+
+# Target: ESP32-C3
+CONFIG_IDF_TARGET="esp32c3"
+
+# Flash: 4MB
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+
+# Partition table: custom (OTA A/B + NVS)
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+# Bluetooth: NimBLE only (no classic BT on C3)
+CONFIG_BT_ENABLED=y
+CONFIG_BT_NIMBLE_ENABLED=y
+CONFIG_BT_NIMBLE_ROLE_PERIPHERAL=y
+CONFIG_BT_NIMBLE_ROLE_CENTRAL=n
+CONFIG_BT_NIMBLE_ROLE_OBSERVER=n
+CONFIG_BT_NIMBLE_ROLE_BROADCASTER=y
+
+# NimBLE: enable bonding, security manager
+CONFIG_BT_NIMBLE_SM_LEGACY=y
+CONFIG_BT_NIMBLE_SM_SC=y
+
+# NimBLE: max connections (puck is peripheral, 1 connection)
+CONFIG_BT_NIMBLE_MAX_CONNECTIONS=1
+
+# Power management: enable light sleep
+CONFIG_PM_ENABLE=y
+CONFIG_PM_DFS_INIT_AUTO=y
+
+# Watchdog
+CONFIG_ESP_TASK_WDT_EN=y
+CONFIG_ESP_TASK_WDT_TIMEOUT_S=10
+
+# OTA: enable
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
+
+# Log level: info for development, warn for production
+CONFIG_LOG_DEFAULT_LEVEL_INFO=y
+
+# --- PowerPuck-specific overrides ---
+
+# Device name: "PowerPuck" instead of "PowerFinger Ring"
+CONFIG_POWERFINGER_DEVICE_NAME="PowerPuck"
+
+# Idle-to-sleep timeout: 60s (longer than ring's 45s to survive typing pauses)
+CONFIG_POWERFINGER_SLEEP_TIMEOUT_MS=60000
+
+# Sensor: PAW3204 optical (P0 prototype)
+CONFIG_SENSOR_PAW3204=y
+
+# Click: snap dome (whole-puck press-down)
+CONFIG_CLICK_SNAP_DOME=y

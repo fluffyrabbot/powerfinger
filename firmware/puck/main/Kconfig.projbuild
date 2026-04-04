@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: MIT
-# PowerFinger Ring — Project-level Kconfig
+# PowerPuck — Project-level Kconfig
+#
+# Identical choices to the ring. Puck-specific defaults are set in
+# sdkconfig.defaults (DEVICE_NAME="PowerPuck", SLEEP_TIMEOUT_MS=60000).
 
 menu "PowerFinger Configuration"
 
@@ -74,17 +77,17 @@ menu "PowerFinger Configuration"
 
     config POWERFINGER_DEVICE_NAME
         string "BLE device name"
-        default "PowerFinger Ring"
+        default "PowerPuck"
         help
             BLE GAP device name advertised to hosts and displayed
-            during pairing. Override per form factor.
+            during pairing.
 
     config POWERFINGER_SLEEP_TIMEOUT_MS
         int "Idle-to-sleep timeout (ms)"
-        default 45000
+        default 60000
         help
             Duration of no activity before entering deep sleep from
-            CONNECTED_IDLE. Desktop puck uses 60000 to survive typing
-            pauses without sleeping.
+            CONNECTED_IDLE. 60s default survives typical typing pauses
+            without sleeping.
 
 endmenu
