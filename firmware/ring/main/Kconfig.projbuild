@@ -18,6 +18,9 @@ menu "PowerFinger Configuration"
 
         config SENSOR_PMW3360
             bool "PMW3360 optical-on-ball (Pro tier)"
+
+        config SENSOR_BALL_HALL
+            bool "Ball+Hall 4x DRV5053 (ADC, surface-agnostic)"
     endchoice
 
     choice POWERFINGER_CLICK_INPUT
@@ -55,6 +58,51 @@ menu "PowerFinger Configuration"
         int "Sensor MISO GPIO pin (PMW3360 SPI only)"
         default 7
         depends on SENSOR_PMW3360
+
+    config POWERFINGER_PMW3360_CPI_DEFAULT
+        int "PMW3360 default CPI (100-12000, steps of 100)"
+        default 1600
+        depends on SENSOR_PMW3360
+        help
+            Default CPI for the PMW3360 sensor. 1600 is a good starting
+            point for Pro tier. Runtime-adjustable via BLE DPI multiplier.
+
+    config POWERFINGER_HALL_ADC_CH_X_POS
+        int "Hall X+ ADC channel"
+        default 1
+        depends on SENSOR_BALL_HALL
+        help
+            ADC1 channel for the DRV5053 sensor on the positive X roller.
+
+    config POWERFINGER_HALL_ADC_CH_X_NEG
+        int "Hall X- ADC channel"
+        default 2
+        depends on SENSOR_BALL_HALL
+        help
+            ADC1 channel for the DRV5053 sensor on the negative X roller.
+
+    config POWERFINGER_HALL_ADC_CH_Y_POS
+        int "Hall Y+ ADC channel"
+        default 3
+        depends on SENSOR_BALL_HALL
+        help
+            ADC1 channel for the DRV5053 sensor on the positive Y roller.
+
+    config POWERFINGER_HALL_ADC_CH_Y_NEG
+        int "Hall Y- ADC channel"
+        default 4
+        depends on SENSOR_BALL_HALL
+        help
+            ADC1 channel for the DRV5053 sensor on the negative Y roller.
+
+    config POWERFINGER_HALL_SENSITIVITY
+        int "Hall sensor sensitivity (mv-to-counts scale factor x10)"
+        default 10
+        depends on SENSOR_BALL_HALL
+        help
+            Scale factor for converting millivolt differentials to HID
+            delta counts, in 0.1x units. 10 = 1.0x (1mV differential =
+            1 count). Needs hardware tuning — this is a placeholder.
 
     config POWERFINGER_DOME_PIN
         int "Snap dome GPIO pin"
