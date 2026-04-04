@@ -17,7 +17,7 @@ idf.py -p /dev/ttyUSBx flash
 | Concern | Ring | PowerPen |
 |---------|------|----------|
 | Sensor | PAW3204 optical (SPI) | Ball+Hall 4x DRV5053 (ADC) |
-| Click | Single dome (one GPIO) | Barrel switch + optional tip dome (two GPIOs) |
+| Click | Single dome (one GPIO) | Barrel switch + tip dome (two GPIOs) |
 | Dead zone | Always on (dome press moves sensor) | Per-click-source: barrel off, tip on |
 | Pin map | See `ring/sdkconfig.defaults` | See `pen/sdkconfig.defaults` |
 | BLE device name | "PowerFinger Ring" | "PowerPen" |

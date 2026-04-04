@@ -6,8 +6,8 @@ ring's P0 optical prototype — the simplest variant that proves the form factor
 
 **Variant ID:** WSTD-BALL-NONE-NONE
 **Sensing:** Ball+Hall (4x DRV5053, 5mm steel ball, 4 magnetic spindle rollers)
-**Click:** Kailh GM8.0 micro switch (barrel, thumb) + optional metal snap dome
-(tip, press-down)
+**Click:** Kailh GM8.0 micro switch (barrel, thumb) + metal snap dome (tip,
+press-down)
 **MCU:** ESP32-C3 SuperMini (same as ring)
 **BOM target:** ~$14 at prototype quantity
 **Accessibility use case:** Surface-agnostic pen pointer for users who cannot use
@@ -24,7 +24,7 @@ fabric, skin, mirror — any surface.
 | Outer diameter | ~8mm | Must fit Kailh GM8.0 (5.8mm wide) plus wall |
 | Length | ~120mm | Pen-length, comfortable for extended grip |
 | Weight | TBD (measure prototype) | Heavier than 17g Genius pen mouse; weight is a feature for tremor damping |
-| Tip | 3D-printed ball socket assembly | Houses 5mm ball, 4 roller spindles, 4 Hall sensors, DRV5032 wake sensor |
+| Tip | 3D-printed ball socket assembly | Houses 5mm ball, 4 roller spindles, 4 Hall sensors, DRV5032 wake sensor, snap dome |
 | End cap | 3D-printed | Houses USB-C connector |
 | Pen angle (use) | 30–70 degrees from horizontal | User-determined by grip; ball+Hall is angle-independent (hypothesis — validate) |
 | Ball protrusion | ~1–2mm beyond tip | Ball contacts surface directly; no glide rim needed |
@@ -38,7 +38,7 @@ USB-C ◄── End Cap ── Battery ── PCB Strip ── Barrel Switch ─
 
 1. **Tip assembly** (~15mm): Ball socket, 4 roller spindles with neodymium
    magnets, 4x DRV5053 Hall sensors, DRV5032 wake sensor near one roller,
-   optional snap dome under ball.
+   snap dome under ball.
 2. **Barrel switch zone** (~10mm): Kailh GM8.0 micro switch mounted on PCB,
    actuator through barrel cutout for thumb access.
 3. **PCB strip** (~40mm): ESP32-C3-MINI-1-N4, LDO, charge controller, MOSFET
@@ -135,7 +135,7 @@ the 4x DRV5053 analog array provides motion data.
 | Location | Part | Actuation | GPIO | Purpose |
 |----------|------|-----------|------|---------|
 | Barrel (thumb) | Kailh GM8.0 micro switch | ~60gf, 0.5mm travel | Primary click GPIO | Left click (default) |
-| Tip (press-down) | 5mm 200gf Snaptron SQ snap dome | 200gf press-down on ball | Secondary click GPIO | Right click (optional, for two-button pen) |
+| Tip (press-down) | 5mm 200gf Snaptron SQ snap dome | 200gf press-down on ball | Secondary click GPIO | Right click (two-button pen) |
 
 The barrel switch is the primary click — thumb-operated, same hand that holds the
 pen. The tip dome is secondary — press the pen down into the surface to click.
@@ -157,7 +157,7 @@ logic as ring Phase 2.
 | GPIO2 | Hall sensor C (ADC) | ADC1_CH2 |
 | GPIO3 | Hall sensor D (ADC) | ADC1_CH3 |
 | GPIO4 | Barrel switch (Kailh GM8.0) | Internal pull-up, active-low, wake-capable |
-| GPIO5 | Tip dome (optional) | Internal pull-up, active-low, wake-capable |
+| GPIO5 | Tip dome (Snaptron SQ) | Internal pull-up, active-low, wake-capable |
 | GPIO6 | Hall VCC gate (MOSFET) | Active-low for P-ch MOSFET |
 | GPIO7 | VBAT ADC | Battery voltage monitor via divider |
 | GPIO8 | DRV5032 wake sensor output | Internal pull-up, active-low, wake-capable |
@@ -324,7 +324,7 @@ typedef struct {
 - Barrel switch (GPIO4) — user picks up pen and clicks
 - DRV5032 wake sensor (GPIO8) — user rolls pen on surface, magnet triggers
   digital Hall switch
-- Tip dome (GPIO5, if populated) — user presses pen tip into surface
+- Tip dome (GPIO5) — user presses pen tip into surface
 
 **Wake sequence:** GPIO interrupt fires → `PEN_EVT_GPIO_WAKE` → transition to
 `PEN_STATE_BOOTING` → power manager gates on Hall VCC (MOSFET) → wait ~1ms for
