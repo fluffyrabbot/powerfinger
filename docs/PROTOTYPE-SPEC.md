@@ -10,7 +10,8 @@ the links below — this document is the concise build spec.
 
 This spec follows the active scope freeze in
 [GO-NO-GO-RUBRIC.md](GO-NO-GO-RUBRIC.md): the optical ring pair + hub is the
-primary validation lane, and the wand is the hedge lane.
+primary validation lane, the puck pair validates keyboard coexistence, and the
+wand is the hedge lane.
 
 ---
 
@@ -58,7 +59,37 @@ resolve usable cursor deltas from a 5mm ball at finger-pressure force levels.
 
 ---
 
-## Prototype 3 — Ball+Hall Wand (x1)
+## Prototype 3 — Optical Puck Pair (x2 identical units)
+
+| Component | Spec |
+|-----------|------|
+| MCU | ESP32-C3 SuperMini |
+| Sensor | Optical mouse sensor (PAW3204 / ADNS-2080 class) |
+| Click | Metal snap dome (whole-puck press-down, 100–170gf) |
+| Battery | LiPo 150–200mAh |
+| Charging | USB-C |
+| Protocol | BLE HID mouse — reports X/Y deltas + click press/release |
+| Shell | 3D-printed disc, 22–28mm diameter, 10–15mm height, concave top |
+| Glide | UHMWPE pads on flat bottom (4 discrete pads around sensor aperture) |
+| Focal distance | 2.4–3.2mm, maintained by shell floor + pad standoff |
+| BOM target | ~$7 each |
+
+Two identical units. Same two-device composition model as the ring pair — the
+hub assigns roles (cursor + left click on one, scroll + right click on the
+other). The puck validates the keyboard-coexistent form factor: can users
+productively alternate between typing and fingertip pointing on desktop pucks?
+
+Key design differences from the ring:
+- **Rigid PCB** (not flex/rigid-flex) — cheaper, more reliable, simpler layout
+- **Non-parametric shell** — one size fits all hands, no finger circumference
+- **Larger battery** — weight budget relaxed since the puck is not worn
+- **Press-down click** — entire top surface is the actuator
+
+See [POWERPUCK-SPEC.md](POWERPUCK-SPEC.md) for the full design specification.
+
+---
+
+## Prototype 4 — Ball+Hall Wand (x1)
 
 | Component | Spec |
 |-----------|------|
@@ -84,7 +115,7 @@ those claims remain hypotheses until bench testing is complete. See
 | Component | Spec |
 |-----------|------|
 | MCU | ESP32-S3 (BLE 5.0 + native USB OTG) |
-| Role | BLE central — pairs with all rings/wands over BLE |
+| Role | BLE central — pairs with all rings/pucks/wands over BLE |
 | Output | USB HID mouse — single unified mouse to the host OS |
 | Connector | USB-A or USB-C |
 | Enclosure | 3D-printed, small USB-stick form factor |
@@ -124,6 +155,9 @@ standard BLE HID mouse for basic cursor + click.
 - **Ring shell CAD** — parametric for finger circumference and sensor angle.
   OpenSCAD, FreeCAD, or Fusion 360. Should accept at minimum: `finger_circumference`
   (mm) and `angle` (degrees)
+- **Puck shell CAD** — simple disc, 22–28mm diameter, 10–15mm height, concave top.
+  Non-parametric (one size). Test at 22mm, 25mm, and 28mm diameter for ergonomic
+  comparison
 - **Wand body CAD** — tube with internal component mounting
 - **Assembled prototypes** — even ugly is fine. We are validating sensing
   geometry, BLE connectivity, and ergonomics, not aesthetics
@@ -132,8 +166,9 @@ standard BLE HID mouse for basic cursor + click.
 
 ### Scope
 
-Three small PCBs. Two shell designs (ring + wand). Assembly. No application
-software beyond verifying the stock ESP-IDF BLE HID example runs and pairs.
+Four small PCBs (ring, puck, wand, hub). Three shell designs (ring + puck +
+wand). Assembly. No application software beyond verifying the stock ESP-IDF BLE
+HID example runs and pairs.
 
 ---
 
@@ -237,10 +272,13 @@ fill this gap using the NTC thermistor and VBUS MOSFET.
 | Priority | What | Quantity | Why |
 |----------|------|----------|-----|
 | **P0** | Optical ring pair (Prototype 1) | x2 | Validates core concept: two identical rings = mouse |
-| **P0** | USB hub dongle | x1 | Validates multi-ring composition — two rings = one USB mouse |
+| **P0** | USB hub dongle | x1 | Validates multi-device composition — two devices = one USB mouse |
+| **P1** | Optical puck pair (Prototype 3) | x2 | Validates keyboard-coexistent desktop form factor |
 | **P1** | Ball+Hall ring pair (Prototype 2) | x2 | Validates surface-agnostic sensing in ring form factor |
-| **P1** | Ball+Hall wand (Prototype 3) | x1 | Validates pen-on-any-surface concept |
+| **P1** | Ball+Hall wand (Prototype 4) | x1 | Validates pen-on-any-surface concept |
 
 P0 is the gate. If the optical ring pair works as a mouse through the hub,
-everything else follows. The hub is P0 because multi-ring composition is the
-core product concept — without it, you just have two independent mice.
+everything else follows. The hub is P0 because multi-device composition is the
+core product concept — without it, you just have two independent mice. The puck
+pair at P1 is the cheapest prototype (~$7 each) and validates whether the
+typing↔pointing workflow works without wearing a ring.

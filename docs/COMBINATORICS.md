@@ -13,20 +13,23 @@ companion app can reassign later.
 | Priority | What to Build | Qty | BOM Each | Why |
 |----------|--------------|-----|----------|-----|
 | **P0** | R30-OLED-NONE-NONE (dome click) | **×2** | ~$9 | Cheapest first proof of the ring control loop |
-| **P0** | USB hub dongle (ESP32-S3) | ×1 | ~$6 | Multi-ring composition — two rings = one USB mouse |
+| **P0** | USB hub dongle (ESP32-S3) | ×1 | ~$6 | Multi-ring composition — two devices = one USB mouse |
+| **P1** | P-OLED-NONE-NONE (dome click, puck) | ×2 | ~$7 | Keyboard-coexistent desktop form factor |
 | **P1** | R30-BALL-NONE-NONE (dome click) | ×2 | ~$11 | Surface-agnostic ring hypothesis (glass, fabric, skin) |
 | **P1** | WSTD-BALL-NONE-NONE (wand) | ×1 | ~$14 | Hedge lane for pen-grip / off-desk use |
 
 P0 is the gate. If the optical ring pair works as a mouse through the hub,
-everything else follows. See [PROTOTYPE-SPEC.md](PROTOTYPE-SPEC.md) for the
-full build spec pitched to EE/ME collaborators.
+everything else follows. The puck pair at P1 validates the keyboard-coexistent
+form factor — same hub, same firmware, different shell. See
+[PROTOTYPE-SPEC.md](PROTOTYPE-SPEC.md) for the full build spec and
+[POWERPUCK-SPEC.md](POWERPUCK-SPEC.md) for the puck design.
 
 ---
 
 ## The Design Space
 
-Everything below enumerates the full combinatorial design space — 576 variants
-across 6 orthogonal axes. This serves two purposes:
+Everything below enumerates the full combinatorial design space across 6
+orthogonal axes. This serves two purposes:
 
 1. **Exploration.** Builders who want to try a different sensor, form factor, or
    option combination can find it here with BOM estimates and tradeoff analysis.
@@ -82,101 +85,72 @@ and sensor mount orientation, not by the sensor itself. All angles use identical
 electronics. A parametric CAD model with angle as a variable produces all four
 variants from one design.
 
-#### Nail Mount (Typing-Compatible Ring)
+#### Desktop Fingertip Puck
 
-The electronics module sits on the **nail side** (dorsal surface) of the
-fingertip. A silicone harness wraps the finger to hold the module in place. The
-finger pad remains fully exposed for typing. When the user curls the finger and
-drags it across a surface, the sensor on the nail side reads the desk past the
-fingertip.
-
-```
-SIDE VIEW — Nail mount
-
-TYPING MODE:                     POINTING MODE:
-
-    ┌─sensor─┐                      ┌─sensor─┐
-    │████████│ ← nail side          │████████│
-    │ finger │                        ╲finger│
-    │        │                         ╲     │
-    │  pad   │ ← exposed, hits key      ╲pad ╲___
-    └────────┘                           └──◉──══════ surface
-   key ══════                          sensor reads surface
-```
-
-| Variant | Notes |
-|---------|-------|
-| **N-30** | 30° curl angle, sensor overhangs fingertip |
-| **N-45** | 45° curl angle, more compact overhang |
-
-**Keyboard compatibility:** This is the only ring form factor where the same
-finger can type AND point without removing the device. The finger pad is
-exposed; the module rides on the nail. The user types normally, then curls the
-finger to point.
-
-**Engineering constraints:**
-
-- **Height budget is extreme.** The module must add ≤3–4mm above the nail, or it
-  catches on adjacent keycaps during typing. This likely requires a bare sensor
-  die on flex PCB with a flat LiPo — no rigid PCB stackup.
-- **Bottom-row keys (M, comma, period, slash)** are the stress test. The finger
-  approaches these at a low angle where the nail-side module comes closest to
-  adjacent keycaps. Module compactness determines whether this form factor is
-  viable for full-size keyboards.
-- **Focal distance is variable.** Unlike the standard ring (fixed rim), the
-  nail-mount's sensor-to-surface distance varies with finger curl radius. A
-  tiny integrated standoff at the sensor tip helps, but the IMU hybrid (I-IMU)
-  is the most robust approach: optical tracking when focal distance is good, IMU
-  fallback when it drifts.
-
-**Status:** Concept. Requires validation of whether the module can be made thin
-enough to not interfere with typing. If viable, this is the most ergonomic ring
-variant for users who split time between typing and pointing.
-
-#### Wrist Bracelet
-
-The electronics module mounts on the **outer wrist** (ulnar side) via a
-bracelet or cuff. The sensor points down at the desk surface. The user slides
-their forearm to move the cursor. Thumb rests on the bracelet body for click.
+Two small disc-shaped devices resting on a desk surface. The user places
+fingertips on top and slides. No donning or doffing — lift fingers to type,
+place them back to point. This form factor was introduced to solve the ring's
+keyboard-coexistence problem without the engineering constraints of the nail
+mount (which required ≤3–4mm module height above the nail — likely infeasible).
 
 ```
-TOP VIEW — Wrist bracelet on desk
+CROSS-SECTION — PowerPuck on desk surface
 
-    ┌──────────┐
-    │ forearm   │
-    │           │
-    │    ┌────┐ │
-    │    │████│ ← module on ulnar side
-    │    │sens│    sensor faces desk
-    │    │ or │    thumb on top for click
-    │    └────┘ │
-    │           │
-    └──────────┘
-    ═══════════════ desk surface
+         ┌──────────────────┐
+        ╱   concave top      ╲   ← fingertip rests here
+       │  ┌──────────────┐    │
+       │  │  LiPo 150mAh │    │
+       │  ├──────────────┤    │
+       │  │  rigid PCB    │    │
+       │  │  ESP32-C3     │    │
+       │  │  sensor ◉     │    │
+       │  └──────────────┘    │
+       ▓▓                    ▓▓  ← shell wall
+       ░░░░░░░░░░░░░░░░░░░░░░  ← UHMWPE glide pads
+       ════════════════════════  desk surface
 ```
 
 | Variant | Notes |
 |---------|-------|
-| **B-STD** | Standard bracelet, fixed mount |
-| **B-ROT** | Rotating mount — module can pivot to adjust sensor angle |
+| **P** | Standard puck, ~22–28mm diameter, 10–15mm height |
 
-**Keyboard compatibility:** Full. The bracelet is on the wrist, not the fingers.
-The user types normally and points by sliding their forearm. No removal, no mode
-switch, no interference with any key.
+**Keyboard compatibility:** Full. The puck is on the desk, not the finger.
+The user types normally and points by placing a fingertip on the puck. Zero
+donning/doffing friction — the fastest typing↔pointing transition of any
+form factor.
 
-**Ergonomic argument:** The forearm rests in neutral pronation (similar to a
-vertical mouse). No wrist deviation, no grip force, no sustained finger curl.
-The weight of the module is irrelevant on the wrist — grams that matter on a
-fingertip are imperceptible on a wrist.
+**Advantages over the ring:**
+- **No sizing.** One shell design fits all hands. No parametric finger
+  circumference.
+- **Guaranteed focal distance.** The device rests on the surface under gravity.
+  No raised rim, no tilt compensation, no variable standoff.
+- **Rigid PCB.** No flex or rigid-flex circuits. Cheaper and more reliable.
+- **Relaxed weight budget.** 12–18g is fine (vs ring's 8–12g). Enables larger
+  battery (150–200mAh) without ergonomic penalty.
+- **Simpler click.** Press the whole device down.
+- **Cheapest variant.** ~$7 BOM for optical, under the $10 floor.
 
-**Tradeoff:** Wrist/forearm movement has lower spatial resolution than fingertip
-movement (~1–2mm discrimination vs. ~0.1mm at the fingertip). Requires higher
-sensor DPI and more aggressive acceleration curves to compensate. Sufficient for
-cursor navigation and clicking; likely insufficient for precision drawing.
+**Tradeoff:** No passive retention — the puck must be found and touched after
+typing. For users who need off-desk pointing (wheelchair, bed, presenting), the
+ring or wand is better. The puck is inherently surface-bound.
 
-**Status:** Concept. A genuinely novel form factor — a surface-tracking wrist
-device with vertical-mouse ergonomics and full typing compatibility. Worth
-prototyping if the nail mount proves too constrained.
+**Status:** Spec complete ([POWERPUCK-SPEC.md](POWERPUCK-SPEC.md)). P1 prototype.
+
+#### Retired Form Factors
+
+The following form factors were previously enumerated for defensive publication
+and design exploration. They remain as prior art but are not recommended for
+prototyping given the puck's superior keyboard-coexistence solution.
+
+**Nail mount (N-30, N-45):** Electronics on nail side of fingertip, finger pad
+exposed for typing. Required ≤3–4mm above nail (bare sensor die on flex PCB),
+variable focal distance, and keycap interference on bottom row. The puck solves
+the same keyboard problem without these extreme constraints.
+
+**Wrist bracelet (B-STD, B-ROT):** Sensor module on outer wrist, forearm slide
+for cursor control. Full keyboard compatibility but ~1–2mm spatial resolution
+(vs ~0.1mm at fingertip) — insufficient for precision pointing. The puck
+provides keyboard compatibility without sacrificing resolution.
 
 #### Tethered Sensor (Fingertip Dot + Wrist Hub)
 
@@ -271,18 +245,22 @@ with the heavy components moved to the wrist and a flex cable in between. No
 new sensing principles, no new firmware architecture. The firmware is identical
 to the self-contained ring; the SPI bus just runs through a longer cable.
 
-#### Hefty Pen (Wand)
+#### Pen / Wand
 
 A rigid pen-shaped device, ~8mm diameter × 120mm length. Aluminum or stainless
 steel tube. Sensing element at the tip, electronics and battery in the body.
+Product name: **PowerPen.** See [POWERPEN-SPEC.md](POWERPEN-SPEC.md).
 
 | Variant | Tip Design | Notes |
 |---------|-----------|-------|
 | **W-STD** | Ball or sensor at tip, straight | Standard pen grip, drag on any surface |
-| **W-RET** | Retractable tip | Ball/sensor retracts into body when not in use (debris protection) |
 
 Wand angle is determined by the user's grip, not the device geometry. The ball
 or sensor at the tip must accommodate 30–70° pen angles from horizontal.
+
+**Retired: W-RET (retractable tip).** Added $2 per variant for a spring+sleeve
+retraction mechanism. Half the OPTB and CAM combinations exceeded the $25 BOM
+ceiling. A friction-fit cap provides the same debris protection for pennies.
 
 ---
 
@@ -518,7 +496,7 @@ IMU hybrid variants as R-30 apply at identical BOMs.
 
 ---
 
-### Wand Variants (2 tip styles × 4 sensors × 2 camera × 2 laser = 32 combinations)
+### Wand Variants (1 tip style × 4 sensors × 2 camera × 2 laser = 16 combinations)
 
 *IMU and IMU hybrid variants apply to wands identically to rings. An IMU-only
 wand is an air pointer (presentation remote). An IMU hybrid wand tracks on a
@@ -547,29 +525,35 @@ the combinatorial pattern is the same.*
 | WSTD-OPTB-CAM-NONE | Optical/ball | OCR | — | ~$25 | At BOM ceiling |
 | WSTD-OPTB-CAM-DOT | Optical/ball | OCR | Laser | ~$28 | **Exceeds $25 ceiling — not recommended** |
 
-#### W-RET (Retractable Tip)
+---
 
-Same 16 combinations as W-STD, +$2 for retraction mechanism (spring + sleeve).
-Protects ball/sensor from pocket debris when not in use.
+### Puck Variants (4 sensors × 2 camera × 2 laser = 16 combinations)
 
-| Variant ID | Sensing | Camera | Laser | BOM Est. | Notes |
-|-----------|---------|--------|-------|----------|-------|
-| WRET-BALL-NONE-NONE | Ball+Hall | — | — | ~$16 | Core retractable wand |
-| WRET-BALL-NONE-DOT | Ball+Hall | — | Laser | ~$19 | With aim dot |
-| WRET-BALL-CAM-NONE | Ball+Hall | OCR | — | ~$24 | Near ceiling |
-| WRET-BALL-CAM-DOT | Ball+Hall | OCR | Laser | ~$27 | **Exceeds ceiling** |
-| WRET-OLED-NONE-NONE | Optical LED | — | — | ~$14 | Budget retractable pen |
-| WRET-OLED-NONE-DOT | Optical LED | — | Laser | ~$17 | With aim dot |
-| WRET-OLED-CAM-NONE | Optical LED | OCR | — | ~$22 | Optical + OCR |
-| WRET-OLED-CAM-DOT | Optical LED | OCR | Laser | ~$25 | At ceiling |
-| WRET-VCSL-NONE-NONE | Laser VCSEL | — | — | ~$17 | Retractable laser pen |
-| WRET-VCSL-NONE-DOT | Laser VCSEL | — | Laser | ~$20 | Dual laser |
-| WRET-VCSL-CAM-NONE | Laser VCSEL | OCR | — | ~$25 | At ceiling |
-| WRET-VCSL-CAM-DOT | Laser VCSEL | OCR | Laser | ~$27 | **Exceeds ceiling** |
-| WRET-OPTB-NONE-NONE | Optical/ball | — | — | ~$20 | Premium retractable |
-| WRET-OPTB-NONE-DOT | Optical/ball | — | Laser | ~$23 | With aim dot |
-| WRET-OPTB-CAM-NONE | Optical/ball | OCR | — | ~$27 | **Exceeds ceiling** |
-| WRET-OPTB-CAM-DOT | Optical/ball | OCR | Laser | ~$30 | **Well over ceiling** |
+The puck sits flat on a surface — no angle variants. All sensing mechanisms
+apply. IMU-only is a niche combination (puck implies surface use) but exists in
+the design space for completeness and defensive publication. IMU hybrid variants
+add ~$0.50–2 to base BOM.
+
+#### P (Standard Puck)
+
+| Variant ID | Sensing | Camera | Laser | BOM Est. | Priority | Notes |
+|-----------|---------|--------|-------|----------|----------|-------|
+| **P-OLED-NONE-NONE** | Optical LED | — | — | **~$7** | **P1 — Build alongside ring P0** | **Cheapest PowerFinger variant** |
+| P-BALL-NONE-NONE | Ball+Hall | — | — | ~$9 | P1 — Surface-agnostic puck | Glass, fabric, skin |
+| P-OPTB-NONE-NONE | Optical/ball | — | — | ~$15 | P2 — Premium puck | 12K CPI, any surface |
+| P-OLED-NONE-DOT | Optical LED | — | Laser | ~$10 | P3 | |
+| P-BALL-NONE-DOT | Ball+Hall | — | Laser | ~$12 | P3 | |
+| P-VCSL-NONE-NONE | Laser VCSEL | — | — | ~$10 | P3 | Better surface range than LED |
+| P-VCSL-NONE-DOT | Laser VCSEL | — | Laser | ~$13 | P3 | |
+| P-OLED-CAM-NONE | Optical LED | OCR | — | ~$15 | P3 | OCR puck — unusual but valid |
+| P-OLED-CAM-DOT | Optical LED | OCR | Laser | ~$18 | P3 | |
+| P-BALL-CAM-NONE | Ball+Hall | OCR | — | ~$17 | P3 | |
+| P-BALL-CAM-DOT | Ball+Hall | OCR | Laser | ~$20 | P3 | |
+| P-VCSL-CAM-NONE | Laser VCSEL | OCR | — | ~$18 | P3 | |
+| P-VCSL-CAM-DOT | Laser VCSEL | OCR | Laser | ~$21 | P3 | |
+| P-OPTB-NONE-DOT | Optical/ball | — | Laser | ~$18 | P3 | |
+| P-OPTB-CAM-NONE | Optical/ball | OCR | — | ~$23 | P4 | |
+| P-OPTB-CAM-DOT | Optical/ball | OCR | Laser | ~$25 | P4 | At BOM ceiling |
 
 ---
 
@@ -580,15 +564,23 @@ Protects ball/sensor from pocket debris when not in use.
 | Fingertip ring — surface sensors (4 angles × 4 sensors × 2 camera × 2 laser × 2 click) | 128 |
 | Fingertip ring — IMU only (4 angles × 2 camera × 2 laser × 2 click) | 32 |
 | Fingertip ring — IMU hybrids (4 angles × 4 sensors × 2 camera × 2 laser × 2 click) | 128 |
-| Nail mount — surface + IMU variants (2 angles × same combos as ring) | 144 |
+| Desktop puck — surface sensors (4 sensors × 2 camera × 2 laser × 2 click) | 32 |
+| Desktop puck — IMU hybrids (4 sensors × 2 camera × 2 laser × 2 click) | 32 |
 | Tethered sensor — surface + IMU variants (4 sensor types × 2 camera × 2 laser × 2 IMU) | 32 |
-| Wrist bracelet — surface + IMU variants (2 styles × same sensor combos) | 80 |
 | Wand standard (16 combos) | 16 |
-| Wand retractable (16 combos) | 16 |
-| **Total unique variants** | **576** |
+| **Total active variants** | **400** |
 
-576 variants. Build the one at the top of this document. The rest is prior art
-and exploration space.
+**Retired variants (prior art only, not recommended for prototyping):**
+
+| Category | Variants |
+|----------|---------|
+| Nail mount (2 angles × ring combos) | 144 |
+| Wrist bracelet (2 styles × sensor combos) | 80 |
+| Wand retractable (16 combos) | 16 |
+| **Retired total** | **240** |
+
+400 active variants + 240 retired = 640 total prior art combinations.
+Build the ones at the top of this document.
 
 ---
 
@@ -597,12 +589,14 @@ and exploration space.
 See "What to Build" at the top of this document for the summary. Full phased
 build order below.
 
-### Phase 2 — Alternative Sensing + Wand (P1–P2)
+### Phase 2 — Alternative Sensing + Wand + Puck (P1–P2)
 
 | Priority | Variant | Quantity | BOM | Why |
 |----------|---------|----------|-----|-----|
+| **P1** | P-OLED-NONE-NONE (dome click, puck) | ×2 | ~$14 | Keyboard-coexistent desktop form factor |
 | **P1** | R30-BALL-NONE-NONE (dome click) | ×2 | ~$22 | Surface-agnostic pair, tests ball in inverted orientation |
 | **P1** | WSTD-BALL-NONE-NONE | ×1 | ~$14 | Core wand concept, pen-on-any-surface |
+| **P2** | P-BALL-NONE-NONE (dome click, puck) | ×2 | ~$18 | Surface-agnostic puck (glass desk users) |
 | **P2** | R30-IMU-NONE-NONE (dome click) | ×2 | ~$18 | Air mouse pair: no surface needed, most accessible variant |
 | **P2** | R30-OLED-IMU-NONE-NONE (dome click) | ×2 | ~$22 | Hybrid pair: surface + air auto-switch, validates IMU fallback |
 | **P2** | R30-OPTB-NONE-NONE (dome click) | ×2 | ~$30 | Premium pair: any surface + high resolution |
@@ -700,14 +694,12 @@ anywhere:
 | Harness | Mounting | Use Case |
 |---------|----------|----------|
 | **Fingertip ring** (default) | Silicone/printed ring on distal phalanx | Standard desk, lap, any-surface use |
-| **Nail mount** | Silicone harness, module on nail side, pad exposed | Typing-compatible — same finger types and points |
+| **Desktop puck** | Free-standing disc on desk surface | Keyboard-coexistent — lift to type, touch to point |
 | **Tethered sensor** | Sensor dot on fingertip, flex cable to wrist hub | Sub-gram fingertip, best precision ergonomics, longest battery |
-| **Wrist bracelet** | Cuff on outer wrist, sensor faces desk | Typing-compatible — forearm slide, vertical-mouse ergonomics |
 | **Toe ring** | Silicone band on big toe or second toe | Users with limited hand/arm mobility |
 | **Knuckle strap** | Elastic strap on proximal phalanx | Users who can't curl fingertips |
 | **Prosthetic mount** | Clip or socket adapter | Mounts to existing prosthetic device |
 | **Headband mount** | Forehead or temple bracket | Head-tracking for users with limited limb mobility |
-| **Flat puck** | Adhesive base, no body attachment | Stationary surface use (desk widget) |
 
 The harness is the cheapest, simplest part of the system — a piece of shaped
 silicone or a 3D-printed bracket. Designing a new harness requires no electrical

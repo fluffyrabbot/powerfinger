@@ -194,6 +194,7 @@ This creates timestamped, enabling disclosure searchable by patent examiners.
 - Firmware build order: `docs/FIRMWARE-ROADMAP.md`
 - Consumer tiers (Standard/Pro): `docs/CONSUMER-TIERS.md`
 - Power budget (pre-hardware estimates): `docs/POWER-BUDGET.md`
+- PowerPuck spec (desktop fingertip mouse): `docs/POWERPUCK-SPEC.md`
 - Wand competitive landscape + patent analysis: `docs/WAND-COMPETITIVE.md`
 - Outreach / collaborators: `docs/OUTREACH.md`
 - CERN-OHL-S 2.0: https://opensource.org/license/cern-ohl-s
