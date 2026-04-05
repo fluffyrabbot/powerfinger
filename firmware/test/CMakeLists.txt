@@ -171,6 +171,23 @@ target_include_directories(usb_hid PUBLIC
 # symbol conflicts (all drivers define sensor_init/read/power_down/wake).
 # The main test suite uses sensor_none via the calibration component.
 
+add_executable(test_click_pen
+    test_click_pen.c
+    ../ring/components/click/click_pen.c
+)
+target_compile_definitions(test_click_pen PRIVATE
+    CONFIG_POWERFINGER_BARREL_PIN=4
+    CONFIG_POWERFINGER_TIP_DOME_PIN=5
+)
+target_include_directories(test_click_pen PRIVATE
+    ../ring/components/click/include
+    ../ring/components/state_machine/include
+    ../ring/components/hal/include
+    mocks
+)
+target_link_libraries(test_click_pen unity mock_hal)
+add_test(NAME test_click_pen COMMAND test_click_pen)
+
 add_executable(test_ball_hall
     test_ball_hall.c
     ../ring/components/sensors/ball_hall.c

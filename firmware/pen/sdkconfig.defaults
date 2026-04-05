@@ -55,8 +55,8 @@ CONFIG_POWERFINGER_HALL_ADC_CH_X_NEG=1
 CONFIG_POWERFINGER_HALL_ADC_CH_Y_POS=2
 CONFIG_POWERFINGER_HALL_ADC_CH_Y_NEG=3
 
-# Click: PP2 uses the existing single-GPIO click path on the barrel switch.
-# PP3 will replace this with the true dual-click integration.
+# Click: PP3 uses the pen-specific dual-GPIO driver selected behind the shared
+# CLICK_SNAP_DOME mode. The compatibility alias stays mapped to the barrel pin.
 CONFIG_CLICK_SNAP_DOME=y
 CONFIG_POWERFINGER_BARREL_PIN=4
 CONFIG_POWERFINGER_TIP_DOME_PIN=5

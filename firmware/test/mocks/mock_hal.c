@@ -16,6 +16,7 @@
 
 #define MOCK_STORAGE_MAX_KEY_LEN   32
 #define MOCK_STORAGE_MAX_BLOB_LEN  128
+#define MOCK_GPIO_MAX_PINS         64
 
 static uint32_t s_time_ms = 0;
 static uint32_t s_adc_mv = 3700;  // default: healthy battery
@@ -43,6 +44,10 @@ static bool s_last_wake_gpio_level = false;
 static int s_wake_gpio_config_count = 0;
 static hal_sleep_mode_t s_last_sleep_mode = HAL_SLEEP_LIGHT;
 static int s_sleep_enter_count = 0;
+static bool s_gpio_level[MOCK_GPIO_MAX_PINS] = {0};
+static hal_gpio_intr_t s_gpio_intr_type[MOCK_GPIO_MAX_PINS] = {0};
+static hal_isr_callback_t s_gpio_isr_callback[MOCK_GPIO_MAX_PINS] = {0};
+static void *s_gpio_isr_arg[MOCK_GPIO_MAX_PINS] = {0};
 static bool s_storage_committed_present = false;
 static char s_storage_committed_key[MOCK_STORAGE_MAX_KEY_LEN] = {0};
 static uint8_t s_storage_committed_blob[MOCK_STORAGE_MAX_BLOB_LEN] = {0};
@@ -88,6 +93,10 @@ void mock_hal_reset(void)
     s_wake_gpio_config_count = 0;
     s_last_sleep_mode = HAL_SLEEP_LIGHT;
     s_sleep_enter_count = 0;
+    memset(s_gpio_level, 0, sizeof(s_gpio_level));
+    memset(s_gpio_intr_type, 0, sizeof(s_gpio_intr_type));
+    memset(s_gpio_isr_callback, 0, sizeof(s_gpio_isr_callback));
+    memset(s_gpio_isr_arg, 0, sizeof(s_gpio_isr_arg));
     s_storage_committed_present = false;
     memset(s_storage_committed_key, 0, sizeof(s_storage_committed_key));
     memset(s_storage_committed_blob, 0, sizeof(s_storage_committed_blob));
@@ -125,6 +134,42 @@ void mock_hal_get_last_wake_gpio_mask(uint64_t *pin_mask, bool *level)
     if (level) *level = s_last_wake_gpio_level;
 }
 int mock_hal_get_wake_gpio_config_count(void) { return s_wake_gpio_config_count; }
+void mock_hal_set_gpio_input(hal_pin_t pin, bool level)
+{
+    if (pin >= MOCK_GPIO_MAX_PINS) {
+        return;
+    }
+
+    bool previous = s_gpio_level[pin];
+    s_gpio_level[pin] = level;
+
+    if (!s_gpio_isr_callback[pin] || previous == level) {
+        return;
+    }
+
+    bool rising = (!previous && level);
+    bool falling = (previous && !level);
+    bool should_fire = false;
+
+    switch (s_gpio_intr_type[pin]) {
+    case HAL_GPIO_INTR_RISING:
+        should_fire = rising;
+        break;
+    case HAL_GPIO_INTR_FALLING:
+        should_fire = falling;
+        break;
+    case HAL_GPIO_INTR_ANY_EDGE:
+        should_fire = true;
+        break;
+    case HAL_GPIO_INTR_NONE:
+    default:
+        break;
+    }
+
+    if (should_fire) {
+        s_gpio_isr_callback[pin](s_gpio_isr_arg[pin]);
+    }
+}
 
 void mock_hal_inject_ble_send_failure(hal_status_t status, int count)
 {
@@ -275,16 +320,45 @@ hal_status_t hal_timer_set_period(hal_timer_handle_t h, uint32_t p) { (void)h;(v
 hal_status_t hal_timer_delete(hal_timer_handle_t h) { (void)h; return HAL_OK; }
 
 // --- hal_gpio ---
-hal_status_t hal_gpio_init(hal_pin_t p, hal_gpio_mode_t m) { (void)p;(void)m; return HAL_OK; }
+hal_status_t hal_gpio_init(hal_pin_t p, hal_gpio_mode_t m)
+{
+    if (p < MOCK_GPIO_MAX_PINS) {
+        if (m == HAL_GPIO_INPUT_PULLUP) {
+            s_gpio_level[p] = true;
+        } else if (m == HAL_GPIO_INPUT_PULLDOWN) {
+            s_gpio_level[p] = false;
+        }
+    }
+    return HAL_OK;
+}
 hal_status_t hal_gpio_set(hal_pin_t p, bool l)
 {
     s_last_gpio_set_pin = p;
     s_last_gpio_set_level = l;
     s_gpio_set_count++;
+    if (p < MOCK_GPIO_MAX_PINS) {
+        s_gpio_level[p] = l;
+    }
     return HAL_OK;
 }
-bool hal_gpio_get(hal_pin_t p) { (void)p; return false; }
-hal_status_t hal_gpio_set_interrupt(hal_pin_t p, hal_gpio_intr_t e, hal_isr_callback_t cb, void *a) { (void)p;(void)e;(void)cb;(void)a; return HAL_OK; }
+bool hal_gpio_get(hal_pin_t p)
+{
+    if (p >= MOCK_GPIO_MAX_PINS) {
+        return false;
+    }
+    return s_gpio_level[p];
+}
+hal_status_t hal_gpio_set_interrupt(hal_pin_t p, hal_gpio_intr_t e, hal_isr_callback_t cb, void *a)
+{
+    if (p >= MOCK_GPIO_MAX_PINS) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    s_gpio_intr_type[p] = e;
+    s_gpio_isr_callback[p] = (e == HAL_GPIO_INTR_NONE) ? NULL : cb;
+    s_gpio_isr_arg[p] = (e == HAL_GPIO_INTR_NONE) ? NULL : a;
+    return HAL_OK;
+}
 
 // --- hal_adc (configurable for battery and sensor tests) ---
 hal_status_t hal_adc_init(hal_adc_channel_t ch) { (void)ch; return HAL_OK; }

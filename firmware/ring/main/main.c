@@ -438,7 +438,9 @@ void app_main(void)
         ESP_LOGW(TAG, "click init failed — buttons disabled");
     }
     dead_zone_ctx_t dead_zone;
+    dead_zone_ctx_t secondary_dead_zone;
     dead_zone_init(&dead_zone);
+    dead_zone_init(&secondary_dead_zone);
 
     // Run calibration (blocks until complete)
     ring_actions_t actions;
@@ -521,6 +523,7 @@ void app_main(void)
                 }
                 if (queued_evt.ring_evt == RING_EVT_BLE_DISCONNECTED) {
                     dead_zone_reset(&dead_zone);
+                    dead_zone_reset(&secondary_dead_zone);
                     adv_start_ms = now;
                     power_manager_on_disconnect();
                     ring_runtime_health_reset_hid_send(&runtime_health);
@@ -586,6 +589,7 @@ void app_main(void)
                                  &next_calibration_attempt_ms,
                                  now)) {
             dead_zone_reset(&dead_zone);
+            dead_zone_reset(&secondary_dead_zone);
             sync_sensor_diagnostics(&diagnostics, sensor_ok, sensor_calibrated);
             log_diagnostics_snapshot("late-calibration", &diagnostics);
         }
@@ -621,6 +625,7 @@ void app_main(void)
                              "sensor read failed %u consecutive times — degrading to click-only until recovery",
                              sensor_update.consecutive_failures);
                     dead_zone_reset(&dead_zone);
+                    dead_zone_reset(&secondary_dead_zone);
                     sensor_ok = false;
                     sync_sensor_diagnostics(&diagnostics, sensor_ok, sensor_calibrated);
                     log_diagnostics_snapshot("sensor-degraded", &diagnostics);
@@ -629,8 +634,18 @@ void app_main(void)
         }
 
         // --- Click + dead zone ---
-        bool clicked = click_ok ? click_is_pressed(CLICK_SOURCE_PRIMARY) : false;
-        uint8_t buttons = clicked ? 0x01 : 0x00;
+        bool primary_clicked = click_ok ? click_is_pressed(CLICK_SOURCE_PRIMARY) : false;
+        bool secondary_clicked = click_ok ? click_is_pressed(CLICK_SOURCE_SECONDARY) : false;
+        bool clicked = primary_clicked || secondary_clicked;
+        uint8_t buttons = 0;
+        if (primary_clicked) {
+            buttons |= 0x01;
+        }
+#ifdef CONFIG_POWERFINGER_FORM_FACTOR_PEN
+        if (secondary_clicked) {
+            buttons |= 0x02;
+        }
+#endif
 
         // Clicks are real user activity even if the sensor is perfectly still.
         // Promote a stationary click from IDLE to ACTIVE so press/release
@@ -646,13 +661,23 @@ void app_main(void)
         }
 
         if (sensor_valid) {
-            dead_zone_update_with_config(&dead_zone,
-                                         clicked,
+#ifdef CONFIG_POWERFINGER_FORM_FACTOR_PEN
+            dead_zone_update_with_config(&secondary_dead_zone,
+                                         secondary_clicked,
                                          &reading.dx,
                                          &reading.dy,
                                          now,
                                          settings.dead_zone_time_ms,
                                          settings.dead_zone_distance);
+#else
+            dead_zone_update_with_config(&dead_zone,
+                                         primary_clicked,
+                                         &reading.dx,
+                                         &reading.dy,
+                                         now,
+                                         settings.dead_zone_time_ms,
+                                         settings.dead_zone_distance);
+#endif
         }
 
         // --- Send HID report if in active state ---

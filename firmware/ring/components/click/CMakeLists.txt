@@ -3,7 +3,11 @@
 set(CLICK_SRCS "dead_zone.c" "calibration.c")
 
 if(CONFIG_CLICK_SNAP_DOME)
-    list(APPEND CLICK_SRCS "click_dome.c")
+    if(CONFIG_POWERFINGER_FORM_FACTOR_PEN)
+        list(APPEND CLICK_SRCS "click_pen.c")
+    else()
+        list(APPEND CLICK_SRCS "click_dome.c")
+    endif()
 elseif(CONFIG_CLICK_PIEZO_LRA)
     list(APPEND CLICK_SRCS "click_piezo.c")
 else()

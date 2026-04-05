@@ -45,7 +45,8 @@ menu "PowerFinger Configuration"
         prompt "Click input"
         default CLICK_SNAP_DOME
         help
-            PP2 maps the shared single-click GPIO path to the barrel switch.
+            PP3 uses the shared GPIO click path with a pen-specific dual-input
+            driver behind CLICK_SNAP_DOME.
 
         config CLICK_NONE
             bool "None (no click)"
@@ -99,8 +100,8 @@ menu "PowerFinger Configuration"
         default 4
         depends on CLICK_SNAP_DOME
         help
-            PP2 compatibility mapping for the existing single-click driver.
-            This should stay aligned with the barrel switch until PP3 lands.
+            Compatibility alias for the shared single-pin click config. Keep
+            this aligned with the barrel switch GPIO for shared callers.
 
     config POWERFINGER_VBAT_ADC_CHANNEL
         int "VBAT ADC channel number"
