@@ -46,6 +46,7 @@ static uint8_t s_last_battery_pct = 0;
 static bool s_hall_power_ready = false;
 static bool s_hall_power_state_known = false;
 static bool s_hall_power_enabled = false;
+static uint64_t s_wake_gpio_mask = 0;
 
 #ifdef CONFIG_POWERFINGER_HALL_POWER_PIN
 #define PIN_HALL_POWER ((hal_pin_t)CONFIG_POWERFINGER_HALL_POWER_PIN)
@@ -171,6 +172,7 @@ hal_status_t power_manager_init(void)
     s_hall_power_ready = false;
     s_hall_power_state_known = false;
     s_hall_power_enabled = false;
+    s_wake_gpio_mask = WAKE_GPIO_MASK;
 
     // Initialize battery ADC — failure is fatal for LiPo safety
     hal_status_t adc_rc = hal_adc_init(VBAT_ADC_CHANNEL);
@@ -325,6 +327,11 @@ hal_status_t power_manager_set_sensor_power(bool enabled)
     return hall_power_set(enabled);
 }
 
+void power_manager_set_wake_gpio_mask(uint64_t pin_mask)
+{
+    s_wake_gpio_mask = pin_mask;
+}
+
 void power_manager_enter_sleep(bool deep)
 {
     // Power gate Hall sensors
@@ -344,15 +351,15 @@ void power_manager_enter_sleep(bool deep)
         bool has_wake_source = false;
 
         hal_status_t gpio_rc = HAL_ERR_NOT_SUPPORTED;
-        if (WAKE_GPIO_MASK != 0) {
-            gpio_rc = hal_sleep_configure_wake_gpio_mask(WAKE_GPIO_MASK, false);
+        if (s_wake_gpio_mask != 0) {
+            gpio_rc = hal_sleep_configure_wake_gpio_mask(s_wake_gpio_mask, false);
         }
         if (gpio_rc == HAL_OK) {
             has_wake_source = true;
-        } else if (WAKE_GPIO_MASK != 0) {
+        } else if (s_wake_gpio_mask != 0) {
 #ifdef ESP_PLATFORM
             ESP_LOGW(TAG, "wake GPIO mask 0x%llx config failed (%d) — timer wake only",
-                     (unsigned long long)WAKE_GPIO_MASK, gpio_rc);
+                     (unsigned long long)s_wake_gpio_mask, gpio_rc);
 #endif
         }
         // Safety net: timer wake so device eventually wakes even if dome pin

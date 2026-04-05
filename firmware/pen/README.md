@@ -1,8 +1,9 @@
 # PowerPen Firmware — WSTD-BALL-NONE-NONE
 
-ESP-IDF build target for the core PowerPen prototype. Shares all components with
-the ring firmware via `EXTRA_COMPONENT_DIRS`; the pen target adds only
-configuration differences (pin map, device name, click topology, wake sensor).
+ESP-IDF build target for the core PowerPen prototype. Shares most components
+with the ring firmware via `EXTRA_COMPONENT_DIRS`; the pen target adds
+target-specific configuration plus a local `pen_wake/` component for DRV5032
+spurious-wake debounce and runtime wake-mask filtering.
 
 ## Build
 
@@ -11,6 +12,15 @@ cd firmware/pen
 idf.py build
 idf.py -p /dev/ttyUSBx flash
 ```
+
+## Current Status
+
+- Host-side verification covers the pen-specific dual-click path and DRV5032
+  wake debounce (`test_click_pen`, `test_pen_wake_debounce`).
+- The pen target now resolves both `firmware/pen/components/` and
+  `firmware/ring/components/`.
+- Real ESP-IDF build, pairing, surface tracking, wake current, and latency
+  still require local hardware and an installed ESP-IDF toolchain.
 
 ## What's Different from Ring
 
@@ -36,12 +46,14 @@ Shared unchanged:
 - `sensors/` — `sensor_interface.h` (ball+Hall driver implements this)
 - `click/calibration.c` — Sensor zero-offset calibration
 
-Shared with interface extensions (PP1 prerequisite):
-- `click/click_interface.h` — extend for multi-source (`click_source_t`)
-- `click/dead_zone.c` — refactor to instanceable `dead_zone_ctx_t`
-- `power/` — extend wake GPIO config to bitmask, add Hall gate-off on cal fail
-- `diagnostics/` — decouple from `ring_state_t`
-- `runtime_health/` — rename `ring_` prefix to `pf_`
+Shared with implemented pen-specific extensions:
+- `click/` — source-aware click polling plus `click_pen.c` for barrel + tip
+- `click/dead_zone.c` — instanceable dead-zone contexts; pen uses tip-only suppression
+- `power/` — wake GPIO bitmask, Hall gate-off on failed calibration, runtime wake-mask override
+- `diagnostics/` — snapshot carries `drv5032_wake_enabled` and `spurious_wake_count`
+
+Pen-local:
+- `pen/components/pen_wake/` — DRV5032 spurious-wake debounce and GPIO8 wake disable/restore logic
 
 ## Firmware Tasks
 

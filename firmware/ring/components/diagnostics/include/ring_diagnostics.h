@@ -36,6 +36,8 @@ typedef struct {
     bool calibration_valid;
     uint8_t battery_pct;
     uint32_t battery_mv;
+    bool drv5032_wake_enabled;
+    uint8_t spurious_wake_count;
 } ring_diag_snapshot_t;
 
 typedef struct {
@@ -57,6 +59,9 @@ void ring_diagnostics_note_sensor_path(ring_diagnostics_t *state,
 void ring_diagnostics_note_battery(ring_diagnostics_t *state,
                                    uint32_t battery_mv,
                                    uint8_t battery_pct);
+void ring_diagnostics_note_pen_wake(ring_diagnostics_t *state,
+                                    bool drv5032_wake_enabled,
+                                    uint8_t spurious_wake_count);
 
 ring_diag_snapshot_t ring_diagnostics_snapshot(const ring_diagnostics_t *state);
 size_t ring_diagnostics_encode_ble_payload(const ring_diagnostics_t *state,

@@ -29,6 +29,9 @@
 #include "ring_diagnostics.h"
 #include "power_manager.h"
 #include "ring_runtime_health.h"
+#ifdef CONFIG_POWERFINGER_FORM_FACTOR_PEN
+#include "pen_wake_debounce.h"
+#endif
 
 #ifndef POWERFINGER_APP_LOG_TAG
 #define POWERFINGER_APP_LOG_TAG "powerfinger"
@@ -82,6 +85,17 @@ static void sync_battery_diagnostics(ring_diagnostics_t *diagnostics)
                                   power_manager_get_battery_level());
 }
 
+static void sync_pen_wake_diagnostics(ring_diagnostics_t *diagnostics)
+{
+#ifdef CONFIG_POWERFINGER_FORM_FACTOR_PEN
+    ring_diagnostics_note_pen_wake(diagnostics,
+                                   pen_wake_debounce_drv5032_enabled(),
+                                   pen_wake_debounce_spurious_wake_count());
+#else
+    (void)diagnostics;
+#endif
+}
+
 static void log_diagnostics_snapshot(const char *reason,
                                      const ring_diagnostics_t *diagnostics)
 {
@@ -92,7 +106,11 @@ static void log_diagnostics_snapshot(const char *reason,
 
     if (snapshot.conn_interval_1_25ms == 0) {
         ESP_LOGI(TAG,
-                 "diag[%s]: state=%s sensor=%s cal=%s bond=%s conn=unknown rejected=%s batt=%u%% (%lumV)",
+                 "diag[%s]: state=%s sensor=%s cal=%s bond=%s conn=unknown rejected=%s batt=%u%% (%lumV)"
+#ifdef CONFIG_POWERFINGER_FORM_FACTOR_PEN
+                 " drv5032=%s spur=%u"
+#endif
+                 ,
                  reason,
                  ring_state_name(snapshot.ring_state),
                  ring_diag_sensor_state_name(snapshot.sensor_state),
@@ -100,12 +118,22 @@ static void log_diagnostics_snapshot(const char *reason,
                  ring_diag_bond_state_name(snapshot.bond_state),
                  snapshot.conn_param_rejected ? "yes" : "no",
                  snapshot.battery_pct,
-                 (unsigned long)snapshot.battery_mv);
+                 (unsigned long)snapshot.battery_mv
+#ifdef CONFIG_POWERFINGER_FORM_FACTOR_PEN
+                 ,
+                 snapshot.drv5032_wake_enabled ? "enabled" : "disabled",
+                 snapshot.spurious_wake_count
+#endif
+                 );
         return;
     }
 
     ESP_LOGI(TAG,
-             "diag[%s]: state=%s sensor=%s cal=%s bond=%s conn=%lu.%02lums rejected=%s batt=%u%% (%lumV)",
+             "diag[%s]: state=%s sensor=%s cal=%s bond=%s conn=%lu.%02lums rejected=%s batt=%u%% (%lumV)"
+#ifdef CONFIG_POWERFINGER_FORM_FACTOR_PEN
+             " drv5032=%s spur=%u"
+#endif
+             ,
              reason,
              ring_state_name(snapshot.ring_state),
              ring_diag_sensor_state_name(snapshot.sensor_state),
@@ -115,7 +143,13 @@ static void log_diagnostics_snapshot(const char *reason,
              (unsigned long)interval_ms_frac,
              snapshot.conn_param_rejected ? "yes" : "no",
              snapshot.battery_pct,
-             (unsigned long)snapshot.battery_mv);
+             (unsigned long)snapshot.battery_mv
+#ifdef CONFIG_POWERFINGER_FORM_FACTOR_PEN
+             ,
+             snapshot.drv5032_wake_enabled ? "enabled" : "disabled",
+             snapshot.spurious_wake_count
+#endif
+             );
 }
 
 static void publish_ble_diagnostics(const ring_diagnostics_t *diagnostics)
@@ -422,6 +456,13 @@ void app_main(void)
         return;
     }
 
+#ifdef CONFIG_POWERFINGER_FORM_FACTOR_PEN
+    hal_status_t wake_rc = pen_wake_debounce_init();
+    if (wake_rc != HAL_OK) {
+        ESP_LOGW(TAG, "pen wake debounce init failed (%d) — keeping default wake mask", wake_rc);
+    }
+#endif
+
     // Initialize sensor (check for failure)
     bool sensor_ok = (sensor_init() == HAL_OK);
     bool sensor_calibrated = false;
@@ -431,6 +472,7 @@ void app_main(void)
         ring_runtime_health_mark_sensor_unavailable(&runtime_health, hal_timer_get_ms());
     }
     sync_sensor_diagnostics(&diagnostics, sensor_ok, sensor_calibrated);
+    sync_pen_wake_diagnostics(&diagnostics);
 
     // Initialize click (check for failure)
     bool click_ok = (click_init() == HAL_OK);
@@ -466,10 +508,14 @@ void app_main(void)
     if (cal_ret == HAL_OK) {
         ring_state_dispatch(RING_EVT_CALIBRATION_DONE, &actions);
     } else {
+#ifdef CONFIG_POWERFINGER_FORM_FACTOR_PEN
+        pen_wake_debounce_note_validation_failure();
+#endif
         ring_state_dispatch(RING_EVT_CALIBRATION_FAILED, &actions);
     }
     ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
     sync_sensor_diagnostics(&diagnostics, sensor_ok, sensor_calibrated);
+    sync_pen_wake_diagnostics(&diagnostics);
     execute_actions(&actions);
 
     // Initialize BLE HID (state machine already set ADVERTISING + action flag)
@@ -481,6 +527,7 @@ void app_main(void)
 
     hal_ble_set_battery_level(power_manager_get_battery_level());
     sync_battery_diagnostics(&diagnostics);
+    sync_pen_wake_diagnostics(&diagnostics);
     publish_ble_diagnostics(&diagnostics);
 
     // Confirm this firmware is valid — cancels automatic rollback.
@@ -610,6 +657,10 @@ void app_main(void)
                 sensor_valid = true;
 
                 if (reading.motion_detected) {
+#ifdef CONFIG_POWERFINGER_FORM_FACTOR_PEN
+                    pen_wake_debounce_note_motion();
+                    sync_pen_wake_diagnostics(&diagnostics);
+#endif
                     memset(&actions, 0, sizeof(actions));
                     ring_state_dispatch(RING_EVT_MOTION_DETECTED, &actions);
                     ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
@@ -652,6 +703,12 @@ void app_main(void)
         // reports are not dropped waiting for motion.
         if (clicked) {
             power_manager_on_click();
+#ifdef CONFIG_POWERFINGER_FORM_FACTOR_PEN
+            if (primary_clicked) {
+                pen_wake_debounce_note_barrel_press();
+                sync_pen_wake_diagnostics(&diagnostics);
+            }
+#endif
             if (ring_state_get() == RING_STATE_CONNECTED_IDLE) {
                 memset(&actions, 0, sizeof(actions));
                 ring_state_dispatch(RING_EVT_CLICK_ACTIVITY, &actions);
@@ -693,6 +750,13 @@ void app_main(void)
         }
         prev_buttons = buttons;
 
+        // Validate DRV5032 deep-sleep wakes shortly after boot and suppress the
+        // motion wake source if it repeatedly wakes without real motion.
+#ifdef CONFIG_POWERFINGER_FORM_FACTOR_PEN
+        pen_wake_debounce_tick(now);
+        sync_pen_wake_diagnostics(&diagnostics);
+#endif
+
         // --- Power management tick ---
         power_event_t pwr_evt = power_manager_tick(now);
         if (pwr_evt != POWER_EVT_NONE) {
@@ -712,6 +776,7 @@ void app_main(void)
         }
         hal_ble_set_battery_level(power_manager_get_battery_level());
         sync_battery_diagnostics(&diagnostics);
+        sync_pen_wake_diagnostics(&diagnostics);
         publish_ble_diagnostics(&diagnostics);
 
         if (ring_settings_needs_flush() &&

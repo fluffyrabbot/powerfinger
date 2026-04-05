@@ -60,3 +60,17 @@ hal_status_t hal_sleep_configure_wake_timer(uint32_t us)
     }
     return HAL_OK;
 }
+
+hal_wake_cause_t hal_sleep_get_wake_cause(void)
+{
+    switch (esp_sleep_get_wakeup_cause()) {
+    case ESP_SLEEP_WAKEUP_UNDEFINED:
+        return HAL_WAKE_CAUSE_COLD_BOOT;
+    case ESP_SLEEP_WAKEUP_GPIO:
+        return HAL_WAKE_CAUSE_GPIO;
+    case ESP_SLEEP_WAKEUP_TIMER:
+        return HAL_WAKE_CAUSE_TIMER;
+    default:
+        return HAL_WAKE_CAUSE_OTHER;
+    }
+}

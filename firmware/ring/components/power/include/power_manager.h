@@ -57,5 +57,9 @@ void power_manager_feed_watchdog(void);
 // No-op for variants without a dedicated sensor power pin.
 hal_status_t power_manager_set_sensor_power(bool enabled);
 
+// Override the deep-sleep wake GPIO bitmask for the current boot.
+// Used by form-factor-specific wake debounce policies.
+void power_manager_set_wake_gpio_mask(uint64_t pin_mask);
+
 // Enter sleep mode as directed by state machine actions.
 void power_manager_enter_sleep(bool deep);

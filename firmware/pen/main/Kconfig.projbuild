@@ -127,6 +127,26 @@ menu "PowerFinger Configuration"
             Bitmask of GPIOs enabled as deep sleep wake sources.
             PowerPen default is GPIO4 | GPIO5 | GPIO8.
 
+    config POWERFINGER_WAKE_VALIDATION_MS
+        int "DRV5032 wake validation window (ms)"
+        default 200
+        help
+            After a DRV5032-triggered wake, motion must be observed within
+            this window or the wake is treated as spurious.
+
+    config POWERFINGER_SPURIOUS_WAKE_LIMIT
+        int "DRV5032 spurious wake limit"
+        default 3
+        help
+            Disable DRV5032 wake after this many spurious wakes within the
+            configured window. Barrel and tip wake remain enabled.
+
+    config POWERFINGER_SPURIOUS_WAKE_WINDOW_MS
+        int "DRV5032 spurious wake window (ms)"
+        default 30000
+        help
+            Rolling window for counting spurious DRV5032 wakes.
+
     config POWERFINGER_DEVICE_NAME
         string "BLE device name"
         default "PowerPen"

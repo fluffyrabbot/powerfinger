@@ -28,6 +28,7 @@ void ring_diagnostics_init(ring_diagnostics_t *state)
     state->snapshot.ring_state = RING_STATE_BOOTING;
     state->snapshot.bond_state = RING_DIAG_BOND_UNKNOWN;
     state->snapshot.sensor_state = RING_DIAG_SENSOR_UNAVAILABLE;
+    state->snapshot.drv5032_wake_enabled = true;
 }
 
 void ring_diagnostics_note_ring_state(ring_diagnostics_t *state, ring_state_t ring_state)
@@ -128,6 +129,18 @@ void ring_diagnostics_note_battery(ring_diagnostics_t *state,
     state->snapshot.battery_pct = battery_pct;
 }
 
+void ring_diagnostics_note_pen_wake(ring_diagnostics_t *state,
+                                    bool drv5032_wake_enabled,
+                                    uint8_t spurious_wake_count)
+{
+    if (!state) {
+        return;
+    }
+
+    state->snapshot.drv5032_wake_enabled = drv5032_wake_enabled;
+    state->snapshot.spurious_wake_count = spurious_wake_count;
+}
+
 ring_diag_snapshot_t ring_diagnostics_snapshot(const ring_diagnostics_t *state)
 {
     ring_diag_snapshot_t snapshot;
@@ -135,6 +148,7 @@ ring_diag_snapshot_t ring_diagnostics_snapshot(const ring_diagnostics_t *state)
     snapshot.ring_state = RING_STATE_BOOTING;
     snapshot.bond_state = RING_DIAG_BOND_UNKNOWN;
     snapshot.sensor_state = RING_DIAG_SENSOR_UNAVAILABLE;
+    snapshot.drv5032_wake_enabled = true;
 
     if (!state) {
         return snapshot;

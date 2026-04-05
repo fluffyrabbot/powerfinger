@@ -80,6 +80,24 @@ target_include_directories(power_manager PUBLIC
     ../ring/components/hal/include
 )
 
+add_library(power_manager_pen STATIC
+    ../ring/components/power/power_manager.c
+    ../ring/components/ble_hid/ble_gap_handler.c
+)
+target_compile_definitions(power_manager_pen PUBLIC
+    CONFIG_POWERFINGER_WAKE_GPIO_MASK=0x130
+    CONFIG_POWERFINGER_WAKE_SENSOR_PIN=8
+    CONFIG_POWERFINGER_HALL_POWER_PIN=6
+    CONFIG_POWERFINGER_HALL_POWER_ACTIVE_LOW
+    CONFIG_POWERFINGER_VBAT_ADC_CHANNEL=7
+)
+target_include_directories(power_manager_pen PUBLIC
+    ../ring/components/power/include
+    ../ring/components/ble_hid/include
+    ../ring/components/state_machine/include
+    ../ring/components/hal/include
+)
+
 add_library(ring_runtime_health STATIC
     ../ring/components/runtime_health/ring_runtime_health.c
 )
@@ -187,6 +205,31 @@ target_include_directories(test_click_pen PRIVATE
 )
 target_link_libraries(test_click_pen unity mock_hal)
 add_test(NAME test_click_pen COMMAND test_click_pen)
+
+add_executable(test_pen_wake_debounce
+    test_pen_wake_debounce.c
+    ../pen/components/pen_wake/pen_wake_debounce.c
+)
+target_compile_definitions(test_pen_wake_debounce PRIVATE
+    CONFIG_POWERFINGER_FORM_FACTOR_PEN
+    CONFIG_POWERFINGER_BARREL_PIN=4
+    CONFIG_POWERFINGER_TIP_DOME_PIN=5
+    CONFIG_POWERFINGER_WAKE_SENSOR_PIN=8
+    CONFIG_POWERFINGER_WAKE_GPIO_MASK=0x130
+    CONFIG_POWERFINGER_WAKE_VALIDATION_MS=200
+    CONFIG_POWERFINGER_SPURIOUS_WAKE_LIMIT=3
+    CONFIG_POWERFINGER_SPURIOUS_WAKE_WINDOW_MS=30000
+)
+target_include_directories(test_pen_wake_debounce PRIVATE
+    ../pen/components/pen_wake/include
+    ../ring/components/power/include
+    ../ring/components/ble_hid/include
+    ../ring/components/state_machine/include
+    ../ring/components/hal/include
+    mocks
+)
+target_link_libraries(test_pen_wake_debounce unity mock_hal power_manager_pen)
+add_test(NAME test_pen_wake_debounce COMMAND test_pen_wake_debounce)
 
 add_executable(test_ball_hall
     test_ball_hall.c

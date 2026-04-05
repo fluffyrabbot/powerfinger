@@ -10,6 +10,13 @@ typedef enum {
     HAL_SLEEP_DEEP,     // Full power-down, wake from GPIO only, loses RAM
 } hal_sleep_mode_t;
 
+typedef enum {
+    HAL_WAKE_CAUSE_COLD_BOOT = 0,
+    HAL_WAKE_CAUSE_GPIO,
+    HAL_WAKE_CAUSE_TIMER,
+    HAL_WAKE_CAUSE_OTHER,
+} hal_wake_cause_t;
+
 // Enter sleep mode. For DEEP sleep, this function does not return —
 // the device reboots on wake. For LIGHT sleep, returns after wakeup.
 hal_status_t hal_sleep_enter(hal_sleep_mode_t mode);
@@ -25,3 +32,6 @@ hal_status_t hal_sleep_configure_wake_gpio_mask(uint64_t pin_mask, bool level);
 
 // Enable timer-based wake from light sleep (e.g. for next BLE event).
 hal_status_t hal_sleep_configure_wake_timer(uint32_t us);
+
+// Return the wake reason for the current boot.
+hal_wake_cause_t hal_sleep_get_wake_cause(void);

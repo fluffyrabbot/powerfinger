@@ -17,6 +17,8 @@ void test_init_defaults_to_booting_and_unavailable(void)
     TEST_ASSERT_EQUAL(RING_DIAG_BOND_UNKNOWN, snapshot.bond_state);
     TEST_ASSERT_EQUAL(RING_DIAG_SENSOR_UNAVAILABLE, snapshot.sensor_state);
     TEST_ASSERT_FALSE(snapshot.calibration_valid);
+    TEST_ASSERT_TRUE(snapshot.drv5032_wake_enabled);
+    TEST_ASSERT_EQUAL(0, snapshot.spurious_wake_count);
 }
 
 void test_connected_session_tracks_interval_bond_and_rejection(void)
@@ -82,6 +84,18 @@ void test_ring_state_and_battery_snapshot_are_updated(void)
     TEST_ASSERT_EQUAL(RING_STATE_CONNECTED_IDLE, snapshot.ring_state);
     TEST_ASSERT_EQUAL(3725, snapshot.battery_mv);
     TEST_ASSERT_EQUAL(52, snapshot.battery_pct);
+}
+
+void test_pen_wake_snapshot_is_updated(void)
+{
+    ring_diagnostics_t state;
+    ring_diagnostics_init(&state);
+
+    ring_diagnostics_note_pen_wake(&state, false, 3);
+
+    ring_diag_snapshot_t snapshot = ring_diagnostics_snapshot(&state);
+    TEST_ASSERT_FALSE(snapshot.drv5032_wake_enabled);
+    TEST_ASSERT_EQUAL(3, snapshot.spurious_wake_count);
 }
 
 void test_name_helpers_return_stable_strings(void)
@@ -150,6 +164,7 @@ void run_ring_diagnostics_tests(void)
     RUN_TEST(test_connected_session_tracks_interval_bond_and_rejection);
     RUN_TEST(test_sensor_path_distinguishes_pending_and_ready);
     RUN_TEST(test_ring_state_and_battery_snapshot_are_updated);
+    RUN_TEST(test_pen_wake_snapshot_is_updated);
     RUN_TEST(test_name_helpers_return_stable_strings);
     RUN_TEST(test_ble_payload_encodes_snapshot_flags_and_intervals);
     RUN_TEST(test_ble_payload_rejects_small_buffer_and_clamps_battery_mv);

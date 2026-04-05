@@ -29,6 +29,7 @@ int mock_hal_get_gpio_set_count(void);
 void mock_hal_get_last_wake_gpio_mask(uint64_t *pin_mask, bool *level);
 int mock_hal_get_wake_gpio_config_count(void);
 void mock_hal_set_gpio_input(hal_pin_t pin, bool level);
+void mock_hal_set_wake_cause(hal_wake_cause_t cause);
 
 // --- Storage mock (for role engine persistence tests) ---
 void mock_hal_storage_seed(const char *key, const void *data, size_t len);

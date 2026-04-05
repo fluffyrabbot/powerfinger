@@ -148,7 +148,12 @@ shell geometry enforces the angle — when the glide pads sit flat on the surfac
 the sensor is at 30 degrees. No external angle fixture is needed for ring tests.
 
 For wand tests, test at three angles from horizontal: 30, 50, and 70 degrees.
-Use a protractor or angle block to verify.
+Use a protractor or angle block to verify. For ball+Hall PowerPen bring-up, run
+the tracking-accuracy drag both horizontally and vertically at each angle and
+record the per-axis sensitivity ratio
+`max(horizontal counts_total, vertical counts_total) / min(...)` in
+`POWERPEN-SPEC.md`. Ratios above 3:1 flag a follow-up for dynamic gain
+compensation; they are not an automatic test failure.
 
 ---
 
@@ -193,6 +198,10 @@ stroke)?
   pointer speed setting and keep it constant across all tests.
 - Counts/mm is the sensor-intrinsic metric and is more meaningful for
   cross-surface comparison. Use it as the primary metric.
+- For ball+Hall PowerPen bring-up, repeat the stroke in both X and Y directions
+  at each of the three test angles and compute the per-axis sensitivity ratio
+  from the two `counts_total` values. Record that ratio alongside the surface
+  results in `POWERPEN-SPEC.md`.
 
 ### 4.2 Jitter at Rest
 

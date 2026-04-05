@@ -166,15 +166,17 @@ DRV5032 is a convenience for motion wake, not a safety-critical component.
 Document in user-facing material that if the pen stops waking on ball roll,
 click-to-wake is the fallback.
 
-**Firmware integration:** Configure all three wake GPIOs (GPIO4, GPIO5, GPIO8) via
-`esp_deep_sleep_enable_gpio_wakeup()` bitmask. The current ring implementation
-(`power_manager_enter_sleep()`) configures only a single dome pin — the pen build
-must extend this to a Kconfig-driven wake GPIO bitmask
-(`CONFIG_POWERFINGER_WAKE_GPIO_MASK`). On wake, the power manager gates on the 4x
-DRV5053 array via the MOSFET, waits `HALL_STABILIZATION_MS` (default 1ms, covers
-DRV5053 30µs power-on + MOSFET + 400nF bypass RC) for Hall sensors to stabilize,
-then runs calibration. The DRV5032 output is not used during active tracking —
-only the 4x DRV5053 analog array provides motion data.
+**Firmware integration:** Configure all three wake GPIOs (GPIO4, GPIO5, GPIO8)
+via `esp_deep_sleep_enable_gpio_wakeup()` bitmask. The current pen target does
+this through `CONFIG_POWERFINGER_WAKE_GPIO_MASK`, then applies a pen-local
+`pen_wake` component that tracks spurious DRV5032 wakes in retained state and
+removes GPIO8 from the runtime wake mask after 3 false wakes in 30 seconds.
+On wake, the power manager gates on the 4x DRV5053 array via the MOSFET and the
+ball+Hall driver applies `BALL_HALL_POWER_ON_MS` (current implementation: 2ms)
+before capturing baselines, which is the effective `HALL_STABILIZATION_MS`
+settling delay in this repo. The DRV5032 output is not used during active
+tracking — only the 4x DRV5053 analog array provides motion data. Reset-on-USB-
+charge is still pending a dedicated charge-detect signal in hardware.
 
 ### Click Subsystem
 
@@ -253,18 +255,23 @@ The PowerPen shares the vast majority of its firmware with the ring. The goal is
 | Calibration | `ring/components/click/calibration.c` | Sensor zero-offset calibration (misplaced in `click/` — should move to `sensors/` or own component) |
 | Test suite | `firmware/test/` | Same host-side test harness |
 
-### Shared with Ring (Interface Extension Required)
+### Shared with Ring (Implemented PowerPen Extensions)
 
-These components are conceptually shared but their current interfaces assume a
-single-button ring. Extending them is prerequisite work for the pen build.
+These components are shared with the ring, but now have pen-aware behavior in
+the current codebase.
 
 | Component | Ring Location | What Changes |
 |-----------|---------------|-------------|
-| Click interface | `ring/components/click/click_interface.h` | `click_is_pressed()` returns one `bool`. Pen needs N sources → add `click_source_t` enum and `click_is_pressed(click_source_t)` or return bitmask |
-| Dead zone | `ring/components/click/dead_zone.c` | Module-level singleton state (`s_state`). Pen needs two independent instances → refactor to `dead_zone_ctx_t *` per instance |
-| Power manager | `ring/components/power/` | `power_manager_enter_sleep()` configures one wake GPIO. Pen needs three → Kconfig-driven `CONFIG_POWERFINGER_WAKE_GPIO_MASK` bitmask. Also: Hall gate-off on calibration failure path |
-| Diagnostics | `ring/components/diagnostics/` | Hard-imports `ring_state.h`, snapshot contains `ring_state_t`. Pen needs generic `uint8_t device_state` + state-name function pointer |
-| Runtime health | `ring/components/runtime_health/` | All types `ring_`-prefixed. Functionally form-factor-agnostic — rename to `pf_` when extracting shared components |
+| Click interface | `ring/components/click/` | `click_is_pressed()` is now source-aware and the pen build swaps in `click_pen.c` for barrel + tip GPIO handling |
+| Dead zone | `ring/components/click/dead_zone.c` | Caller-owned `dead_zone_ctx_t` instances let the pen suppress tip motion without suppressing barrel clicks |
+| Power manager | `ring/components/power/` | Shared code now supports wake GPIO masks, calibration-failure Hall gate-off, and a runtime wake-mask override used by DRV5032 debounce |
+| Diagnostics | `ring/components/diagnostics/` | Snapshot now carries `drv5032_wake_enabled` and `spurious_wake_count` so bring-up logs can show when motion wake has been disabled |
+
+### PowerPen-Local Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| Wake debounce | `pen/components/pen_wake/` | DRV5032 spurious-wake window tracking, GPIO8 wake disable/restore, and validation timing |
 
 ### PowerPen-Specific (Configuration Only)
 
@@ -293,8 +300,34 @@ firmware/
     Kconfig              ← POWERFINGER_FORM_FACTOR=PEN
 ```
 
-The pen `CMakeLists.txt` uses `EXTRA_COMPONENT_DIRS` to include shared components
-from `ring/components/`. No code duplication — just different configuration.
+The pen `CMakeLists.txt` uses `EXTRA_COMPONENT_DIRS` to include both local pen
+components and shared components from `ring/components/`. Shared logic remains
+centralized; the pen adds only the DRV5032 debounce component locally.
+
+### Current Firmware Defaults (Implemented)
+
+| Setting | Current Default | Notes |
+|---------|-----------------|-------|
+| BLE device name | `PowerPen` | Advertised GAP name |
+| Sensor driver | `SENSOR_BALL_HALL` | Pen baseline is the ball+Hall path |
+| Click mapping | Barrel = left, tip = right | Barrel bypasses dead zone; tip uses dead zone |
+| Hall sensitivity | `10` (1.0x) | `CONFIG_POWERFINGER_HALL_SENSITIVITY` |
+| Hall settle delay | `BALL_HALL_POWER_ON_MS = 2ms` | Applied inside the ball+Hall driver after rail enable |
+| Wake GPIO mask | `0x130` | GPIO4 + GPIO5 + GPIO8 |
+| Wake validation | `200ms` | `CONFIG_POWERFINGER_WAKE_VALIDATION_MS` |
+| Spurious wake policy | `3 wakes / 30s` | Disables GPIO8 only; barrel + tip remain wake-capable |
+| Sleep timeout | `45,000ms` | Current pen bring-up default |
+| Tip dead zone | `50ms`, `10 counts` | Inherited runtime defaults from shared ring settings |
+
+### Current Software Status
+
+- PP2 build target exists and now resolves both `firmware/pen/components/` and
+  shared `firmware/ring/components/`.
+- PP3 dual-click input is implemented and host-tested.
+- PP5 software baseline is implemented: DRV5032 wake debounce, runtime wake-mask
+  filtering, diagnostics fields, and host-side unit tests.
+- PP4 / PP5 empirical bench validation and PP6 ergonomic tuning remain hardware
+  work; the tables below are the log surface to fill during bring-up.
 
 ---
 
@@ -459,6 +492,37 @@ Tune:
 
 **Done when:** You can browse the web and do basic OS navigation using the
 breadboard pen rig.
+
+### Empirical Validation Log
+
+#### PP4 — Surface / Angle Matrix
+
+| Surface | 30 deg | 50 deg | 70 deg | Per-axis ratio | Notes |
+|---------|--------|--------|--------|----------------|-------|
+| Glass | Pending bench | Pending bench | Pending bench | Pending bench | |
+| Wood | Pending bench | Pending bench | Pending bench | Pending bench | |
+| Fabric | Pending bench | Pending bench | Pending bench | Pending bench | |
+
+#### PP5 — Wake / Power Measurements
+
+| Check | Target | Current Status | Measured Result |
+|-------|--------|----------------|-----------------|
+| Barrel wake | Wakes from deep sleep | Pending bench | |
+| Tip wake | Wakes from deep sleep | Pending bench | |
+| DRV5032 wake | Wakes from deep sleep | Pending bench | |
+| Spurious wake disable | GPIO8 disabled after 3 false wakes / 30s | Software implemented, bench pending | |
+| Deep sleep current | `< 25µA` | Pending bench | |
+| Wake-to-first-report latency | `< 500ms` bonded best case | Pending bench | |
+| DRV5032 placement sweep | Safe zone identified | Pending bench | |
+
+#### PP6 — Recommended Bring-Up Defaults
+
+| Setting | Current Recommendation | Validation Status | Notes |
+|---------|------------------------|-------------------|-------|
+| Hall sensitivity | `10` (1.0x) | Pending bench | Adjust only if PP4 data demands it |
+| Sleep timeout | `45,000ms` | Pending bench | Revisit after real navigation session |
+| Tip dead zone | `50ms / 10 counts` | Pending bench | Barrel remains unsuppressed |
+| DRV5032 placement | Pending bench | Pending bench | Select from PP5 placement sweep |
 
 ---
 

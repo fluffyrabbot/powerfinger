@@ -213,6 +213,21 @@ void test_deep_sleep_uses_configured_wake_gpio_mask(void)
     TEST_ASSERT_EQUAL(1, mock_hal_get_sleep_enter_count());
 }
 
+void test_runtime_wake_gpio_mask_override_is_applied(void)
+{
+    reset();
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
+
+    power_manager_set_wake_gpio_mask(0x30ULL);
+    power_manager_enter_sleep(true);
+
+    uint64_t mask = 0;
+    bool level = true;
+    mock_hal_get_last_wake_gpio_mask(&mask, &level);
+    TEST_ASSERT_TRUE(mask == 0x30ULL);
+    TEST_ASSERT_FALSE(level);
+}
+
 void run_power_manager_tests(void)
 {
     printf("Power manager tests:\n");
@@ -228,4 +243,5 @@ void run_power_manager_tests(void)
     RUN_TEST(test_sensor_power_can_be_gated_for_calibration_failure);
     RUN_TEST(test_click_activity_restores_sensor_power_after_gate_off);
     RUN_TEST(test_deep_sleep_uses_configured_wake_gpio_mask);
+    RUN_TEST(test_runtime_wake_gpio_mask_override_is_applied);
 }
