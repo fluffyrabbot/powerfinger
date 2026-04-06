@@ -2,5 +2,5 @@
 idf_component_register(
     SRCS "role_engine.c"
     INCLUDE_DIRS "include"
-    REQUIRES hal
+    REQUIRES pf_hal ble_central
 )

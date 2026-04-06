@@ -2,6 +2,7 @@
 // PowerFinger HAL — Sleep implementation for ESP-IDF
 
 #include "hal_sleep.h"
+#include "driver/gpio.h"
 #include "esp_sleep.h"
 #include "esp_pm.h"
 #include "esp_log.h"
@@ -39,7 +40,7 @@ hal_status_t hal_sleep_configure_wake_gpio(hal_pin_t pin, bool level)
 
 hal_status_t hal_sleep_configure_wake_gpio_mask(uint64_t pin_mask, bool level)
 {
-    esp_err_t ret = esp_deep_sleep_enable_gpio_wakeup(
+    esp_err_t ret = esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown(
         pin_mask,
         level ? ESP_GPIO_WAKEUP_GPIO_HIGH : ESP_GPIO_WAKEUP_GPIO_LOW
     );
@@ -63,14 +64,16 @@ hal_status_t hal_sleep_configure_wake_timer(uint32_t us)
 
 hal_wake_cause_t hal_sleep_get_wake_cause(void)
 {
-    switch (esp_sleep_get_wakeup_cause()) {
-    case ESP_SLEEP_WAKEUP_UNDEFINED:
+    uint32_t causes = esp_sleep_get_wakeup_causes();
+
+    if (causes == 0) {
         return HAL_WAKE_CAUSE_COLD_BOOT;
-    case ESP_SLEEP_WAKEUP_GPIO:
-        return HAL_WAKE_CAUSE_GPIO;
-    case ESP_SLEEP_WAKEUP_TIMER:
-        return HAL_WAKE_CAUSE_TIMER;
-    default:
-        return HAL_WAKE_CAUSE_OTHER;
     }
+    if (causes & (1UL << ESP_SLEEP_WAKEUP_GPIO)) {
+        return HAL_WAKE_CAUSE_GPIO;
+    }
+    if (causes & (1UL << ESP_SLEEP_WAKEUP_TIMER)) {
+        return HAL_WAKE_CAUSE_TIMER;
+    }
+    return HAL_WAKE_CAUSE_OTHER;
 }

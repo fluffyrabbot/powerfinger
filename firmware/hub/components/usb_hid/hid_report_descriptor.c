@@ -74,4 +74,4 @@ const uint8_t usb_hid_report_descriptor[] = {
     0xC0,                   // End Collection (Application)
 };
 
-const size_t usb_hid_report_descriptor_len = sizeof(usb_hid_report_descriptor);
+const size_t usb_hid_report_descriptor_len = USB_HID_REPORT_DESCRIPTOR_LEN;

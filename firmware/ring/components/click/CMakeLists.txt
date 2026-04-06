@@ -17,5 +17,5 @@ endif()
 idf_component_register(
     SRCS ${CLICK_SRCS}
     INCLUDE_DIRS "include"
-    REQUIRES hal sensors
+    REQUIRES pf_hal sensors
 )

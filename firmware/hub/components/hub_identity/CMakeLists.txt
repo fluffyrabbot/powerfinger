@@ -2,5 +2,5 @@
 idf_component_register(
     SRCS "hub_identity.c"
     INCLUDE_DIRS "include"
-    REQUIRES hal
+    REQUIRES pf_hal
 )

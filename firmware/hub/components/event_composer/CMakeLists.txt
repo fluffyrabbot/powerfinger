@@ -2,5 +2,5 @@
 idf_component_register(
     SRCS "event_composer.c"
     INCLUDE_DIRS "include"
-    REQUIRES hal role_engine
+    REQUIRES pf_hal ble_central role_engine
 )

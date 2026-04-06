@@ -36,9 +36,12 @@ static void pack_report(const composed_report_t *report, uint8_t out[USB_HID_REP
 
 #include "esp_log.h"
 #include "tinyusb.h"
+#include "tinyusb_default_config.h"
 #include "class/hid/hid_device.h"
 
 static const char *TAG = "usb_hid";
+
+#define TUSB_DESC_TOTAL_LEN (TUD_CONFIG_DESC_LEN + CFG_TUD_HID * TUD_HID_DESC_LEN)
 
 // TinyUSB descriptor callbacks — required by the TinyUSB stack.
 
@@ -66,6 +69,12 @@ static const char *s_string_desc[] = {
     [1] = "PowerFinger",                 // Manufacturer
     [2] = "PowerFinger Hub",             // Product
     [3] = "000001",                      // Serial
+};
+
+static const uint8_t s_hid_configuration_descriptor[] = {
+    TUD_CONFIG_DESCRIPTOR(1, 1, 0, TUSB_DESC_TOTAL_LEN,
+                          TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+    TUD_HID_DESCRIPTOR(0, 0, false, USB_HID_REPORT_DESCRIPTOR_LEN, 0x81, 16, 10),
 };
 
 // HID report descriptor callback (called by TinyUSB stack)
@@ -96,12 +105,15 @@ void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id,
 
 hal_status_t usb_hid_mouse_init(void)
 {
-    const tinyusb_config_t tusb_cfg = {
-        .device_descriptor = &s_device_desc,
-        .string_descriptor = s_string_desc,
-        .string_descriptor_count = sizeof(s_string_desc) / sizeof(s_string_desc[0]),
-        .external_phy = false,
-    };
+    tinyusb_config_t tusb_cfg = TINYUSB_DEFAULT_CONFIG();
+
+    tusb_cfg.descriptor.device = &s_device_desc;
+    tusb_cfg.descriptor.full_speed_config = s_hid_configuration_descriptor;
+    tusb_cfg.descriptor.string = s_string_desc;
+    tusb_cfg.descriptor.string_count = sizeof(s_string_desc) / sizeof(s_string_desc[0]);
+#if (TUD_OPT_HIGH_SPEED)
+    tusb_cfg.descriptor.high_speed_config = s_hid_configuration_descriptor;
+#endif
 
     esp_err_t ret = tinyusb_driver_install(&tusb_cfg);
     if (ret != ESP_OK) {

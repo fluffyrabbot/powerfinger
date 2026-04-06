@@ -2,5 +2,5 @@
 idf_component_register(
     SRCS "ring_runtime_health.c"
     INCLUDE_DIRS "include"
-    REQUIRES hal state_machine
+    REQUIRES pf_hal state_machine
 )

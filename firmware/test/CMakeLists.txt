@@ -24,7 +24,7 @@ add_library(mock_hal STATIC mocks/mock_hal.c)
 target_include_directories(mock_hal PUBLIC
     mocks
     ../hub/components/ble_central/include
-    ../ring/components/hal/include
+    ../ring/components/pf_hal/include
 )
 
 # Components under test (compiled for host, not ESP32)
@@ -33,7 +33,7 @@ add_library(state_machine STATIC
 )
 target_include_directories(state_machine PUBLIC
     ../ring/components/state_machine/include
-    ../ring/components/hal/include
+    ../ring/components/pf_hal/include
 )
 
 add_library(dead_zone STATIC
@@ -42,7 +42,7 @@ add_library(dead_zone STATIC
 target_include_directories(dead_zone PUBLIC
     ../ring/components/click/include
     ../ring/components/state_machine/include
-    ../ring/components/hal/include
+    ../ring/components/pf_hal/include
 )
 
 add_library(ring_diagnostics STATIC
@@ -51,7 +51,7 @@ add_library(ring_diagnostics STATIC
 target_include_directories(ring_diagnostics PUBLIC
     ../ring/components/diagnostics/include
     ../ring/components/state_machine/include
-    ../ring/components/hal/include
+    ../ring/components/pf_hal/include
 )
 
 add_library(calibration STATIC
@@ -61,7 +61,7 @@ target_include_directories(calibration PUBLIC
     ../ring/components/click/include
     ../ring/components/sensors/include
     ../ring/components/state_machine/include
-    ../ring/components/hal/include
+    ../ring/components/pf_hal/include
 )
 
 add_library(power_manager STATIC
@@ -77,7 +77,7 @@ target_include_directories(power_manager PUBLIC
     ../ring/components/power/include
     ../ring/components/ble_hid/include
     ../ring/components/state_machine/include
-    ../ring/components/hal/include
+    ../ring/components/pf_hal/include
 )
 
 add_library(power_manager_pen STATIC
@@ -95,7 +95,7 @@ target_include_directories(power_manager_pen PUBLIC
     ../ring/components/power/include
     ../ring/components/ble_hid/include
     ../ring/components/state_machine/include
-    ../ring/components/hal/include
+    ../ring/components/pf_hal/include
 )
 
 add_library(ring_runtime_health STATIC
@@ -104,22 +104,22 @@ add_library(ring_runtime_health STATIC
 target_include_directories(ring_runtime_health PUBLIC
     ../ring/components/runtime_health/include
     ../ring/components/state_machine/include
-    ../ring/components/hal/include
+    ../ring/components/pf_hal/include
 )
 
 add_library(ring_settings STATIC
-    ../ring/components/hal/ring_settings.c
+    ../ring/components/pf_hal/ring_settings.c
 )
 target_include_directories(ring_settings PUBLIC
-    ../ring/components/hal/include
+    ../ring/components/pf_hal/include
     ../ring/components/state_machine/include
 )
 
 add_library(ring_identity STATIC
-    ../ring/components/hal/ring_identity.c
+    ../ring/components/pf_hal/ring_identity.c
 )
 target_include_directories(ring_identity PUBLIC
-    ../ring/components/hal/include
+    ../ring/components/pf_hal/include
 )
 
 add_library(hub_identity STATIC
@@ -127,7 +127,7 @@ add_library(hub_identity STATIC
 )
 target_include_directories(hub_identity PUBLIC
     ../hub/components/hub_identity/include
-    ../ring/components/hal/include
+    ../ring/components/pf_hal/include
 )
 
 add_library(role_engine STATIC
@@ -136,7 +136,7 @@ add_library(role_engine STATIC
 target_include_directories(role_engine PUBLIC
     ../hub/components/role_engine/include
     ../hub/components/ble_central/include
-    ../ring/components/hal/include
+    ../ring/components/pf_hal/include
 )
 
 add_library(hub_control STATIC
@@ -147,7 +147,7 @@ target_include_directories(hub_control PUBLIC
     ../hub/components/event_composer/include
     ../hub/components/role_engine/include
     ../hub/components/ble_central/include
-    ../ring/components/hal/include
+    ../ring/components/pf_hal/include
 )
 
 add_library(companion_protocol STATIC
@@ -158,7 +158,7 @@ target_include_directories(companion_protocol PUBLIC
     ../hub/components/hub_control/include
     ../hub/components/role_engine/include
     ../hub/components/ble_central/include
-    ../ring/components/hal/include
+    ../ring/components/pf_hal/include
 )
 
 # Event composer — compiled for host with lock macros as no-ops (no ESP_PLATFORM)
@@ -169,7 +169,7 @@ target_include_directories(event_composer PUBLIC
     ../hub/components/event_composer/include
     ../hub/components/role_engine/include
     ../hub/components/ble_central/include
-    ../ring/components/hal/include
+    ../ring/components/pf_hal/include
 )
 
 # USB HID mouse — compiled for host (mock path, no TinyUSB)
@@ -182,7 +182,7 @@ target_include_directories(usb_hid PUBLIC
     ../hub/components/event_composer/include
     ../hub/components/role_engine/include
     ../hub/components/ble_central/include
-    ../ring/components/hal/include
+    ../ring/components/pf_hal/include
 )
 
 # Sensor driver tests: compiled as separate executables to avoid
@@ -200,7 +200,7 @@ target_compile_definitions(test_click_pen PRIVATE
 target_include_directories(test_click_pen PRIVATE
     ../ring/components/click/include
     ../ring/components/state_machine/include
-    ../ring/components/hal/include
+    ../ring/components/pf_hal/include
     mocks
 )
 target_link_libraries(test_click_pen unity mock_hal)
@@ -225,7 +225,7 @@ target_include_directories(test_pen_wake_debounce PRIVATE
     ../ring/components/power/include
     ../ring/components/ble_hid/include
     ../ring/components/state_machine/include
-    ../ring/components/hal/include
+    ../ring/components/pf_hal/include
     mocks
 )
 target_link_libraries(test_pen_wake_debounce unity mock_hal power_manager_pen)
@@ -238,7 +238,7 @@ add_executable(test_ball_hall
 target_include_directories(test_ball_hall PRIVATE
     ../ring/components/sensors/include
     ../ring/components/state_machine/include
-    ../ring/components/hal/include
+    ../ring/components/pf_hal/include
     mocks
 )
 target_link_libraries(test_ball_hall unity mock_hal)
@@ -251,7 +251,7 @@ add_executable(test_pmw3360
 target_include_directories(test_pmw3360 PRIVATE
     ../ring/components/sensors/include
     ../ring/components/state_machine/include
-    ../ring/components/hal/include
+    ../ring/components/pf_hal/include
     mocks
 )
 target_link_libraries(test_pmw3360 unity mock_hal)
@@ -301,7 +301,7 @@ target_include_directories(powerfinger_tests PRIVATE
     ../ring/components/power/include
     ../ring/components/runtime_health/include
     ../ring/components/ble_hid/include
-    ../ring/components/hal/include
+    ../ring/components/pf_hal/include
     ../hub/components/hub_identity/include
     ../hub/components/role_engine/include
     ../hub/components/hub_control/include

@@ -110,7 +110,7 @@ menu "PowerFinger Configuration"
 
     config POWERFINGER_WAKE_GPIO_MASK
         int "Deep sleep wake GPIO bitmask"
-        default 0x100 if CLICK_SNAP_DOME
+        default 256 if CLICK_SNAP_DOME
         default 0
         help
             Bitmask of GPIOs enabled as deep sleep wake sources.

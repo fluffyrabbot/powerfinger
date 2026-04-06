@@ -2,5 +2,5 @@
 idf_component_register(
     SRCS "pen_wake_debounce.c"
     INCLUDE_DIRS "include"
-    REQUIRES hal power
+    REQUIRES pf_hal power
 )

@@ -24,11 +24,15 @@
 
 static const char *TAG = "hal_ble";
 
+// ESP-IDF ships the implementation but does not expose a public prototype.
+void ble_store_config_init(void);
+
 // --- Forward declarations ---
 static int ble_gap_event_handler(struct ble_gap_event *event, void *arg);
 static void ble_host_task(void *param);
 static void ble_on_sync(void);
 static void ble_on_reset(int reason);
+static int ble_delete_all_bonds(void);
 
 // --- Module state ---
 static hal_ble_event_cb_t s_app_cb = NULL;
@@ -533,7 +537,7 @@ static int ble_gap_event_handler(struct ble_gap_event *event, void *arg)
             } else {
                 // Stale handle — delete all bonds as fallback
                 ESP_LOGW(TAG, "conn_find failed, deleting all bonds");
-                ble_store_util_delete_all();
+                ble_delete_all_bonds();
             }
             ble_gap_terminate(s_conn_handle, BLE_ERR_AUTH_FAIL);
             notify_app(HAL_BLE_EVT_BOND_FAILED);
@@ -549,7 +553,7 @@ static int ble_gap_event_handler(struct ble_gap_event *event, void *arg)
             ble_store_util_delete_peer(&desc.peer_id_addr);
         } else {
             ESP_LOGW(TAG, "repeat pairing: conn_find failed, deleting all bonds");
-            ble_store_util_delete_all();
+            ble_delete_all_bonds();
         }
         return BLE_GAP_REPEAT_PAIRING_RETRY;
     }
@@ -685,6 +689,38 @@ static void ble_host_task(void *param)
     (void)param;
     nimble_port_run();
     nimble_port_freertos_deinit();
+}
+
+static int ble_delete_all_bonds(void)
+{
+    int rc = ble_store_util_delete_all(BLE_STORE_OBJ_TYPE_OUR_SEC, NULL);
+    if (rc != 0) {
+        return rc;
+    }
+
+    rc = ble_store_util_delete_all(BLE_STORE_OBJ_TYPE_PEER_SEC, NULL);
+    if (rc != 0) {
+        return rc;
+    }
+
+    rc = ble_store_util_delete_all(BLE_STORE_OBJ_TYPE_CCCD, NULL);
+    if (rc != 0) {
+        return rc;
+    }
+
+#if MYNEWT_VAL(ENC_ADV_DATA)
+    rc = ble_store_util_delete_all(BLE_STORE_OBJ_TYPE_ENC_ADV_DATA, NULL);
+    if (rc != 0) {
+        return rc;
+    }
+#endif
+
+    rc = ble_store_util_delete_all(BLE_STORE_OBJ_TYPE_PEER_ADDR, NULL);
+    if (rc != 0) {
+        return rc;
+    }
+
+    return ble_store_util_delete_all(BLE_STORE_OBJ_TYPE_CSFC, NULL);
 }
 
 // --- Public API ---
@@ -826,7 +862,7 @@ hal_status_t hal_ble_request_conn_params(uint16_t min_1_25ms, uint16_t max_1_25m
 
 hal_status_t hal_ble_delete_all_bonds(void)
 {
-    int rc = ble_store_util_delete_all();
+    int rc = ble_delete_all_bonds();
     return (rc == 0) ? HAL_OK : HAL_ERR_IO;
 }
 

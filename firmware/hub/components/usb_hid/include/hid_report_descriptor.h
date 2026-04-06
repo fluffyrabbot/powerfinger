@@ -15,6 +15,7 @@
 //   [5]   vertical scroll (int8_t)
 //   [6]   horizontal scroll (int8_t)
 #define USB_HID_REPORT_SIZE 7
+#define USB_HID_REPORT_DESCRIPTOR_LEN 82
 
 extern const uint8_t usb_hid_report_descriptor[];
 extern const size_t  usb_hid_report_descriptor_len;

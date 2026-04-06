@@ -122,7 +122,7 @@ menu "PowerFinger Configuration"
 
     config POWERFINGER_WAKE_GPIO_MASK
         int "Deep sleep wake GPIO bitmask"
-        default 0x130
+        default 304
         help
             Bitmask of GPIOs enabled as deep sleep wake sources.
             PowerPen default is GPIO4 | GPIO5 | GPIO8.

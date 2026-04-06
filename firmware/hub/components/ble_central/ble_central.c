@@ -27,6 +27,10 @@
 #include <string.h>
 
 static const char *TAG = "ble_central";
+
+// ESP-IDF ships the implementation but does not expose a public prototype.
+void ble_store_config_init(void);
+
 // BLE timing constants
 // 30s gives slow hosts time to complete the connection procedure.
 #define BLE_CONNECT_TIMEOUT_MS    30000
@@ -556,8 +560,6 @@ hal_status_t ble_central_init(hub_ring_report_cb_t report_cb,
     ble_hs_cfg.sm_their_key_dist = BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID;
     ble_hs_cfg.sm_io_cap = BLE_SM_IO_CAP_NO_IO;
 
-    ble_svc_gap_init();
-    ble_svc_gatt_init();
     ble_store_config_init();
 
     nimble_port_freertos_init(host_task);
