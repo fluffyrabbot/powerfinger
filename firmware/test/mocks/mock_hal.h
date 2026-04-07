@@ -31,6 +31,11 @@ int mock_hal_get_wake_gpio_config_count(void);
 void mock_hal_set_gpio_input(hal_pin_t pin, bool level);
 void mock_hal_set_wake_cause(hal_wake_cause_t cause);
 
+// --- GPIO read sequence (for bit-banged protocol tests, e.g., PAW3204) ---
+// Enqueue a sequence of return values for hal_gpio_get on a specific pin.
+// When the sequence is exhausted, falls back to the normal pin level.
+void mock_hal_set_gpio_read_sequence(hal_pin_t pin, const bool *values, int count);
+
 // --- Storage mock (for role engine persistence tests) ---
 void mock_hal_storage_seed(const char *key, const void *data, size_t len);
 void mock_hal_inject_storage_set_failure(hal_status_t status, int count);

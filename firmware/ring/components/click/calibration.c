@@ -91,7 +91,19 @@ hal_status_t calibration_run(void)
 {
     calibration_reset();
 
+    uint32_t start_ms = hal_timer_get_ms();
+
     for (int attempt = 0; attempt <= CALIBRATION_MAX_RETRIES; attempt++) {
+        // Guard: abort if wall-clock time exceeds CALIBRATION_TIMEOUT_MS.
+        // This prevents infinite hang if sensor_read() blocks or returns
+        // stale data that always fails the motion check.
+        if ((hal_timer_get_ms() - start_ms) >= CALIBRATION_TIMEOUT_MS) {
+            LOG_W("calibration timed out after %lu ms",
+                  (unsigned long)(hal_timer_get_ms() - start_ms));
+            calibration_reset();
+            return HAL_ERR_TIMEOUT;
+        }
+
         hal_status_t rc = calibration_attempt_once();
         if (rc == HAL_OK) {
             return HAL_OK;

@@ -117,3 +117,7 @@
 
 #define PMW3360_SHUTDOWN_VALUE       0xB6
 #define PMW3360_RESET_VALUE          0x5A
+
+// SROM download sequence values
+#define PMW3360_SROM_ENABLE_CLEAR    0x00   // Step 1: clear SROM_Enable
+#define PMW3360_SROM_ENABLE_START    0x1D   // Step 3: start SROM download

@@ -72,6 +72,9 @@ target_compile_definitions(power_manager PUBLIC
     CONFIG_POWERFINGER_WAKE_GPIO_MASK=0x100
     CONFIG_POWERFINGER_HALL_POWER_PIN=9
     CONFIG_POWERFINGER_VBAT_ADC_CHANNEL=0
+    CONFIG_POWERFINGER_NTC_ADC_CHANNEL=1
+    CONFIG_POWERFINGER_CHARGE_ENABLE_PIN=3
+    CONFIG_POWERFINGER_VBUS_DETECT_PIN=4
 )
 target_include_directories(power_manager PUBLIC
     ../ring/components/power/include
@@ -257,6 +260,19 @@ target_include_directories(test_pmw3360 PRIVATE
 target_link_libraries(test_pmw3360 unity mock_hal)
 add_test(NAME test_pmw3360 COMMAND test_pmw3360)
 
+add_executable(test_paw3204
+    test_paw3204.c
+    ../ring/components/sensors/paw3204.c
+)
+target_include_directories(test_paw3204 PRIVATE
+    ../ring/components/sensors/include
+    ../ring/components/state_machine/include
+    ../ring/components/pf_hal/include
+    mocks
+)
+target_link_libraries(test_paw3204 unity mock_hal)
+add_test(NAME test_paw3204 COMMAND test_paw3204)
+
 # Test executable (main suite — uses sensor_none via calibration)
 add_executable(powerfinger_tests
     test_state_machine.c
@@ -292,6 +308,7 @@ target_link_libraries(powerfinger_tests
     companion_protocol
     event_composer
     usb_hid
+    m  # math library (logf in NTC temperature conversion)
 )
 target_include_directories(powerfinger_tests PRIVATE
     ../ring/components/state_machine/include

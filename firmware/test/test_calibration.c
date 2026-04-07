@@ -16,6 +16,7 @@ static hal_status_t s_script_status[SENSOR_SCRIPT_MAX];
 static sensor_reading_t s_script_readings[SENSOR_SCRIPT_MAX];
 static int s_script_len = 0;
 static int s_script_pos = 0;
+static uint32_t s_sensor_read_delay_ms = 0;  // simulates blocking sensor I/O
 
 static void reset(void)
 {
@@ -25,6 +26,7 @@ static void reset(void)
     memset(s_script_readings, 0, sizeof(s_script_readings));
     s_script_len = 0;
     s_script_pos = 0;
+    s_sensor_read_delay_ms = 0;
 }
 
 static void script_push(hal_status_t status, int16_t dx, int16_t dy)
@@ -53,6 +55,11 @@ static void script_push_many_error(int count, hal_status_t status)
 
 hal_status_t sensor_read(sensor_reading_t *out)
 {
+    // Simulate blocking sensor I/O by advancing mock timer
+    if (s_sensor_read_delay_ms > 0) {
+        mock_hal_advance_time_ms(s_sensor_read_delay_ms);
+    }
+
     if (s_script_pos >= s_script_len) {
         return HAL_ERR_IO;
     }
@@ -137,6 +144,30 @@ void test_calibration_run_retries_until_success(void)
                       hal_timer_get_ms());
 }
 
+void test_calibration_run_aborts_on_overall_timeout(void)
+{
+    reset();
+    // Fill script with enough failing reads for all retries.
+    // Failing reads cause calibration_attempt_once to fail, triggering retries.
+    int total_reads = (CALIBRATION_MAX_RETRIES + 1) * CALIBRATION_SAMPLE_COUNT;
+    script_push_many_error(total_reads, HAL_ERR_IO);
+
+    // Simulate a blocking sensor (each read takes 200ms).
+    // One attempt = 50 reads × (200ms read + 2ms poll delay) = ~10100ms
+    // >> CALIBRATION_TIMEOUT_MS (5000ms). The timeout should fire
+    // at the start of the second attempt loop iteration.
+    s_sensor_read_delay_ms = 200;
+
+    hal_status_t rc = calibration_run();
+    TEST_ASSERT_EQUAL(HAL_ERR_TIMEOUT, rc);
+    TEST_ASSERT_FALSE(calibration_is_valid());
+
+    // Verify that we didn't consume all reads — timeout stopped us early.
+    // Without timeout, would consume all total_reads. With timeout,
+    // should stop after 1-2 attempts.
+    TEST_ASSERT_TRUE(s_script_pos < total_reads);
+}
+
 void run_calibration_tests(void)
 {
     printf("Calibration tests:\n");
@@ -144,4 +175,5 @@ void run_calibration_tests(void)
     RUN_TEST(test_calibration_failure_clears_previous_offsets);
     RUN_TEST(test_calibration_attempt_once_rejects_motion_during_sampling);
     RUN_TEST(test_calibration_run_retries_until_success);
+    RUN_TEST(test_calibration_run_aborts_on_overall_timeout);
 }

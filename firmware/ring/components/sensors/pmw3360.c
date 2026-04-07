@@ -72,14 +72,14 @@ static hal_status_t upload_srom(void)
     hal_status_t rc;
 
     // Step 1: Write 0x00 to SROM_Enable
-    rc = write_reg(PMW3360_REG_SROM_ENABLE, 0x00);
+    rc = write_reg(PMW3360_REG_SROM_ENABLE, PMW3360_SROM_ENABLE_CLEAR);
     if (rc != HAL_OK) return rc;
 
     // Step 2: Wait for SROM to be ready
     hal_timer_delay_ms(PMW3360_T_SROM_LOAD_MS);
 
     // Step 3: Write 0x1D to SROM_Enable to start download
-    rc = write_reg(PMW3360_REG_SROM_ENABLE, 0x1D);
+    rc = write_reg(PMW3360_REG_SROM_ENABLE, PMW3360_SROM_ENABLE_START);
     if (rc != HAL_OK) return rc;
 
     delay_us(PMW3360_T_SRAD_US);

@@ -91,6 +91,11 @@
 // Maximum calibration attempts before using zero offset
 #define CALIBRATION_MAX_RETRIES     3
 
+// Overall calibration timeout. If calibration_run() exceeds this wall-clock
+// duration, it aborts regardless of retry count. Prevents infinite hang if
+// sensor_read() blocks. Conservative: 2× worst-case normal duration.
+#define CALIBRATION_TIMEOUT_MS      5000
+
 // --- Runtime settings ---
 // DPI multiplier uses 0.1x units so the ring can scale deltas without float.
 #define DPI_MULTIPLIER_DEFAULT      10   // 1.0x native sensor scale
@@ -100,3 +105,43 @@
 // Flash erase/commit can take tens to hundreds of milliseconds, so settings
 // writes stay in RAM until the ring leaves the active HID path.
 #define SETTINGS_FLUSH_RETRY_MS     1000
+
+// --- Thermal safety (LiPo charge control via NTC + MOSFET) ---
+// See BATTERY-SAFETY.md for rationale. All temperatures in degrees Celsius.
+
+// Charge cutoff: disable charging at or above this cell temperature.
+// IEC 62133-2 requires charge cessation above 45°C.
+#define CHARGE_TEMP_CUTOFF_C        45
+
+// Charge resume: re-enable charging at or below this temperature.
+// 5°C hysteresis prevents rapid on/off cycling near the threshold.
+#define CHARGE_TEMP_RESUME_C        40
+
+// Cold cutoff: disable charging below this cell temperature.
+// Charging LiPo below 0°C causes lithium plating (permanent cell damage).
+#define CHARGE_TEMP_COLD_CUTOFF_C   0
+
+// Cold resume: re-enable charging at or above this temperature.
+#define CHARGE_TEMP_COLD_RESUME_C   5
+
+// Thermal emergency: if cell exceeds this, enter deep sleep immediately.
+// Well below the 130°C thermal runaway onset but above any plausible
+// operating scenario — indicates a hardware fault or fire risk.
+#define THERMAL_EMERGENCY_TEMP_C    60
+
+// NTC B-parameter and reference values for temperature conversion.
+// Standard 10kΩ NTC with B3950 beta (matches BOM: NTC1).
+#define NTC_BETA                    3950
+#define NTC_R0_OHMS                 10000   // Resistance at T0
+#define NTC_T0_K                    298.15f // 25°C in Kelvin
+#define NTC_DIVIDER_R_OHMS          10000   // Voltage divider fixed resistor (R3)
+#define NTC_VCC_MV                  3300    // ADC reference = LDO output
+
+// Thermal check interval during charging (VBUS present).
+// BATTERY-SAFETY.md §7 requires ≤10s for overvoltage checks.
+// We check thermal every second when charging for responsive cutoff.
+#define THERMAL_CHECK_INTERVAL_MS   1000
+
+// Overvoltage threshold during charging. If VBAT exceeds this while
+// charging, disable charge immediately (charger malfunction protection).
+#define CHARGE_OVERVOLTAGE_MV       4250

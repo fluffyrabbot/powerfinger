@@ -762,9 +762,12 @@ void app_main(void)
         if (pwr_evt != POWER_EVT_NONE) {
             // Map power events to ring state machine events
             ring_event_t ring_evt = RING_EVT_NONE;
-            if (pwr_evt == POWER_EVT_IDLE_TIMEOUT)   ring_evt = RING_EVT_IDLE_TIMEOUT;
-            if (pwr_evt == POWER_EVT_LOW_BATTERY)    ring_evt = RING_EVT_LOW_BATTERY;
-            if (pwr_evt == POWER_EVT_SLEEP_TIMEOUT)  ring_evt = RING_EVT_SLEEP_TIMEOUT;
+            if (pwr_evt == POWER_EVT_IDLE_TIMEOUT)       ring_evt = RING_EVT_IDLE_TIMEOUT;
+            if (pwr_evt == POWER_EVT_LOW_BATTERY)        ring_evt = RING_EVT_LOW_BATTERY;
+            if (pwr_evt == POWER_EVT_SLEEP_TIMEOUT)      ring_evt = RING_EVT_SLEEP_TIMEOUT;
+            // Thermal emergency reuses the LOW_BATTERY invariant path:
+            // both force immediate deep sleep from any state, unconditionally.
+            if (pwr_evt == POWER_EVT_THERMAL_SHUTDOWN)   ring_evt = RING_EVT_LOW_BATTERY;
 
             if (ring_evt != RING_EVT_NONE) {
                 memset(&actions, 0, sizeof(actions));

@@ -331,8 +331,11 @@ static int ble_hid_info_access(uint16_t conn_handle, uint16_t attr_handle,
             const char *hw_rev = ring_identity_hardware_revision();
             rc = os_mbuf_append(ctxt->om, hw_rev, strlen(hw_rev));
         } else if (ble_uuid_cmp(uuid, BLE_UUID16_DECLARE(0x2A50)) == 0) {
-            // PnP ID: Bluetooth SIG vendor source (0x02), no assigned VID/PID yet
-            uint8_t pnp_id[] = { 0x02, 0xFF, 0xFF, 0x01, 0x00, 0x01, 0x00 };
+            // PnP ID: Bluetooth SIG vendor source (0x02).
+            // VID 0x02C4 = Espressif (Bluetooth SIG member company ID).
+            // PID/version are project placeholders — replace with USB-IF
+            // or Bluetooth SIG assigned values before production.
+            uint8_t pnp_id[] = { 0x02, 0xC4, 0x02, 0x01, 0x00, 0x01, 0x00 };
             rc = os_mbuf_append(ctxt->om, pnp_id, sizeof(pnp_id));
         } else if (ble_uuid_cmp(uuid, BLE_UUID16_DECLARE(0x2A19)) == 0) {
             rc = os_mbuf_append(ctxt->om, &s_battery_level, 1);

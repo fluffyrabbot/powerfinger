@@ -50,6 +50,12 @@ static hal_gpio_intr_t s_gpio_intr_type[MOCK_GPIO_MAX_PINS] = {0};
 static hal_isr_callback_t s_gpio_isr_callback[MOCK_GPIO_MAX_PINS] = {0};
 static void *s_gpio_isr_arg[MOCK_GPIO_MAX_PINS] = {0};
 static hal_wake_cause_t s_wake_cause = HAL_WAKE_CAUSE_COLD_BOOT;
+
+// GPIO read sequence: supports bit-banged protocol testing (PAW3204, etc.)
+#define MOCK_GPIO_SEQ_MAX 512
+static bool s_gpio_read_seq[MOCK_GPIO_MAX_PINS][MOCK_GPIO_SEQ_MAX];
+static int s_gpio_read_seq_len[MOCK_GPIO_MAX_PINS];
+static int s_gpio_read_seq_pos[MOCK_GPIO_MAX_PINS];
 static bool s_storage_committed_present = false;
 static char s_storage_committed_key[MOCK_STORAGE_MAX_KEY_LEN] = {0};
 static uint8_t s_storage_committed_blob[MOCK_STORAGE_MAX_BLOB_LEN] = {0};
@@ -101,6 +107,8 @@ void mock_hal_reset(void)
     memset(s_gpio_isr_callback, 0, sizeof(s_gpio_isr_callback));
     memset(s_gpio_isr_arg, 0, sizeof(s_gpio_isr_arg));
     s_wake_cause = HAL_WAKE_CAUSE_COLD_BOOT;
+    memset(s_gpio_read_seq_len, 0, sizeof(s_gpio_read_seq_len));
+    memset(s_gpio_read_seq_pos, 0, sizeof(s_gpio_read_seq_pos));
     s_storage_committed_present = false;
     memset(s_storage_committed_key, 0, sizeof(s_storage_committed_key));
     memset(s_storage_committed_blob, 0, sizeof(s_storage_committed_blob));
@@ -179,6 +187,18 @@ void mock_hal_set_gpio_input(hal_pin_t pin, bool level)
 void mock_hal_set_wake_cause(hal_wake_cause_t cause)
 {
     s_wake_cause = cause;
+}
+
+void mock_hal_set_gpio_read_sequence(hal_pin_t pin, const bool *values, int count)
+{
+    if (pin >= MOCK_GPIO_MAX_PINS || count > MOCK_GPIO_SEQ_MAX) {
+        return;
+    }
+    for (int i = 0; i < count; i++) {
+        s_gpio_read_seq[pin][i] = values[i];
+    }
+    s_gpio_read_seq_len[pin] = count;
+    s_gpio_read_seq_pos[pin] = 0;
 }
 
 void mock_hal_inject_ble_send_failure(hal_status_t status, int count)
@@ -355,6 +375,10 @@ bool hal_gpio_get(hal_pin_t p)
 {
     if (p >= MOCK_GPIO_MAX_PINS) {
         return false;
+    }
+    // If a read sequence is active for this pin, consume the next value
+    if (s_gpio_read_seq_pos[p] < s_gpio_read_seq_len[p]) {
+        return s_gpio_read_seq[p][s_gpio_read_seq_pos[p]++];
     }
     return s_gpio_level[p];
 }

@@ -154,13 +154,13 @@ hal_status_t sensor_init(void)
     LOG_I("PAW3204 detected (product ID: 0x%02X)", pid);
 
     // Disable write protection for configuration
-    reg_write(PAW3204_REG_WRITE_PROTECT, 0x5A);
+    reg_write(PAW3204_REG_WRITE_PROTECT, PAW3204_WRITE_PROTECT_UNLOCK);
 
     // Set resolution: 800 CPI (default for Standard tier)
     reg_write(PAW3204_REG_RESOLUTION, PAW3204_RES_800CPI);
 
     // Re-enable write protection
-    reg_write(PAW3204_REG_WRITE_PROTECT, 0x00);
+    reg_write(PAW3204_REG_WRITE_PROTECT, PAW3204_WRITE_PROTECT_LOCK);
 
     // Read and discard any stale delta values
     reg_read(PAW3204_REG_MOTION);
@@ -198,9 +198,9 @@ hal_status_t sensor_power_down(void)
     // PAW3204 enters sleep automatically based on SLEEP1/SLEEP2 registers.
     // For forced power-down, we can set the configuration register.
     // In practice, the LDO power gate handles this for deep sleep.
-    reg_write(PAW3204_REG_WRITE_PROTECT, 0x5A);
+    reg_write(PAW3204_REG_WRITE_PROTECT, PAW3204_WRITE_PROTECT_UNLOCK);
     reg_write(PAW3204_REG_CONFIG, 0x01);  // Force sleep
-    reg_write(PAW3204_REG_WRITE_PROTECT, 0x00);
+    reg_write(PAW3204_REG_WRITE_PROTECT, PAW3204_WRITE_PROTECT_LOCK);
     return HAL_OK;
 }
 

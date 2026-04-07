@@ -37,6 +37,10 @@
 #define PAW3204_T_RESYNC_US         4       // delay between register operations (datasheet min)
 #define PAW3204_T_POWERUP_MS        50      // power-up time before first register access
 
+// Write protection
+#define PAW3204_WRITE_PROTECT_UNLOCK 0x5A   // Unlock value for REG_WRITE_PROTECT
+#define PAW3204_WRITE_PROTECT_LOCK   0x00   // Re-lock value
+
 // Resolution settings (CPI)
 #define PAW3204_RES_400CPI          0x00
 #define PAW3204_RES_500CPI          0x01
