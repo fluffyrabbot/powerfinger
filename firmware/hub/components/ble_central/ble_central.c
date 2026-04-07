@@ -23,6 +23,7 @@
 #include "services/gatt/ble_svc_gatt.h"
 #include "store/config/ble_store_config.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 
 #include <string.h>
 
@@ -46,6 +47,27 @@ void ble_store_config_init(void);
 // Covers CCCD (0x2902) + Report Reference (0x2908) + margin.
 // PowerFinger rings have exactly 2 descriptors; 8 handles is generous.
 #define HID_DSC_SEARCH_RANGE      8
+
+// Setting relay operations run on the companion-command path and wait for the
+// NimBLE callback to complete. Bound the wait so a stalled peripheral does not
+// wedge the USB CDC task indefinitely.
+#define GATT_RELAY_TIMEOUT_MS     3000
+#define GATT_RELAY_READ_MAX_LEN   8
+
+// PowerFinger config UUIDs must match the ring firmware. NimBLE expects
+// BLE_UUID128_DECLARE bytes in little-endian order.
+#define PF_UUID128_DPI \
+    BLE_UUID128_DECLARE(0x66, 0x72, 0x65, 0x77, 0x6F, 0x70, 0x54, 0xB0, \
+                        0x67, 0x6E, 0x69, 0x72, 0x01, 0x01, 0x46, 0x50)
+#define PF_UUID128_DEAD_ZONE_TIME \
+    BLE_UUID128_DECLARE(0x66, 0x72, 0x65, 0x77, 0x6F, 0x70, 0x54, 0xB0, \
+                        0x67, 0x6E, 0x69, 0x72, 0x02, 0x01, 0x46, 0x50)
+#define PF_UUID128_DEAD_ZONE_DISTANCE \
+    BLE_UUID128_DECLARE(0x66, 0x72, 0x65, 0x77, 0x6F, 0x70, 0x54, 0xB0, \
+                        0x67, 0x6E, 0x69, 0x72, 0x03, 0x01, 0x46, 0x50)
+#define PF_UUID128_FIRMWARE_VERSION \
+    BLE_UUID128_DECLARE(0x66, 0x72, 0x65, 0x77, 0x6F, 0x70, 0x54, 0xB0, \
+                        0x67, 0x6E, 0x69, 0x72, 0x01, 0x02, 0x46, 0x50)
 
 // Spinlock protecting s_rings[] and s_connected_count from concurrent
 // reads on the app core (ble_central_get_mac, ble_central_connected_count)
@@ -78,14 +100,40 @@ typedef struct {
     uint16_t conn_handle;
     uint16_t hid_report_handle;     // GATT characteristic value handle for HID report
     uint16_t hid_cccd_handle;       // CCCD handle for enabling notifications
+    uint16_t dpi_handle;
+    uint16_t dead_zone_time_handle;
+    uint16_t dead_zone_distance_handle;
+    uint16_t firmware_version_handle;
     uint8_t  mac[6];
     bool     connected;
     bool     subscribed;
     uint32_t connect_time_ms;       // H8: timestamp for discovery timeout
 } ring_conn_t;
 
+typedef struct {
+    SemaphoreHandle_t mutex;
+    SemaphoreHandle_t done;
+    uint32_t token_counter;
+    uint32_t active_token;
+    uint16_t conn_handle;
+    uint16_t attr_handle;
+    hal_status_t status;
+    uint8_t read_buf[GATT_RELAY_READ_MAX_LEN];
+    size_t read_len;
+} gatt_relay_state_t;
+
+typedef struct {
+    uint16_t conn_handle;
+    uint16_t dpi_handle;
+    uint16_t dead_zone_time_handle;
+    uint16_t dead_zone_distance_handle;
+    uint16_t firmware_version_handle;
+    bool subscribed;
+} ring_settings_target_t;
+
 static ring_conn_t s_rings[HUB_MAX_RINGS];
 static uint8_t s_connected_count = 0;
+static gatt_relay_state_t s_gatt_relay = {0};
 
 // --- Helpers ---
 
@@ -107,6 +155,72 @@ static int find_free_slot(void)
     return -1;
 }
 
+static void clear_ring_slot(ring_conn_t *ring)
+{
+    if (!ring) {
+        return;
+    }
+
+    memset(ring, 0, sizeof(*ring));
+}
+
+static hal_status_t map_gatt_status(int status)
+{
+    if (status == 0) {
+        return HAL_OK;
+    }
+    if (status == BLE_HS_ENOTCONN) {
+        return HAL_ERR_NOT_FOUND;
+    }
+    if (status == BLE_HS_EBUSY || status == BLE_HS_EALREADY) {
+        return HAL_ERR_BUSY;
+    }
+    if (status == BLE_HS_ETIMEOUT || status == BLE_HS_ETIMEOUT_HCI) {
+        return HAL_ERR_TIMEOUT;
+    }
+    if (status == BLE_HS_ENOTSUP ||
+        status == BLE_HS_ATT_ERR(BLE_ATT_ERR_ATTR_NOT_FOUND) ||
+        status == BLE_HS_ATT_ERR(BLE_ATT_ERR_READ_NOT_PERMITTED) ||
+        status == BLE_HS_ATT_ERR(BLE_ATT_ERR_WRITE_NOT_PERMITTED) ||
+        status == BLE_HS_ATT_ERR(BLE_ATT_ERR_REQ_NOT_SUPPORTED)) {
+        return HAL_ERR_NOT_SUPPORTED;
+    }
+    if (status == BLE_HS_ATT_ERR(BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN) ||
+        status == BLE_HS_ATT_ERR(BLE_ATT_ERR_VALUE_NOT_ALLOWED)) {
+        return HAL_ERR_INVALID_ARG;
+    }
+    if (status == BLE_HS_ATT_ERR(BLE_ATT_ERR_INSUFFICIENT_AUTHEN) ||
+        status == BLE_HS_ATT_ERR(BLE_ATT_ERR_INSUFFICIENT_ENC)) {
+        return HAL_ERR_REJECTED;
+    }
+    return HAL_ERR_IO;
+}
+
+static hal_status_t copy_ring_settings_target_by_mac(const uint8_t mac[6],
+                                                     ring_settings_target_t *target_out)
+{
+    if (!mac || !target_out) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    RINGS_LOCK();
+    for (uint8_t i = 0; i < HUB_MAX_RINGS; i++) {
+        if (s_rings[i].connected && memcmp(s_rings[i].mac, mac, 6) == 0) {
+            target_out->conn_handle = s_rings[i].conn_handle;
+            target_out->dpi_handle = s_rings[i].dpi_handle;
+            target_out->dead_zone_time_handle = s_rings[i].dead_zone_time_handle;
+            target_out->dead_zone_distance_handle = s_rings[i].dead_zone_distance_handle;
+            target_out->firmware_version_handle = s_rings[i].firmware_version_handle;
+            target_out->subscribed = s_rings[i].subscribed;
+            RINGS_UNLOCK();
+            return HAL_OK;
+        }
+    }
+    RINGS_UNLOCK();
+
+    return HAL_ERR_NOT_FOUND;
+}
+
 static bool adv_has_powerfinger_identity(const struct ble_hs_adv_fields *fields)
 {
     return fields->svc_data_uuid16 != NULL &&
@@ -122,6 +236,14 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg);
 static int on_disc_dsc(uint16_t conn_handle, const struct ble_gatt_error *error,
                        uint16_t chr_val_handle, const struct ble_gatt_dsc *dsc,
                        void *arg);
+static int on_gatt_relay_read(uint16_t conn_handle,
+                              const struct ble_gatt_error *error,
+                              struct ble_gatt_attr *attr,
+                              void *arg);
+static int on_gatt_relay_write(uint16_t conn_handle,
+                               const struct ble_gatt_error *error,
+                               struct ble_gatt_attr *attr,
+                               void *arg);
 
 // --- GATT discovery callbacks ---
 
@@ -212,6 +334,22 @@ static int on_disc_chr(uint16_t conn_handle,
             RINGS_UNLOCK();
             ESP_LOGI(TAG, "ring %d: found HID Report handle=%d",
                      ring_idx, chr->val_handle);
+        } else if (ble_uuid_cmp(&chr->uuid.u, PF_UUID128_DPI) == 0) {
+            RINGS_LOCK();
+            s_rings[ring_idx].dpi_handle = chr->val_handle;
+            RINGS_UNLOCK();
+        } else if (ble_uuid_cmp(&chr->uuid.u, PF_UUID128_DEAD_ZONE_TIME) == 0) {
+            RINGS_LOCK();
+            s_rings[ring_idx].dead_zone_time_handle = chr->val_handle;
+            RINGS_UNLOCK();
+        } else if (ble_uuid_cmp(&chr->uuid.u, PF_UUID128_DEAD_ZONE_DISTANCE) == 0) {
+            RINGS_LOCK();
+            s_rings[ring_idx].dead_zone_distance_handle = chr->val_handle;
+            RINGS_UNLOCK();
+        } else if (ble_uuid_cmp(&chr->uuid.u, PF_UUID128_FIRMWARE_VERSION) == 0) {
+            RINGS_LOCK();
+            s_rings[ring_idx].firmware_version_handle = chr->val_handle;
+            RINGS_UNLOCK();
         }
     } else if (error->status == BLE_HS_EDONE) {
         // Characteristic discovery complete. Initiate descriptor discovery to
@@ -240,6 +378,176 @@ static int on_disc_chr(uint16_t conn_handle,
         }
     }
     return 0;
+}
+
+static int on_gatt_relay_read(uint16_t conn_handle,
+                              const struct ble_gatt_error *error,
+                              struct ble_gatt_attr *attr,
+                              void *arg)
+{
+    uint32_t token = (uint32_t)(uintptr_t)arg;
+    if (token != s_gatt_relay.active_token ||
+        conn_handle != s_gatt_relay.conn_handle ||
+        !s_gatt_relay.done) {
+        return 0;
+    }
+
+    if (error->status != 0) {
+        s_gatt_relay.status = map_gatt_status(error->status);
+        xSemaphoreGive(s_gatt_relay.done);
+        return 0;
+    }
+
+    if (!attr || attr->handle != s_gatt_relay.attr_handle || !attr->om) {
+        s_gatt_relay.status = HAL_ERR_IO;
+        xSemaphoreGive(s_gatt_relay.done);
+        return 0;
+    }
+
+    size_t read_len = OS_MBUF_PKTLEN(attr->om);
+    if (read_len > sizeof(s_gatt_relay.read_buf)) {
+        s_gatt_relay.status = HAL_ERR_NO_MEM;
+        xSemaphoreGive(s_gatt_relay.done);
+        return 0;
+    }
+
+    if (os_mbuf_copydata(attr->om, 0, read_len, s_gatt_relay.read_buf) != 0) {
+        s_gatt_relay.status = HAL_ERR_IO;
+        xSemaphoreGive(s_gatt_relay.done);
+        return 0;
+    }
+
+    s_gatt_relay.read_len = read_len;
+    s_gatt_relay.status = HAL_OK;
+    xSemaphoreGive(s_gatt_relay.done);
+    return 0;
+}
+
+static int on_gatt_relay_write(uint16_t conn_handle,
+                               const struct ble_gatt_error *error,
+                               struct ble_gatt_attr *attr,
+                               void *arg)
+{
+    uint32_t token = (uint32_t)(uintptr_t)arg;
+    (void)attr;
+
+    if (token != s_gatt_relay.active_token ||
+        conn_handle != s_gatt_relay.conn_handle ||
+        !s_gatt_relay.done) {
+        return 0;
+    }
+
+    s_gatt_relay.status = map_gatt_status(error->status);
+    xSemaphoreGive(s_gatt_relay.done);
+    return 0;
+}
+
+static hal_status_t ble_central_read_attr(uint16_t conn_handle,
+                                          uint16_t attr_handle,
+                                          uint8_t *buf_out,
+                                          size_t buf_out_len,
+                                          size_t *read_len_out)
+{
+    if (!buf_out || !read_len_out || buf_out_len == 0 || attr_handle == 0) {
+        return HAL_ERR_INVALID_ARG;
+    }
+    if (!s_gatt_relay.mutex || !s_gatt_relay.done) {
+        return HAL_ERR_BUSY;
+    }
+
+    if (xSemaphoreTake(s_gatt_relay.mutex, pdMS_TO_TICKS(GATT_RELAY_TIMEOUT_MS)) != pdTRUE) {
+        return HAL_ERR_BUSY;
+    }
+
+    while (xSemaphoreTake(s_gatt_relay.done, 0) == pdTRUE) {
+    }
+
+    s_gatt_relay.token_counter++;
+    s_gatt_relay.active_token = s_gatt_relay.token_counter;
+    s_gatt_relay.conn_handle = conn_handle;
+    s_gatt_relay.attr_handle = attr_handle;
+    s_gatt_relay.status = HAL_ERR_BUSY;
+    s_gatt_relay.read_len = 0;
+
+    int rc = ble_gattc_read(conn_handle,
+                            attr_handle,
+                            on_gatt_relay_read,
+                            (void *)(uintptr_t)s_gatt_relay.active_token);
+    if (rc != 0) {
+        s_gatt_relay.active_token = 0;
+        xSemaphoreGive(s_gatt_relay.mutex);
+        return map_gatt_status(rc);
+    }
+
+    if (xSemaphoreTake(s_gatt_relay.done, pdMS_TO_TICKS(GATT_RELAY_TIMEOUT_MS)) != pdTRUE) {
+        s_gatt_relay.active_token = 0;
+        xSemaphoreGive(s_gatt_relay.mutex);
+        return HAL_ERR_TIMEOUT;
+    }
+
+    hal_status_t status = s_gatt_relay.status;
+    if (status == HAL_OK) {
+        if (s_gatt_relay.read_len > buf_out_len) {
+            status = HAL_ERR_NO_MEM;
+        } else {
+            memcpy(buf_out, s_gatt_relay.read_buf, s_gatt_relay.read_len);
+            *read_len_out = s_gatt_relay.read_len;
+        }
+    }
+
+    s_gatt_relay.active_token = 0;
+    xSemaphoreGive(s_gatt_relay.mutex);
+    return status;
+}
+
+static hal_status_t ble_central_write_attr(uint16_t conn_handle,
+                                           uint16_t attr_handle,
+                                           const void *data,
+                                           size_t data_len)
+{
+    if (!data || data_len == 0 || attr_handle == 0) {
+        return HAL_ERR_INVALID_ARG;
+    }
+    if (!s_gatt_relay.mutex || !s_gatt_relay.done) {
+        return HAL_ERR_BUSY;
+    }
+
+    if (xSemaphoreTake(s_gatt_relay.mutex, pdMS_TO_TICKS(GATT_RELAY_TIMEOUT_MS)) != pdTRUE) {
+        return HAL_ERR_BUSY;
+    }
+
+    while (xSemaphoreTake(s_gatt_relay.done, 0) == pdTRUE) {
+    }
+
+    s_gatt_relay.token_counter++;
+    s_gatt_relay.active_token = s_gatt_relay.token_counter;
+    s_gatt_relay.conn_handle = conn_handle;
+    s_gatt_relay.attr_handle = attr_handle;
+    s_gatt_relay.status = HAL_ERR_BUSY;
+    s_gatt_relay.read_len = 0;
+
+    int rc = ble_gattc_write_flat(conn_handle,
+                                  attr_handle,
+                                  data,
+                                  data_len,
+                                  on_gatt_relay_write,
+                                  (void *)(uintptr_t)s_gatt_relay.active_token);
+    if (rc != 0) {
+        s_gatt_relay.active_token = 0;
+        xSemaphoreGive(s_gatt_relay.mutex);
+        return map_gatt_status(rc);
+    }
+
+    if (xSemaphoreTake(s_gatt_relay.done, pdMS_TO_TICKS(GATT_RELAY_TIMEOUT_MS)) != pdTRUE) {
+        s_gatt_relay.active_token = 0;
+        xSemaphoreGive(s_gatt_relay.mutex);
+        return HAL_ERR_TIMEOUT;
+    }
+
+    hal_status_t status = s_gatt_relay.status;
+    s_gatt_relay.active_token = 0;
+    xSemaphoreGive(s_gatt_relay.mutex);
+    return status;
 }
 
 // --- GAP event handler ---
@@ -318,6 +626,10 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
             s_rings[slot].subscribed = false;
             s_rings[slot].hid_report_handle = 0;
             s_rings[slot].hid_cccd_handle = 0;
+            s_rings[slot].dpi_handle = 0;
+            s_rings[slot].dead_zone_time_handle = 0;
+            s_rings[slot].dead_zone_distance_handle = 0;
+            s_rings[slot].firmware_version_handle = 0;
             s_rings[slot].connect_time_ms = hal_timer_get_ms();
             if (got_desc) {
                 memcpy(s_rings[slot].mac, desc.peer_id_addr.val, 6);
@@ -373,8 +685,7 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
         RINGS_LOCK();
         int idx = find_ring_by_conn(event->disconnect.conn.conn_handle);
         if (idx >= 0) {
-            s_rings[idx].connected = false;
-            s_rings[idx].subscribed = false;
+            clear_ring_slot(&s_rings[idx]);
             s_connected_count--;
         }
         RINGS_UNLOCK();
@@ -500,8 +811,7 @@ static void on_reset(int reason)
     RINGS_LOCK();
     for (int i = 0; i < HUB_MAX_RINGS; i++) {
         was_connected[i] = s_rings[i].connected;
-        s_rings[i].connected = false;
-        s_rings[i].subscribed = false;
+        clear_ring_slot(&s_rings[i]);
     }
     // H6: recompute count from array state rather than unconditionally
     // setting to 0. Prevents underflow if a concurrent disconnect handler
@@ -541,9 +851,29 @@ hal_status_t ble_central_init(hub_ring_report_cb_t report_cb,
 #ifdef ESP_PLATFORM
     memset(s_rings, 0, sizeof(s_rings));
     s_connected_count = 0;
+    memset(&s_gatt_relay, 0, sizeof(s_gatt_relay));
+
+    s_gatt_relay.mutex = xSemaphoreCreateMutex();
+    s_gatt_relay.done = xSemaphoreCreateBinary();
+    if (!s_gatt_relay.mutex || !s_gatt_relay.done) {
+        if (s_gatt_relay.mutex) {
+            vSemaphoreDelete(s_gatt_relay.mutex);
+            s_gatt_relay.mutex = NULL;
+        }
+        if (s_gatt_relay.done) {
+            vSemaphoreDelete(s_gatt_relay.done);
+            s_gatt_relay.done = NULL;
+        }
+        ESP_LOGE(TAG, "failed to allocate GATT relay synchronization primitives");
+        return HAL_ERR_NO_MEM;
+    }
 
     esp_err_t ret = nimble_port_init();
     if (ret != ESP_OK) {
+        vSemaphoreDelete(s_gatt_relay.mutex);
+        vSemaphoreDelete(s_gatt_relay.done);
+        s_gatt_relay.mutex = NULL;
+        s_gatt_relay.done = NULL;
         ESP_LOGE(TAG, "nimble_port_init failed: %s", esp_err_to_name(ret));
         return HAL_ERR_IO;
     }
@@ -673,6 +1003,179 @@ hal_status_t ble_central_delete_bond_by_mac(const uint8_t mac[6])
 #endif
 
     return HAL_OK;
+}
+
+hal_status_t ble_central_get_ring_settings_by_mac(const uint8_t mac[6],
+                                                  hub_ring_settings_t *settings_out)
+{
+    if (!mac || !settings_out) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+#ifdef ESP_PLATFORM
+    ring_settings_target_t target = {0};
+    hal_status_t target_rc = copy_ring_settings_target_by_mac(mac, &target);
+    if (target_rc != HAL_OK) {
+        return target_rc;
+    }
+
+    if (target.dpi_handle == 0 ||
+        target.dead_zone_time_handle == 0 ||
+        target.dead_zone_distance_handle == 0 ||
+        target.firmware_version_handle == 0) {
+        return target.subscribed ? HAL_ERR_NOT_SUPPORTED : HAL_ERR_BUSY;
+    }
+
+    uint8_t read_buf[GATT_RELAY_READ_MAX_LEN] = {0};
+    size_t read_len = 0;
+    hal_status_t rc = ble_central_read_attr(target.conn_handle,
+                                            target.dpi_handle,
+                                            read_buf,
+                                            sizeof(read_buf),
+                                            &read_len);
+    if (rc != HAL_OK) {
+        return rc;
+    }
+    if (read_len != 1) {
+        return HAL_ERR_IO;
+    }
+    settings_out->dpi_multiplier = read_buf[0];
+
+    rc = ble_central_read_attr(target.conn_handle,
+                               target.dead_zone_time_handle,
+                               read_buf,
+                               sizeof(read_buf),
+                               &read_len);
+    if (rc != HAL_OK) {
+        return rc;
+    }
+    if (read_len != 2) {
+        return HAL_ERR_IO;
+    }
+    settings_out->dead_zone_time_ms = (uint16_t)read_buf[0] |
+                                      ((uint16_t)read_buf[1] << 8);
+
+    rc = ble_central_read_attr(target.conn_handle,
+                               target.dead_zone_distance_handle,
+                               read_buf,
+                               sizeof(read_buf),
+                               &read_len);
+    if (rc != HAL_OK) {
+        return rc;
+    }
+    if (read_len != 1) {
+        return HAL_ERR_IO;
+    }
+    settings_out->dead_zone_distance = read_buf[0];
+
+    rc = ble_central_read_attr(target.conn_handle,
+                               target.firmware_version_handle,
+                               read_buf,
+                               sizeof(read_buf),
+                               &read_len);
+    if (rc != HAL_OK) {
+        return rc;
+    }
+    if (read_len != sizeof(settings_out->firmware_version)) {
+        return HAL_ERR_IO;
+    }
+    memcpy(settings_out->firmware_version,
+           read_buf,
+           sizeof(settings_out->firmware_version));
+    return HAL_OK;
+#else
+    (void)mac;
+    (void)settings_out;
+    return HAL_ERR_NOT_FOUND;
+#endif
+}
+
+hal_status_t ble_central_set_ring_dpi_by_mac(const uint8_t mac[6],
+                                             uint8_t dpi_multiplier)
+{
+    if (!mac || dpi_multiplier == 0) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+#ifdef ESP_PLATFORM
+    ring_settings_target_t target = {0};
+    hal_status_t target_rc = copy_ring_settings_target_by_mac(mac, &target);
+    if (target_rc != HAL_OK) {
+        return target_rc;
+    }
+    if (target.dpi_handle == 0) {
+        return target.subscribed ? HAL_ERR_NOT_SUPPORTED : HAL_ERR_BUSY;
+    }
+
+    return ble_central_write_attr(target.conn_handle,
+                                  target.dpi_handle,
+                                  &dpi_multiplier,
+                                  sizeof(dpi_multiplier));
+#else
+    (void)mac;
+    (void)dpi_multiplier;
+    return HAL_ERR_NOT_FOUND;
+#endif
+}
+
+hal_status_t ble_central_set_ring_dead_zone_time_by_mac(const uint8_t mac[6],
+                                                        uint16_t dead_zone_time_ms)
+{
+    if (!mac || dead_zone_time_ms > 2000U) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+#ifdef ESP_PLATFORM
+    ring_settings_target_t target = {0};
+    hal_status_t target_rc = copy_ring_settings_target_by_mac(mac, &target);
+    if (target_rc != HAL_OK) {
+        return target_rc;
+    }
+    if (target.dead_zone_time_handle == 0) {
+        return target.subscribed ? HAL_ERR_NOT_SUPPORTED : HAL_ERR_BUSY;
+    }
+
+    uint8_t payload[2] = {
+        (uint8_t)(dead_zone_time_ms & 0xFFU),
+        (uint8_t)((dead_zone_time_ms >> 8) & 0xFFU),
+    };
+    return ble_central_write_attr(target.conn_handle,
+                                  target.dead_zone_time_handle,
+                                  payload,
+                                  sizeof(payload));
+#else
+    (void)mac;
+    (void)dead_zone_time_ms;
+    return HAL_ERR_NOT_FOUND;
+#endif
+}
+
+hal_status_t ble_central_set_ring_dead_zone_distance_by_mac(const uint8_t mac[6],
+                                                            uint8_t dead_zone_distance)
+{
+    if (!mac) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+#ifdef ESP_PLATFORM
+    ring_settings_target_t target = {0};
+    hal_status_t target_rc = copy_ring_settings_target_by_mac(mac, &target);
+    if (target_rc != HAL_OK) {
+        return target_rc;
+    }
+    if (target.dead_zone_distance_handle == 0) {
+        return target.subscribed ? HAL_ERR_NOT_SUPPORTED : HAL_ERR_BUSY;
+    }
+
+    return ble_central_write_attr(target.conn_handle,
+                                  target.dead_zone_distance_handle,
+                                  &dead_zone_distance,
+                                  sizeof(dead_zone_distance));
+#else
+    (void)mac;
+    (void)dead_zone_distance;
+    return HAL_ERR_NOT_FOUND;
+#endif
 }
 
 uint8_t ble_central_connected_count(void)

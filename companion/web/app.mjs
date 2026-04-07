@@ -1,12 +1,17 @@
 import {
     SERIAL_OPTIONS,
     SUPPORTED_ROLES,
+    buildGetRingSettingsCommand,
     buildForgetRingCommand,
+    buildSetRingDeadZoneDistanceCommand,
+    buildSetRingDeadZoneTimeCommand,
+    buildSetRingDpiCommand,
     buildSetRoleCommand,
     buildSwapRolesCommand,
     parseHubInfoResponse,
     parseProtocolResponse,
     parseRingInfoResponse,
+    parseRingSettingsResponse,
     parseRingsResponse,
 } from "./protocol.mjs";
 
@@ -22,6 +27,7 @@ const state = {
     pendingResponse: null,
     hubInfo: null,
     roles: [],
+    ringSettings: {},
 };
 
 const elements = {
@@ -98,7 +104,7 @@ function setBusy(disabled) {
         button.disabled = disabled || !connected;
     }
 
-    elements.roleCards.querySelectorAll("[data-apply-role], [data-forget-ring], [data-inspect-ring], [data-role-select]").forEach((control) => {
+    elements.roleCards.querySelectorAll("[data-apply-role], [data-forget-ring], [data-inspect-ring], [data-load-settings], [data-save-settings], [data-role-select], [data-setting-input]").forEach((control) => {
         control.disabled = disabled || !connected;
     });
 }
@@ -149,6 +155,18 @@ function renderHubInfo() {
         .join("");
 }
 
+function pruneCachedRingSettings() {
+    const nextSettings = {};
+
+    for (const entry of state.roles) {
+        if (state.ringSettings[entry.mac]) {
+            nextSettings[entry.mac] = state.ringSettings[entry.mac];
+        }
+    }
+
+    state.ringSettings = nextSettings;
+}
+
 function renderRoleCards() {
     if (state.roles.length === 0) {
         const message = state.port
@@ -161,10 +179,17 @@ function renderRoleCards() {
 
     elements.roleCards.innerHTML = state.roles
         .map((entry) => {
+            const settings = state.ringSettings[entry.mac] ?? null;
             const options = SUPPORTED_ROLES.map((role) => {
                 const selected = role === entry.role ? " selected" : "";
                 return `<option value="${role}"${selected}>${role}</option>`;
             }).join("");
+
+            const tuningStatus = settings
+                ? `Loaded live tuning${settings.firmwareVersion ? ` · FW ${settings.firmwareVersion}` : ""}`
+                : entry.connected
+                    ? "Load tuning to read the ring's live BLE settings."
+                    : "Reconnect this ring to inspect or change tuning.";
 
             return `
                 <article class="ring-card" data-mac="${entry.mac}">
@@ -188,9 +213,81 @@ function renderRoleCards() {
                         </select>
                     </label>
 
+                    <section class="ring-settings-panel">
+                        <div class="ring-settings-header">
+                            <div>
+                                <h4>Live tuning</h4>
+                                <p>${tuningStatus}</p>
+                            </div>
+                            <button
+                                class="secondary-button"
+                                type="button"
+                                data-load-settings="${entry.mac}"
+                                ${entry.connected ? "" : "disabled"}
+                            >
+                                Load Tuning
+                            </button>
+                        </div>
+
+                        <div class="ring-settings-grid">
+                            <label class="field">
+                                <span>DPI multiplier</span>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="255"
+                                    step="1"
+                                    value="${settings?.dpiMultiplier ?? ""}"
+                                    placeholder="${entry.connected ? "10 = 1.0x" : "Ring offline"}"
+                                    data-setting-input="dpiMultiplier"
+                                    data-setting-mac="${entry.mac}"
+                                    ${entry.connected ? "" : "disabled"}
+                                >
+                            </label>
+
+                            <label class="field">
+                                <span>Dead zone time (ms)</span>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="2000"
+                                    step="1"
+                                    value="${settings?.deadZoneTimeMs ?? ""}"
+                                    placeholder="${entry.connected ? "50" : "Ring offline"}"
+                                    data-setting-input="deadZoneTimeMs"
+                                    data-setting-mac="${entry.mac}"
+                                    ${entry.connected ? "" : "disabled"}
+                                >
+                            </label>
+
+                            <label class="field">
+                                <span>Dead zone distance</span>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="255"
+                                    step="1"
+                                    value="${settings?.deadZoneDistance ?? ""}"
+                                    placeholder="${entry.connected ? "10" : "Ring offline"}"
+                                    data-setting-input="deadZoneDistance"
+                                    data-setting-mac="${entry.mac}"
+                                    ${entry.connected ? "" : "disabled"}
+                                >
+                            </label>
+                        </div>
+                    </section>
+
                     <div class="ring-card-actions">
                         <button class="secondary-button" type="button" data-inspect-ring="${entry.mac}">
                             Inspect
+                        </button>
+                        <button
+                            class="secondary-button"
+                            type="button"
+                            data-save-settings="${entry.mac}"
+                            ${entry.connected ? "" : "disabled"}
+                        >
+                            Save Tuning
                         </button>
                         <button class="secondary-button" type="button" data-apply-role="${entry.mac}">
                             Apply Role
@@ -214,6 +311,14 @@ function renderRoleCards() {
 
     elements.roleCards.querySelectorAll("[data-inspect-ring]").forEach((button) => {
         button.addEventListener("click", () => handleInspectRing(button.dataset.inspectRing));
+    });
+
+    elements.roleCards.querySelectorAll("[data-load-settings]").forEach((button) => {
+        button.addEventListener("click", () => handleLoadRingSettings(button.dataset.loadSettings));
+    });
+
+    elements.roleCards.querySelectorAll("[data-save-settings]").forEach((button) => {
+        button.addEventListener("click", () => handleSaveRingSettings(button.dataset.saveSettings));
     });
 }
 
@@ -340,6 +445,7 @@ async function disconnectFromHub(reason = "Disconnected.") {
     state.readBuffer = "";
     state.hubInfo = null;
     state.roles = [];
+    state.ringSettings = {};
     state.disconnecting = false;
 
     updateConnectionUi();
@@ -483,6 +589,7 @@ async function refreshRoles() {
     }
 
     state.roles = parseRingsResponse(response);
+    pruneCachedRingSettings();
     renderRoleCards();
     renderSwapSelectors();
 }
@@ -498,6 +605,28 @@ async function refreshAll() {
         setStatusNote(error.message, "meta-pill-danger");
     } finally {
         setBusy(false);
+    }
+}
+
+function getRingSettingInput(mac, settingName) {
+    return elements.roleCards.querySelector(
+        `[data-setting-input="${settingName}"][data-setting-mac="${mac}"]`,
+    );
+}
+
+async function loadRingSettings(mac, announce = true) {
+    const response = await sendCommand(buildGetRingSettingsCommand(mac));
+    setLastResponse(response);
+
+    if (!response.ok) {
+        throw new Error(`${response.errorCode} ${response.errorMessage}`);
+    }
+
+    state.ringSettings[mac] = parseRingSettingsResponse(response);
+    renderRoleCards();
+
+    if (announce) {
+        setStatusNote(`Loaded live tuning for ${mac}.`, "meta-pill-success");
     }
 }
 
@@ -562,6 +691,60 @@ async function handleInspectRing(mac) {
             `${ringInfo.mac} is ${ringInfo.connected ? "connected" : "disconnected"} as ${ringInfo.role}.`,
             "meta-pill-success",
         );
+    } catch (error) {
+        setStatusNote(error.message, "meta-pill-danger");
+    } finally {
+        setBusy(false);
+    }
+}
+
+async function handleLoadRingSettings(mac) {
+    setBusy(true);
+
+    try {
+        await loadRingSettings(mac);
+    } catch (error) {
+        setStatusNote(error.message, "meta-pill-danger");
+    } finally {
+        setBusy(false);
+    }
+}
+
+async function handleSaveRingSettings(mac) {
+    const dpiInput = getRingSettingInput(mac, "dpiMultiplier");
+    const deadZoneTimeInput = getRingSettingInput(mac, "deadZoneTimeMs");
+    const deadZoneDistanceInput = getRingSettingInput(mac, "deadZoneDistance");
+    if (!dpiInput || !deadZoneTimeInput || !deadZoneDistanceInput) {
+        setStatusNote("Could not find the tuning fields for that ring.", "meta-pill-danger");
+        return;
+    }
+
+    let commands = [];
+    try {
+        commands = [
+            buildSetRingDpiCommand(mac, dpiInput.value),
+            buildSetRingDeadZoneTimeCommand(mac, deadZoneTimeInput.value),
+            buildSetRingDeadZoneDistanceCommand(mac, deadZoneDistanceInput.value),
+        ];
+    } catch (error) {
+        setStatusNote(error.message, "meta-pill-danger");
+        return;
+    }
+
+    setBusy(true);
+
+    try {
+        for (const command of commands) {
+            const response = await sendCommand(command);
+            setLastResponse(response);
+
+            if (!response.ok) {
+                throw new Error(`${response.errorCode} ${response.errorMessage}`);
+            }
+        }
+
+        await loadRingSettings(mac, false);
+        setStatusNote(`Saved live tuning for ${mac}.`, "meta-pill-success");
     } catch (error) {
         setStatusNote(error.message, "meta-pill-danger");
     } finally {

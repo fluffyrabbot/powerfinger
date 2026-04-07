@@ -77,8 +77,13 @@ static hal_status_t s_storage_commit_status = HAL_OK;
 static int s_storage_commit_fail_count = 0;
 static bool s_mock_ring_present[HUB_MAX_RINGS] = {0};
 static uint8_t s_mock_ring_macs[HUB_MAX_RINGS][6] = {{0}};
+static hub_ring_settings_t s_mock_ring_settings[HUB_MAX_RINGS] = {0};
 static bool s_mock_bond_present[HUB_MAX_RINGS] = {0};
 static uint8_t s_mock_bond_macs[HUB_MAX_RINGS][6] = {{0}};
+
+#define MOCK_RING_DPI_DEFAULT               10U
+#define MOCK_RING_DEAD_ZONE_TIME_DEFAULT_MS 50U
+#define MOCK_RING_DEAD_ZONE_DISTANCE_DEFAULT 10U
 
 void mock_hal_reset(void)
 {
@@ -136,6 +141,7 @@ void mock_hal_reset(void)
     s_storage_commit_fail_count = 0;
     memset(s_mock_ring_present, 0, sizeof(s_mock_ring_present));
     memset(s_mock_ring_macs, 0, sizeof(s_mock_ring_macs));
+    memset(s_mock_ring_settings, 0, sizeof(s_mock_ring_settings));
     memset(s_mock_bond_present, 0, sizeof(s_mock_bond_present));
     memset(s_mock_bond_macs, 0, sizeof(s_mock_bond_macs));
 }
@@ -310,6 +316,7 @@ void mock_ble_central_clear_connected_rings(void)
 {
     memset(s_mock_ring_present, 0, sizeof(s_mock_ring_present));
     memset(s_mock_ring_macs, 0, sizeof(s_mock_ring_macs));
+    memset(s_mock_ring_settings, 0, sizeof(s_mock_ring_settings));
 }
 
 void mock_ble_central_set_connected_ring(uint8_t ring_index, const uint8_t mac[6])
@@ -320,6 +327,14 @@ void mock_ble_central_set_connected_ring(uint8_t ring_index, const uint8_t mac[6
 
     s_mock_ring_present[ring_index] = true;
     memcpy(s_mock_ring_macs[ring_index], mac, sizeof(s_mock_ring_macs[ring_index]));
+    s_mock_ring_settings[ring_index].dpi_multiplier = MOCK_RING_DPI_DEFAULT;
+    s_mock_ring_settings[ring_index].dead_zone_time_ms =
+        MOCK_RING_DEAD_ZONE_TIME_DEFAULT_MS;
+    s_mock_ring_settings[ring_index].dead_zone_distance =
+        MOCK_RING_DEAD_ZONE_DISTANCE_DEFAULT;
+    s_mock_ring_settings[ring_index].firmware_version[0] = 0;
+    s_mock_ring_settings[ring_index].firmware_version[1] = 1;
+    s_mock_ring_settings[ring_index].firmware_version[2] = 0;
 }
 
 void mock_ble_central_clear_bonds(void)
@@ -658,6 +673,7 @@ hal_status_t ble_central_disconnect_ring_by_mac(const uint8_t mac[6])
             memcmp(s_mock_ring_macs[i], mac, sizeof(s_mock_ring_macs[i])) == 0) {
             s_mock_ring_present[i] = false;
             memset(s_mock_ring_macs[i], 0, sizeof(s_mock_ring_macs[i]));
+            memset(&s_mock_ring_settings[i], 0, sizeof(s_mock_ring_settings[i]));
             return HAL_OK;
         }
     }
@@ -681,4 +697,76 @@ hal_status_t ble_central_delete_bond_by_mac(const uint8_t mac[6])
     }
 
     return HAL_OK;
+}
+
+hal_status_t ble_central_get_ring_settings_by_mac(const uint8_t mac[6],
+                                                  hub_ring_settings_t *settings_out)
+{
+    if (!mac || !settings_out) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    for (uint8_t i = 0; i < HUB_MAX_RINGS; i++) {
+        if (s_mock_ring_present[i] &&
+            memcmp(s_mock_ring_macs[i], mac, sizeof(s_mock_ring_macs[i])) == 0) {
+            *settings_out = s_mock_ring_settings[i];
+            return HAL_OK;
+        }
+    }
+
+    return HAL_ERR_NOT_FOUND;
+}
+
+hal_status_t ble_central_set_ring_dpi_by_mac(const uint8_t mac[6],
+                                             uint8_t dpi_multiplier)
+{
+    if (!mac || dpi_multiplier == 0) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    for (uint8_t i = 0; i < HUB_MAX_RINGS; i++) {
+        if (s_mock_ring_present[i] &&
+            memcmp(s_mock_ring_macs[i], mac, sizeof(s_mock_ring_macs[i])) == 0) {
+            s_mock_ring_settings[i].dpi_multiplier = dpi_multiplier;
+            return HAL_OK;
+        }
+    }
+
+    return HAL_ERR_NOT_FOUND;
+}
+
+hal_status_t ble_central_set_ring_dead_zone_time_by_mac(const uint8_t mac[6],
+                                                        uint16_t dead_zone_time_ms)
+{
+    if (!mac || dead_zone_time_ms > 2000U) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    for (uint8_t i = 0; i < HUB_MAX_RINGS; i++) {
+        if (s_mock_ring_present[i] &&
+            memcmp(s_mock_ring_macs[i], mac, sizeof(s_mock_ring_macs[i])) == 0) {
+            s_mock_ring_settings[i].dead_zone_time_ms = dead_zone_time_ms;
+            return HAL_OK;
+        }
+    }
+
+    return HAL_ERR_NOT_FOUND;
+}
+
+hal_status_t ble_central_set_ring_dead_zone_distance_by_mac(const uint8_t mac[6],
+                                                            uint8_t dead_zone_distance)
+{
+    if (!mac) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    for (uint8_t i = 0; i < HUB_MAX_RINGS; i++) {
+        if (s_mock_ring_present[i] &&
+            memcmp(s_mock_ring_macs[i], mac, sizeof(s_mock_ring_macs[i])) == 0) {
+            s_mock_ring_settings[i].dead_zone_distance = dead_zone_distance;
+            return HAL_OK;
+        }
+    }
+
+    return HAL_ERR_NOT_FOUND;
 }

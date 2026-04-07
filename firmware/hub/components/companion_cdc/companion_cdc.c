@@ -56,7 +56,7 @@ static hal_status_t companion_cdc_emit_response(const char *response, void *arg)
     }
 
     esp_err_t flush_rc = tinyusb_cdcacm_write_flush(COMPANION_CDC_PORT, 0);
-    if (flush_rc == ESP_OK || flush_rc == ESP_NOT_FINISHED) {
+    if (flush_rc == ESP_OK || flush_rc == ESP_ERR_NOT_FINISHED) {
         return HAL_OK;
     }
 

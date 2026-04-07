@@ -8,9 +8,16 @@
 #include "role_engine.h"
 
 #include <ctype.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+#define COMPANION_RING_DPI_MIN                    1UL
+#define COMPANION_RING_DPI_MAX                    255UL
+#define COMPANION_RING_DEAD_ZONE_TIME_MS_MAX      2000UL
+#define COMPANION_RING_DEAD_ZONE_DISTANCE_MAX     255UL
 
 typedef struct {
     char *buf;
@@ -213,6 +220,29 @@ static hal_status_t parse_role_token(const char *token, ring_role_t *role_out)
     return HAL_ERR_INVALID_ARG;
 }
 
+static hal_status_t parse_unsigned_long_token(const char *token,
+                                              unsigned long min_value,
+                                              unsigned long max_value,
+                                              unsigned long *value_out)
+{
+    if (!token || !value_out || min_value > max_value) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    errno = 0;
+    char *end = NULL;
+    unsigned long value = strtoul(token, &end, 10);
+    if (errno != 0 || !end || *end != '\0') {
+        return HAL_ERR_INVALID_ARG;
+    }
+    if (value < min_value || value > max_value) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    *value_out = value;
+    return HAL_OK;
+}
+
 static hal_status_t lookup_known_ring(const uint8_t mac[6], ring_role_t *role_out)
 {
     if (!mac || !role_out) {
@@ -234,6 +264,65 @@ static hal_status_t lookup_known_ring(const uint8_t mac[6], ring_role_t *role_ou
     }
 
     return HAL_ERR_NOT_FOUND;
+}
+
+static hal_status_t format_firmware_version(const uint8_t version[3],
+                                            char *version_out,
+                                            size_t version_out_len)
+{
+    if (!version || !version_out || version_out_len == 0) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    int written = snprintf(version_out,
+                           version_out_len,
+                           "%u.%u.%u",
+                           version[0],
+                           version[1],
+                           version[2]);
+    if (written <= 0 || (size_t)written >= version_out_len) {
+        return HAL_ERR_NO_MEM;
+    }
+
+    return HAL_OK;
+}
+
+static hal_status_t write_ring_relay_error(char *response_out,
+                                           size_t response_out_len,
+                                           hal_status_t relay_status,
+                                           const char *io_message)
+{
+    if (relay_status == HAL_ERR_NOT_FOUND) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    409,
+                                    "ring_not_connected");
+    }
+    if (relay_status == HAL_ERR_BUSY ||
+        relay_status == HAL_ERR_TIMEOUT ||
+        relay_status == HAL_ERR_REJECTED) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    503,
+                                    "ring_not_ready");
+    }
+    if (relay_status == HAL_ERR_NOT_SUPPORTED) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    501,
+                                    "ring_settings_unavailable");
+    }
+    if (relay_status == HAL_ERR_INVALID_ARG) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_value");
+    }
+
+    return write_protocol_error(response_out,
+                                response_out_len,
+                                500,
+                                io_message);
 }
 
 static hal_status_t handle_get_hub_info(const companion_protocol_hub_info_t *hub_info,
@@ -413,6 +502,307 @@ static hal_status_t handle_get_ring_info(char *args,
                          formatted_mac,
                          role_engine_role_name(role),
                          connected ? 1U : 0U);
+}
+
+static hal_status_t handle_get_ring_settings(char *args,
+                                             char *response_out,
+                                             size_t response_out_len)
+{
+    char *cursor = args;
+    char *mac_token = next_token(&cursor);
+
+    if (!mac_token) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_args");
+    }
+    if (next_token(&cursor) != NULL) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "unexpected_args");
+    }
+
+    uint8_t mac[6] = {0};
+    if (parse_mac_token(mac_token, mac) != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_mac");
+    }
+
+    ring_role_t ignored_role = ROLE_CURSOR;
+    hal_status_t rc = lookup_known_ring(mac, &ignored_role);
+    (void)ignored_role;
+    if (rc == HAL_ERR_NOT_FOUND) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    404,
+                                    "unknown_mac");
+    }
+    if (rc != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    500,
+                                    "role_read_failed");
+    }
+
+    hub_ring_settings_t settings = {0};
+    rc = ble_central_get_ring_settings_by_mac(mac, &settings);
+    if (rc != HAL_OK) {
+        return write_ring_relay_error(response_out,
+                                      response_out_len,
+                                      rc,
+                                      "ring_settings_read_failed");
+    }
+
+    char formatted_mac[18] = {0};
+    char firmware_version[16] = {0};
+    rc = format_mac(mac, formatted_mac, sizeof(formatted_mac));
+    if (rc != HAL_OK) {
+        return rc;
+    }
+    rc = format_firmware_version(settings.firmware_version,
+                                 firmware_version,
+                                 sizeof(firmware_version));
+    if (rc != HAL_OK) {
+        return rc;
+    }
+
+    response_builder_t builder = {
+        .buf = response_out,
+        .len = response_out_len,
+        .used = 0,
+    };
+    return append_format(&builder,
+                         "+ mac=%s\n"
+                         "+ dpi_multiplier=%u\n"
+                         "+ dead_zone_time_ms=%u\n"
+                         "+ dead_zone_distance=%u\n"
+                         "+ firmware_version=%s\n"
+                         "OK\n",
+                         formatted_mac,
+                         settings.dpi_multiplier,
+                         settings.dead_zone_time_ms,
+                         settings.dead_zone_distance,
+                         firmware_version);
+}
+
+static hal_status_t handle_set_ring_dpi(char *args,
+                                        char *response_out,
+                                        size_t response_out_len)
+{
+    char *cursor = args;
+    char *mac_token = next_token(&cursor);
+    char *value_token = next_token(&cursor);
+
+    if (!mac_token || !value_token) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_args");
+    }
+    if (next_token(&cursor) != NULL) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "unexpected_args");
+    }
+
+    uint8_t mac[6] = {0};
+    if (parse_mac_token(mac_token, mac) != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_mac");
+    }
+
+    unsigned long dpi_value = 0;
+    if (parse_unsigned_long_token(value_token,
+                                  COMPANION_RING_DPI_MIN,
+                                  COMPANION_RING_DPI_MAX,
+                                  &dpi_value) != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_value");
+    }
+
+    ring_role_t ignored_role = ROLE_CURSOR;
+    hal_status_t rc = lookup_known_ring(mac, &ignored_role);
+    (void)ignored_role;
+    if (rc == HAL_ERR_NOT_FOUND) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    404,
+                                    "unknown_mac");
+    }
+    if (rc != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    500,
+                                    "role_read_failed");
+    }
+
+    rc = ble_central_set_ring_dpi_by_mac(mac, (uint8_t)dpi_value);
+    if (rc != HAL_OK) {
+        return write_ring_relay_error(response_out,
+                                      response_out_len,
+                                      rc,
+                                      "ring_settings_write_failed");
+    }
+
+    response_builder_t builder = {
+        .buf = response_out,
+        .len = response_out_len,
+        .used = 0,
+    };
+    return append_format(&builder, "OK\n");
+}
+
+static hal_status_t handle_set_ring_dead_zone_time(char *args,
+                                                   char *response_out,
+                                                   size_t response_out_len)
+{
+    char *cursor = args;
+    char *mac_token = next_token(&cursor);
+    char *value_token = next_token(&cursor);
+
+    if (!mac_token || !value_token) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_args");
+    }
+    if (next_token(&cursor) != NULL) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "unexpected_args");
+    }
+
+    uint8_t mac[6] = {0};
+    if (parse_mac_token(mac_token, mac) != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_mac");
+    }
+
+    unsigned long dead_zone_time_ms = 0;
+    if (parse_unsigned_long_token(value_token,
+                                  0UL,
+                                  COMPANION_RING_DEAD_ZONE_TIME_MS_MAX,
+                                  &dead_zone_time_ms) != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_value");
+    }
+
+    ring_role_t ignored_role = ROLE_CURSOR;
+    hal_status_t rc = lookup_known_ring(mac, &ignored_role);
+    (void)ignored_role;
+    if (rc == HAL_ERR_NOT_FOUND) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    404,
+                                    "unknown_mac");
+    }
+    if (rc != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    500,
+                                    "role_read_failed");
+    }
+
+    rc = ble_central_set_ring_dead_zone_time_by_mac(mac, (uint16_t)dead_zone_time_ms);
+    if (rc != HAL_OK) {
+        return write_ring_relay_error(response_out,
+                                      response_out_len,
+                                      rc,
+                                      "ring_settings_write_failed");
+    }
+
+    response_builder_t builder = {
+        .buf = response_out,
+        .len = response_out_len,
+        .used = 0,
+    };
+    return append_format(&builder, "OK\n");
+}
+
+static hal_status_t handle_set_ring_dead_zone_distance(char *args,
+                                                       char *response_out,
+                                                       size_t response_out_len)
+{
+    char *cursor = args;
+    char *mac_token = next_token(&cursor);
+    char *value_token = next_token(&cursor);
+
+    if (!mac_token || !value_token) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_args");
+    }
+    if (next_token(&cursor) != NULL) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "unexpected_args");
+    }
+
+    uint8_t mac[6] = {0};
+    if (parse_mac_token(mac_token, mac) != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_mac");
+    }
+
+    unsigned long dead_zone_distance = 0;
+    if (parse_unsigned_long_token(value_token,
+                                  0UL,
+                                  COMPANION_RING_DEAD_ZONE_DISTANCE_MAX,
+                                  &dead_zone_distance) != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_value");
+    }
+
+    ring_role_t ignored_role = ROLE_CURSOR;
+    hal_status_t rc = lookup_known_ring(mac, &ignored_role);
+    (void)ignored_role;
+    if (rc == HAL_ERR_NOT_FOUND) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    404,
+                                    "unknown_mac");
+    }
+    if (rc != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    500,
+                                    "role_read_failed");
+    }
+
+    rc = ble_central_set_ring_dead_zone_distance_by_mac(mac, (uint8_t)dead_zone_distance);
+    if (rc != HAL_OK) {
+        return write_ring_relay_error(response_out,
+                                      response_out_len,
+                                      rc,
+                                      "ring_settings_write_failed");
+    }
+
+    response_builder_t builder = {
+        .buf = response_out,
+        .len = response_out_len,
+        .used = 0,
+    };
+    return append_format(&builder, "OK\n");
 }
 
 static hal_status_t handle_set_role(char *args,
@@ -647,6 +1037,22 @@ hal_status_t companion_protocol_handle_line(const char *line,
 
     if (token_equals_ignore_case(command, "GET_RING_INFO")) {
         return handle_get_ring_info(args, response_out, response_out_len);
+    }
+
+    if (token_equals_ignore_case(command, "GET_RING_SETTINGS")) {
+        return handle_get_ring_settings(args, response_out, response_out_len);
+    }
+
+    if (token_equals_ignore_case(command, "SET_RING_DPI")) {
+        return handle_set_ring_dpi(args, response_out, response_out_len);
+    }
+
+    if (token_equals_ignore_case(command, "SET_RING_DEAD_ZONE_TIME")) {
+        return handle_set_ring_dead_zone_time(args, response_out, response_out_len);
+    }
+
+    if (token_equals_ignore_case(command, "SET_RING_DEAD_ZONE_DISTANCE")) {
+        return handle_set_ring_dead_zone_distance(args, response_out, response_out_len);
     }
 
     if (token_equals_ignore_case(command, "SET_ROLE")) {

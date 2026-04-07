@@ -18,6 +18,13 @@ typedef struct {
     int8_t  wheel;
 } hub_ring_report_t;
 
+typedef struct {
+    uint8_t dpi_multiplier;
+    uint16_t dead_zone_time_ms;
+    uint8_t dead_zone_distance;
+    uint8_t firmware_version[3];
+} hub_ring_settings_t;
+
 // Callback when a ring sends a HID report
 typedef void (*hub_ring_report_cb_t)(uint8_t ring_index,
                                      const hub_ring_report_t *report,
@@ -44,6 +51,18 @@ hal_status_t ble_central_disconnect_ring_by_mac(const uint8_t mac[6]);
 // Delete the current bond entry for a ring MAC.
 // The pre-hardware implementation targets the current public-address mode.
 hal_status_t ble_central_delete_bond_by_mac(const uint8_t mac[6]);
+
+// Read the current ring settings from a connected ring over BLE.
+hal_status_t ble_central_get_ring_settings_by_mac(const uint8_t mac[6],
+                                                  hub_ring_settings_t *settings_out);
+
+// Write one settings value to a connected ring over BLE.
+hal_status_t ble_central_set_ring_dpi_by_mac(const uint8_t mac[6],
+                                             uint8_t dpi_multiplier);
+hal_status_t ble_central_set_ring_dead_zone_time_by_mac(const uint8_t mac[6],
+                                                        uint16_t dead_zone_time_ms);
+hal_status_t ble_central_set_ring_dead_zone_distance_by_mac(const uint8_t mac[6],
+                                                            uint8_t dead_zone_distance);
 
 // Get number of currently connected rings
 uint8_t ble_central_connected_count(void);

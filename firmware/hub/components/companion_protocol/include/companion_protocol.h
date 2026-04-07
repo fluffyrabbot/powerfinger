@@ -3,9 +3,10 @@
 //
 // This transport-agnostic parser handles the text protocol used by the hub's
 // USB CDC task and other hub-side control surfaces. Today it supports
-// GET_HUB_INFO, GET_ROLES, GET_RINGS, GET_RING_INFO, and the first mutating
-// hub commands (SET_ROLE, SWAP_ROLES, and FORGET_RING) so companion tooling
-// can exercise both read and write role flows over the real transport.
+// GET_HUB_INFO, GET_ROLES, GET_RINGS, GET_RING_INFO, GET_RING_SETTINGS, and
+// the current mutating hub commands (SET_RING_*, SET_ROLE, SWAP_ROLES, and
+// FORGET_RING) so companion tooling can exercise both role and tuning flows
+// over the real transport.
 
 #pragma once
 

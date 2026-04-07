@@ -11,11 +11,12 @@
     <div class="page-shell">
         <header class="hero">
             <p class="eyebrow">PowerFinger Companion</p>
-            <h1>Role control and hub diagnostics without a build step.</h1>
+            <h1>Role control and live ring tuning without a build step.</h1>
             <p class="hero-copy">
                 This local Web Serial client talks directly to the hub's USB CDC control
                 port. It is intentionally small: useful today for role assignment,
-                swapping, forgetting rings, and inspecting the raw protocol surface.
+                swapping, ring-tuning relay, forgetting rings, and inspecting the raw
+                protocol surface.
             </p>
 
             <div class="toolbar">
@@ -88,8 +89,9 @@
                     </div>
                     <p class="panel-note">
                         The current hub firmware merges persisted roles with live
-                        connected/disconnected status. Battery, RSSI, and tuning
-                        are still future commands.
+                        connected/disconnected status and can now relay the live
+                        tuning surface for connected rings. Battery, RSSI, and
+                        diagnostics are still future commands.
                     </p>
                 </div>
                 <div id="role-cards" class="ring-grid">

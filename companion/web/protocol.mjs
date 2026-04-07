@@ -12,6 +12,12 @@ export const SUPPORTED_ROLES = Object.freeze([
     "MODIFIER",
 ]);
 
+export const RING_SETTINGS_LIMITS = Object.freeze({
+    dpiMultiplier: Object.freeze({ min: 1, max: 255 }),
+    deadZoneTimeMs: Object.freeze({ min: 0, max: 2000 }),
+    deadZoneDistance: Object.freeze({ min: 0, max: 255 }),
+});
+
 export function normalizeMac(mac) {
     if (typeof mac !== "string") {
         throw new TypeError("MAC address must be a string.");
@@ -38,6 +44,22 @@ export function normalizeRole(role) {
     return normalized;
 }
 
+export function normalizeInteger(value, label, { min, max }) {
+    if (typeof value === "string" && value.trim() === "") {
+        throw new Error(`${label} is required.`);
+    }
+
+    const numeric = Number(value);
+    if (!Number.isInteger(numeric)) {
+        throw new Error(`${label} must be an integer.`);
+    }
+    if (numeric < min || numeric > max) {
+        throw new Error(`${label} must be between ${min} and ${max}.`);
+    }
+
+    return numeric;
+}
+
 export function buildSetRoleCommand(mac, role) {
     return `SET_ROLE ${normalizeMac(mac)} ${normalizeRole(role)}`;
 }
@@ -55,6 +77,37 @@ export function buildSwapRolesCommand(macA, macB) {
 
 export function buildForgetRingCommand(mac) {
     return `FORGET_RING ${normalizeMac(mac)}`;
+}
+
+export function buildGetRingSettingsCommand(mac) {
+    return `GET_RING_SETTINGS ${normalizeMac(mac)}`;
+}
+
+export function buildSetRingDpiCommand(mac, dpiMultiplier) {
+    const value = normalizeInteger(
+        dpiMultiplier,
+        "DPI multiplier",
+        RING_SETTINGS_LIMITS.dpiMultiplier,
+    );
+    return `SET_RING_DPI ${normalizeMac(mac)} ${value}`;
+}
+
+export function buildSetRingDeadZoneTimeCommand(mac, deadZoneTimeMs) {
+    const value = normalizeInteger(
+        deadZoneTimeMs,
+        "Dead zone time",
+        RING_SETTINGS_LIMITS.deadZoneTimeMs,
+    );
+    return `SET_RING_DEAD_ZONE_TIME ${normalizeMac(mac)} ${value}`;
+}
+
+export function buildSetRingDeadZoneDistanceCommand(mac, deadZoneDistance) {
+    const value = normalizeInteger(
+        deadZoneDistance,
+        "Dead zone distance",
+        RING_SETTINGS_LIMITS.deadZoneDistance,
+    );
+    return `SET_RING_DEAD_ZONE_DISTANCE ${normalizeMac(mac)} ${value}`;
 }
 
 export function parseProtocolResponse(rawText) {
@@ -185,5 +238,33 @@ export function parseRingInfoResponse(response) {
         mac: normalizeMac(fields.mac ?? ""),
         role: normalizeRole(fields.role ?? ""),
         connected: fields.connected === "1",
+    };
+}
+
+export function parseRingSettingsResponse(response) {
+    const parsed = typeof response === "string" ? parseProtocolResponse(response) : response;
+    if (!parsed?.ok) {
+        throw new Error("Ring settings response was not successful.");
+    }
+
+    const fields = parseKeyValueDataLines(parsed.dataLines);
+    return {
+        mac: normalizeMac(fields.mac ?? ""),
+        dpiMultiplier: normalizeInteger(
+            fields.dpi_multiplier ?? Number.NaN,
+            "DPI multiplier",
+            RING_SETTINGS_LIMITS.dpiMultiplier,
+        ),
+        deadZoneTimeMs: normalizeInteger(
+            fields.dead_zone_time_ms ?? Number.NaN,
+            "Dead zone time",
+            RING_SETTINGS_LIMITS.deadZoneTimeMs,
+        ),
+        deadZoneDistance: normalizeInteger(
+            fields.dead_zone_distance ?? Number.NaN,
+            "Dead zone distance",
+            RING_SETTINGS_LIMITS.deadZoneDistance,
+        ),
+        firmwareVersion: String(fields.firmware_version ?? "—"),
     };
 }

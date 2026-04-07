@@ -13,14 +13,15 @@ Information identity fields (model, firmware revision, hardware revision, and
 serial number) for bring-up and companion readback, plus a read-only
 diagnostic snapshot characteristic. On the hub side, the text command core now
 implements host-tested `GET_HUB_INFO`, `GET_ROLES`, `GET_RINGS`,
-`GET_RING_INFO`, `SET_ROLE`, and `SWAP_ROLES` handling behind a
-transport-agnostic parser, and `FORGET_RING` now tears down live input,
-removes the persisted role entry, and deletes the current public-address bond
-entry by MAC. USB CDC transport is now live on the hub, so the remaining
-deferred work is the rest of the hub command set and the BLE relay writes that
-let the hub proxy per-ring configuration. A minimal local Web Serial UI now
-lives under `companion/web/` so the repo has a real companion surface before
-the broader app stack exists.
+`GET_RING_INFO`, `GET_RING_SETTINGS`, `SET_RING_DPI`,
+`SET_RING_DEAD_ZONE_TIME`, `SET_RING_DEAD_ZONE_DISTANCE`, `SET_ROLE`, and
+`SWAP_ROLES` handling behind a transport-agnostic parser, and `FORGET_RING`
+now tears down live input, removes the persisted role entry, and deletes the
+current public-address bond entry by MAC. USB CDC transport is now live on the
+hub, and the local Web Serial UI under `companion/web/` can both inspect and
+relay per-ring tuning for connected rings. The remaining deferred work is the
+rest of the hub command set: diagnostics/battery readback, gestures, OTA, and
+the broader app stack.
 
 **What the app configures:**
 - Role assignment (which ring is cursor, which is scroll, which is modifier)
@@ -378,6 +379,10 @@ Implemented in the current hub firmware over USB CDC:
 - `GET_ROLES`
 - `GET_RINGS`
 - `GET_RING_INFO`
+- `GET_RING_SETTINGS`
+- `SET_RING_DPI`
+- `SET_RING_DEAD_ZONE_TIME`
+- `SET_RING_DEAD_ZONE_DISTANCE`
 - `SET_ROLE`
 - `SWAP_ROLES`
 - `ROLE_SWAP` (alias of `SWAP_ROLES`)
@@ -485,8 +490,8 @@ OK
 ```
 
 The current pre-hardware implementation reports only the persisted role plus
-whether the ring is currently connected. Battery, RSSI, and ring-setting relay
-fields stay deferred until the hub has those reads available.
+whether the ring is currently connected. Battery, RSSI, and diagnostics
+readback stay deferred until the hub has those reads available.
 
 If the ring is known but not currently connected:
 
@@ -507,6 +512,61 @@ Returns summary info for all known rings.
 + AA:BB:CC:DD:EE:01 CURSOR connected
 + AA:BB:CC:DD:EE:02 SCROLL connected
 + AA:BB:CC:DD:EE:03 MODIFIER disconnected
+OK
+```
+
+#### GET_RING_SETTINGS
+
+Returns the current live tuning values for a connected known ring.
+
+```
+> GET_RING_SETTINGS AA:BB:CC:DD:EE:01
++ mac=AA:BB:CC:DD:EE:01
++ dpi_multiplier=20
++ dead_zone_time_ms=75
++ dead_zone_distance=12
++ firmware_version=0.1.0
+OK
+```
+
+If the ring is known but not currently connected:
+
+```
+> GET_RING_SETTINGS AA:BB:CC:DD:EE:01
+ERR 409 ring_not_connected
+```
+
+If the ring is still completing discovery or the config surface is unavailable:
+
+```
+> GET_RING_SETTINGS AA:BB:CC:DD:EE:01
+ERR 503 ring_not_ready
+```
+
+#### SET_RING_DPI
+
+Writes the DPI multiplier for a connected known ring.
+
+```
+> SET_RING_DPI AA:BB:CC:DD:EE:01 20
+OK
+```
+
+#### SET_RING_DEAD_ZONE_TIME
+
+Writes the click dead-zone time for a connected known ring.
+
+```
+> SET_RING_DEAD_ZONE_TIME AA:BB:CC:DD:EE:01 75
+OK
+```
+
+#### SET_RING_DEAD_ZONE_DISTANCE
+
+Writes the click dead-zone distance for a connected known ring.
+
+```
+> SET_RING_DEAD_ZONE_DISTANCE AA:BB:CC:DD:EE:01 12
 OK
 ```
 
@@ -1035,24 +1095,24 @@ requires changes to:
 
 5. **Hub firmware** -- The text command parser core for `GET_HUB_INFO` and
    `GET_ROLES` now exists as a transport-agnostic module, and the hub now also
-   exposes `GET_RINGS` and `GET_RING_INFO` for a truthful merge of persisted
-   role state plus live connection status. `SET_ROLE` plus `SWAP_ROLES` already
+   exposes `GET_RINGS`, `GET_RING_INFO`, `GET_RING_SETTINGS`, and the current
+   `SET_RING_*` tuning relay commands. `SET_ROLE` plus `SWAP_ROLES` already
    route through a shared hub-control helper so persistent role changes and the
    live event-composer cache stay aligned for active rings. `FORGET_RING` now
    also drops live input immediately, requests a BLE disconnect if needed,
    deletes the current public-address bond entry by MAC, and removes the
    persisted role assignment. That command core is now exposed through a USB
-   CDC task on the ESP32-S3. The remaining work is the rest of the mutating and
-   relay commands from section 3, then an actual app scaffold on top of that
-   transport.
+   CDC task on the ESP32-S3 and now reaches the ring's existing config
+   characteristics through the hub BLE central. The remaining work is the rest
+   of the command surface from section 3, then a broader app scaffold on top of
+   that transport.
 
 ### 7.2 Hub as Configuration Relay
 
 When the companion app adjusts a ring's DPI via the hub (Web Serial), the
 flow is:
 
-1. App sends `SET_RING_DPI AA:BB:CC:DD:EE:01 20` (or equivalent command,
-   which can be added to the serial protocol as needed).
+1. App sends `SET_RING_DPI AA:BB:CC:DD:EE:01 20`.
 2. Hub's serial parser identifies the target ring by MAC.
 3. Hub's BLE central writes the value to the ring's DPI characteristic
    (0x0101) over the existing BLE connection.

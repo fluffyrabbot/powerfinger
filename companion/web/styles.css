@@ -350,9 +350,18 @@ select:focus-visible {
     align-items: start;
 }
 
+.ring-card-actions {
+    flex-wrap: wrap;
+}
+
 .ring-card h3 {
     margin: 0;
     font-size: 1.1rem;
+}
+
+.ring-card h4 {
+    margin: 0;
+    font-size: 1rem;
 }
 
 .mac-label {
@@ -379,6 +388,34 @@ select:focus-visible {
     display: flex;
     flex-wrap: wrap;
     gap: 0.45rem;
+}
+
+.ring-settings-panel {
+    display: grid;
+    gap: var(--space-md);
+    padding: 0.9rem;
+    border: 1px solid rgba(15, 123, 108, 0.16);
+    border-radius: var(--radius-md);
+    background: linear-gradient(145deg, rgba(250, 255, 253, 0.88), rgba(243, 248, 245, 0.82));
+}
+
+.ring-settings-header {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    align-items: start;
+}
+
+.ring-settings-header p {
+    margin: 0.25rem 0 0;
+    color: var(--muted);
+    line-height: 1.45;
+}
+
+.ring-settings-grid {
+    display: grid;
+    gap: var(--space-sm);
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 
 .empty-state {
@@ -486,6 +523,10 @@ select {
 
     .command-form {
         grid-template-columns: 1fr;
+    }
+
+    .ring-settings-header {
+        flex-direction: column;
     }
 }
 

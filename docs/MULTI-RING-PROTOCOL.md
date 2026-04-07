@@ -378,7 +378,65 @@ OK
 **Current implementation:** role comes from the persisted role engine entry.
 `connected=1` means the BLE central currently has an active slot for that MAC;
 `connected=0` means the role entry exists but the ring is not live right now.
-Battery, RSSI, and per-ring setting readback remain future work.
+Battery, RSSI, and diagnostics readback remain future work.
+
+#### `GET_RING_SETTINGS`
+
+Request the current live tuning values for one connected known ring.
+
+**Arguments:**
+```
+GET_RING_SETTINGS <mac>
+```
+
+**Response:**
+```
++ mac=AA:BB:CC:DD:EE:FF
++ dpi_multiplier=20
++ dead_zone_time_ms=75
++ dead_zone_distance=12
++ firmware_version=0.1.0
+OK
+```
+
+**Current implementation:** reads the ring's existing BLE configuration
+characteristics through the hub BLE central. If the MAC is known but not
+currently connected, the command returns `ERR 409 ring_not_connected`. If the
+ring is still completing discovery or the config handles are unavailable, the
+command returns `ERR 503 ring_not_ready`.
+
+#### `SET_RING_DPI`
+
+Write the ring's DPI multiplier over the hub BLE relay.
+
+**Arguments:**
+```
+SET_RING_DPI <mac> <dpi_multiplier>
+```
+
+**Current implementation:** validates the ASCII value in the companion parser,
+then writes one byte to the ring's existing DPI characteristic. Unknown MACs
+return `ERR 404 unknown_mac`; disconnected rings return
+`ERR 409 ring_not_connected`; out-of-range values return
+`ERR 400 invalid_value`.
+
+#### `SET_RING_DEAD_ZONE_TIME`
+
+Write the ring's click dead-zone time over the hub BLE relay.
+
+**Arguments:**
+```
+SET_RING_DEAD_ZONE_TIME <mac> <dead_zone_time_ms>
+```
+
+#### `SET_RING_DEAD_ZONE_DISTANCE`
+
+Write the ring's click dead-zone distance over the hub BLE relay.
+
+**Arguments:**
+```
+SET_RING_DEAD_ZONE_DISTANCE <mac> <dead_zone_distance>
+```
 
 #### `SET_ROLE`
 
@@ -727,7 +785,7 @@ The following protocol pieces are still incomplete in the current codebase:
 
 | Function | Module | Purpose |
 |----------|--------|---------|
-| Remaining hub companion commands | Existing parser + CDC stack | Extend the current read-only and role-management surface with the deferred hub-settings, gesture, OTA, and BLE relay commands |
+| Remaining hub companion commands | Existing parser + CDC stack | Extend the current role-management plus ring-settings relay surface with the deferred diagnostics, battery, gesture, OTA, and hub-settings commands |
 
 ### 7.2 Thread Safety Summary
 
@@ -735,7 +793,7 @@ The following protocol pieces are still incomplete in the current codebase:
 |----------|-----------|-------------|
 | `s_entries[]` (role engine) | FreeRTOS mutex | NimBLE task (via `role_engine_get_role`), companion command task |
 | `s_rings[]` (event composer) | portMUX spinlock | NimBLE task (via `feed`, `ring_disconnected`), main loop (via `compose`) |
-| `s_rings[]` (BLE central) | Single-task access | NimBLE task only (all GAP callbacks run on same task) |
+| `s_rings[]` (BLE central) | portMUX spinlock for slot snapshots + semaphore/mutex for synchronous relay ops | NimBLE task (GAP / GATT callbacks), companion command task |
 | NVS writes | Single background flush task | Role engine flush worker only |
 
 **Current behavior:** Companion or NimBLE callers mutate in-memory role state

@@ -2,12 +2,17 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+    buildGetRingSettingsCommand,
     buildForgetRingCommand,
+    buildSetRingDeadZoneDistanceCommand,
+    buildSetRingDeadZoneTimeCommand,
+    buildSetRingDpiCommand,
     buildSetRoleCommand,
     buildSwapRolesCommand,
     parseHubInfoResponse,
     parseProtocolResponse,
     parseRingInfoResponse,
+    parseRingSettingsResponse,
     parseRingsResponse,
     parseRolesResponse,
 } from "../web/protocol.mjs";
@@ -79,6 +84,20 @@ test("parseRingInfoResponse extracts ring snapshot", () => {
     });
 });
 
+test("parseRingSettingsResponse extracts live tuning values", () => {
+    const settings = parseRingSettingsResponse(
+        "+ mac=AA:BB:CC:DD:EE:01\n+ dpi_multiplier=20\n+ dead_zone_time_ms=75\n+ dead_zone_distance=12\n+ firmware_version=0.1.0\nOK\n",
+    );
+
+    assert.deepEqual(settings, {
+        mac: "AA:BB:CC:DD:EE:01",
+        dpiMultiplier: 20,
+        deadZoneTimeMs: 75,
+        deadZoneDistance: 12,
+        firmwareVersion: "0.1.0",
+    });
+});
+
 test("command builders normalize and validate arguments", () => {
     assert.equal(
         buildSetRoleCommand("aa:bb:cc:dd:ee:01", "scroll"),
@@ -91,5 +110,28 @@ test("command builders normalize and validate arguments", () => {
     assert.equal(
         buildForgetRingCommand("aa:bb:cc:dd:ee:03"),
         "FORGET_RING AA:BB:CC:DD:EE:03",
+    );
+    assert.equal(
+        buildGetRingSettingsCommand("aa:bb:cc:dd:ee:01"),
+        "GET_RING_SETTINGS AA:BB:CC:DD:EE:01",
+    );
+    assert.equal(
+        buildSetRingDpiCommand("aa:bb:cc:dd:ee:01", "20"),
+        "SET_RING_DPI AA:BB:CC:DD:EE:01 20",
+    );
+    assert.equal(
+        buildSetRingDeadZoneTimeCommand("aa:bb:cc:dd:ee:01", 75),
+        "SET_RING_DEAD_ZONE_TIME AA:BB:CC:DD:EE:01 75",
+    );
+    assert.equal(
+        buildSetRingDeadZoneDistanceCommand("aa:bb:cc:dd:ee:01", 12),
+        "SET_RING_DEAD_ZONE_DISTANCE AA:BB:CC:DD:EE:01 12",
+    );
+});
+
+test("ring tuning builders reject blank required values", () => {
+    assert.throws(
+        () => buildSetRingDpiCommand("aa:bb:cc:dd:ee:01", ""),
+        /required/i,
     );
 });

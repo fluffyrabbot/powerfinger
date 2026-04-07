@@ -150,6 +150,119 @@ void test_get_ring_info_rejects_unknown_mac(void)
     TEST_ASSERT_TRUE(strcmp("ERR 404 unknown_mac\n", response) == 0);
 }
 
+void test_get_ring_settings_reads_live_config_from_connected_ring(void)
+{
+    reset();
+    char response[192] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(1);
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    mock_ble_central_set_connected_ring(0, MAC_A);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("GET_RING_SETTINGS 10:11:12:13:14:15",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp(
+        "+ mac=10:11:12:13:14:15\n"
+        "+ dpi_multiplier=10\n"
+        "+ dead_zone_time_ms=50\n"
+        "+ dead_zone_distance=10\n"
+        "+ firmware_version=0.1.0\n"
+        "OK\n",
+        response) == 0);
+}
+
+void test_get_ring_settings_reports_known_but_disconnected_ring(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("GET_RING_SETTINGS 10:11:12:13:14:15",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("ERR 409 ring_not_connected\n", response) == 0);
+}
+
+void test_set_ring_setting_commands_update_live_ring_state(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(1);
+    hub_ring_settings_t settings = {0};
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    mock_ble_central_set_connected_ring(0, MAC_A);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("SET_RING_DPI 10:11:12:13:14:15 20",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("OK\n", response) == 0);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("SET_RING_DEAD_ZONE_TIME 10:11:12:13:14:15 75",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("OK\n", response) == 0);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("SET_RING_DEAD_ZONE_DISTANCE 10:11:12:13:14:15 12",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("OK\n", response) == 0);
+
+    TEST_ASSERT_EQUAL(HAL_OK, ble_central_get_ring_settings_by_mac(MAC_A, &settings));
+    TEST_ASSERT_EQUAL(20, settings.dpi_multiplier);
+    TEST_ASSERT_EQUAL(75, settings.dead_zone_time_ms);
+    TEST_ASSERT_EQUAL(12, settings.dead_zone_distance);
+    TEST_ASSERT_EQUAL(0, settings.firmware_version[0]);
+    TEST_ASSERT_EQUAL(1, settings.firmware_version[1]);
+    TEST_ASSERT_EQUAL(0, settings.firmware_version[2]);
+}
+
+void test_set_ring_dpi_rejects_invalid_value(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(1);
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    mock_ble_central_set_connected_ring(0, MAC_A);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("SET_RING_DPI 10:11:12:13:14:15 0",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("ERR 400 invalid_value\n", response) == 0);
+}
+
+void test_set_ring_dpi_reports_known_but_disconnected_ring(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("SET_RING_DPI 10:11:12:13:14:15 20",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("ERR 409 ring_not_connected\n", response) == 0);
+}
+
 void test_unknown_command_returns_protocol_error(void)
 {
     reset();
@@ -360,6 +473,11 @@ void run_companion_protocol_tests(void)
     RUN_TEST(test_get_rings_merges_role_map_with_live_connection_status);
     RUN_TEST(test_get_ring_info_reports_known_ring_snapshot);
     RUN_TEST(test_get_ring_info_rejects_unknown_mac);
+    RUN_TEST(test_get_ring_settings_reads_live_config_from_connected_ring);
+    RUN_TEST(test_get_ring_settings_reports_known_but_disconnected_ring);
+    RUN_TEST(test_set_ring_setting_commands_update_live_ring_state);
+    RUN_TEST(test_set_ring_dpi_rejects_invalid_value);
+    RUN_TEST(test_set_ring_dpi_reports_known_but_disconnected_ring);
     RUN_TEST(test_unknown_command_returns_protocol_error);
     RUN_TEST(test_set_role_reassigns_known_ring);
     RUN_TEST(test_command_set_role_rejects_unknown_mac);
