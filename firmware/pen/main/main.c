@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: MIT
-// PowerPen Firmware — Entry Point
-//
-// Reuses the shared ring application flow while enabling the pen-specific
-// dual-click behavior through form-factor gated shared code.
+// PowerPen Firmware - Entry Point
 
-#define POWERFINGER_APP_LOG_TAG "powerpen"
-#define POWERFINGER_APP_FIRMWARE_NAME "PowerPen"
+#include "app_runtime.h"
 
-#include "../../ring/main/main.c"
+static const powerfinger_app_config_t s_pen_app_config = {
+    .log_tag = "powerpen",
+    .firmware_name = "PowerPen",
+};
+
+void app_main(void)
+{
+    powerfinger_app_main(&s_pen_app_config);
+}

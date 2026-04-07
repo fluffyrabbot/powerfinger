@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
-// PowerPuck Firmware — Entry Point
-//
-// Reuses the shared ring application flow while enabling the puck-specific
-// desktop form factor through Kconfig-gated shared code.
-// Structurally identical to the ring entry point — only log strings
-// and Kconfig defaults (device name, sleep timeout) differ.
+// PowerPuck Firmware - Entry Point
 
-#define POWERFINGER_APP_LOG_TAG "powerpuck"
-#define POWERFINGER_APP_FIRMWARE_NAME "PowerPuck"
+#include "app_runtime.h"
 
-#include "../../ring/main/main.c"
+static const powerfinger_app_config_t s_puck_app_config = {
+    .log_tag = "powerpuck",
+    .firmware_name = "PowerPuck",
+};
+
+void app_main(void)
+{
+    powerfinger_app_main(&s_puck_app_config);
+}
