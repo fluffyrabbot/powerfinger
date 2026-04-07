@@ -125,7 +125,7 @@ implementation versus planning:
 | Area | Current reality | Start here |
 |------|-----------------|-----------|
 | Firmware | Real ESP-IDF targets for `ring`, `hub`, `pen`, and `puck`, plus a host-side unit test suite. The active validation lane is `ring` + `hub`. | `scripts/verify-firmware-local.sh`, `docs/FIRMWARE-VERIFY-LOCAL.md` |
-| Companion | A minimal local Web Serial app now lives under `companion/web/`. It talks to the hub's existing USB CDC text protocol and covers hub info, role assignment, swaps, forget, and raw commands. | `companion/README.md`, `companion/web/`, `docs/COMPANION-APP-ARCH.md` |
+| Companion | A minimal local Web Serial app now lives under `companion/web/`. It talks to the hub's existing USB CDC text protocol and covers hub info, role assignment, swaps, forget, per-ring tuning, and battery/diagnostics inspection. | `companion/README.md`, `companion/web/`, `docs/COMPANION-APP-ARCH.md` |
 | Hardware | BOM intent files exist under `hardware/bom/`. KiCad, CAD, assembly, and disassembly deliverables are not checked in yet. | `hardware/README.md`, `hardware/bom/README.md` |
 | Docs | Design, validation, accessibility, and IP docs are the most complete part of the repo today. | `docs/` |
 

@@ -13,15 +13,15 @@ Information identity fields (model, firmware revision, hardware revision, and
 serial number) for bring-up and companion readback, plus a read-only
 diagnostic snapshot characteristic. On the hub side, the text command core now
 implements host-tested `GET_HUB_INFO`, `GET_ROLES`, `GET_RINGS`,
-`GET_RING_INFO`, `GET_RING_SETTINGS`, `SET_RING_DPI`,
+`GET_RING_INFO`, `GET_RING_SETTINGS`, `GET_RING_DIAGNOSTICS`, `SET_RING_DPI`,
 `SET_RING_DEAD_ZONE_TIME`, `SET_RING_DEAD_ZONE_DISTANCE`, `SET_ROLE`, and
 `SWAP_ROLES` handling behind a transport-agnostic parser, and `FORGET_RING`
 now tears down live input, removes the persisted role entry, and deletes the
 current public-address bond entry by MAC. USB CDC transport is now live on the
 hub, and the local Web Serial UI under `companion/web/` can both inspect and
-relay per-ring tuning for connected rings. The remaining deferred work is the
-rest of the hub command set: diagnostics/battery readback, gestures, OTA, and
-the broader app stack.
+relay per-ring tuning plus battery/diagnostics inspection for connected rings.
+The remaining deferred work is the rest of the hub command set: gestures, OTA,
+and the broader app stack.
 
 **What the app configures:**
 - Role assignment (which ring is cursor, which is scroll, which is modifier)
@@ -380,12 +380,14 @@ Implemented in the current hub firmware over USB CDC:
 - `GET_RINGS`
 - `GET_RING_INFO`
 - `GET_RING_SETTINGS`
+- `GET_RING_DIAGNOSTICS`
 - `SET_RING_DPI`
 - `SET_RING_DEAD_ZONE_TIME`
 - `SET_RING_DEAD_ZONE_DISTANCE`
 - `SET_ROLE`
 - `SWAP_ROLES`
 - `ROLE_SWAP` (alias of `SWAP_ROLES`)
+- `FORGET_RING`
 - `FORGET_RING`
 
 The remaining commands in this section are still planned companion-surface
@@ -490,8 +492,8 @@ OK
 ```
 
 The current pre-hardware implementation reports only the persisted role plus
-whether the ring is currently connected. Battery, RSSI, and diagnostics
-readback stay deferred until the hub has those reads available.
+whether the ring is currently connected. Battery and diagnostics now live under
+`GET_RING_DIAGNOSTICS`; RSSI remains deferred.
 
 If the ring is known but not currently connected:
 
@@ -541,6 +543,33 @@ If the ring is still completing discovery or the config surface is unavailable:
 ```
 > GET_RING_SETTINGS AA:BB:CC:DD:EE:01
 ERR 503 ring_not_ready
+```
+
+#### GET_RING_DIAGNOSTICS
+
+Returns the current battery and diagnostics snapshot for a connected known ring.
+
+```
+> GET_RING_DIAGNOSTICS AA:BB:CC:DD:EE:01
++ mac=AA:BB:CC:DD:EE:01
++ battery_pct=50
++ battery_mv=3700
++ ring_state=CONNECTED_IDLE
++ sensor_state=READY
++ bond_state=RESTORED
++ connected=1
++ calibration_valid=1
++ conn_param_rejected=0
++ conn_interval_1_25ms=12
++ diagnostics_version=1
+OK
+```
+
+If the ring is known but not currently connected:
+
+```
+> GET_RING_DIAGNOSTICS AA:BB:CC:DD:EE:01
+ERR 409 ring_not_connected
 ```
 
 #### SET_RING_DPI
@@ -1095,14 +1124,15 @@ requires changes to:
 
 5. **Hub firmware** -- The text command parser core for `GET_HUB_INFO` and
    `GET_ROLES` now exists as a transport-agnostic module, and the hub now also
-   exposes `GET_RINGS`, `GET_RING_INFO`, `GET_RING_SETTINGS`, and the current
-   `SET_RING_*` tuning relay commands. `SET_ROLE` plus `SWAP_ROLES` already
-   route through a shared hub-control helper so persistent role changes and the
-   live event-composer cache stay aligned for active rings. `FORGET_RING` now
-   also drops live input immediately, requests a BLE disconnect if needed,
-   deletes the current public-address bond entry by MAC, and removes the
-   persisted role assignment. That command core is now exposed through a USB
-   CDC task on the ESP32-S3 and now reaches the ring's existing config
+   exposes `GET_RINGS`, `GET_RING_INFO`, `GET_RING_SETTINGS`,
+   `GET_RING_DIAGNOSTICS`, and the current `SET_RING_*` tuning relay commands.
+   `SET_ROLE` plus `SWAP_ROLES` already route through a shared hub-control
+   helper so persistent role changes and the live event-composer cache stay
+   aligned for active rings. `FORGET_RING` now also drops live input
+   immediately, requests a BLE disconnect if needed, deletes the current
+   public-address bond entry by MAC, and removes the persisted role
+   assignment. That command core is now exposed through a USB CDC task on the
+   ESP32-S3 and now reaches the ring's existing config
    characteristics through the hub BLE central. The remaining work is the rest
    of the command surface from section 3, then a broader app scaffold on top of
    that transport.

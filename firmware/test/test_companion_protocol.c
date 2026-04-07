@@ -190,6 +190,52 @@ void test_get_ring_settings_reports_known_but_disconnected_ring(void)
     TEST_ASSERT_TRUE(strcmp("ERR 409 ring_not_connected\n", response) == 0);
 }
 
+void test_get_ring_diagnostics_reads_live_snapshot_from_connected_ring(void)
+{
+    reset();
+    char response[320] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(1);
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    mock_ble_central_set_connected_ring(0, MAC_A);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("GET_RING_DIAGNOSTICS 10:11:12:13:14:15",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp(
+        "+ mac=10:11:12:13:14:15\n"
+        "+ battery_pct=50\n"
+        "+ battery_mv=3700\n"
+        "+ ring_state=CONNECTED_IDLE\n"
+        "+ sensor_state=READY\n"
+        "+ bond_state=RESTORED\n"
+        "+ connected=1\n"
+        "+ calibration_valid=1\n"
+        "+ conn_param_rejected=0\n"
+        "+ conn_interval_1_25ms=12\n"
+        "+ diagnostics_version=1\n"
+        "OK\n",
+        response) == 0);
+}
+
+void test_get_ring_diagnostics_reports_known_but_disconnected_ring(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("GET_RING_DIAGNOSTICS 10:11:12:13:14:15",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("ERR 409 ring_not_connected\n", response) == 0);
+}
+
 void test_set_ring_setting_commands_update_live_ring_state(void)
 {
     reset();
@@ -475,6 +521,8 @@ void run_companion_protocol_tests(void)
     RUN_TEST(test_get_ring_info_rejects_unknown_mac);
     RUN_TEST(test_get_ring_settings_reads_live_config_from_connected_ring);
     RUN_TEST(test_get_ring_settings_reports_known_but_disconnected_ring);
+    RUN_TEST(test_get_ring_diagnostics_reads_live_snapshot_from_connected_ring);
+    RUN_TEST(test_get_ring_diagnostics_reports_known_but_disconnected_ring);
     RUN_TEST(test_set_ring_setting_commands_update_live_ring_state);
     RUN_TEST(test_set_ring_dpi_rejects_invalid_value);
     RUN_TEST(test_set_ring_dpi_reports_known_but_disconnected_ring);

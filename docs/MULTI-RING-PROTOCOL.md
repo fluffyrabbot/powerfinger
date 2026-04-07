@@ -378,7 +378,8 @@ OK
 **Current implementation:** role comes from the persisted role engine entry.
 `connected=1` means the BLE central currently has an active slot for that MAC;
 `connected=0` means the role entry exists but the ring is not live right now.
-Battery, RSSI, and diagnostics readback remain future work.
+Battery and diagnostics now live under `GET_RING_DIAGNOSTICS`; RSSI remains
+future work.
 
 #### `GET_RING_SETTINGS`
 
@@ -404,6 +405,39 @@ characteristics through the hub BLE central. If the MAC is known but not
 currently connected, the command returns `ERR 409 ring_not_connected`. If the
 ring is still completing discovery or the config handles are unavailable, the
 command returns `ERR 503 ring_not_ready`.
+
+#### `GET_RING_DIAGNOSTICS`
+
+Request the current battery and diagnostics snapshot for one connected known
+ring.
+
+**Arguments:**
+```
+GET_RING_DIAGNOSTICS <mac>
+```
+
+**Response:**
+```
++ mac=AA:BB:CC:DD:EE:FF
++ battery_pct=50
++ battery_mv=3700
++ ring_state=CONNECTED_IDLE
++ sensor_state=READY
++ bond_state=RESTORED
++ connected=1
++ calibration_valid=1
++ conn_param_rejected=0
++ conn_interval_1_25ms=12
++ diagnostics_version=1
+OK
+```
+
+**Current implementation:** reads the ring's standard Battery Service
+characteristic plus the custom diagnostics characteristic through the hub BLE
+central, then formats the decoded snapshot as text. If the MAC is known but not
+currently connected, the command returns `ERR 409 ring_not_connected`. If the
+ring is still completing discovery or the diagnostics surface is unavailable,
+the command returns `ERR 503 ring_not_ready`.
 
 #### `SET_RING_DPI`
 
@@ -785,7 +819,7 @@ The following protocol pieces are still incomplete in the current codebase:
 
 | Function | Module | Purpose |
 |----------|--------|---------|
-| Remaining hub companion commands | Existing parser + CDC stack | Extend the current role-management plus ring-settings relay surface with the deferred diagnostics, battery, gesture, OTA, and hub-settings commands |
+| Remaining hub companion commands | Existing parser + CDC stack | Extend the current role-management, ring-settings relay, and diagnostics readback surface with gesture, OTA, RSSI, and hub-settings commands |
 
 ### 7.2 Thread Safety Summary
 

@@ -290,6 +290,7 @@ static hal_status_t format_firmware_version(const uint8_t version[3],
 static hal_status_t write_ring_relay_error(char *response_out,
                                            size_t response_out_len,
                                            hal_status_t relay_status,
+                                           const char *unsupported_message,
                                            const char *io_message)
 {
     if (relay_status == HAL_ERR_NOT_FOUND) {
@@ -310,7 +311,7 @@ static hal_status_t write_ring_relay_error(char *response_out,
         return write_protocol_error(response_out,
                                     response_out_len,
                                     501,
-                                    "ring_settings_unavailable");
+                                    unsupported_message);
     }
     if (relay_status == HAL_ERR_INVALID_ARG) {
         return write_protocol_error(response_out,
@@ -323,6 +324,52 @@ static hal_status_t write_ring_relay_error(char *response_out,
                                 response_out_len,
                                 500,
                                 io_message);
+}
+
+static const char *ring_state_code_name(uint8_t ring_state_code)
+{
+    switch (ring_state_code) {
+    case 0:
+        return "DEEP_SLEEP";
+    case 1:
+        return "BOOTING";
+    case 2:
+        return "ADVERTISING";
+    case 3:
+        return "CONNECTED_ACTIVE";
+    case 4:
+        return "CONNECTED_IDLE";
+    default:
+        return "UNKNOWN";
+    }
+}
+
+static const char *ring_sensor_state_name(hub_ring_sensor_state_t sensor_state)
+{
+    switch (sensor_state) {
+    case HUB_RING_SENSOR_UNAVAILABLE:
+        return "UNAVAILABLE";
+    case HUB_RING_SENSOR_CALIBRATION_PENDING:
+        return "CALIBRATION_PENDING";
+    case HUB_RING_SENSOR_READY:
+        return "READY";
+    default:
+        return "UNKNOWN";
+    }
+}
+
+static const char *ring_bond_state_name(hub_ring_bond_state_t bond_state)
+{
+    switch (bond_state) {
+    case HUB_RING_BOND_UNKNOWN:
+        return "UNKNOWN";
+    case HUB_RING_BOND_RESTORED:
+        return "RESTORED";
+    case HUB_RING_BOND_FAILED:
+        return "FAILED";
+    default:
+        return "UNKNOWN";
+    }
 }
 
 static hal_status_t handle_get_hub_info(const companion_protocol_hub_info_t *hub_info,
@@ -554,6 +601,7 @@ static hal_status_t handle_get_ring_settings(char *args,
         return write_ring_relay_error(response_out,
                                       response_out_len,
                                       rc,
+                                      "ring_settings_unavailable",
                                       "ring_settings_read_failed");
     }
 
@@ -587,6 +635,97 @@ static hal_status_t handle_get_ring_settings(char *args,
                          settings.dead_zone_time_ms,
                          settings.dead_zone_distance,
                          firmware_version);
+}
+
+static hal_status_t handle_get_ring_diagnostics(char *args,
+                                                char *response_out,
+                                                size_t response_out_len)
+{
+    char *cursor = args;
+    char *mac_token = next_token(&cursor);
+
+    if (!mac_token) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_args");
+    }
+    if (next_token(&cursor) != NULL) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "unexpected_args");
+    }
+
+    uint8_t mac[6] = {0};
+    if (parse_mac_token(mac_token, mac) != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_mac");
+    }
+
+    ring_role_t ignored_role = ROLE_CURSOR;
+    hal_status_t rc = lookup_known_ring(mac, &ignored_role);
+    (void)ignored_role;
+    if (rc == HAL_ERR_NOT_FOUND) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    404,
+                                    "unknown_mac");
+    }
+    if (rc != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    500,
+                                    "role_read_failed");
+    }
+
+    hub_ring_diagnostics_t diagnostics = {0};
+    rc = ble_central_get_ring_diagnostics_by_mac(mac, &diagnostics);
+    if (rc != HAL_OK) {
+        return write_ring_relay_error(response_out,
+                                      response_out_len,
+                                      rc,
+                                      "ring_diagnostics_unavailable",
+                                      "ring_diagnostics_read_failed");
+    }
+
+    char formatted_mac[18] = {0};
+    rc = format_mac(mac, formatted_mac, sizeof(formatted_mac));
+    if (rc != HAL_OK) {
+        return rc;
+    }
+
+    response_builder_t builder = {
+        .buf = response_out,
+        .len = response_out_len,
+        .used = 0,
+    };
+    return append_format(&builder,
+                         "+ mac=%s\n"
+                         "+ battery_pct=%u\n"
+                         "+ battery_mv=%u\n"
+                         "+ ring_state=%s\n"
+                         "+ sensor_state=%s\n"
+                         "+ bond_state=%s\n"
+                         "+ connected=%u\n"
+                         "+ calibration_valid=%u\n"
+                         "+ conn_param_rejected=%u\n"
+                         "+ conn_interval_1_25ms=%u\n"
+                         "+ diagnostics_version=%u\n"
+                         "OK\n",
+                         formatted_mac,
+                         diagnostics.battery_pct,
+                         (unsigned int)diagnostics.battery_mv,
+                         ring_state_code_name(diagnostics.ring_state_code),
+                         ring_sensor_state_name(diagnostics.sensor_state),
+                         ring_bond_state_name(diagnostics.bond_state),
+                         diagnostics.connected ? 1U : 0U,
+                         diagnostics.calibration_valid ? 1U : 0U,
+                         diagnostics.conn_param_rejected ? 1U : 0U,
+                         diagnostics.conn_interval_1_25ms,
+                         diagnostics.diagnostics_version);
 }
 
 static hal_status_t handle_set_ring_dpi(char *args,
@@ -650,6 +789,7 @@ static hal_status_t handle_set_ring_dpi(char *args,
         return write_ring_relay_error(response_out,
                                       response_out_len,
                                       rc,
+                                      "ring_settings_unavailable",
                                       "ring_settings_write_failed");
     }
 
@@ -722,6 +862,7 @@ static hal_status_t handle_set_ring_dead_zone_time(char *args,
         return write_ring_relay_error(response_out,
                                       response_out_len,
                                       rc,
+                                      "ring_settings_unavailable",
                                       "ring_settings_write_failed");
     }
 
@@ -794,6 +935,7 @@ static hal_status_t handle_set_ring_dead_zone_distance(char *args,
         return write_ring_relay_error(response_out,
                                       response_out_len,
                                       rc,
+                                      "ring_settings_unavailable",
                                       "ring_settings_write_failed");
     }
 
@@ -1041,6 +1183,10 @@ hal_status_t companion_protocol_handle_line(const char *line,
 
     if (token_equals_ignore_case(command, "GET_RING_SETTINGS")) {
         return handle_get_ring_settings(args, response_out, response_out_len);
+    }
+
+    if (token_equals_ignore_case(command, "GET_RING_DIAGNOSTICS")) {
+        return handle_get_ring_diagnostics(args, response_out, response_out_len);
     }
 
     if (token_equals_ignore_case(command, "SET_RING_DPI")) {

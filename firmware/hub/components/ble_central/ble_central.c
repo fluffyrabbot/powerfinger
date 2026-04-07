@@ -52,7 +52,7 @@ void ble_store_config_init(void);
 // NimBLE callback to complete. Bound the wait so a stalled peripheral does not
 // wedge the USB CDC task indefinitely.
 #define GATT_RELAY_TIMEOUT_MS     3000
-#define GATT_RELAY_READ_MAX_LEN   8
+#define GATT_RELAY_READ_MAX_LEN   16
 
 // PowerFinger config UUIDs must match the ring firmware. NimBLE expects
 // BLE_UUID128_DECLARE bytes in little-endian order.
@@ -68,6 +68,9 @@ void ble_store_config_init(void);
 #define PF_UUID128_FIRMWARE_VERSION \
     BLE_UUID128_DECLARE(0x66, 0x72, 0x65, 0x77, 0x6F, 0x70, 0x54, 0xB0, \
                         0x67, 0x6E, 0x69, 0x72, 0x01, 0x02, 0x46, 0x50)
+#define PF_UUID128_DIAGNOSTICS \
+    BLE_UUID128_DECLARE(0x66, 0x72, 0x65, 0x77, 0x6F, 0x70, 0x54, 0xB0, \
+                        0x67, 0x6E, 0x69, 0x72, 0x01, 0x04, 0x46, 0x50)
 
 // Spinlock protecting s_rings[] and s_connected_count from concurrent
 // reads on the app core (ble_central_get_mac, ble_central_connected_count)
@@ -104,6 +107,8 @@ typedef struct {
     uint16_t dead_zone_time_handle;
     uint16_t dead_zone_distance_handle;
     uint16_t firmware_version_handle;
+    uint16_t battery_level_handle;
+    uint16_t diagnostics_handle;
     uint8_t  mac[6];
     bool     connected;
     bool     subscribed;
@@ -128,8 +133,10 @@ typedef struct {
     uint16_t dead_zone_time_handle;
     uint16_t dead_zone_distance_handle;
     uint16_t firmware_version_handle;
+    uint16_t battery_level_handle;
+    uint16_t diagnostics_handle;
     bool subscribed;
-} ring_settings_target_t;
+} ring_relay_target_t;
 
 static ring_conn_t s_rings[HUB_MAX_RINGS];
 static uint8_t s_connected_count = 0;
@@ -196,8 +203,8 @@ static hal_status_t map_gatt_status(int status)
     return HAL_ERR_IO;
 }
 
-static hal_status_t copy_ring_settings_target_by_mac(const uint8_t mac[6],
-                                                     ring_settings_target_t *target_out)
+static hal_status_t copy_ring_relay_target_by_mac(const uint8_t mac[6],
+                                                  ring_relay_target_t *target_out)
 {
     if (!mac || !target_out) {
         return HAL_ERR_INVALID_ARG;
@@ -211,6 +218,8 @@ static hal_status_t copy_ring_settings_target_by_mac(const uint8_t mac[6],
             target_out->dead_zone_time_handle = s_rings[i].dead_zone_time_handle;
             target_out->dead_zone_distance_handle = s_rings[i].dead_zone_distance_handle;
             target_out->firmware_version_handle = s_rings[i].firmware_version_handle;
+            target_out->battery_level_handle = s_rings[i].battery_level_handle;
+            target_out->diagnostics_handle = s_rings[i].diagnostics_handle;
             target_out->subscribed = s_rings[i].subscribed;
             RINGS_UNLOCK();
             return HAL_OK;
@@ -219,6 +228,38 @@ static hal_status_t copy_ring_settings_target_by_mac(const uint8_t mac[6],
     RINGS_UNLOCK();
 
     return HAL_ERR_NOT_FOUND;
+}
+
+static hal_status_t decode_ring_diagnostics_payload(const uint8_t *payload,
+                                                    size_t payload_len,
+                                                    uint8_t battery_pct_fallback,
+                                                    bool has_battery_pct_fallback,
+                                                    hub_ring_diagnostics_t *diagnostics_out)
+{
+    if (!payload || !diagnostics_out) {
+        return HAL_ERR_INVALID_ARG;
+    }
+    if (payload_len < 10U) {
+        return HAL_ERR_IO;
+    }
+    if (payload[0] != 1U) {
+        return HAL_ERR_NOT_SUPPORTED;
+    }
+
+    memset(diagnostics_out, 0, sizeof(*diagnostics_out));
+    diagnostics_out->diagnostics_version = payload[0];
+    diagnostics_out->ring_state_code = payload[1];
+    diagnostics_out->sensor_state = (hub_ring_sensor_state_t)payload[2];
+    diagnostics_out->bond_state = (hub_ring_bond_state_t)payload[3];
+    diagnostics_out->connected = (payload[4] & 0x01U) != 0;
+    diagnostics_out->calibration_valid = (payload[4] & 0x02U) != 0;
+    diagnostics_out->conn_param_rejected = (payload[4] & 0x04U) != 0;
+    diagnostics_out->battery_pct = has_battery_pct_fallback ? battery_pct_fallback : payload[5];
+    diagnostics_out->battery_mv = (uint32_t)payload[6] |
+                                  ((uint32_t)payload[7] << 8);
+    diagnostics_out->conn_interval_1_25ms = (uint16_t)payload[8] |
+                                            ((uint16_t)payload[9] << 8);
+    return HAL_OK;
 }
 
 static bool adv_has_powerfinger_identity(const struct ble_hs_adv_fields *fields)
@@ -334,6 +375,10 @@ static int on_disc_chr(uint16_t conn_handle,
             RINGS_UNLOCK();
             ESP_LOGI(TAG, "ring %d: found HID Report handle=%d",
                      ring_idx, chr->val_handle);
+        } else if (ble_uuid_cmp(&chr->uuid.u, BLE_UUID16_DECLARE(0x2A19)) == 0) {
+            RINGS_LOCK();
+            s_rings[ring_idx].battery_level_handle = chr->val_handle;
+            RINGS_UNLOCK();
         } else if (ble_uuid_cmp(&chr->uuid.u, PF_UUID128_DPI) == 0) {
             RINGS_LOCK();
             s_rings[ring_idx].dpi_handle = chr->val_handle;
@@ -349,6 +394,10 @@ static int on_disc_chr(uint16_t conn_handle,
         } else if (ble_uuid_cmp(&chr->uuid.u, PF_UUID128_FIRMWARE_VERSION) == 0) {
             RINGS_LOCK();
             s_rings[ring_idx].firmware_version_handle = chr->val_handle;
+            RINGS_UNLOCK();
+        } else if (ble_uuid_cmp(&chr->uuid.u, PF_UUID128_DIAGNOSTICS) == 0) {
+            RINGS_LOCK();
+            s_rings[ring_idx].diagnostics_handle = chr->val_handle;
             RINGS_UNLOCK();
         }
     } else if (error->status == BLE_HS_EDONE) {
@@ -630,6 +679,8 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
             s_rings[slot].dead_zone_time_handle = 0;
             s_rings[slot].dead_zone_distance_handle = 0;
             s_rings[slot].firmware_version_handle = 0;
+            s_rings[slot].battery_level_handle = 0;
+            s_rings[slot].diagnostics_handle = 0;
             s_rings[slot].connect_time_ms = hal_timer_get_ms();
             if (got_desc) {
                 memcpy(s_rings[slot].mac, desc.peer_id_addr.val, 6);
@@ -1013,8 +1064,8 @@ hal_status_t ble_central_get_ring_settings_by_mac(const uint8_t mac[6],
     }
 
 #ifdef ESP_PLATFORM
-    ring_settings_target_t target = {0};
-    hal_status_t target_rc = copy_ring_settings_target_by_mac(mac, &target);
+    ring_relay_target_t target = {0};
+    hal_status_t target_rc = copy_ring_relay_target_by_mac(mac, &target);
     if (target_rc != HAL_OK) {
         return target_rc;
     }
@@ -1090,6 +1141,66 @@ hal_status_t ble_central_get_ring_settings_by_mac(const uint8_t mac[6],
 #endif
 }
 
+hal_status_t ble_central_get_ring_diagnostics_by_mac(const uint8_t mac[6],
+                                                     hub_ring_diagnostics_t *diagnostics_out)
+{
+    if (!mac || !diagnostics_out) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+#ifdef ESP_PLATFORM
+    ring_relay_target_t target = {0};
+    hal_status_t target_rc = copy_ring_relay_target_by_mac(mac, &target);
+    if (target_rc != HAL_OK) {
+        return target_rc;
+    }
+    if (target.diagnostics_handle == 0) {
+        return target.subscribed ? HAL_ERR_NOT_SUPPORTED : HAL_ERR_BUSY;
+    }
+
+    uint8_t diagnostics_buf[GATT_RELAY_READ_MAX_LEN] = {0};
+    size_t diagnostics_len = 0;
+    hal_status_t rc = ble_central_read_attr(target.conn_handle,
+                                            target.diagnostics_handle,
+                                            diagnostics_buf,
+                                            sizeof(diagnostics_buf),
+                                            &diagnostics_len);
+    if (rc != HAL_OK) {
+        return rc;
+    }
+
+    uint8_t battery_pct = 0;
+    bool has_battery_pct = false;
+    if (target.battery_level_handle != 0) {
+        uint8_t battery_buf[GATT_RELAY_READ_MAX_LEN] = {0};
+        size_t battery_len = 0;
+        rc = ble_central_read_attr(target.conn_handle,
+                                   target.battery_level_handle,
+                                   battery_buf,
+                                   sizeof(battery_buf),
+                                   &battery_len);
+        if (rc != HAL_OK) {
+            return rc;
+        }
+        if (battery_len != 1U) {
+            return HAL_ERR_IO;
+        }
+        battery_pct = battery_buf[0];
+        has_battery_pct = true;
+    }
+
+    return decode_ring_diagnostics_payload(diagnostics_buf,
+                                           diagnostics_len,
+                                           battery_pct,
+                                           has_battery_pct,
+                                           diagnostics_out);
+#else
+    (void)mac;
+    (void)diagnostics_out;
+    return HAL_ERR_NOT_FOUND;
+#endif
+}
+
 hal_status_t ble_central_set_ring_dpi_by_mac(const uint8_t mac[6],
                                              uint8_t dpi_multiplier)
 {
@@ -1098,8 +1209,8 @@ hal_status_t ble_central_set_ring_dpi_by_mac(const uint8_t mac[6],
     }
 
 #ifdef ESP_PLATFORM
-    ring_settings_target_t target = {0};
-    hal_status_t target_rc = copy_ring_settings_target_by_mac(mac, &target);
+    ring_relay_target_t target = {0};
+    hal_status_t target_rc = copy_ring_relay_target_by_mac(mac, &target);
     if (target_rc != HAL_OK) {
         return target_rc;
     }
@@ -1126,8 +1237,8 @@ hal_status_t ble_central_set_ring_dead_zone_time_by_mac(const uint8_t mac[6],
     }
 
 #ifdef ESP_PLATFORM
-    ring_settings_target_t target = {0};
-    hal_status_t target_rc = copy_ring_settings_target_by_mac(mac, &target);
+    ring_relay_target_t target = {0};
+    hal_status_t target_rc = copy_ring_relay_target_by_mac(mac, &target);
     if (target_rc != HAL_OK) {
         return target_rc;
     }
@@ -1158,8 +1269,8 @@ hal_status_t ble_central_set_ring_dead_zone_distance_by_mac(const uint8_t mac[6]
     }
 
 #ifdef ESP_PLATFORM
-    ring_settings_target_t target = {0};
-    hal_status_t target_rc = copy_ring_settings_target_by_mac(mac, &target);
+    ring_relay_target_t target = {0};
+    hal_status_t target_rc = copy_ring_relay_target_by_mac(mac, &target);
     if (target_rc != HAL_OK) {
         return target_rc;
     }

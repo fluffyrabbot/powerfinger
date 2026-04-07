@@ -78,12 +78,16 @@ static int s_storage_commit_fail_count = 0;
 static bool s_mock_ring_present[HUB_MAX_RINGS] = {0};
 static uint8_t s_mock_ring_macs[HUB_MAX_RINGS][6] = {{0}};
 static hub_ring_settings_t s_mock_ring_settings[HUB_MAX_RINGS] = {0};
+static hub_ring_diagnostics_t s_mock_ring_diagnostics[HUB_MAX_RINGS] = {0};
 static bool s_mock_bond_present[HUB_MAX_RINGS] = {0};
 static uint8_t s_mock_bond_macs[HUB_MAX_RINGS][6] = {{0}};
 
 #define MOCK_RING_DPI_DEFAULT               10U
 #define MOCK_RING_DEAD_ZONE_TIME_DEFAULT_MS 50U
 #define MOCK_RING_DEAD_ZONE_DISTANCE_DEFAULT 10U
+#define MOCK_RING_BATTERY_PCT_DEFAULT       50U
+#define MOCK_RING_BATTERY_MV_DEFAULT        3700U
+#define MOCK_RING_CONN_INTERVAL_DEFAULT     12U
 
 void mock_hal_reset(void)
 {
@@ -142,6 +146,7 @@ void mock_hal_reset(void)
     memset(s_mock_ring_present, 0, sizeof(s_mock_ring_present));
     memset(s_mock_ring_macs, 0, sizeof(s_mock_ring_macs));
     memset(s_mock_ring_settings, 0, sizeof(s_mock_ring_settings));
+    memset(s_mock_ring_diagnostics, 0, sizeof(s_mock_ring_diagnostics));
     memset(s_mock_bond_present, 0, sizeof(s_mock_bond_present));
     memset(s_mock_bond_macs, 0, sizeof(s_mock_bond_macs));
 }
@@ -317,6 +322,7 @@ void mock_ble_central_clear_connected_rings(void)
     memset(s_mock_ring_present, 0, sizeof(s_mock_ring_present));
     memset(s_mock_ring_macs, 0, sizeof(s_mock_ring_macs));
     memset(s_mock_ring_settings, 0, sizeof(s_mock_ring_settings));
+    memset(s_mock_ring_diagnostics, 0, sizeof(s_mock_ring_diagnostics));
 }
 
 void mock_ble_central_set_connected_ring(uint8_t ring_index, const uint8_t mac[6])
@@ -335,6 +341,18 @@ void mock_ble_central_set_connected_ring(uint8_t ring_index, const uint8_t mac[6
     s_mock_ring_settings[ring_index].firmware_version[0] = 0;
     s_mock_ring_settings[ring_index].firmware_version[1] = 1;
     s_mock_ring_settings[ring_index].firmware_version[2] = 0;
+
+    s_mock_ring_diagnostics[ring_index].diagnostics_version = 1;
+    s_mock_ring_diagnostics[ring_index].ring_state_code = 4;
+    s_mock_ring_diagnostics[ring_index].sensor_state = HUB_RING_SENSOR_READY;
+    s_mock_ring_diagnostics[ring_index].bond_state = HUB_RING_BOND_RESTORED;
+    s_mock_ring_diagnostics[ring_index].connected = true;
+    s_mock_ring_diagnostics[ring_index].calibration_valid = true;
+    s_mock_ring_diagnostics[ring_index].conn_param_rejected = false;
+    s_mock_ring_diagnostics[ring_index].battery_pct = MOCK_RING_BATTERY_PCT_DEFAULT;
+    s_mock_ring_diagnostics[ring_index].battery_mv = MOCK_RING_BATTERY_MV_DEFAULT;
+    s_mock_ring_diagnostics[ring_index].conn_interval_1_25ms =
+        MOCK_RING_CONN_INTERVAL_DEFAULT;
 }
 
 void mock_ble_central_clear_bonds(void)
@@ -710,6 +728,24 @@ hal_status_t ble_central_get_ring_settings_by_mac(const uint8_t mac[6],
         if (s_mock_ring_present[i] &&
             memcmp(s_mock_ring_macs[i], mac, sizeof(s_mock_ring_macs[i])) == 0) {
             *settings_out = s_mock_ring_settings[i];
+            return HAL_OK;
+        }
+    }
+
+    return HAL_ERR_NOT_FOUND;
+}
+
+hal_status_t ble_central_get_ring_diagnostics_by_mac(const uint8_t mac[6],
+                                                     hub_ring_diagnostics_t *diagnostics_out)
+{
+    if (!mac || !diagnostics_out) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    for (uint8_t i = 0; i < HUB_MAX_RINGS; i++) {
+        if (s_mock_ring_present[i] &&
+            memcmp(s_mock_ring_macs[i], mac, sizeof(s_mock_ring_macs[i])) == 0) {
+            *diagnostics_out = s_mock_ring_diagnostics[i];
             return HAL_OK;
         }
     }

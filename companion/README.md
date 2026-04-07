@@ -8,7 +8,7 @@ The companion app is optional configuration software, not a runtime dependency.
 - It talks to the hub's existing USB CDC transport from Chrome or Edge on
   `localhost`.
 - Implemented hub commands today: `GET_HUB_INFO`, `GET_ROLES`, `GET_RINGS`,
-  `GET_RING_INFO`, `GET_RING_SETTINGS`, `SET_RING_DPI`,
+  `GET_RING_INFO`, `GET_RING_SETTINGS`, `GET_RING_DIAGNOSTICS`, `SET_RING_DPI`,
   `SET_RING_DEAD_ZONE_TIME`, `SET_RING_DEAD_ZONE_DISTANCE`, `SET_ROLE`,
   `SWAP_ROLES`, `ROLE_SWAP`, and `FORGET_RING`.
 - No Flutter, mobile, or packaged desktop app scaffold is checked in yet.
@@ -35,6 +35,7 @@ Web Serial.
 - Known-ring list with live connected/disconnected state via `GET_RINGS`
 - Per-ring snapshot via `GET_RING_INFO`
 - Per-ring live tuning readback via `GET_RING_SETTINGS`
+- Per-ring battery and diagnostics readback via `GET_RING_DIAGNOSTICS`
 - Per-ring live tuning writes via the `SET_RING_*` relay commands
 - Per-ring reassignment via `SET_ROLE`
 - Two-ring swap via `SWAP_ROLES`
@@ -44,7 +45,6 @@ Web Serial.
 ## Current Gaps
 
 - No direct BLE mode for single-ring tuning
-- No battery or diagnostics relay UI yet
 - No OTA UX
 - No packaged installable app
 
@@ -59,8 +59,8 @@ Web Serial.
 
 ## Expected Future Responsibilities
 
-- Battery and diagnostics readback
-- Firmware update UX
+- OTA update UX
 - Packaged desktop and mobile variants
+- Hub-side gesture and policy configuration
 
 See `docs/COMPANION-APP-ARCH.md` for the deferred architecture sketch.

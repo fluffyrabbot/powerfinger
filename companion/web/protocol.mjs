@@ -18,6 +18,13 @@ export const RING_SETTINGS_LIMITS = Object.freeze({
     deadZoneDistance: Object.freeze({ min: 0, max: 255 }),
 });
 
+export const RING_DIAGNOSTICS_LIMITS = Object.freeze({
+    batteryPct: Object.freeze({ min: 0, max: 100 }),
+    batteryMv: Object.freeze({ min: 0, max: 65535 }),
+    connInterval125Ms: Object.freeze({ min: 0, max: 65535 }),
+    diagnosticsVersion: Object.freeze({ min: 1, max: 255 }),
+});
+
 export function normalizeMac(mac) {
     if (typeof mac !== "string") {
         throw new TypeError("MAC address must be a string.");
@@ -81,6 +88,10 @@ export function buildForgetRingCommand(mac) {
 
 export function buildGetRingSettingsCommand(mac) {
     return `GET_RING_SETTINGS ${normalizeMac(mac)}`;
+}
+
+export function buildGetRingDiagnosticsCommand(mac) {
+    return `GET_RING_DIAGNOSTICS ${normalizeMac(mac)}`;
 }
 
 export function buildSetRingDpiCommand(mac, dpiMultiplier) {
@@ -266,5 +277,43 @@ export function parseRingSettingsResponse(response) {
             RING_SETTINGS_LIMITS.deadZoneDistance,
         ),
         firmwareVersion: String(fields.firmware_version ?? "—"),
+    };
+}
+
+export function parseRingDiagnosticsResponse(response) {
+    const parsed = typeof response === "string" ? parseProtocolResponse(response) : response;
+    if (!parsed?.ok) {
+        throw new Error("Ring diagnostics response was not successful.");
+    }
+
+    const fields = parseKeyValueDataLines(parsed.dataLines);
+    return {
+        mac: normalizeMac(fields.mac ?? ""),
+        batteryPct: normalizeInteger(
+            fields.battery_pct ?? Number.NaN,
+            "Battery percentage",
+            RING_DIAGNOSTICS_LIMITS.batteryPct,
+        ),
+        batteryMv: normalizeInteger(
+            fields.battery_mv ?? Number.NaN,
+            "Battery millivolts",
+            RING_DIAGNOSTICS_LIMITS.batteryMv,
+        ),
+        ringState: String(fields.ring_state ?? "UNKNOWN"),
+        sensorState: String(fields.sensor_state ?? "UNKNOWN"),
+        bondState: String(fields.bond_state ?? "UNKNOWN"),
+        connected: fields.connected === "1",
+        calibrationValid: fields.calibration_valid === "1",
+        connParamRejected: fields.conn_param_rejected === "1",
+        connInterval125Ms: normalizeInteger(
+            fields.conn_interval_1_25ms ?? Number.NaN,
+            "Connection interval",
+            RING_DIAGNOSTICS_LIMITS.connInterval125Ms,
+        ),
+        diagnosticsVersion: normalizeInteger(
+            fields.diagnostics_version ?? Number.NaN,
+            "Diagnostics version",
+            RING_DIAGNOSTICS_LIMITS.diagnosticsVersion,
+        ),
     };
 }

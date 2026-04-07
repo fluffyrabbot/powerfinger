@@ -1,6 +1,7 @@
 import {
     SERIAL_OPTIONS,
     SUPPORTED_ROLES,
+    buildGetRingDiagnosticsCommand,
     buildGetRingSettingsCommand,
     buildForgetRingCommand,
     buildSetRingDeadZoneDistanceCommand,
@@ -10,6 +11,7 @@ import {
     buildSwapRolesCommand,
     parseHubInfoResponse,
     parseProtocolResponse,
+    parseRingDiagnosticsResponse,
     parseRingInfoResponse,
     parseRingSettingsResponse,
     parseRingsResponse,
@@ -28,6 +30,7 @@ const state = {
     hubInfo: null,
     roles: [],
     ringSettings: {},
+    ringDiagnostics: {},
 };
 
 const elements = {
@@ -104,7 +107,7 @@ function setBusy(disabled) {
         button.disabled = disabled || !connected;
     }
 
-    elements.roleCards.querySelectorAll("[data-apply-role], [data-forget-ring], [data-inspect-ring], [data-load-settings], [data-save-settings], [data-role-select], [data-setting-input]").forEach((control) => {
+    elements.roleCards.querySelectorAll("[data-apply-role], [data-forget-ring], [data-inspect-ring], [data-load-settings], [data-load-diagnostics], [data-save-settings], [data-role-select], [data-setting-input]").forEach((control) => {
         control.disabled = disabled || !connected;
     });
 }
@@ -155,16 +158,58 @@ function renderHubInfo() {
         .join("");
 }
 
-function pruneCachedRingSettings() {
+function pruneCachedRingData() {
     const nextSettings = {};
+    const nextDiagnostics = {};
 
     for (const entry of state.roles) {
         if (state.ringSettings[entry.mac]) {
             nextSettings[entry.mac] = state.ringSettings[entry.mac];
         }
+        if (entry.connected && state.ringDiagnostics[entry.mac]) {
+            nextDiagnostics[entry.mac] = state.ringDiagnostics[entry.mac];
+        }
     }
 
     state.ringSettings = nextSettings;
+    state.ringDiagnostics = nextDiagnostics;
+}
+
+function formatConnectionIntervalMs(connInterval125Ms) {
+    const milliseconds = Number(connInterval125Ms) * 1.25;
+
+    if (!Number.isFinite(milliseconds)) {
+        return "—";
+    }
+    if (Number.isInteger(milliseconds)) {
+        return `${milliseconds} ms`;
+    }
+
+    return `${milliseconds.toFixed(2).replace(/0+$/, "").replace(/\.$/, "")} ms`;
+}
+
+function describeDiagnosticsStatus(diagnostics) {
+    if (!diagnostics) {
+        return "";
+    }
+
+    const parts = [
+        `${diagnostics.batteryPct}%`,
+        `${diagnostics.batteryMv} mV`,
+        formatConnectionIntervalMs(diagnostics.connInterval125Ms),
+    ];
+
+    return parts.join(" · ");
+}
+
+function describeDiagnosticsFlags(diagnostics) {
+    const parts = [
+        diagnostics.calibrationValid ? "calibrated" : "calibration pending",
+        diagnostics.connParamRejected ? "conn params rejected" : "conn params accepted",
+        diagnostics.connected ? "session connected" : "session disconnected",
+    ];
+
+    return parts.join(" · ");
 }
 
 function renderRoleCards() {
@@ -180,6 +225,7 @@ function renderRoleCards() {
     elements.roleCards.innerHTML = state.roles
         .map((entry) => {
             const settings = state.ringSettings[entry.mac] ?? null;
+            const diagnostics = state.ringDiagnostics[entry.mac] ?? null;
             const options = SUPPORTED_ROLES.map((role) => {
                 const selected = role === entry.role ? " selected" : "";
                 return `<option value="${role}"${selected}>${role}</option>`;
@@ -190,6 +236,41 @@ function renderRoleCards() {
                 : entry.connected
                     ? "Load tuning to read the ring's live BLE settings."
                     : "Reconnect this ring to inspect or change tuning.";
+            const diagnosticsStatus = diagnostics
+                ? `Loaded live telemetry · ${describeDiagnosticsStatus(diagnostics)}`
+                : entry.connected
+                    ? "Load battery and diagnostics readback from the ring."
+                    : "Reconnect this ring to inspect battery and diagnostics.";
+            const diagnosticsBody = diagnostics
+                ? `
+                            <div class="ring-telemetry-grid">
+                                <div class="telemetry-stat">
+                                    <span>Battery</span>
+                                    <strong>${diagnostics.batteryPct}% · ${diagnostics.batteryMv} mV</strong>
+                                </div>
+                                <div class="telemetry-stat">
+                                    <span>Ring state</span>
+                                    <strong>${diagnostics.ringState}</strong>
+                                </div>
+                                <div class="telemetry-stat">
+                                    <span>Sensor path</span>
+                                    <strong>${diagnostics.sensorState}</strong>
+                                </div>
+                                <div class="telemetry-stat">
+                                    <span>Bond state</span>
+                                    <strong>${diagnostics.bondState}</strong>
+                                </div>
+                                <div class="telemetry-stat">
+                                    <span>Connection interval</span>
+                                    <strong>${formatConnectionIntervalMs(diagnostics.connInterval125Ms)}</strong>
+                                </div>
+                                <div class="telemetry-stat">
+                                    <span>Flags</span>
+                                    <strong>${describeDiagnosticsFlags(diagnostics)}</strong>
+                                </div>
+                            </div>
+                        `
+                : `<p class="ring-telemetry-empty">No live diagnostics loaded for this ring yet.</p>`;
 
             return `
                 <article class="ring-card" data-mac="${entry.mac}">
@@ -277,6 +358,25 @@ function renderRoleCards() {
                         </div>
                     </section>
 
+                    <section class="ring-settings-panel ring-telemetry-panel">
+                        <div class="ring-settings-header">
+                            <div>
+                                <h4>Battery + diagnostics</h4>
+                                <p>${diagnosticsStatus}</p>
+                            </div>
+                            <button
+                                class="secondary-button"
+                                type="button"
+                                data-load-diagnostics="${entry.mac}"
+                                ${entry.connected ? "" : "disabled"}
+                            >
+                                Load Telemetry
+                            </button>
+                        </div>
+
+                        ${diagnosticsBody}
+                    </section>
+
                     <div class="ring-card-actions">
                         <button class="secondary-button" type="button" data-inspect-ring="${entry.mac}">
                             Inspect
@@ -315,6 +415,10 @@ function renderRoleCards() {
 
     elements.roleCards.querySelectorAll("[data-load-settings]").forEach((button) => {
         button.addEventListener("click", () => handleLoadRingSettings(button.dataset.loadSettings));
+    });
+
+    elements.roleCards.querySelectorAll("[data-load-diagnostics]").forEach((button) => {
+        button.addEventListener("click", () => handleLoadRingDiagnostics(button.dataset.loadDiagnostics));
     });
 
     elements.roleCards.querySelectorAll("[data-save-settings]").forEach((button) => {
@@ -446,6 +550,7 @@ async function disconnectFromHub(reason = "Disconnected.") {
     state.hubInfo = null;
     state.roles = [];
     state.ringSettings = {};
+    state.ringDiagnostics = {};
     state.disconnecting = false;
 
     updateConnectionUi();
@@ -589,7 +694,7 @@ async function refreshRoles() {
     }
 
     state.roles = parseRingsResponse(response);
-    pruneCachedRingSettings();
+    pruneCachedRingData();
     renderRoleCards();
     renderSwapSelectors();
 }
@@ -627,6 +732,22 @@ async function loadRingSettings(mac, announce = true) {
 
     if (announce) {
         setStatusNote(`Loaded live tuning for ${mac}.`, "meta-pill-success");
+    }
+}
+
+async function loadRingDiagnostics(mac, announce = true) {
+    const response = await sendCommand(buildGetRingDiagnosticsCommand(mac));
+    setLastResponse(response);
+
+    if (!response.ok) {
+        throw new Error(`${response.errorCode} ${response.errorMessage}`);
+    }
+
+    state.ringDiagnostics[mac] = parseRingDiagnosticsResponse(response);
+    renderRoleCards();
+
+    if (announce) {
+        setStatusNote(`Loaded battery and diagnostics for ${mac}.`, "meta-pill-success");
     }
 }
 
@@ -687,6 +808,16 @@ async function handleInspectRing(mac) {
         }
 
         const ringInfo = parseRingInfoResponse(response);
+        if (ringInfo.connected) {
+            await loadRingDiagnostics(mac, false);
+            const diagnostics = state.ringDiagnostics[mac];
+            setStatusNote(
+                `${ringInfo.mac} is connected as ${ringInfo.role}. Battery ${describeDiagnosticsStatus(diagnostics)}.`,
+                "meta-pill-success",
+            );
+            return;
+        }
+
         setStatusNote(
             `${ringInfo.mac} is ${ringInfo.connected ? "connected" : "disconnected"} as ${ringInfo.role}.`,
             "meta-pill-success",
@@ -703,6 +834,18 @@ async function handleLoadRingSettings(mac) {
 
     try {
         await loadRingSettings(mac);
+    } catch (error) {
+        setStatusNote(error.message, "meta-pill-danger");
+    } finally {
+        setBusy(false);
+    }
+}
+
+async function handleLoadRingDiagnostics(mac) {
+    setBusy(true);
+
+    try {
+        await loadRingDiagnostics(mac);
     } catch (error) {
         setStatusNote(error.message, "meta-pill-danger");
     } finally {

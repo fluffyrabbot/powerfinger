@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+    buildGetRingDiagnosticsCommand,
     buildGetRingSettingsCommand,
     buildForgetRingCommand,
     buildSetRingDeadZoneDistanceCommand,
@@ -12,6 +13,7 @@ import {
     parseHubInfoResponse,
     parseProtocolResponse,
     parseRingInfoResponse,
+    parseRingDiagnosticsResponse,
     parseRingSettingsResponse,
     parseRingsResponse,
     parseRolesResponse,
@@ -98,6 +100,37 @@ test("parseRingSettingsResponse extracts live tuning values", () => {
     });
 });
 
+test("parseRingDiagnosticsResponse extracts live battery and health state", () => {
+    const diagnostics = parseRingDiagnosticsResponse(
+        "+ mac=AA:BB:CC:DD:EE:01\n"
+        + "+ battery_pct=50\n"
+        + "+ battery_mv=3700\n"
+        + "+ ring_state=CONNECTED_IDLE\n"
+        + "+ sensor_state=READY\n"
+        + "+ bond_state=RESTORED\n"
+        + "+ connected=1\n"
+        + "+ calibration_valid=1\n"
+        + "+ conn_param_rejected=0\n"
+        + "+ conn_interval_1_25ms=12\n"
+        + "+ diagnostics_version=1\n"
+        + "OK\n",
+    );
+
+    assert.deepEqual(diagnostics, {
+        mac: "AA:BB:CC:DD:EE:01",
+        batteryPct: 50,
+        batteryMv: 3700,
+        ringState: "CONNECTED_IDLE",
+        sensorState: "READY",
+        bondState: "RESTORED",
+        connected: true,
+        calibrationValid: true,
+        connParamRejected: false,
+        connInterval125Ms: 12,
+        diagnosticsVersion: 1,
+    });
+});
+
 test("command builders normalize and validate arguments", () => {
     assert.equal(
         buildSetRoleCommand("aa:bb:cc:dd:ee:01", "scroll"),
@@ -114,6 +147,10 @@ test("command builders normalize and validate arguments", () => {
     assert.equal(
         buildGetRingSettingsCommand("aa:bb:cc:dd:ee:01"),
         "GET_RING_SETTINGS AA:BB:CC:DD:EE:01",
+    );
+    assert.equal(
+        buildGetRingDiagnosticsCommand("aa:bb:cc:dd:ee:01"),
+        "GET_RING_DIAGNOSTICS AA:BB:CC:DD:EE:01",
     );
     assert.equal(
         buildSetRingDpiCommand("aa:bb:cc:dd:ee:01", "20"),
