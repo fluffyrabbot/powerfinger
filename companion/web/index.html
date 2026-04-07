@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PowerFinger Companion</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+    <div class="page-shell">
+        <header class="hero">
+            <p class="eyebrow">PowerFinger Companion</p>
+            <h1>Role control and hub diagnostics without a build step.</h1>
+            <p class="hero-copy">
+                This local Web Serial client talks directly to the hub's USB CDC control
+                port. It is intentionally small: useful today for role assignment,
+                swapping, forgetting rings, and inspecting the raw protocol surface.
+            </p>
+
+            <div class="toolbar">
+                <button id="connect-button" class="primary-button" type="button">
+                    Connect Hub
+                </button>
+                <button id="refresh-button" class="secondary-button" type="button" disabled>
+                    Refresh Snapshot
+                </button>
+            </div>
+
+            <div class="hero-meta">
+                <p id="support-hint" class="meta-pill">
+                    Checking browser support…
+                </p>
+                <p id="connection-state" class="meta-pill meta-pill-neutral">
+                    Disconnected
+                </p>
+                <p id="status-note" class="meta-pill meta-pill-neutral">
+                    Waiting for a hub connection.
+                </p>
+            </div>
+        </header>
+
+        <main class="layout">
+            <section class="panel hero-panel">
+                <div class="panel-header">
+                    <div>
+                        <p class="panel-kicker">Hub</p>
+                        <h2>Current snapshot</h2>
+                    </div>
+                    <p class="panel-note">
+                        Backed by <code>GET_HUB_INFO</code>. This is the live USB CDC
+                        view of the hub, not a cached app model.
+                    </p>
+                </div>
+                <dl id="hub-info-grid" class="stats-grid">
+                    <div class="stat-card">
+                        <dt>Firmware</dt>
+                        <dd>—</dd>
+                    </div>
+                    <div class="stat-card">
+                        <dt>Hardware</dt>
+                        <dd>—</dd>
+                    </div>
+                    <div class="stat-card">
+                        <dt>Connected Rings</dt>
+                        <dd>—</dd>
+                    </div>
+                    <div class="stat-card">
+                        <dt>Capacity</dt>
+                        <dd>—</dd>
+                    </div>
+                    <div class="stat-card">
+                        <dt>USB Poll</dt>
+                        <dd>—</dd>
+                    </div>
+                    <div class="stat-card">
+                        <dt>Scan Policy</dt>
+                        <dd>—</dd>
+                    </div>
+                </dl>
+            </section>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <div>
+                        <p class="panel-kicker">Roles</p>
+                        <h2>Known rings</h2>
+                    </div>
+                    <p class="panel-note">
+                        The current hub firmware exposes persisted role assignments only.
+                        Per-ring live battery, RSSI, and tuning are future commands.
+                    </p>
+                </div>
+                <div id="role-cards" class="ring-grid">
+                    <article class="empty-state">
+                        Connect the hub, then refresh to load known role assignments.
+                    </article>
+                </div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <div>
+                        <p class="panel-kicker">Swap</p>
+                        <h2>Two-ring role exchange</h2>
+                    </div>
+                    <p class="panel-note">
+                        Sends <code>SWAP_ROLES</code> and reloads the persisted map.
+                    </p>
+                </div>
+                <form id="swap-form" class="stack-form">
+                    <label class="field">
+                        <span>Ring A</span>
+                        <select id="swap-mac-a" disabled>
+                            <option value="">Select a ring</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span>Ring B</span>
+                        <select id="swap-mac-b" disabled>
+                            <option value="">Select a ring</option>
+                        </select>
+                    </label>
+                    <button id="swap-button" class="secondary-button" type="submit" disabled>
+                        Swap Roles
+                    </button>
+                </form>
+            </section>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <div>
+                        <p class="panel-kicker">Console</p>
+                        <h2>Raw protocol</h2>
+                    </div>
+                    <p class="panel-note">
+                        Useful for commands the UI does not model yet. Responses render
+                        exactly as the hub returns them.
+                    </p>
+                </div>
+
+                <div class="quick-actions">
+                    <button class="chip-button" type="button" data-command="GET_HUB_INFO" disabled>
+                        GET_HUB_INFO
+                    </button>
+                    <button class="chip-button" type="button" data-command="GET_ROLES" disabled>
+                        GET_ROLES
+                    </button>
+                </div>
+
+                <form id="command-form" class="command-form">
+                    <label class="field command-field">
+                        <span>Command</span>
+                        <input
+                            id="command-input"
+                            type="text"
+                            name="command"
+                            placeholder="FORGET_RING AA:BB:CC:DD:EE:FF"
+                            autocomplete="off"
+                            spellcheck="false"
+                            disabled
+                        >
+                    </label>
+                    <button id="send-button" class="primary-button" type="submit" disabled>
+                        Send Command
+                    </button>
+                </form>
+
+                <div class="response-panel">
+                    <div class="response-header">
+                        <p>Last response</p>
+                        <p id="response-status" class="response-status response-status-neutral">
+                            Idle
+                        </p>
+                    </div>
+                    <pre id="response-output" class="code-pane">No response yet.</pre>
+                </div>
+            </section>
+
+            <section class="panel transcript-panel">
+                <div class="panel-header">
+                    <div>
+                        <p class="panel-kicker">Transcript</p>
+                        <h2>Session log</h2>
+                    </div>
+                    <p class="panel-note">
+                        Helpful when debugging parser or transport issues with a live hub.
+                    </p>
+                </div>
+                <pre id="transcript-output" class="code-pane">Session transcript will appear here.</pre>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

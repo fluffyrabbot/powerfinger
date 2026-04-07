@@ -249,9 +249,11 @@ The companion app communicates with the hub via either:
 - **BLE GATT characteristic** (when hub exposes a configuration service).
 
 Both transports should carry the same command semantics. The current pre-hardware
-command core already exists in `companion_protocol.c`, but transport wiring is
-still deferred. The parser's canonical serialization today is a UTF-8
-line-oriented text protocol, not a binary frame format.
+command core already exists in `companion_protocol.c`, and USB CDC transport is
+now wired on the hub plus exercised by the local Web Serial scaffold under
+`companion/web/`. BLE transport is still deferred. The parser's canonical
+serialization today is a UTF-8 line-oriented text protocol, not a binary frame
+format.
 
 ### 4.1 Command Format
 

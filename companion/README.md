@@ -4,12 +4,12 @@ The companion app is optional configuration software, not a runtime dependency.
 
 ## Current Repo Status
 
-- No Flutter, web, desktop, or mobile app scaffold is checked in yet.
-- The current deliverables are protocol and architecture docs plus the hub-side
-  control surface the future app will talk to.
-- The hub firmware already exposes the text companion protocol over USB CDC.
+- A minimal dependency-free Web Serial client now lives in `companion/web/`.
+- It talks to the hub's existing USB CDC transport from Chrome or Edge on
+  `localhost`.
 - Implemented hub commands today: `GET_HUB_INFO`, `GET_ROLES`, `SET_ROLE`,
   `SWAP_ROLES`, `ROLE_SWAP`, and `FORGET_RING`.
+- No Flutter, mobile, or packaged desktop app scaffold is checked in yet.
 
 ## Current Scope
 
@@ -18,10 +18,36 @@ The companion app is optional configuration software, not a runtime dependency.
 - No workflow automation dependency
 - No blocking role in P0 validation
 
+## Run It Locally
+
+```bash
+scripts/serve-companion-local.sh
+```
+
+Then open `http://127.0.0.1:4173` in Chrome or Edge and connect to the hub over
+Web Serial.
+
+## What The Scaffold Covers
+
+- Hub snapshot via `GET_HUB_INFO`
+- Persisted role map via `GET_ROLES`
+- Per-ring reassignment via `SET_ROLE`
+- Two-ring swap via `SWAP_ROLES`
+- Ring removal via `FORGET_RING`
+- Raw command console plus transcript for protocol debugging
+
+## Current Gaps
+
+- No direct BLE mode for single-ring tuning
+- No ring-settings relay UI (`SET_RING_*` style commands do not exist yet)
+- No OTA UX
+- No packaged installable app
+
 ## What To Read First
 
 - `docs/COMPANION-APP-ARCH.md` - architecture, transport, and UX sketch
 - `docs/MULTI-RING-PROTOCOL.md` - hub command contract
+- `companion/web/` - static local app scaffold
 - `firmware/hub/components/companion_cdc/` - USB CDC transport
 - `firmware/hub/components/companion_session/` - line-oriented session layer
 - `firmware/hub/components/companion_protocol/` - command parser and responses

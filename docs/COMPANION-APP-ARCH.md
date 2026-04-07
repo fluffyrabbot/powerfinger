@@ -17,7 +17,9 @@ implements host-tested `GET_HUB_INFO`, `GET_ROLES`, `SET_ROLE`, and
 now tears down live input, removes the persisted role entry, and deletes the
 current public-address bond entry by MAC. USB CDC transport is now live on the
 hub, so the remaining deferred work is the rest of the hub command set and the
-BLE relay writes that let the hub proxy per-ring configuration.
+BLE relay writes that let the hub proxy per-ring configuration. A minimal local
+Web Serial UI now lives under `companion/web/` so the repo has a real companion
+surface before the broader app stack exists.
 
 **What the app configures:**
 - Role assignment (which ring is cursor, which is scroll, which is modifier)

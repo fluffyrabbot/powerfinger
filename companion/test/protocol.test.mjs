@@ -1,0 +1,70 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+
+import {
+    buildForgetRingCommand,
+    buildSetRoleCommand,
+    buildSwapRolesCommand,
+    parseHubInfoResponse,
+    parseProtocolResponse,
+    parseRolesResponse,
+} from "../web/protocol.mjs";
+
+test("parseProtocolResponse handles successful multi-line replies", () => {
+    const response = parseProtocolResponse(
+        "+ fw=0.1.0\n+ hw=DEVBOARD-S3\n+ rings=2\nOK\n",
+    );
+
+    assert.equal(response.ok, true);
+    assert.equal(response.dataLines.length, 3);
+    assert.equal(response.statusLine, "OK");
+});
+
+test("parseProtocolResponse handles protocol errors", () => {
+    const response = parseProtocolResponse("ERR 404 unknown_mac\n");
+
+    assert.equal(response.ok, false);
+    assert.equal(response.errorCode, 404);
+    assert.equal(response.errorMessage, "unknown_mac");
+});
+
+test("parseHubInfoResponse extracts key fields", () => {
+    const info = parseHubInfoResponse(
+        "+ fw=0.1.0\n+ hw=DEVBOARD-S3\n+ rings=2\n+ max_rings=4\n+ usb_poll_ms=1\n+ scan_policy=1\nOK\n",
+    );
+
+    assert.deepEqual(info, {
+        firmwareRevision: "0.1.0",
+        hardwareRevision: "DEVBOARD-S3",
+        connectedRings: "2",
+        maxRings: "4",
+        usbPollMs: "1",
+        scanPolicy: "1",
+    });
+});
+
+test("parseRolesResponse returns normalized role entries", () => {
+    const roles = parseRolesResponse(
+        "+ aa:bb:cc:dd:ee:01 cursor\n+ AA:BB:CC:DD:EE:02 SCROLL\nOK\n",
+    );
+
+    assert.deepEqual(roles, [
+        { mac: "AA:BB:CC:DD:EE:01", role: "CURSOR" },
+        { mac: "AA:BB:CC:DD:EE:02", role: "SCROLL" },
+    ]);
+});
+
+test("command builders normalize and validate arguments", () => {
+    assert.equal(
+        buildSetRoleCommand("aa:bb:cc:dd:ee:01", "scroll"),
+        "SET_ROLE AA:BB:CC:DD:EE:01 SCROLL",
+    );
+    assert.equal(
+        buildSwapRolesCommand("aa:bb:cc:dd:ee:01", "AA:BB:CC:DD:EE:02"),
+        "SWAP_ROLES AA:BB:CC:DD:EE:01 AA:BB:CC:DD:EE:02",
+    );
+    assert.equal(
+        buildForgetRingCommand("aa:bb:cc:dd:ee:03"),
+        "FORGET_RING AA:BB:CC:DD:EE:03",
+    );
+});
