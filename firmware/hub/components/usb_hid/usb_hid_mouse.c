@@ -37,11 +37,28 @@ static void pack_report(const composed_report_t *report, uint8_t out[USB_HID_REP
 #include "esp_log.h"
 #include "tinyusb.h"
 #include "tinyusb_default_config.h"
+#include "class/cdc/cdc_device.h"
 #include "class/hid/hid_device.h"
 
 static const char *TAG = "usb_hid";
 
-#define TUSB_DESC_TOTAL_LEN (TUD_CONFIG_DESC_LEN + CFG_TUD_HID * TUD_HID_DESC_LEN)
+#define USB_CONFIG_INDEX 1
+#define USB_INTERFACE_COUNT 3
+#define USB_STRING_INDEX_MANUFACTURER 1
+#define USB_STRING_INDEX_PRODUCT 2
+#define USB_STRING_INDEX_SERIAL 3
+#define USB_STRING_INDEX_CDC 4
+#define USB_STRING_INDEX_HID 5
+#define USB_HID_EP_IN 0x81
+#define USB_CDC_EP_NOTIF 0x82
+#define USB_CDC_EP_OUT 0x03
+#define USB_CDC_EP_IN 0x83
+#define USB_CDC_EP_NOTIF_SIZE 8
+#define USB_HID_EP_SIZE 16
+#define USB_HID_POLL_INTERVAL_MS 10
+#define TUSB_DESC_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_HID_DESC_LEN)
+
+static bool s_usb_initialized = false;
 
 // TinyUSB descriptor callbacks — required by the TinyUSB stack.
 
@@ -69,12 +86,27 @@ static const char *s_string_desc[] = {
     [1] = "PowerFinger",                 // Manufacturer
     [2] = "PowerFinger Hub",             // Product
     [3] = "000001",                      // Serial
+    [4] = "PowerFinger Control",         // CDC interface
+    [5] = "PowerFinger HID",             // HID interface
 };
 
-static const uint8_t s_hid_configuration_descriptor[] = {
-    TUD_CONFIG_DESCRIPTOR(1, 1, 0, TUSB_DESC_TOTAL_LEN,
+static const uint8_t s_composite_configuration_descriptor[] = {
+    TUD_CONFIG_DESCRIPTOR(USB_CONFIG_INDEX, USB_INTERFACE_COUNT, 0, TUSB_DESC_TOTAL_LEN,
                           TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
-    TUD_HID_DESCRIPTOR(0, 0, false, USB_HID_REPORT_DESCRIPTOR_LEN, 0x81, 16, 10),
+    TUD_CDC_DESCRIPTOR(0,
+                       USB_STRING_INDEX_CDC,
+                       USB_CDC_EP_NOTIF,
+                       USB_CDC_EP_NOTIF_SIZE,
+                       USB_CDC_EP_OUT,
+                       USB_CDC_EP_IN,
+                       CFG_TUD_CDC_EP_BUFSIZE),
+    TUD_HID_DESCRIPTOR(2,
+                       USB_STRING_INDEX_HID,
+                       false,
+                       USB_HID_REPORT_DESCRIPTOR_LEN,
+                       USB_HID_EP_IN,
+                       USB_HID_EP_SIZE,
+                       USB_HID_POLL_INTERVAL_MS),
 };
 
 // HID report descriptor callback (called by TinyUSB stack)
@@ -105,14 +137,18 @@ void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id,
 
 hal_status_t usb_hid_mouse_init(void)
 {
+    if (s_usb_initialized) {
+        return HAL_OK;
+    }
+
     tinyusb_config_t tusb_cfg = TINYUSB_DEFAULT_CONFIG();
 
     tusb_cfg.descriptor.device = &s_device_desc;
-    tusb_cfg.descriptor.full_speed_config = s_hid_configuration_descriptor;
+    tusb_cfg.descriptor.full_speed_config = s_composite_configuration_descriptor;
     tusb_cfg.descriptor.string = s_string_desc;
     tusb_cfg.descriptor.string_count = sizeof(s_string_desc) / sizeof(s_string_desc[0]);
 #if (TUD_OPT_HIGH_SPEED)
-    tusb_cfg.descriptor.high_speed_config = s_hid_configuration_descriptor;
+    tusb_cfg.descriptor.high_speed_config = s_composite_configuration_descriptor;
 #endif
 
     esp_err_t ret = tinyusb_driver_install(&tusb_cfg);
@@ -121,7 +157,9 @@ hal_status_t usb_hid_mouse_init(void)
         return HAL_ERR_IO;
     }
 
-    ESP_LOGI(TAG, "USB HID mouse initialized (report size=%d)", USB_HID_REPORT_SIZE);
+    s_usb_initialized = true;
+    ESP_LOGI(TAG, "USB HID+CDC composite device initialized (report size=%d)",
+             USB_HID_REPORT_SIZE);
     return HAL_OK;
 }
 

@@ -12,8 +12,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define COMMAND_LINE_MAX_LEN 128
-
 typedef struct {
     char *buf;
     size_t len;
@@ -462,7 +460,7 @@ hal_status_t companion_protocol_handle_line(const char *line,
         return HAL_ERR_INVALID_ARG;
     }
 
-    char normalized[COMMAND_LINE_MAX_LEN] = {0};
+    char normalized[COMPANION_PROTOCOL_COMMAND_LINE_MAX_LEN + 1] = {0};
     hal_status_t rc = normalize_line(line, normalized, sizeof(normalized));
     if (rc != HAL_OK) {
         return rc;

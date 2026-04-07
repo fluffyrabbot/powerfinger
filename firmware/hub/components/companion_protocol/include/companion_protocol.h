@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: MIT
 // PowerFinger Hub — Companion protocol parser
 //
-// This transport-agnostic parser handles the text protocol used by the future
-// USB CDC task and other hub-side control surfaces. Pre-hardware it supports
+// This transport-agnostic parser handles the text protocol used by the hub's
+// USB CDC task and other hub-side control surfaces. Today it supports
 // GET_HUB_INFO, GET_ROLES, and the first mutating hub commands (SET_ROLE,
 // SWAP_ROLES, and FORGET_RING) so companion tooling can exercise both read and
-// write role flows before serial transport exists.
+// write role flows over the real transport.
 
 #pragma once
 
 #include "hal_types.h"
+
+// Maximum command payload length in ASCII characters, excluding the trailing
+// newline and the internal NUL terminator.
+#define COMPANION_PROTOCOL_COMMAND_LINE_MAX_LEN 128
 
 typedef struct {
     const char *firmware_revision;

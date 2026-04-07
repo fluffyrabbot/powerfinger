@@ -164,6 +164,18 @@ target_include_directories(companion_protocol PUBLIC
     ../ring/components/pf_hal/include
 )
 
+add_library(companion_session STATIC
+    ../hub/components/companion_session/companion_session.c
+)
+target_include_directories(companion_session PUBLIC
+    ../hub/components/companion_session/include
+    ../hub/components/companion_protocol/include
+    ../hub/components/hub_control/include
+    ../hub/components/role_engine/include
+    ../hub/components/ble_central/include
+    ../ring/components/pf_hal/include
+)
+
 # Event composer — compiled for host with lock macros as no-ops (no ESP_PLATFORM)
 add_library(event_composer STATIC
     ../hub/components/event_composer/event_composer.c
@@ -287,6 +299,7 @@ add_executable(powerfinger_tests
     test_role_engine.c
     test_hub_control.c
     test_companion_protocol.c
+    test_companion_session.c
     test_event_composer.c
     test_usb_hid.c
     test_main.c
@@ -305,6 +318,7 @@ target_link_libraries(powerfinger_tests
     hub_identity
     role_engine
     hub_control
+    companion_session
     companion_protocol
     event_composer
     usb_hid
@@ -323,6 +337,7 @@ target_include_directories(powerfinger_tests PRIVATE
     ../hub/components/role_engine/include
     ../hub/components/hub_control/include
     ../hub/components/companion_protocol/include
+    ../hub/components/companion_session/include
     ../hub/components/ble_central/include
     ../hub/components/event_composer/include
     ../hub/components/usb_hid/include

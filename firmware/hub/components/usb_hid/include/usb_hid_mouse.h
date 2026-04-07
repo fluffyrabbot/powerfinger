@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 // PowerFinger Hub — USB HID mouse output interface
 //
-// Presents the hub as a standard USB HID mouse to the host OS.
+// Sends the hub's composed mouse report over the composite USB device that
+// also carries the CDC companion control port.
 
 #pragma once
 

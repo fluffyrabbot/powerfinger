@@ -361,7 +361,26 @@ line:
 OK\n
 ```
 
+Current hub firmware accepts up to 128 ASCII bytes per command line. Overlong
+lines are discarded until the next newline and return:
+
+```
+ERR 400 command_too_long\n
+```
+
 ### 3.3 Command Reference
+
+Implemented in the current hub firmware over USB CDC:
+- `GET_HUB_INFO`
+- `GET_ROLES`
+- `SET_ROLE`
+- `SWAP_ROLES`
+- `ROLE_SWAP` (alias of `SWAP_ROLES`)
+- `FORGET_RING`
+
+The remaining commands in this section are still planned companion-surface
+work and should not be treated as available until the hub firmware implements
+them.
 
 #### GET_HUB_INFO
 
@@ -445,8 +464,8 @@ Error if the same MAC is provided twice:
 ERR 400 identical_macs
 ```
 
-The text command `SWAP_ROLES` maps to the binary protocol's `ROLE_SWAP`
-semantics from the multi-ring protocol document.
+The parser also accepts `ROLE_SWAP` as a backwards-compatible alias for
+`SWAP_ROLES`.
 
 #### GET_RING_INFO
 

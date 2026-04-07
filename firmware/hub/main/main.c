@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 // PowerFinger USB Hub Dongle Firmware — Entry Point
 //
-// The hub is a BLE central + USB HID device. It:
+// The hub is a BLE central + composite USB device. It:
 // 1. Scans for PowerFinger ring peripherals over BLE
 // 2. Pairs, bonds, and receives HID reports from up to 4 rings
 // 3. Maps each ring to a role (cursor, scroll, modifier) via the role engine
 // 4. Composes all ring inputs into a single USB HID mouse report
-// 5. Presents as one standard USB HID mouse to the host OS
+// 5. Presents as one USB HID mouse plus a CDC control port to the host OS
 
 #include <stdio.h>
 #include "esp_log.h"
@@ -15,6 +15,7 @@
 #include "nvs_flash.h"
 #include "hal_timer.h"
 #include "ble_central.h"
+#include "companion_cdc.h"
 #include "role_engine.h"
 #include "event_composer.h"
 #include "hub_identity.h"
@@ -24,6 +25,11 @@ static const char *TAG = "powerfinger_hub";
 
 // USB HID poll interval (1ms for USB full-speed)
 #define USB_POLL_INTERVAL_MS 1
+
+// Companion protocol exposes the hub's current scan behavior as a small enum.
+// The current firmware continuously scans for eligible rings between connect
+// events, so report that explicitly instead of a bare literal.
+#define HUB_SCAN_POLICY_CONTINUOUS 1
 
 // Poll for rings stuck in GATT discovery at a human timescale, not every
 // USB tick. 1s granularity is plenty for a 10s discovery timeout.
@@ -70,6 +76,24 @@ static void on_ring_connection(uint8_t ring_index, bool connected, void *arg)
     }
 }
 
+static void fill_companion_hub_info(companion_protocol_hub_info_t *info_out, void *arg)
+{
+    (void)arg;
+
+    if (!info_out) {
+        return;
+    }
+
+    *info_out = (companion_protocol_hub_info_t) {
+        .firmware_revision = hub_identity_firmware_revision(),
+        .hardware_revision = hub_identity_hardware_revision(),
+        .connected_rings = ble_central_connected_count(),
+        .max_rings = HUB_MAX_RINGS,
+        .usb_poll_ms = USB_POLL_INTERVAL_MS,
+        .scan_policy = HUB_SCAN_POLICY_CONTINUOUS,
+    };
+}
+
 // --- Main ---
 
 void app_main(void)
@@ -86,7 +110,9 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    // Initialize components — BLE is fatal, others are degradable
+    // Initialize components. The hub depends on role persistence, BLE ingest,
+    // and the composite USB output/control surface, so fail fast if any of
+    // those cannot come up cleanly at boot.
     if (role_engine_init() != HAL_OK) {
         // Mutex allocation failure means OOM at boot — restart rather than
         // running the role engine without synchronization.
@@ -100,6 +126,14 @@ void app_main(void)
     }
     if (ble_central_init(on_ring_report, on_ring_connection, NULL) != HAL_OK) {
         ESP_LOGE(TAG, "BLE central init failed — hub cannot function");
+        esp_restart();
+    }
+    companion_cdc_config_t companion_cfg = {
+        .fill_hub_info = fill_companion_hub_info,
+        .cb_arg = NULL,
+    };
+    if (companion_cdc_start(&companion_cfg) != HAL_OK) {
+        ESP_LOGE(TAG, "USB companion CDC init failed — restarting");
         esp_restart();
     }
 
