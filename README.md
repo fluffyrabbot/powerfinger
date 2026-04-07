@@ -4,9 +4,10 @@
 needs it.**
 
 PowerFinger is a family of wearable and handheld pointing devices designed for
-accessibility, repairability, and surface agnosticism. Every design file —
-schematics, PCB layouts, 3D models, firmware, companion app — is published under
-CERN-OHL-S 2.0 (strongly reciprocal open hardware license).
+accessibility, repairability, and surface agnosticism. Hardware design files —
+schematics, PCB layouts, 3D models, BOMs, and assembly docs — are published
+under CERN-OHL-S 2.0. Firmware and software, including the companion app, are
+published under MIT.
 
 ## Philosophy
 

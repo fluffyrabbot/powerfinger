@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
+#include <stdatomic.h>
 #include "esp_log.h"
 #include "esp_ota_ops.h"
 #include "esp_system.h"
@@ -62,6 +63,7 @@ typedef struct {
 } app_event_t;
 
 static QueueHandle_t s_evt_queue = NULL;
+static atomic_uint s_evt_queue_dropped = ATOMIC_VAR_INIT(0);
 
 // --- Clamp int16_t to int8_t range (prevents direction reversal on overflow) ---
 static inline int8_t clamp_i8(int16_t v)
@@ -245,6 +247,128 @@ static void handle_hid_send_result(ring_runtime_health_t *runtime_health,
     }
 }
 
+static void note_connected_transition(ring_diagnostics_t *diagnostics,
+                                      ring_runtime_health_t *runtime_health,
+                                      uint32_t *adv_start_ms,
+                                      uint8_t *prev_buttons,
+                                      uint16_t conn_interval_1_25ms,
+                                      const char *reason)
+{
+    if (adv_start_ms) {
+        *adv_start_ms = 0;
+    }
+
+    power_manager_on_connect();
+
+    if (runtime_health) {
+        ring_runtime_health_reset_hid_send(runtime_health);
+    }
+
+    if (diagnostics) {
+        ring_diagnostics_note_connected(diagnostics, conn_interval_1_25ms);
+        log_diagnostics_snapshot(reason, diagnostics);
+    }
+
+    if (prev_buttons) {
+        *prev_buttons = 0;
+    }
+}
+
+static void note_disconnected_transition(ring_diagnostics_t *diagnostics,
+                                         ring_runtime_health_t *runtime_health,
+                                         dead_zone_ctx_t *primary_dead_zone,
+                                         dead_zone_ctx_t *secondary_dead_zone,
+                                         uint32_t *adv_start_ms,
+                                         uint8_t *prev_buttons,
+                                         uint32_t now_ms,
+                                         const char *reason)
+{
+    if (primary_dead_zone) {
+        dead_zone_reset(primary_dead_zone);
+    }
+    if (secondary_dead_zone) {
+        dead_zone_reset(secondary_dead_zone);
+    }
+    if (adv_start_ms) {
+        *adv_start_ms = now_ms;
+    }
+
+    power_manager_on_disconnect();
+
+    if (runtime_health) {
+        ring_runtime_health_reset_hid_send(runtime_health);
+    }
+
+    if (diagnostics) {
+        ring_diagnostics_note_disconnected(diagnostics);
+        log_diagnostics_snapshot(reason, diagnostics);
+    }
+
+    if (prev_buttons) {
+        *prev_buttons = 0;
+    }
+}
+
+static void reconcile_ble_event_drops(ring_diagnostics_t *diagnostics,
+                                      ring_runtime_health_t *runtime_health,
+                                      dead_zone_ctx_t *primary_dead_zone,
+                                      dead_zone_ctx_t *secondary_dead_zone,
+                                      uint32_t *adv_start_ms,
+                                      uint8_t *prev_buttons,
+                                      uint32_t now_ms)
+{
+    unsigned int dropped = atomic_exchange(&s_evt_queue_dropped, 0U);
+    if (dropped == 0U) {
+        return;
+    }
+
+    bool connected = hal_ble_is_connected();
+    ring_state_t state = ring_state_get();
+
+    ESP_LOGW(TAG,
+             "BLE event queue dropped %u event(s) — reconciling state=%s connected=%s",
+             dropped,
+             ring_state_name(state),
+             connected ? "yes" : "no");
+
+    ring_actions_t actions;
+    memset(&actions, 0, sizeof(actions));
+
+    if (connected && state == RING_STATE_ADVERTISING) {
+        ring_state_dispatch(RING_EVT_BLE_CONNECTED, &actions);
+        ring_diagnostics_note_ring_state(diagnostics, ring_state_get());
+        execute_actions(&actions);
+        note_connected_transition(diagnostics,
+                                  runtime_health,
+                                  adv_start_ms,
+                                  prev_buttons,
+                                  0,
+                                  "queue-reconcile-connect");
+        return;
+    }
+
+    if (!connected &&
+        (state == RING_STATE_CONNECTED_ACTIVE || state == RING_STATE_CONNECTED_IDLE)) {
+        ring_state_dispatch(RING_EVT_BLE_DISCONNECTED, &actions);
+        ring_diagnostics_note_ring_state(diagnostics, ring_state_get());
+        execute_actions(&actions);
+        note_disconnected_transition(diagnostics,
+                                     runtime_health,
+                                     primary_dead_zone,
+                                     secondary_dead_zone,
+                                     adv_start_ms,
+                                     prev_buttons,
+                                     now_ms,
+                                     "queue-reconcile-disconnect");
+        return;
+    }
+
+    ESP_LOGW(TAG,
+             "BLE queue drop did not require topology repair (state=%s connected=%s)",
+             ring_state_name(state),
+             connected ? "yes" : "no");
+}
+
 // --- BLE event callback (posts to queue, never dispatches directly) ---
 
 static void ble_event_callback(const hal_ble_event_data_t *evt, void *arg)
@@ -283,7 +407,11 @@ static void ble_event_callback(const hal_ble_event_data_t *evt, void *arg)
     // If the queue is full the event is dropped. Under normal operation the
     // main loop drains faster than events arrive, so this should not fire.
     if (xQueueSend(s_evt_queue, &app_evt, 0) != pdTRUE) {
-        ESP_LOGW(TAG, "BLE event queue full — event type %d dropped", (int)app_evt.type);
+        unsigned int dropped = atomic_fetch_add(&s_evt_queue_dropped, 1U) + 1U;
+        ESP_LOGW(TAG,
+                 "BLE event queue full — event type %d dropped (%u pending repair)",
+                 (int)app_evt.type,
+                 dropped);
     }
 }
 
@@ -340,19 +468,22 @@ static void phase0_fake_motion_loop(void)
                 ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
                 execute_actions(&actions);
                 if (queued_evt.ring_evt == RING_EVT_BLE_CONNECTED) {
-                    adv_start_ms = 0;  // connected, stop tracking adv timeout
-                    power_manager_on_connect();
-                    ring_runtime_health_reset_hid_send(&runtime_health);
-                    ring_diagnostics_note_connected(&diagnostics,
-                                                    queued_evt.conn_interval_1_25ms);
-                    log_diagnostics_snapshot("connect", &diagnostics);
+                    note_connected_transition(&diagnostics,
+                                              &runtime_health,
+                                              &adv_start_ms,
+                                              NULL,
+                                              queued_evt.conn_interval_1_25ms,
+                                              "connect");
                 }
                 if (queued_evt.ring_evt == RING_EVT_BLE_DISCONNECTED) {
-                    adv_start_ms = hal_timer_get_ms();
-                    power_manager_on_disconnect();
-                    ring_runtime_health_reset_hid_send(&runtime_health);
-                    ring_diagnostics_note_disconnected(&diagnostics);
-                    log_diagnostics_snapshot("disconnect", &diagnostics);
+                    note_disconnected_transition(&diagnostics,
+                                                 &runtime_health,
+                                                 NULL,
+                                                 NULL,
+                                                 &adv_start_ms,
+                                                 NULL,
+                                                 hal_timer_get_ms(),
+                                                 "disconnect");
                 }
             } else if (queued_evt.type == APP_EVT_BOND_RESTORED) {
                 ring_diagnostics_note_bond_restored(&diagnostics);
@@ -369,6 +500,14 @@ static void phase0_fake_motion_loop(void)
                 log_diagnostics_snapshot("conn-rejected", &diagnostics);
             }
         }
+
+        reconcile_ble_event_drops(&diagnostics,
+                                  &runtime_health,
+                                  NULL,
+                                  NULL,
+                                  &adv_start_ms,
+                                  NULL,
+                                  hal_timer_get_ms());
 
         // Check advertising timeout
         uint32_t now = hal_timer_get_ms();
@@ -560,23 +699,22 @@ void app_main(void)
                 execute_actions(&actions);
 
                 if (queued_evt.ring_evt == RING_EVT_BLE_CONNECTED) {
-                    adv_start_ms = 0;
-                    power_manager_on_connect();
-                    ring_runtime_health_reset_hid_send(&runtime_health);
-                    ring_diagnostics_note_connected(&diagnostics,
-                                                    queued_evt.conn_interval_1_25ms);
-                    prev_buttons = 0;
-                    log_diagnostics_snapshot("connect", &diagnostics);
+                    note_connected_transition(&diagnostics,
+                                              &runtime_health,
+                                              &adv_start_ms,
+                                              &prev_buttons,
+                                              queued_evt.conn_interval_1_25ms,
+                                              "connect");
                 }
                 if (queued_evt.ring_evt == RING_EVT_BLE_DISCONNECTED) {
-                    dead_zone_reset(&dead_zone);
-                    dead_zone_reset(&secondary_dead_zone);
-                    adv_start_ms = now;
-                    power_manager_on_disconnect();
-                    ring_runtime_health_reset_hid_send(&runtime_health);
-                    ring_diagnostics_note_disconnected(&diagnostics);
-                    prev_buttons = 0;
-                    log_diagnostics_snapshot("disconnect", &diagnostics);
+                    note_disconnected_transition(&diagnostics,
+                                                 &runtime_health,
+                                                 &dead_zone,
+                                                 &secondary_dead_zone,
+                                                 &adv_start_ms,
+                                                 &prev_buttons,
+                                                 now,
+                                                 "disconnect");
                 }
             } else if (queued_evt.type == APP_EVT_BOND_RESTORED) {
                 ring_diagnostics_note_bond_restored(&diagnostics);
@@ -593,6 +731,14 @@ void app_main(void)
                 log_diagnostics_snapshot("conn-rejected", &diagnostics);
             }
         }
+
+        reconcile_ble_event_drops(&diagnostics,
+                                  &runtime_health,
+                                  &dead_zone,
+                                  &secondary_dead_zone,
+                                  &adv_start_ms,
+                                  &prev_buttons,
+                                  now);
 
         // --- Advertising timeout ---
         if (adv_start_ms != 0 &&

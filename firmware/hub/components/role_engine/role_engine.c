@@ -30,9 +30,14 @@ static SemaphoreHandle_t s_mutex = NULL;
 
 #include <string.h>
 
-// NVS blob format: version byte + array of role_engine_entry_t
-#define ROLE_NVS_KEY     "roles"
-#define ROLE_NVS_VERSION 1
+// Persisted role blob encoding:
+// [version:1][count:1][entry0:7]...[entryN:7]
+// entry = [mac:6][role:1]
+#define ROLE_NVS_KEY         "roles"
+#define ROLE_NVS_VERSION     1
+#define ROLE_BLOB_HEADER_LEN 2U
+#define ROLE_BLOB_ENTRY_LEN  7U
+#define ROLE_BLOB_MAX_LEN    (ROLE_BLOB_HEADER_LEN + (ROLE_BLOB_ENTRY_LEN * HUB_MAX_RINGS))
 
 #ifdef ESP_PLATFORM
 // Background NVS flush task. Low priority is intentional: USB HID delivery and
@@ -43,13 +48,14 @@ static SemaphoreHandle_t s_mutex = NULL;
 #define ROLE_FLUSH_RETRY_DELAY_MS   250
 #endif
 
-// Role assignment entry
-// NVS blob layout
+// In-memory snapshot of the persisted role table.
 typedef struct {
     uint8_t version;
     uint8_t count;
     role_engine_entry_t entries[HUB_MAX_RINGS];
 } role_blob_t;
+
+_Static_assert(ROLE_COUNT <= UINT8_MAX, "role blob encoding assumes uint8_t roles");
 
 static role_engine_entry_t s_entries[HUB_MAX_RINGS];
 static int s_entry_count = 0;
@@ -102,13 +108,76 @@ static ring_role_t default_role_for_new_ring(void)
     return ROLE_MODIFIER;  // all named roles occupied
 }
 
+static size_t encode_role_blob(const role_blob_t *snapshot,
+                               uint8_t *buf,
+                               size_t buf_len)
+{
+    if (!snapshot || !buf || snapshot->count > HUB_MAX_RINGS) {
+        return 0;
+    }
+
+    size_t required_len = ROLE_BLOB_HEADER_LEN +
+                          ((size_t)snapshot->count * ROLE_BLOB_ENTRY_LEN);
+    if (buf_len < required_len) {
+        return 0;
+    }
+
+    buf[0] = snapshot->version;
+    buf[1] = snapshot->count;
+
+    size_t offset = ROLE_BLOB_HEADER_LEN;
+    for (size_t i = 0; i < snapshot->count; i++) {
+        memcpy(&buf[offset], snapshot->entries[i].mac, sizeof(snapshot->entries[i].mac));
+        buf[offset + 6] = (uint8_t)snapshot->entries[i].role;
+        offset += ROLE_BLOB_ENTRY_LEN;
+    }
+
+    return required_len;
+}
+
+static bool decode_role_blob(const uint8_t *buf,
+                             size_t len,
+                             role_blob_t *blob_out)
+{
+    if (!buf || !blob_out || len < ROLE_BLOB_HEADER_LEN) {
+        return false;
+    }
+
+    memset(blob_out, 0, sizeof(*blob_out));
+    blob_out->version = buf[0];
+    blob_out->count = buf[1];
+
+    if (blob_out->version != ROLE_NVS_VERSION || blob_out->count > HUB_MAX_RINGS) {
+        return false;
+    }
+
+    size_t required_len = ROLE_BLOB_HEADER_LEN +
+                          ((size_t)blob_out->count * ROLE_BLOB_ENTRY_LEN);
+    if (len != required_len) {
+        return false;
+    }
+
+    size_t offset = ROLE_BLOB_HEADER_LEN;
+    for (size_t i = 0; i < blob_out->count; i++) {
+        memcpy(blob_out->entries[i].mac, &buf[offset], sizeof(blob_out->entries[i].mac));
+        blob_out->entries[i].role = (ring_role_t)buf[offset + 6];
+        offset += ROLE_BLOB_ENTRY_LEN;
+    }
+
+    return true;
+}
+
 // Write to NVS from a pre-captured snapshot (avoids reading s_entries without mutex).
 // M8: returns true on success, false on failure (caller should re-set dirty flag).
 static bool flush_to_nvs(const role_blob_t *snapshot)
 {
-    size_t len = sizeof(uint8_t) * 2 +
-                 sizeof(role_engine_entry_t) * snapshot->count;
-    hal_status_t rc = hal_storage_set(ROLE_NVS_KEY, snapshot, len);
+    uint8_t buf[ROLE_BLOB_MAX_LEN] = {0};
+    size_t len = encode_role_blob(snapshot, buf, sizeof(buf));
+    if (len == 0) {
+        return false;
+    }
+
+    hal_status_t rc = hal_storage_set(ROLE_NVS_KEY, buf, len);
     if (rc != HAL_OK) {
 #ifdef ESP_PLATFORM
         ESP_LOGE(TAG, "NVS role write failed: %d — roles not persisted", (int)rc);
@@ -128,7 +197,7 @@ static bool flush_to_nvs(const role_blob_t *snapshot)
 // Capture s_entries into a blob while mutex is held. Caller must hold the lock.
 static role_blob_t snapshot_entries_locked(int count)
 {
-    role_blob_t blob;
+    role_blob_t blob = {0};
     blob.version = ROLE_NVS_VERSION;
     blob.count = (uint8_t)count;
     memcpy(blob.entries, s_entries, sizeof(role_engine_entry_t) * count);
@@ -218,13 +287,17 @@ hal_status_t role_engine_init(void)
     s_dirty = false;
     memset(&s_pending_blob, 0, sizeof(s_pending_blob));
 
-    hal_storage_init();
+    hal_status_t storage_rc = hal_storage_init();
+    if (storage_rc != HAL_OK) {
+        return storage_rc;
+    }
 
     // Try to load saved roles from NVS
+    uint8_t raw_blob[ROLE_BLOB_MAX_LEN] = {0};
+    size_t len = sizeof(raw_blob);
     role_blob_t blob;
-    size_t len = sizeof(blob);
-    if (hal_storage_get(ROLE_NVS_KEY, &blob, &len) == HAL_OK) {
-        if (len >= 2 && blob.version == ROLE_NVS_VERSION && blob.count <= HUB_MAX_RINGS) {
+    if (hal_storage_get(ROLE_NVS_KEY, raw_blob, &len) == HAL_OK) {
+        if (decode_role_blob(raw_blob, len, &blob)) {
             // Validate each entry and deduplicate by MAC, keeping the last
             // entry encountered so the most recently written assignment wins.
             for (int i = 0; i < blob.count; i++) {

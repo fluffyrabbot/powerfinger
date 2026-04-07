@@ -12,17 +12,6 @@
 #define ROLE_NVS_TEST_KEY "roles"
 #define ROLE_NVS_VERSION  1
 
-typedef struct {
-    uint8_t mac[6];
-    ring_role_t role;
-} role_entry_t;
-
-typedef struct {
-    uint8_t version;
-    uint8_t count;
-    role_engine_entry_t entries[HUB_MAX_RINGS];
-} role_blob_t;
-
 static const uint8_t MAC_A[6] = { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15 };
 static const uint8_t MAC_B[6] = { 0x20, 0x21, 0x22, 0x23, 0x24, 0x25 };
 
@@ -72,19 +61,51 @@ void test_flush_failure_retries_dirty_snapshot(void)
     TEST_ASSERT_EQUAL(ROLE_SCROLL, role_engine_get_role(MAC_A));
 }
 
+void test_init_propagates_storage_init_failure(void)
+{
+    mock_hal_reset();
+    mock_hal_inject_storage_init_failure(HAL_ERR_IO, 1);
+
+    TEST_ASSERT_EQUAL(HAL_ERR_IO, role_engine_init());
+
+    // A subsequent init should succeed once the injected failure is consumed.
+    TEST_ASSERT_EQUAL(HAL_OK, role_engine_init());
+}
+
+void test_flush_writes_compact_explicit_blob_format(void)
+{
+    reset();
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    TEST_ASSERT_EQUAL(ROLE_SCROLL, role_engine_get_role(MAC_B));
+
+    role_engine_flush_if_dirty();
+
+    uint8_t blob[64] = {0};
+    size_t len = sizeof(blob);
+    uint8_t expected[] = {
+        ROLE_NVS_VERSION,
+        2,
+        0x10, 0x11, 0x12, 0x13, 0x14, 0x15, ROLE_CURSOR,
+        0x20, 0x21, 0x22, 0x23, 0x24, 0x25, ROLE_SCROLL,
+    };
+
+    TEST_ASSERT_EQUAL(HAL_OK, hal_storage_get(ROLE_NVS_TEST_KEY, blob, &len));
+    TEST_ASSERT_EQUAL(sizeof(expected), len);
+    TEST_ASSERT_TRUE(memcmp(expected, blob, sizeof(expected)) == 0);
+}
+
 void test_duplicate_mac_load_keeps_last_entry(void)
 {
     mock_hal_reset();
 
-    role_blob_t blob = {
-        .version = ROLE_NVS_VERSION,
-        .count = 2,
-        .entries = {
-            { .mac = { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15 }, .role = ROLE_CURSOR },
-            { .mac = { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15 }, .role = ROLE_MODIFIER },
-        },
+    uint8_t blob[] = {
+        ROLE_NVS_VERSION,
+        2,
+        0x10, 0x11, 0x12, 0x13, 0x14, 0x15, ROLE_CURSOR,
+        0x10, 0x11, 0x12, 0x13, 0x14, 0x15, ROLE_MODIFIER,
     };
-    mock_hal_storage_seed(ROLE_NVS_TEST_KEY, &blob, sizeof(uint8_t) * 2 + (sizeof(role_entry_t) * 2));
+    mock_hal_storage_seed(ROLE_NVS_TEST_KEY, blob, sizeof(blob));
 
     TEST_ASSERT_EQUAL(HAL_OK, role_engine_init());
     TEST_ASSERT_EQUAL(ROLE_MODIFIER, role_engine_get_role(MAC_A));
@@ -180,6 +201,8 @@ void run_role_engine_tests(void)
     printf("Role engine tests:\n");
     RUN_TEST(test_roles_persist_after_flush_and_reload);
     RUN_TEST(test_flush_failure_retries_dirty_snapshot);
+    RUN_TEST(test_init_propagates_storage_init_failure);
+    RUN_TEST(test_flush_writes_compact_explicit_blob_format);
     RUN_TEST(test_duplicate_mac_load_keeps_last_entry);
     RUN_TEST(test_get_all_returns_entries_in_assignment_order);
     RUN_TEST(test_get_all_supports_count_query_without_output_buffer);

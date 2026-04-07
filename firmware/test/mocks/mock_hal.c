@@ -65,6 +65,8 @@ static bool s_storage_pending_delete = false;
 static char s_storage_pending_key[MOCK_STORAGE_MAX_KEY_LEN] = {0};
 static uint8_t s_storage_pending_blob[MOCK_STORAGE_MAX_BLOB_LEN] = {0};
 static size_t s_storage_pending_len = 0;
+static hal_status_t s_storage_init_status = HAL_OK;
+static int s_storage_init_fail_count = 0;
 static hal_status_t s_storage_set_status = HAL_OK;
 static int s_storage_set_fail_count = 0;
 static hal_status_t s_storage_commit_status = HAL_OK;
@@ -118,6 +120,8 @@ void mock_hal_reset(void)
     memset(s_storage_pending_key, 0, sizeof(s_storage_pending_key));
     memset(s_storage_pending_blob, 0, sizeof(s_storage_pending_blob));
     s_storage_pending_len = 0;
+    s_storage_init_status = HAL_OK;
+    s_storage_init_fail_count = 0;
     s_storage_set_status = HAL_OK;
     s_storage_set_fail_count = 0;
     s_storage_commit_status = HAL_OK;
@@ -226,6 +230,12 @@ void mock_hal_inject_storage_set_failure(hal_status_t status, int count)
 {
     s_storage_set_status = status;
     s_storage_set_fail_count = count;
+}
+
+void mock_hal_inject_storage_init_failure(hal_status_t status, int count)
+{
+    s_storage_init_status = status;
+    s_storage_init_fail_count = count;
 }
 
 void mock_hal_inject_storage_commit_failure(hal_status_t status, int count)
@@ -432,7 +442,14 @@ hal_status_t hal_sleep_configure_wake_timer(uint32_t us) { (void)us; return HAL_
 hal_wake_cause_t hal_sleep_get_wake_cause(void) { return s_wake_cause; }
 
 // --- hal_storage ---
-hal_status_t hal_storage_init(void) { return HAL_OK; }
+hal_status_t hal_storage_init(void)
+{
+    if (s_storage_init_fail_count > 0) {
+        s_storage_init_fail_count--;
+        return s_storage_init_status;
+    }
+    return HAL_OK;
+}
 hal_status_t hal_storage_set(const char *k, const void *d, size_t l) {
     if (!k || !d || l > MOCK_STORAGE_MAX_BLOB_LEN) return HAL_ERR_INVALID_ARG;
     if (s_storage_set_fail_count > 0) {

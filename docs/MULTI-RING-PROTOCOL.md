@@ -242,77 +242,124 @@ a "forget ring" action that calls `role_engine_forget()` to reclaim the slot.
 
 ---
 
-## 4. Companion App Interaction Protocol **[SPECIFIED]**
+## 4. Companion App Interaction Protocol **[PARTIALLY IMPLEMENTED]**
 
 The companion app communicates with the hub via either:
 - **Web Serial** (USB CDC, when hub is connected to a PC), or
 - **BLE GATT characteristic** (when hub exposes a configuration service).
 
-Both transports carry the same command/response protocol defined below.
+Both transports should carry the same command semantics. The current pre-hardware
+command core already exists in `companion_protocol.c`, but transport wiring is
+still deferred. The parser's canonical serialization today is a UTF-8
+line-oriented text protocol, not a binary frame format.
 
 ### 4.1 Command Format
 
-Commands are length-prefixed binary frames:
+Commands are single text lines terminated by `\n`:
 
 ```
-[command_id: uint8_t] [payload: variable]
+COMMAND [arg0] [arg1] ...
 ```
 
-Response:
+Rules:
+- Command names are case-insensitive.
+- Role tokens are case-insensitive (`CURSOR`, `SCROLL`, `MODIFIER`).
+- MAC addresses use 6 colon-separated hex bytes (`AA:BB:CC:DD:EE:FF`).
+- Leading/trailing ASCII whitespace is ignored.
+- The current parser caps a normalized input line at 127 characters plus the
+  terminating NUL (`COMMAND_LINE_MAX_LEN = 128`).
+
+Responses are also text:
 
 ```
-[command_id: uint8_t] [status: uint8_t] [payload: variable]
+OK\n
 ```
 
-Status codes: `0x00` = OK, `0x01` = INVALID_ARG, `0x02` = NOT_FOUND,
-`0x03` = CONFLICT, `0x04` = BUSY (role swap in progress).
+or:
+
+```
++ key=value\n
++ key=value\n
+OK\n
+```
+
+or, for protocol / command failures:
+
+```
+ERR <code> <message>\n
+```
+
+The current parser uses HTTP-like numeric codes for readability:
+- `400` — invalid syntax or invalid argument
+- `404` — unknown MAC / missing entry
+- `500` — internal hub-side failure while applying a command
+
+Unlike a transport failure, these `ERR` responses are still a successful parser
+call from the firmware's point of view. `companion_protocol_handle_line()`
+returns `HAL_OK` when it successfully formats an `ERR ...` line.
 
 ### 4.2 Commands
 
-#### `GET_ROLES` (0x01)
+#### `GET_HUB_INFO`
+
+Return one human-readable snapshot of hub identity and top-level state.
+
+**Arguments:** none.
+
+**Response:**
+
+```
++ fw=<firmware revision>
++ hw=<hardware revision>
++ rings=<currently connected ring count>
++ max_rings=<connection capacity>
++ usb_poll_ms=<configured USB HID poll interval>
++ scan_policy=<configured scan policy enum>
+OK
+```
+
+**Current implementation:** implemented by `handle_get_hub_info()`.
+
+#### `GET_ROLES`
 
 Request roles for all known rings.
 
-**Request payload:** empty.
+**Arguments:** none.
 
-**Response payload:**
+**Response:**
 ```
-[count: uint8_t]
-[entry 0: mac[6] + role: uint8_t + connected: uint8_t]
-...
-[entry N: mac[6] + role: uint8_t + connected: uint8_t]
++ AA:BB:CC:DD:EE:FF CURSOR
++ 11:22:33:44:55:66 SCROLL
+OK
 ```
 
-The `connected` byte is `0x01` if the ring is currently in the ACTIVE state,
-`0x00` otherwise. This allows the companion app to display both connected and
-remembered-but-disconnected rings.
+The current implementation returns persisted MAC-to-role assignments only. It
+does not append a per-ring connected/disconnected flag yet; callers that need
+an aggregate live count use `GET_HUB_INFO`.
 
-**Implementation:** Iterate `s_entries[0..s_entry_count-1]` from role engine.
-For each, check whether any active BLE central slot holds that MAC.
+**Implementation:** iterate `s_entries[0..s_entry_count-1]` from the role
+engine and format one `+ <mac> <role>` line per entry.
 
-#### `ROLE_SET` (0x02)
+#### `SET_ROLE`
 
 Assign a specific role to a specific ring.
 
-**Request payload:**
+**Arguments:**
 ```
-[mac: 6 bytes] [new_role: uint8_t]
+SET_ROLE <mac> <role>
 ```
 
 **Preconditions:**
-- `new_role < ROLE_COUNT`
+- `<role>` parses as one of `CURSOR`, `SCROLL`, `MODIFIER`
 - MAC exists in role engine (`s_entries[]`)
 
 **Procedure:**
-1. Validate arguments. Return `INVALID_ARG` if `new_role >= ROLE_COUNT`.
-2. Call `role_engine_set_role(mac, new_role)`. Return `NOT_FOUND` if MAC unknown.
-3. If the ring is currently ACTIVE:
-   a. Transition ring to ROLE_SWAPPING.
-   b. Call `event_composer_set_role(ring_index, new_role)`.
-   c. Allow `event_composer_set_role()` to clear any buffered deltas and
-      button state for that ring.
-   d. Transition ring back to ACTIVE.
-4. Return OK.
+1. Validate MAC and role tokens. Return `ERR 400 invalid_mac` or
+   `ERR 400 invalid_role` on parse failure.
+2. Call `hub_control_set_role(mac, role)`.
+3. If the MAC is unknown, return `ERR 404 unknown_mac`.
+4. If the live cache update or persistence path fails, return `ERR 500 set_failed`.
+5. Otherwise return `OK`.
 
 **Postcondition:** NVS updated. If the ring is ACTIVE and the hub also calls
 `event_composer_set_role(ring_index, new_role)`, subsequent
@@ -332,13 +379,13 @@ any buffered deltas at the swap point. This intentionally favors safety over
 perfect continuity. Losing a few milliseconds of motion is preferable to
 misclassifying a held click or buffered deltas under the wrong role.
 
-#### `ROLE_SWAP` (0x03)
+#### `SWAP_ROLES` / `ROLE_SWAP`
 
 Swap roles between two rings atomically.
 
-**Request payload:**
+**Arguments:**
 ```
-[mac_a: 6 bytes] [mac_b: 6 bytes]
+SWAP_ROLES <mac_a> <mac_b>
 ```
 
 **Preconditions:**
@@ -370,13 +417,16 @@ CURSOR would produce a jarring double-cursor effect. The single-mutex-acquisitio
 hal_status_t role_engine_swap(const uint8_t mac_a[6], const uint8_t mac_b[6]);
 ```
 
-#### `FORGET_RING` (0x04)
+The current parser also accepts `ROLE_SWAP` as a backwards-compatible alias for
+`SWAP_ROLES`.
+
+#### `FORGET_RING`
 
 Remove a ring's role assignment and free its slot.
 
-**Request payload:**
+**Arguments:**
 ```
-[mac: 6 bytes]
+FORGET_RING <mac>
 ```
 
 **Preconditions:**
@@ -798,10 +848,13 @@ These items require BDFL decision before implementation:
    **Recommendation:** Keep current behavior (roles are not unique). Document
    the two-cursor use case as an accessibility feature.
 
-2. **Should the companion app command protocol use binary or JSON?** Binary is
-   more efficient on constrained BLE bandwidth. JSON is easier to debug over
-   Web Serial. **Recommendation:** Binary over BLE GATT, JSON over Web Serial.
-   Define a shared semantic model with two serialization formats.
+2. **Should a second serialization format be added later for BLE control
+   surfaces?** The current command core already uses one text grammar across the
+   parser and companion-architecture docs. A future binary encoding may still be
+   worth adding for bandwidth-sensitive BLE writes, but it should be versioned
+   as a distinct transport format instead of silently redefining the current
+   command spec. **Recommendation:** keep the existing text grammar canonical
+   until measured BLE transport limits justify a second encoding.
 
 3. **Should `FORGET_RING` disconnect an active ring?** The current spec says
    yes. An alternative is to return an error if the ring is connected, requiring

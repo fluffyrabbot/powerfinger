@@ -38,6 +38,7 @@ void mock_hal_set_gpio_read_sequence(hal_pin_t pin, const bool *values, int coun
 
 // --- Storage mock (for role engine persistence tests) ---
 void mock_hal_storage_seed(const char *key, const void *data, size_t len);
+void mock_hal_inject_storage_init_failure(hal_status_t status, int count);
 void mock_hal_inject_storage_set_failure(hal_status_t status, int count);
 void mock_hal_inject_storage_commit_failure(hal_status_t status, int count);
 
