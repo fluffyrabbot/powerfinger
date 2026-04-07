@@ -116,6 +116,19 @@ See [docs/COMBINATORICS.md](docs/COMBINATORICS.md) for the full design space.
 - **Guidance laser** — red dot on the surface shows exactly where you're
   pointing/scanning
 
+## What Exists Today
+
+PowerFinger is still pre-prototype, but the repo already has a real software
+lane. The main difference across directories is how much of each lane is
+implementation versus planning:
+
+| Area | Current reality | Start here |
+|------|-----------------|-----------|
+| Firmware | Real ESP-IDF targets for `ring`, `hub`, `pen`, and `puck`, plus a host-side unit test suite. The active validation lane is `ring` + `hub`. | `scripts/verify-firmware-local.sh`, `docs/FIRMWARE-VERIFY-LOCAL.md` |
+| Companion | No app scaffold is checked in yet. Current companion work is the architecture/protocol docs plus the hub's USB CDC text command surface. | `companion/README.md`, `docs/COMPANION-APP-ARCH.md`, `docs/MULTI-RING-PROTOCOL.md` |
+| Hardware | BOM intent files exist under `hardware/bom/`. KiCad, CAD, assembly, and disassembly deliverables are not checked in yet. | `hardware/README.md`, `hardware/bom/README.md` |
+| Docs | Design, validation, accessibility, and IP docs are the most complete part of the repo today. | `docs/` |
+
 ## Quick Start
 
 For local software verification:
@@ -146,8 +159,11 @@ the validation gate order.
 ## Project Status
 
 **Pre-prototype.** Architecture, design space, power budget, and competitive
-analysis documented. Active scope is frozen to the optical ring pair + hub
-validation lane, with the wand as the hedge lane. Hardware prototyping next. See
+analysis are documented, and the repo already contains real firmware projects
+plus a local verification path. Active scope is frozen to the optical ring +
+hub validation lane, with the wand as the hedge lane. The companion app is
+not scaffolded yet, and the hardware tree currently contains BOM intent files
+and workspace structure rather than CAD/PCB drops. See
 [docs/FIRMWARE-ROADMAP.md](docs/FIRMWARE-ROADMAP.md) for the firmware build
 order — every phase runs on a $3 ESP32-C3 dev board before prototype hardware
 arrives.

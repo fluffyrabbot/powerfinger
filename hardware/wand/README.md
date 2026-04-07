@@ -1,6 +1,13 @@
 # Wand Hardware
 
-Put wand-specific hardware work here.
+This directory is reserved for wand-specific hardware deliverables.
+
+## Current Repo Status
+
+- No wand KiCad or CAD sources are checked in yet.
+- The current wand-side hardware artifact is the BOM intent file in
+  `hardware/bom/WSTD-BALL-NONE-NONE.csv`.
+- The wand remains the hedge lane rather than the active validation lane.
 
 ## Expected Contents Per Variant
 

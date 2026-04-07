@@ -285,10 +285,10 @@ customize, not how you use.
 **Pre-hardware status:** The hub now has shared identity strings plus a
 host-tested text command core for `GET_HUB_INFO`, `GET_ROLES`, `SET_ROLE`,
 `SWAP_ROLES`, and `FORGET_RING`, so the command contract no longer lives only
-in docs and the core role-mutation paths are real before transport arrives.
+in docs and the core role-mutation paths are already real.
 The current forget path assumes the ring's public-address identity mode, which
-matches today's BLE setup. USB CDC transport, the rest of the hub command set,
-and BLE relay operations are still pending.
+matches today's BLE setup. USB CDC transport is now in place; the remaining
+hub-side work is the rest of the command set and the BLE relay operations.
 
 **Platform priority:**
 1. **Web Serial** (Chrome/Edge) — talks to hub over USB serial from a webpage.

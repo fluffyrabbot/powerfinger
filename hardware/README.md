@@ -3,6 +3,15 @@
 This tree is for hardware deliverables that become part of the defensive
 publication record.
 
+## Current Repo Status
+
+- The committed hardware artifacts today are the BOM intent files under
+  `hardware/bom/`.
+- No KiCad projects, CAD models, assembly guides, or disassembly guides are
+  checked in yet.
+- `ring/`, `wand/`, and `shared/` are workspace directories for the first real
+  design drops, not completed hardware packages.
+
 ## Required Structure
 
 - `ring/` — ring-specific CAD, PCB, assembly, and disassembly files

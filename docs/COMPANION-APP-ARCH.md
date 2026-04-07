@@ -15,9 +15,9 @@ diagnostic snapshot characteristic. On the hub side, the text command core now
 implements host-tested `GET_HUB_INFO`, `GET_ROLES`, `SET_ROLE`, and
 `SWAP_ROLES` handling behind a transport-agnostic parser, and `FORGET_RING`
 now tears down live input, removes the persisted role entry, and deletes the
-current public-address bond entry by MAC. USB CDC transport, the rest of the
-hub command set, and BLE relay writes are still deferred until after the first
-hardware validation gates unless the BDFL reprioritizes them.
+current public-address bond entry by MAC. USB CDC transport is now live on the
+hub, so the remaining deferred work is the rest of the hub command set and the
+BLE relay writes that let the hub proxy per-ring configuration.
 
 **What the app configures:**
 - Role assignment (which ring is cursor, which is scroll, which is modifier)
@@ -1036,9 +1036,10 @@ requires changes to:
    role changes and the live event-composer cache stay aligned for active
    rings. `FORGET_RING` now also drops live input immediately, requests a BLE
    disconnect if needed, deletes the current public-address bond entry by MAC,
-   and removes the persisted role assignment. The remaining work is to wire
-   this command core into a USB CDC task on the ESP32-S3, then add the
-   remaining mutating and relay commands from section 3.
+   and removes the persisted role assignment. That command core is now exposed
+   through a USB CDC task on the ESP32-S3. The remaining work is the rest of
+   the mutating and relay commands from section 3, then an actual app scaffold
+   on top of that transport.
 
 ### 7.2 Hub as Configuration Relay
 
