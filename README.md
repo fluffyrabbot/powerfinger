@@ -118,10 +118,30 @@ See [docs/COMBINATORICS.md](docs/COMBINATORICS.md) for the full design space.
 
 ## Quick Start
 
-*Coming soon.* See [docs/COMBINATORICS.md](docs/COMBINATORICS.md) for what to
-build first, [docs/PROTOTYPE-SPEC.md](docs/PROTOTYPE-SPEC.md) for the EE/ME
-build spec, and [docs/GO-NO-GO-RUBRIC.md](docs/GO-NO-GO-RUBRIC.md) for the
-validation gate order.
+For local software verification:
+
+```bash
+scripts/verify-firmware-local.sh
+```
+
+That runs the host-side unit tests and then builds the active firmware lane:
+`ring` + `hub`. To build every ESP-IDF firmware target instead:
+
+```bash
+scripts/verify-firmware-local.sh --all
+```
+
+If you only want the host-side unit tests:
+
+```bash
+scripts/verify-firmware-local.sh --host-tests-only
+```
+
+See [docs/FIRMWARE-VERIFY-LOCAL.md](docs/FIRMWARE-VERIFY-LOCAL.md) for the
+local verification flow, [docs/COMBINATORICS.md](docs/COMBINATORICS.md) for
+what to build first, [docs/PROTOTYPE-SPEC.md](docs/PROTOTYPE-SPEC.md) for the
+EE/ME build spec, and [docs/GO-NO-GO-RUBRIC.md](docs/GO-NO-GO-RUBRIC.md) for
+the validation gate order.
 
 ## Project Status
 

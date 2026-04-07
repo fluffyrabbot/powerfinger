@@ -1,6 +1,7 @@
 # Build directories
 build/
 build-test/
+build-idf/
 
 # ESP-IDF
 sdkconfig

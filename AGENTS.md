@@ -61,11 +61,20 @@ powerfinger/
 
 ## Build & Dev Commands
 
-*Not yet established.* When firmware development begins:
-- Target MCU: ESP32-C3 (ring, wand basic) or ESP32-S3 (camera variants)
-- Framework: ESP-IDF (Apache 2.0)
-- Build: `idf.py build`
-- Flash: `idf.py -p /dev/ttyUSBx flash`
+Preferred local verification path:
+- `scripts/verify-firmware-local.sh`
+  Default: host-side tests + ESP-IDF builds for `ring` and `hub`
+- `scripts/verify-firmware-local.sh --all`
+  Builds `ring`, `pen`, `puck`, and `hub`
+- `scripts/verify-firmware-local.sh --host-tests-only`
+  Runs only the host-side unit tests
+
+Direct per-project iteration when you already know the target:
+- `IDF_TARGET=esp32c3 idf.py -C firmware/ring -B build-idf/ring build`
+- `IDF_TARGET=esp32c3 idf.py -C firmware/pen -B build-idf/pen build`
+- `IDF_TARGET=esp32c3 idf.py -C firmware/puck -B build-idf/puck build`
+- `IDF_TARGET=esp32s3 idf.py -C firmware/hub -B build-idf/hub build`
+- Flash example: `idf.py -C firmware/ring -B build-idf/ring -p /dev/ttyUSBx flash`
 
 ## Key Technical Constraints
 
