@@ -6,7 +6,8 @@ import {
     buildSwapRolesCommand,
     parseHubInfoResponse,
     parseProtocolResponse,
-    parseRolesResponse,
+    parseRingInfoResponse,
+    parseRingsResponse,
 } from "./protocol.mjs";
 
 const COMMAND_TIMEOUT_MS = 4000;
@@ -97,7 +98,7 @@ function setBusy(disabled) {
         button.disabled = disabled || !connected;
     }
 
-    elements.roleCards.querySelectorAll("[data-apply-role], [data-forget-ring], [data-role-select]").forEach((control) => {
+    elements.roleCards.querySelectorAll("[data-apply-role], [data-forget-ring], [data-inspect-ring], [data-role-select]").forEach((control) => {
         control.disabled = disabled || !connected;
     });
 }
@@ -152,7 +153,7 @@ function renderRoleCards() {
     if (state.roles.length === 0) {
         const message = state.port
             ? "No persisted role assignments are stored on the hub yet."
-            : "Connect the hub, then refresh to load known role assignments.";
+            : "Connect the hub, then refresh to load known rings.";
 
         elements.roleCards.innerHTML = `<article class="empty-state">${message}</article>`;
         return;
@@ -172,7 +173,12 @@ function renderRoleCards() {
                             <h3>Known ring</h3>
                             <p class="mac-label">${entry.mac}</p>
                         </div>
-                        <span class="ring-badge">${entry.role}</span>
+                        <div class="ring-card-status">
+                            <span class="ring-badge">${entry.role}</span>
+                            <span class="ring-badge ${entry.connected ? "" : "ring-badge-muted"}">
+                                ${entry.connected ? "Connected" : "Disconnected"}
+                            </span>
+                        </div>
                     </div>
 
                     <label class="field">
@@ -183,6 +189,9 @@ function renderRoleCards() {
                     </label>
 
                     <div class="ring-card-actions">
+                        <button class="secondary-button" type="button" data-inspect-ring="${entry.mac}">
+                            Inspect
+                        </button>
                         <button class="secondary-button" type="button" data-apply-role="${entry.mac}">
                             Apply Role
                         </button>
@@ -202,12 +211,16 @@ function renderRoleCards() {
     elements.roleCards.querySelectorAll("[data-forget-ring]").forEach((button) => {
         button.addEventListener("click", () => handleForgetRing(button.dataset.forgetRing));
     });
+
+    elements.roleCards.querySelectorAll("[data-inspect-ring]").forEach((button) => {
+        button.addEventListener("click", () => handleInspectRing(button.dataset.inspectRing));
+    });
 }
 
 function renderSwapSelectors() {
     const placeholder = `<option value="">Select a ring</option>`;
     const options = state.roles
-        .map((entry) => `<option value="${entry.mac}">${entry.mac} · ${entry.role}</option>`)
+        .map((entry) => `<option value="${entry.mac}">${entry.mac} · ${entry.role} · ${entry.connected ? "connected" : "disconnected"}</option>`)
         .join("");
 
     elements.swapMacA.innerHTML = placeholder + options;
@@ -462,14 +475,14 @@ async function refreshHubInfo() {
 }
 
 async function refreshRoles() {
-    const response = await sendCommand("GET_ROLES");
+    const response = await sendCommand("GET_RINGS");
     setLastResponse(response);
 
     if (!response.ok) {
         throw new Error(`${response.errorCode} ${response.errorMessage}`);
     }
 
-    state.roles = parseRolesResponse(response);
+    state.roles = parseRingsResponse(response);
     renderRoleCards();
     renderSwapSelectors();
 }
@@ -531,6 +544,29 @@ async function handleForgetRing(mac) {
 
     const command = buildForgetRingCommand(mac);
     await runCommand(command, `Forgot ${mac}.`);
+}
+
+async function handleInspectRing(mac) {
+    setBusy(true);
+
+    try {
+        const response = await sendCommand(`GET_RING_INFO ${mac}`);
+        setLastResponse(response);
+
+        if (!response.ok) {
+            throw new Error(`${response.errorCode} ${response.errorMessage}`);
+        }
+
+        const ringInfo = parseRingInfoResponse(response);
+        setStatusNote(
+            `${ringInfo.mac} is ${ringInfo.connected ? "connected" : "disconnected"} as ${ringInfo.role}.`,
+            "meta-pill-success",
+        );
+    } catch (error) {
+        setStatusNote(error.message, "meta-pill-danger");
+    } finally {
+        setBusy(false);
+    }
 }
 
 async function handleSwap(event) {

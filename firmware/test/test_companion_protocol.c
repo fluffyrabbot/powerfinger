@@ -92,6 +92,64 @@ void test_get_roles_returns_ok_when_empty(void)
     TEST_ASSERT_TRUE(strcmp("OK\n", response) == 0);
 }
 
+void test_get_rings_merges_role_map_with_live_connection_status(void)
+{
+    reset();
+    char response[192] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(1);
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    TEST_ASSERT_EQUAL(ROLE_SCROLL, role_engine_get_role(MAC_B));
+    mock_ble_central_set_connected_ring(0, MAC_A);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("GET_RINGS",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp(
+        "+ 10:11:12:13:14:15 CURSOR connected\n"
+        "+ 20:21:22:23:24:25 SCROLL disconnected\n"
+        "OK\n",
+        response) == 0);
+}
+
+void test_get_ring_info_reports_known_ring_snapshot(void)
+{
+    reset();
+    char response[160] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(1);
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    mock_ble_central_set_connected_ring(0, MAC_A);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("GET_RING_INFO 10:11:12:13:14:15",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp(
+        "+ mac=10:11:12:13:14:15\n"
+        "+ role=CURSOR\n"
+        "+ connected=1\n"
+        "OK\n",
+        response) == 0);
+}
+
+void test_get_ring_info_rejects_unknown_mac(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("GET_RING_INFO 10:11:12:13:14:15",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("ERR 404 unknown_mac\n", response) == 0);
+}
+
 void test_unknown_command_returns_protocol_error(void)
 {
     reset();
@@ -299,6 +357,9 @@ void run_companion_protocol_tests(void)
     RUN_TEST(test_get_hub_info_formats_truthful_snapshot);
     RUN_TEST(test_get_roles_formats_known_assignments);
     RUN_TEST(test_get_roles_returns_ok_when_empty);
+    RUN_TEST(test_get_rings_merges_role_map_with_live_connection_status);
+    RUN_TEST(test_get_ring_info_reports_known_ring_snapshot);
+    RUN_TEST(test_get_ring_info_rejects_unknown_mac);
     RUN_TEST(test_unknown_command_returns_protocol_error);
     RUN_TEST(test_set_role_reassigns_known_ring);
     RUN_TEST(test_command_set_role_rejects_unknown_mac);

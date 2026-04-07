@@ -370,6 +370,17 @@ select:focus-visible {
     font-weight: 700;
 }
 
+.ring-badge-muted {
+    background: rgba(72, 90, 86, 0.12);
+    color: var(--muted);
+}
+
+.ring-card-status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
 .empty-state {
     padding: 1rem;
     line-height: 1.6;

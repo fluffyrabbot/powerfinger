@@ -87,8 +87,9 @@
                         <h2>Known rings</h2>
                     </div>
                     <p class="panel-note">
-                        The current hub firmware exposes persisted role assignments only.
-                        Per-ring live battery, RSSI, and tuning are future commands.
+                        The current hub firmware merges persisted roles with live
+                        connected/disconnected status. Battery, RSSI, and tuning
+                        are still future commands.
                     </p>
                 </div>
                 <div id="role-cards" class="ring-grid">
@@ -142,6 +143,9 @@
                 <div class="quick-actions">
                     <button class="chip-button" type="button" data-command="GET_HUB_INFO" disabled>
                         GET_HUB_INFO
+                    </button>
+                    <button class="chip-button" type="button" data-command="GET_RINGS" disabled>
+                        GET_RINGS
                     </button>
                     <button class="chip-button" type="button" data-command="GET_ROLES" disabled>
                         GET_ROLES

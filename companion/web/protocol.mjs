@@ -153,3 +153,37 @@ export function parseRolesResponse(response) {
         };
     });
 }
+
+export function parseRingsResponse(response) {
+    const parsed = typeof response === "string" ? parseProtocolResponse(response) : response;
+    if (!parsed?.ok) {
+        throw new Error("Rings response was not successful.");
+    }
+
+    return parsed.dataLines.map((line) => {
+        const match = /^\+\s+([0-9A-F:]{17})\s+([A-Z]+)\s+(connected|disconnected)$/i.exec(line);
+        if (!match) {
+            throw new Error(`Expected ring summary entry, got: ${line}`);
+        }
+
+        return {
+            mac: normalizeMac(match[1]),
+            role: normalizeRole(match[2]),
+            connected: match[3].toLowerCase() === "connected",
+        };
+    });
+}
+
+export function parseRingInfoResponse(response) {
+    const parsed = typeof response === "string" ? parseProtocolResponse(response) : response;
+    if (!parsed?.ok) {
+        throw new Error("Ring info response was not successful.");
+    }
+
+    const fields = parseKeyValueDataLines(parsed.dataLines);
+    return {
+        mac: normalizeMac(fields.mac ?? ""),
+        role: normalizeRole(fields.role ?? ""),
+        connected: fields.connected === "1",
+    };
+}

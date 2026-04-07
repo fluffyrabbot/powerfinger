@@ -7,8 +7,8 @@ The companion app is optional configuration software, not a runtime dependency.
 - A minimal dependency-free Web Serial client now lives in `companion/web/`.
 - It talks to the hub's existing USB CDC transport from Chrome or Edge on
   `localhost`.
-- Implemented hub commands today: `GET_HUB_INFO`, `GET_ROLES`, `SET_ROLE`,
-  `SWAP_ROLES`, `ROLE_SWAP`, and `FORGET_RING`.
+- Implemented hub commands today: `GET_HUB_INFO`, `GET_ROLES`, `GET_RINGS`,
+  `GET_RING_INFO`, `SET_ROLE`, `SWAP_ROLES`, `ROLE_SWAP`, and `FORGET_RING`.
 - No Flutter, mobile, or packaged desktop app scaffold is checked in yet.
 
 ## Current Scope
@@ -30,7 +30,8 @@ Web Serial.
 ## What The Scaffold Covers
 
 - Hub snapshot via `GET_HUB_INFO`
-- Persisted role map via `GET_ROLES`
+- Known-ring list with live connected/disconnected state via `GET_RINGS`
+- Per-ring snapshot via `GET_RING_INFO`
 - Per-ring reassignment via `SET_ROLE`
 - Two-ring swap via `SWAP_ROLES`
 - Ring removal via `FORGET_RING`

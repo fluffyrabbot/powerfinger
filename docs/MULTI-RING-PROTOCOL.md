@@ -335,12 +335,50 @@ Request roles for all known rings.
 OK
 ```
 
-The current implementation returns persisted MAC-to-role assignments only. It
-does not append a per-ring connected/disconnected flag yet; callers that need
-an aggregate live count use `GET_HUB_INFO`.
+The current implementation returns persisted MAC-to-role assignments only.
 
 **Implementation:** iterate `s_entries[0..s_entry_count-1]` from the role
 engine and format one `+ <mac> <role>` line per entry.
+
+#### `GET_RINGS`
+
+Request the persisted ring-role table, annotated with current live connection
+status.
+
+**Arguments:** none.
+
+**Response:**
+```
++ AA:BB:CC:DD:EE:FF CURSOR connected
++ 11:22:33:44:55:66 SCROLL disconnected
+OK
+```
+
+The current implementation still uses the persisted role table as the source of
+truth for which rings are "known". The extra `connected` / `disconnected`
+token is derived from the BLE central's live slot map.
+
+#### `GET_RING_INFO`
+
+Request the current snapshot for one known ring.
+
+**Arguments:**
+```
+GET_RING_INFO <mac>
+```
+
+**Response:**
+```
++ mac=AA:BB:CC:DD:EE:FF
++ role=CURSOR
++ connected=1
+OK
+```
+
+**Current implementation:** role comes from the persisted role engine entry.
+`connected=1` means the BLE central currently has an active slot for that MAC;
+`connected=0` means the role entry exists but the ring is not live right now.
+Battery, RSSI, and per-ring setting readback remain future work.
 
 #### `SET_ROLE`
 
@@ -689,7 +727,7 @@ The following protocol pieces are still incomplete in the current codebase:
 
 | Function | Module | Purpose |
 |----------|--------|---------|
-| Companion command parser transport wiring | New module | Hook the existing parser core into USB CDC and extend the remaining hub commands beyond `GET_HUB_INFO` / `GET_ROLES` / `SET_ROLE` |
+| Remaining hub companion commands | Existing parser + CDC stack | Extend the current read-only and role-management surface with the deferred hub-settings, gesture, OTA, and BLE relay commands |
 
 ### 7.2 Thread Safety Summary
 

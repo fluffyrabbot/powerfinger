@@ -213,6 +213,29 @@ static hal_status_t parse_role_token(const char *token, ring_role_t *role_out)
     return HAL_ERR_INVALID_ARG;
 }
 
+static hal_status_t lookup_known_ring(const uint8_t mac[6], ring_role_t *role_out)
+{
+    if (!mac || !role_out) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    role_engine_entry_t entries[HUB_MAX_RINGS] = {0};
+    size_t entry_count = 0;
+    hal_status_t rc = role_engine_get_all(entries, HUB_MAX_RINGS, &entry_count);
+    if (rc != HAL_OK) {
+        return rc;
+    }
+
+    for (size_t i = 0; i < entry_count; i++) {
+        if (memcmp(entries[i].mac, mac, 6) == 0) {
+            *role_out = entries[i].role;
+            return HAL_OK;
+        }
+    }
+
+    return HAL_ERR_NOT_FOUND;
+}
+
 static hal_status_t handle_get_hub_info(const companion_protocol_hub_info_t *hub_info,
                                         char *response_out,
                                         size_t response_out_len)
@@ -281,6 +304,115 @@ static hal_status_t handle_get_roles(char *response_out, size_t response_out_len
     }
 
     return append_format(&builder, "OK\n");
+}
+
+static hal_status_t handle_get_rings(char *response_out, size_t response_out_len)
+{
+    role_engine_entry_t entries[HUB_MAX_RINGS] = {0};
+    size_t entry_count = 0;
+    hal_status_t rc = role_engine_get_all(entries,
+                                          HUB_MAX_RINGS,
+                                          &entry_count);
+    if (rc != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    500,
+                                    "role_read_failed");
+    }
+
+    response_builder_t builder = {
+        .buf = response_out,
+        .len = response_out_len,
+        .used = 0,
+    };
+
+    for (size_t i = 0; i < entry_count; i++) {
+        char mac[18] = {0};
+        rc = format_mac(entries[i].mac, mac, sizeof(mac));
+        if (rc != HAL_OK) {
+            return rc;
+        }
+
+        uint8_t ring_index = 0;
+        bool connected = (ble_central_find_ring_index_by_mac(entries[i].mac, &ring_index) == HAL_OK);
+        rc = append_format(&builder,
+                           "+ %s %s %s\n",
+                           mac,
+                           role_engine_role_name(entries[i].role),
+                           connected ? "connected" : "disconnected");
+        if (rc != HAL_OK) {
+            return rc;
+        }
+    }
+
+    return append_format(&builder, "OK\n");
+}
+
+static hal_status_t handle_get_ring_info(char *args,
+                                         char *response_out,
+                                         size_t response_out_len)
+{
+    char *cursor = args;
+    char *mac_token = next_token(&cursor);
+
+    if (!mac_token) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_args");
+    }
+    if (next_token(&cursor) != NULL) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "unexpected_args");
+    }
+
+    uint8_t mac[6] = {0};
+    if (parse_mac_token(mac_token, mac) != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_mac");
+    }
+
+    ring_role_t role = ROLE_CURSOR;
+    hal_status_t rc = lookup_known_ring(mac, &role);
+    if (rc == HAL_ERR_NOT_FOUND) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    404,
+                                    "unknown_mac");
+    }
+    if (rc != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    500,
+                                    "role_read_failed");
+    }
+
+    uint8_t ring_index = 0;
+    bool connected = (ble_central_find_ring_index_by_mac(mac, &ring_index) == HAL_OK);
+    char formatted_mac[18] = {0};
+    rc = format_mac(mac, formatted_mac, sizeof(formatted_mac));
+    if (rc != HAL_OK) {
+        return rc;
+    }
+
+    response_builder_t builder = {
+        .buf = response_out,
+        .len = response_out_len,
+        .used = 0,
+    };
+
+    return append_format(&builder,
+                         "+ mac=%s\n"
+                         "+ role=%s\n"
+                         "+ connected=%u\n"
+                         "OK\n",
+                         formatted_mac,
+                         role_engine_role_name(role),
+                         connected ? 1U : 0U);
 }
 
 static hal_status_t handle_set_role(char *args,
@@ -501,6 +633,20 @@ hal_status_t companion_protocol_handle_line(const char *line,
                                         "unexpected_args");
         }
         return handle_get_roles(response_out, response_out_len);
+    }
+
+    if (token_equals_ignore_case(command, "GET_RINGS")) {
+        if (*args != '\0') {
+            return write_protocol_error(response_out,
+                                        response_out_len,
+                                        400,
+                                        "unexpected_args");
+        }
+        return handle_get_rings(response_out, response_out_len);
+    }
+
+    if (token_equals_ignore_case(command, "GET_RING_INFO")) {
+        return handle_get_ring_info(args, response_out, response_out_len);
     }
 
     if (token_equals_ignore_case(command, "SET_ROLE")) {

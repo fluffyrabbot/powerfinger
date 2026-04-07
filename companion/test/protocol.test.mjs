@@ -7,6 +7,8 @@ import {
     buildSwapRolesCommand,
     parseHubInfoResponse,
     parseProtocolResponse,
+    parseRingInfoResponse,
+    parseRingsResponse,
     parseRolesResponse,
 } from "../web/protocol.mjs";
 
@@ -52,6 +54,29 @@ test("parseRolesResponse returns normalized role entries", () => {
         { mac: "AA:BB:CC:DD:EE:01", role: "CURSOR" },
         { mac: "AA:BB:CC:DD:EE:02", role: "SCROLL" },
     ]);
+});
+
+test("parseRingsResponse includes live connection status", () => {
+    const rings = parseRingsResponse(
+        "+ AA:BB:CC:DD:EE:01 CURSOR connected\n+ AA:BB:CC:DD:EE:02 SCROLL disconnected\nOK\n",
+    );
+
+    assert.deepEqual(rings, [
+        { mac: "AA:BB:CC:DD:EE:01", role: "CURSOR", connected: true },
+        { mac: "AA:BB:CC:DD:EE:02", role: "SCROLL", connected: false },
+    ]);
+});
+
+test("parseRingInfoResponse extracts ring snapshot", () => {
+    const ringInfo = parseRingInfoResponse(
+        "+ mac=AA:BB:CC:DD:EE:01\n+ role=CURSOR\n+ connected=1\nOK\n",
+    );
+
+    assert.deepEqual(ringInfo, {
+        mac: "AA:BB:CC:DD:EE:01",
+        role: "CURSOR",
+        connected: true,
+    });
 });
 
 test("command builders normalize and validate arguments", () => {
