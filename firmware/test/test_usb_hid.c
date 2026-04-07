@@ -41,24 +41,24 @@ void test_usb_buttons_packed_in_byte_0(void)
 {
     reset();
     composed_report_t r = {0};
-    r.buttons = 0x05;  // left + middle
+    r.buttons = 0x11;  // left + forward
 
     usb_hid_mouse_send(&r);
     const uint8_t *buf = usb_hid_mouse_test_get_last_report();
 
-    ASSERT_BYTE(0x05, buf[0]);
+    ASSERT_BYTE(0x11, buf[0]);
 }
 
-void test_usb_buttons_masked_to_3_bits(void)
+void test_usb_buttons_masked_to_5_bits(void)
 {
     reset();
     composed_report_t r = {0};
-    r.buttons = 0xFF;  // only lower 3 bits should survive
+    r.buttons = 0xFF;  // only lower 5 bits should survive
 
     usb_hid_mouse_send(&r);
     const uint8_t *buf = usb_hid_mouse_test_get_last_report();
 
-    ASSERT_BYTE(0x07, buf[0]);
+    ASSERT_BYTE(0x1F, buf[0]);
 }
 
 void test_usb_cursor_positive_xy(void)
@@ -125,7 +125,7 @@ void test_usb_full_report(void)
 {
     reset();
     composed_report_t r = {
-        .buttons = 0x03,       // left + right
+        .buttons = 0x1B,       // left + right + back + forward
         .cursor_dx = 1000,
         .cursor_dy = -2000,
         .scroll_v = 5,
@@ -135,7 +135,7 @@ void test_usb_full_report(void)
     usb_hid_mouse_send(&r);
     const uint8_t *buf = usb_hid_mouse_test_get_last_report();
 
-    ASSERT_BYTE(0x03, buf[0]);
+    ASSERT_BYTE(0x1B, buf[0]);
     // 1000 = 0x03E8 LE
     ASSERT_BYTE(0xE8, buf[1]);
     ASSERT_BYTE(0x03, buf[2]);
@@ -179,6 +179,19 @@ void test_descriptor_contains_consumer_page(void)
         }
     }
     TEST_ASSERT_TRUE(found); // Must contain Usage Page (Consumer) for AC Pan
+}
+
+void test_descriptor_supports_five_buttons(void)
+{
+    bool found_usage_max_5 = false;
+    for (size_t i = 0; i + 1 < usb_hid_report_descriptor_len; i++) {
+        if (usb_hid_report_descriptor[i] == 0x29 &&
+            usb_hid_report_descriptor[i + 1] == 0x05) {
+            found_usage_max_5 = true;
+            break;
+        }
+    }
+    TEST_ASSERT_TRUE(found_usage_max_5);
 }
 
 void test_descriptor_contains_ac_pan(void)
@@ -321,7 +334,7 @@ void run_usb_hid_tests(void)
     printf("USB HID tests:\n");
     RUN_TEST(test_usb_zero_report_is_all_zeros);
     RUN_TEST(test_usb_buttons_packed_in_byte_0);
-    RUN_TEST(test_usb_buttons_masked_to_3_bits);
+    RUN_TEST(test_usb_buttons_masked_to_5_bits);
     RUN_TEST(test_usb_cursor_positive_xy);
     RUN_TEST(test_usb_cursor_negative_xy);
     RUN_TEST(test_usb_scroll_vertical);
@@ -330,6 +343,7 @@ void run_usb_hid_tests(void)
     RUN_TEST(test_descriptor_not_empty);
     RUN_TEST(test_descriptor_starts_with_usage_page);
     RUN_TEST(test_descriptor_ends_with_end_collection);
+    RUN_TEST(test_descriptor_supports_five_buttons);
     RUN_TEST(test_descriptor_contains_consumer_page);
     RUN_TEST(test_descriptor_contains_ac_pan);
     RUN_TEST(test_usb_send_count_increments);

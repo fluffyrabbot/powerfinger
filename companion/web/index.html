@@ -91,8 +91,8 @@
                         The current hub firmware merges persisted roles with live
                         connected/disconnected status and can now relay the live
                         tuning surface plus battery and diagnostics readback for
-                        connected rings. RSSI and gesture/OTA flows are still
-                        future commands.
+                        connected rings. RSSI plus OTA flows are still future
+                        commands.
                     </p>
                 </div>
                 <div id="role-cards" class="ring-grid">
@@ -129,6 +129,26 @@
                         Swap Roles
                     </button>
                 </form>
+
+                <div class="gesture-section">
+                    <div class="panel-header gesture-header">
+                        <div>
+                            <p class="panel-kicker">Gestures</p>
+                            <h2>Chord mapping</h2>
+                        </div>
+                        <p class="panel-note">
+                            Configures the hub-owned simultaneous-click gestures that
+                            currently map to middle, back, and forward mouse buttons.
+                        </p>
+                    </div>
+
+                    <form id="gesture-form" class="stack-form">
+                        <div id="gesture-grid" class="gesture-grid"></div>
+                        <button id="save-gestures-button" class="secondary-button" type="submit" disabled>
+                            Save Gestures
+                        </button>
+                    </form>
+                </div>
             </section>
 
             <section class="panel">
@@ -152,6 +172,9 @@
                     </button>
                     <button class="chip-button" type="button" data-command="GET_ROLES" disabled>
                         GET_ROLES
+                    </button>
+                    <button class="chip-button" type="button" data-command="GET_GESTURES" disabled>
+                        GET_GESTURES
                     </button>
                 </div>
 

@@ -14,20 +14,22 @@ serial number) for bring-up and companion readback, plus a read-only
 diagnostic snapshot characteristic. On the hub side, the text command core now
 implements host-tested `GET_HUB_INFO`, `GET_ROLES`, `GET_RINGS`,
 `GET_RING_INFO`, `GET_RING_SETTINGS`, `GET_RING_DIAGNOSTICS`, `SET_RING_DPI`,
-`SET_RING_DEAD_ZONE_TIME`, `SET_RING_DEAD_ZONE_DISTANCE`, `SET_ROLE`, and
-`SWAP_ROLES` handling behind a transport-agnostic parser, and `FORGET_RING`
-now tears down live input, removes the persisted role entry, and deletes the
-current public-address bond entry by MAC. USB CDC transport is now live on the
-hub, and the local Web Serial UI under `companion/web/` can both inspect and
-relay per-ring tuning plus battery/diagnostics inspection for connected rings.
-The remaining deferred work is the rest of the hub command set: gestures, OTA,
-and the broader app stack.
+`SET_RING_DEAD_ZONE_TIME`, `SET_RING_DEAD_ZONE_DISTANCE`, `GET_GESTURES`,
+`SET_GESTURE`, `SET_ROLE`, and `SWAP_ROLES` handling behind a
+transport-agnostic parser, and `FORGET_RING` now tears down live input,
+removes the persisted role entry, and deletes the current public-address bond
+entry by MAC. USB CDC transport is now live on the hub, and the local Web
+Serial UI under `companion/web/` can inspect and relay per-ring tuning, battery
+/ diagnostics inspection, and the current shipped gesture subset for connected
+rings. The remaining deferred work is the rest of the hub command set: OTA,
+RSSI, hub policy/settings, and the broader app stack.
 
 **What the app configures:**
 - Role assignment (which ring is cursor, which is scroll, which is modifier)
 - DPI/sensitivity per ring
 - Dead zone parameters per ring
-- Gesture mapping (e.g., simultaneous two-ring click)
+- Gesture mapping (currently simultaneous-click triggers with disabled,
+  middle-click, back, or forward actions)
 - Hub settings (USB poll rate, ring scan policy)
 - Firmware updates (hub via USB serial, rings via BLE OTA through hub)
 
@@ -92,25 +94,27 @@ gesture_entry_t {
 }
 ```
 
-| Trigger ID | Meaning |
-|-----------|---------|
-| 0x01 | Simultaneous click: cursor + scroll rings |
-| 0x02 | Simultaneous click: cursor + modifier rings |
-| 0x03 | Simultaneous click: scroll + modifier rings |
-| 0x04 | Simultaneous click: all three rings |
-| 0x05 | Double-click on cursor ring |
-| 0x06 | Double-click on scroll ring |
+| Trigger ID | Meaning | Support today |
+|-----------|---------|---------------|
+| 0x01 | Simultaneous click: cursor + scroll rings | Yes |
+| 0x02 | Simultaneous click: cursor + modifier rings | Yes |
+| 0x03 | Simultaneous click: scroll + modifier rings | Yes |
+| 0x04 | Simultaneous click: all three rings | Yes |
+| 0x05 | Double-click on cursor ring | Planned, parser returns `ERR 501 unsupported_gesture_trigger` |
+| 0x06 | Double-click on scroll ring | Planned, parser returns `ERR 501 unsupported_gesture_trigger` |
 
-| Action ID | Meaning |
-|----------|---------|
-| 0x00 | No action (gesture disabled) |
-| 0x01 | Middle click |
-| 0x02 | Back (mouse button 4) |
-| 0x03 | Forward (mouse button 5) |
-| 0x04 | Toggle scroll lock (scroll ring locks to vertical only) |
-| 0x05 | DPI cycle (switch between two preset DPI values) |
+| Action ID | Meaning | Support today |
+|----------|---------|---------------|
+| 0x00 | No action (gesture disabled) | Yes |
+| 0x01 | Middle click | Yes |
+| 0x02 | Back (mouse button 4) | Yes |
+| 0x03 | Forward (mouse button 5) | Yes |
+| 0x04 | Toggle scroll lock (scroll ring locks to vertical only) | Planned, parser returns `ERR 501 unsupported_gesture_action` |
+| 0x05 | DPI cycle (switch between two preset DPI values) | Planned, parser returns `ERR 501 unsupported_gesture_action` |
 
-Maximum 8 gesture entries. Stored in hub NVS as a versioned blob.
+Maximum 8 gesture entries. Stored in hub NVS as a versioned blob. The current
+hub firmware persists only the supported subset above and applies it inside the
+event composer before emitting the USB HID report.
 
 ### 1.4 Hub Settings
 
@@ -381,13 +385,14 @@ Implemented in the current hub firmware over USB CDC:
 - `GET_RING_INFO`
 - `GET_RING_SETTINGS`
 - `GET_RING_DIAGNOSTICS`
+- `GET_GESTURES`
 - `SET_RING_DPI`
 - `SET_RING_DEAD_ZONE_TIME`
 - `SET_RING_DEAD_ZONE_DISTANCE`
+- `SET_GESTURE`
 - `SET_ROLE`
 - `SWAP_ROLES`
 - `ROLE_SWAP` (alias of `SWAP_ROLES`)
-- `FORGET_RING`
 - `FORGET_RING`
 
 The remaining commands in this section are still planned companion-surface
@@ -630,7 +635,9 @@ Configure a gesture mapping.
 OK
 ```
 
-First argument is trigger ID, second is action ID (see section 1.3).
+First argument is trigger ID, second is action ID (see section 1.3). The
+current implementation accepts only simultaneous-click triggers (`0x01`-`0x04`)
+and actions `0x00`-`0x03`; known but deferred IDs return `ERR 501`.
 
 #### GET_GESTURES
 
@@ -639,11 +646,15 @@ Returns all gesture mappings.
 ```
 > GET_GESTURES
 + 0x01 0x01 cursor+scroll=middle_click
-+ 0x05 0x05 double_click_cursor=dpi_cycle
++ 0x02 0x00 cursor+modifier=disabled
++ 0x03 0x02 scroll+modifier=back
++ 0x04 0x03 all_three=forward
 OK
 ```
 
-The human-readable description after the IDs is informational (not parsed).
+The current implementation always returns the four supported simultaneous-click
+trigger lines. The human-readable description after the IDs is informational
+(not parsed).
 
 #### FORGET_RING
 

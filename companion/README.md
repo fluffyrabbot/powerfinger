@@ -9,8 +9,11 @@ The companion app is optional configuration software, not a runtime dependency.
   `localhost`.
 - Implemented hub commands today: `GET_HUB_INFO`, `GET_ROLES`, `GET_RINGS`,
   `GET_RING_INFO`, `GET_RING_SETTINGS`, `GET_RING_DIAGNOSTICS`, `SET_RING_DPI`,
-  `SET_RING_DEAD_ZONE_TIME`, `SET_RING_DEAD_ZONE_DISTANCE`, `SET_ROLE`,
-  `SWAP_ROLES`, `ROLE_SWAP`, and `FORGET_RING`.
+  `SET_RING_DEAD_ZONE_TIME`, `SET_RING_DEAD_ZONE_DISTANCE`, `GET_GESTURES`,
+  `SET_GESTURE`, `SET_ROLE`, `SWAP_ROLES`, `ROLE_SWAP`, and `FORGET_RING`.
+- The current gesture UI covers the shipped hub subset only: simultaneous-click
+  triggers (`0x01`-`0x04`) mapped to disabled, middle-click, back, or forward
+  (`0x00`-`0x03`).
 - No Flutter, mobile, or packaged desktop app scaffold is checked in yet.
 
 ## Current Scope
@@ -37,6 +40,8 @@ Web Serial.
 - Per-ring live tuning readback via `GET_RING_SETTINGS`
 - Per-ring battery and diagnostics readback via `GET_RING_DIAGNOSTICS`
 - Per-ring live tuning writes via the `SET_RING_*` relay commands
+- Hub-owned simultaneous-click gesture mapping via `GET_GESTURES` /
+  `SET_GESTURE`
 - Per-ring reassignment via `SET_ROLE`
 - Two-ring swap via `SWAP_ROLES`
 - Ring removal via `FORGET_RING`
@@ -61,6 +66,6 @@ Web Serial.
 
 - OTA update UX
 - Packaged desktop and mobile variants
-- Hub-side gesture and policy configuration
+- Hub-side policy, RSSI, and broader settings configuration
 
 See `docs/COMPANION-APP-ARCH.md` for the deferred architecture sketch.

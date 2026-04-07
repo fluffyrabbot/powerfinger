@@ -17,6 +17,7 @@
 #include "ble_central.h"
 #include "companion_cdc.h"
 #include "role_engine.h"
+#include "gesture_engine.h"
 #include "event_composer.h"
 #include "hub_identity.h"
 #include "usb_hid_mouse.h"
@@ -41,6 +42,15 @@ static const char *TAG = "powerfinger_hub";
 // continuous failure — long enough to survive brief USB bus resets, short
 // enough to not leave a user without input indefinitely.
 #define USB_SEND_FAIL_THRESHOLD 5000
+
+static void sync_persisted_gestures_to_event_composer(void)
+{
+    for (uint8_t trigger = GESTURE_TRIGGER_CURSOR_SCROLL_CLICK;
+         trigger <= GESTURE_TRIGGER_ALL_THREE_CLICK;
+         trigger++) {
+        event_composer_set_gesture_action(trigger, gesture_engine_get_action(trigger));
+    }
+}
 
 // --- Callbacks from BLE central ---
 
@@ -119,7 +129,12 @@ void app_main(void)
         ESP_LOGE(TAG, "role engine init failed (OOM) — restarting");
         esp_restart();
     }
+    if (gesture_engine_init() != HAL_OK) {
+        ESP_LOGE(TAG, "gesture engine init failed — restarting");
+        esp_restart();
+    }
     event_composer_init();
+    sync_persisted_gestures_to_event_composer();
     if (usb_hid_mouse_init() != HAL_OK) {
         ESP_LOGE(TAG, "USB HID init failed — hub has no output path");
         esp_restart();

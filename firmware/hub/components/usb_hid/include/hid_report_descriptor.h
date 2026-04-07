@@ -9,7 +9,7 @@
 #include <stddef.h>
 
 // USB HID report byte layout (7 bytes):
-//   [0]   buttons (3 bits + 5 padding)
+//   [0]   buttons (5 bits + 3 padding)
 //   [1-2] X delta (int16_t LE)
 //   [3-4] Y delta (int16_t LE)
 //   [5]   vertical scroll (int8_t)

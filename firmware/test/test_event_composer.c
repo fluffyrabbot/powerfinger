@@ -244,6 +244,59 @@ void test_modifier_ring_middle_click(void)
     TEST_ASSERT_EQUAL(0, r.cursor_dx);    // modifier ignores deltas
 }
 
+void test_cursor_scroll_gesture_can_override_base_clicks_with_middle_click(void)
+{
+    reset();
+    event_composer_set_gesture_action(GESTURE_TRIGGER_CURSOR_SCROLL_CLICK,
+                                      GESTURE_ACTION_MIDDLE_CLICK);
+    connect_ring(0, ROLE_CURSOR);
+    connect_ring(1, ROLE_SCROLL);
+    feed_ring(0, 0x01, 5, 3);
+    feed_ring(1, 0x01, 2, -4);
+
+    composed_report_t r;
+    event_composer_compose(&r);
+    TEST_ASSERT_EQUAL(0x04, r.buttons);
+    TEST_ASSERT_EQUAL(0, r.cursor_dx);
+    TEST_ASSERT_EQUAL(0, r.cursor_dy);
+    TEST_ASSERT_EQUAL(0, r.scroll_h);
+    TEST_ASSERT_EQUAL(0, r.scroll_v);
+}
+
+void test_cursor_modifier_gesture_can_emit_back_button(void)
+{
+    reset();
+    event_composer_set_gesture_action(GESTURE_TRIGGER_CURSOR_MODIFIER_CLICK,
+                                      GESTURE_ACTION_BACK);
+    connect_ring(0, ROLE_CURSOR);
+    connect_ring(1, ROLE_MODIFIER);
+    feed_ring(0, 0x01, 0, 0);
+    feed_ring(1, 0x01, 0, 0);
+
+    composed_report_t r;
+    event_composer_compose(&r);
+    TEST_ASSERT_EQUAL(0x08, r.buttons);
+}
+
+void test_all_three_gesture_takes_precedence_over_pair_gesture(void)
+{
+    reset();
+    event_composer_set_gesture_action(GESTURE_TRIGGER_CURSOR_SCROLL_CLICK,
+                                      GESTURE_ACTION_BACK);
+    event_composer_set_gesture_action(GESTURE_TRIGGER_ALL_THREE_CLICK,
+                                      GESTURE_ACTION_FORWARD);
+    connect_ring(0, ROLE_CURSOR);
+    connect_ring(1, ROLE_SCROLL);
+    connect_ring(2, ROLE_MODIFIER);
+    feed_ring(0, 0x01, 0, 0);
+    feed_ring(1, 0x01, 0, 0);
+    feed_ring(2, 0x01, 0, 0);
+
+    composed_report_t r;
+    event_composer_compose(&r);
+    TEST_ASSERT_EQUAL(0x10, r.buttons);
+}
+
 // --- Bounds check ---
 
 void test_invalid_ring_index_ignored(void)
@@ -371,6 +424,9 @@ void run_event_composer_tests(void)
     RUN_TEST(test_accumulator_saturates_positive);
     RUN_TEST(test_accumulator_saturates_negative);
     RUN_TEST(test_modifier_ring_middle_click);
+    RUN_TEST(test_cursor_scroll_gesture_can_override_base_clicks_with_middle_click);
+    RUN_TEST(test_cursor_modifier_gesture_can_emit_back_button);
+    RUN_TEST(test_all_three_gesture_takes_precedence_over_pair_gesture);
     RUN_TEST(test_invalid_ring_index_ignored);
     RUN_TEST(test_reconnect_after_disconnect_works);
     RUN_TEST(test_buttons_reflect_latest_feed);

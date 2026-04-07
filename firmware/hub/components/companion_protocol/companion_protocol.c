@@ -4,6 +4,7 @@
 #include "companion_protocol.h"
 
 #include "ble_central.h"
+#include "gesture_engine.h"
 #include "hub_control.h"
 #include "role_engine.h"
 
@@ -243,6 +244,24 @@ static hal_status_t parse_unsigned_long_token(const char *token,
     return HAL_OK;
 }
 
+static hal_status_t parse_auto_base_byte_token(const char *token,
+                                               uint8_t *value_out)
+{
+    if (!token || !value_out) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    errno = 0;
+    char *end = NULL;
+    unsigned long value = strtoul(token, &end, 0);
+    if (errno != 0 || !end || *end != '\0' || value > UINT8_MAX) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    *value_out = (uint8_t)value;
+    return HAL_OK;
+}
+
 static hal_status_t lookup_known_ring(const uint8_t mac[6], ring_role_t *role_out)
 {
     if (!mac || !role_out) {
@@ -370,6 +389,18 @@ static const char *ring_bond_state_name(hub_ring_bond_state_t bond_state)
     default:
         return "UNKNOWN";
     }
+}
+
+static hal_status_t append_gesture_line(response_builder_t *builder,
+                                        uint8_t trigger,
+                                        uint8_t action)
+{
+    return append_format(builder,
+                         "+ 0x%02X 0x%02X %s=%s\n",
+                         trigger,
+                         action,
+                         gesture_engine_trigger_name(trigger),
+                         gesture_engine_action_name(action));
 }
 
 static hal_status_t handle_get_hub_info(const companion_protocol_hub_info_t *hub_info,
@@ -726,6 +757,106 @@ static hal_status_t handle_get_ring_diagnostics(char *args,
                          diagnostics.conn_param_rejected ? 1U : 0U,
                          diagnostics.conn_interval_1_25ms,
                          diagnostics.diagnostics_version);
+}
+
+static hal_status_t handle_get_gestures(char *response_out, size_t response_out_len)
+{
+    response_builder_t builder = {
+        .buf = response_out,
+        .len = response_out_len,
+        .used = 0,
+    };
+
+    for (uint8_t trigger = GESTURE_TRIGGER_CURSOR_SCROLL_CLICK;
+         trigger <= GESTURE_TRIGGER_ALL_THREE_CLICK;
+         trigger++) {
+        hal_status_t rc = append_gesture_line(&builder,
+                                              trigger,
+                                              gesture_engine_get_action(trigger));
+        if (rc != HAL_OK) {
+            return rc;
+        }
+    }
+
+    return append_format(&builder, "OK\n");
+}
+
+static hal_status_t handle_set_gesture(char *args,
+                                       char *response_out,
+                                       size_t response_out_len)
+{
+    char *cursor = args;
+    char *trigger_token = next_token(&cursor);
+    char *action_token = next_token(&cursor);
+
+    if (!trigger_token || !action_token) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_args");
+    }
+    if (next_token(&cursor) != NULL) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "unexpected_args");
+    }
+
+    uint8_t trigger = 0;
+    if (parse_auto_base_byte_token(trigger_token, &trigger) != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_trigger");
+    }
+
+    uint8_t action_value = 0;
+    if (parse_auto_base_byte_token(action_token, &action_value) != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_action");
+    }
+
+    if (!gesture_engine_trigger_known(trigger)) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_trigger");
+    }
+    if (!gesture_engine_action_known(action_value)) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_action");
+    }
+    if (!gesture_engine_trigger_supported(trigger)) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    501,
+                                    "unsupported_gesture_trigger");
+    }
+    if (!gesture_engine_action_supported(action_value)) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    501,
+                                    "unsupported_gesture_action");
+    }
+
+    hal_status_t rc = hub_control_set_gesture(trigger, (gesture_action_t)action_value);
+    if (rc != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    500,
+                                    "gesture_write_failed");
+    }
+
+    response_builder_t builder = {
+        .buf = response_out,
+        .len = response_out_len,
+        .used = 0,
+    };
+    return append_format(&builder, "OK\n");
 }
 
 static hal_status_t handle_set_ring_dpi(char *args,
@@ -1189,8 +1320,22 @@ hal_status_t companion_protocol_handle_line(const char *line,
         return handle_get_ring_diagnostics(args, response_out, response_out_len);
     }
 
+    if (token_equals_ignore_case(command, "GET_GESTURES")) {
+        if (*args != '\0') {
+            return write_protocol_error(response_out,
+                                        response_out_len,
+                                        400,
+                                        "unexpected_args");
+        }
+        return handle_get_gestures(response_out, response_out_len);
+    }
+
     if (token_equals_ignore_case(command, "SET_RING_DPI")) {
         return handle_set_ring_dpi(args, response_out, response_out_len);
+    }
+
+    if (token_equals_ignore_case(command, "SET_GESTURE")) {
+        return handle_set_gesture(args, response_out, response_out_len);
     }
 
     if (token_equals_ignore_case(command, "SET_RING_DEAD_ZONE_TIME")) {

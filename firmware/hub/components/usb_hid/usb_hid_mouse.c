@@ -5,7 +5,7 @@
 // Host (test): Packs reports into a static buffer for test inspection.
 //
 // Report byte layout (7 bytes, matches hid_report_descriptor.c):
-//   [0]   buttons (3 bits + 5 padding)
+//   [0]   buttons (5 bits + 3 padding)
 //   [1-2] X delta (int16_t LE)
 //   [3-4] Y delta (int16_t LE)
 //   [5]   vertical scroll (int8_t)
@@ -20,7 +20,7 @@
 // This function is used by both the real TinyUSB path and the test mock.
 static void pack_report(const composed_report_t *report, uint8_t out[USB_HID_REPORT_SIZE])
 {
-    out[0] = report->buttons & 0x07;    // 3 buttons, mask upper bits
+    out[0] = report->buttons & 0x1F;    // 5 buttons, mask upper bits
     out[1] = (uint8_t)(report->cursor_dx & 0xFF);         // X low byte
     out[2] = (uint8_t)((report->cursor_dx >> 8) & 0xFF);  // X high byte
     out[3] = (uint8_t)(report->cursor_dy & 0xFF);         // Y low byte

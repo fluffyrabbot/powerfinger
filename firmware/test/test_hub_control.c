@@ -8,6 +8,7 @@
 #include "ble_central.h"
 #include "hub_control.h"
 #include "event_composer.h"
+#include "gesture_engine.h"
 
 static const uint8_t MAC_A[6] = { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15 };
 static const uint8_t MAC_B[6] = { 0x20, 0x21, 0x22, 0x23, 0x24, 0x25 };
@@ -17,6 +18,7 @@ static void reset(void)
     mock_hal_reset();
     mock_ble_central_clear_connected_rings();
     mock_ble_central_clear_bonds();
+    TEST_ASSERT_EQUAL(HAL_OK, gesture_engine_init());
     TEST_ASSERT_EQUAL(HAL_OK, role_engine_init());
     TEST_ASSERT_EQUAL(HAL_OK, event_composer_init());
 }
@@ -167,6 +169,33 @@ void test_forget_ring_rejects_unknown_mac(void)
     TEST_ASSERT_EQUAL(HAL_ERR_NOT_FOUND, hub_control_forget_ring(MAC_A));
 }
 
+void test_set_gesture_persists_and_updates_live_event_composer_cache(void)
+{
+    reset();
+
+    event_composer_mark_connected(0, ROLE_CURSOR);
+    event_composer_mark_connected(1, ROLE_SCROLL);
+    event_composer_feed(0, 0x01, 4, 1);
+    event_composer_feed(1, 0x01, 2, -3);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      hub_control_set_gesture(GESTURE_TRIGGER_CURSOR_SCROLL_CLICK,
+                                              GESTURE_ACTION_BACK));
+
+    composed_report_t report;
+    event_composer_compose(&report);
+    TEST_ASSERT_EQUAL(0x08, report.buttons);
+    TEST_ASSERT_EQUAL(0, report.cursor_dx);
+    TEST_ASSERT_EQUAL(0, report.cursor_dy);
+    TEST_ASSERT_EQUAL(0, report.scroll_h);
+    TEST_ASSERT_EQUAL(0, report.scroll_v);
+
+    gesture_engine_flush_if_dirty();
+    TEST_ASSERT_EQUAL(HAL_OK, gesture_engine_init());
+    TEST_ASSERT_EQUAL(GESTURE_ACTION_BACK,
+                      gesture_engine_get_action(GESTURE_TRIGGER_CURSOR_SCROLL_CLICK));
+}
+
 void run_hub_control_tests(void)
 {
     printf("Hub control tests:\n");
@@ -179,4 +208,5 @@ void run_hub_control_tests(void)
     RUN_TEST(test_forget_ring_removes_assignment_and_bond_for_disconnected_ring);
     RUN_TEST(test_forget_ring_drops_live_input_before_disconnect_completes);
     RUN_TEST(test_forget_ring_rejects_unknown_mac);
+    RUN_TEST(test_set_gesture_persists_and_updates_live_event_composer_cache);
 }

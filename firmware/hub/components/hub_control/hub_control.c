@@ -5,6 +5,7 @@
 
 #include "ble_central.h"
 #include "event_composer.h"
+#include "gesture_engine.h"
 
 #include <string.h>
 
@@ -143,4 +144,15 @@ hal_status_t hub_control_forget_ring(const uint8_t mac[6])
     }
 
     return role_engine_forget(mac);
+}
+
+hal_status_t hub_control_set_gesture(uint8_t trigger, gesture_action_t action)
+{
+    hal_status_t rc = gesture_engine_set_action(trigger, action);
+    if (rc != HAL_OK) {
+        return rc;
+    }
+
+    event_composer_set_gesture_action(trigger, action);
+    return HAL_OK;
 }

@@ -3,14 +3,14 @@
 //
 // Superset of the ring's BLE HID descriptor:
 //   BLE:  3 buttons, int8  X/Y, int8  wheel
-//   USB:  3 buttons, int16 X/Y, int8  wheel, int8 horizontal scroll (AC Pan)
+//   USB:  5 buttons, int16 X/Y, int8  wheel, int8 horizontal scroll (AC Pan)
 //
 // 16-bit X/Y handles multi-ring delta accumulation (two rings at 127 each
 // exceeds int8_t range). AC Pan enables scroll-role ring X deltas as
 // horizontal scroll — not available over the ring's BLE descriptor.
 //
 // Report byte layout (7 bytes total):
-//   Byte 0:    buttons (3 bits + 5 padding)
+//   Byte 0:    buttons (5 bits + 3 padding)
 //   Bytes 1-2: X delta (int16_t LE)
 //   Bytes 3-4: Y delta (int16_t LE)
 //   Byte 5:    vertical scroll wheel (int8_t)
@@ -25,19 +25,19 @@ const uint8_t usb_hid_report_descriptor[] = {
     0x09, 0x01,             //   Usage (Pointer)
     0xA1, 0x00,             //   Collection (Physical)
 
-    // --- 3 buttons ---
+    // --- 5 buttons ---
     0x05, 0x09,             //     Usage Page (Button)
     0x19, 0x01,             //     Usage Minimum (1)
-    0x29, 0x03,             //     Usage Maximum (3)
+    0x29, 0x05,             //     Usage Maximum (5)
     0x15, 0x00,             //     Logical Minimum (0)
     0x25, 0x01,             //     Logical Maximum (1)
-    0x95, 0x03,             //     Report Count (3)
+    0x95, 0x05,             //     Report Count (5)
     0x75, 0x01,             //     Report Size (1)
-    0x81, 0x02,             //     Input (Data, Variable, Absolute) — 3 button bits
+    0x81, 0x02,             //     Input (Data, Variable, Absolute) — 5 button bits
 
-    // --- 5-bit padding ---
+    // --- 3-bit padding ---
     0x95, 0x01,             //     Report Count (1)
-    0x75, 0x05,             //     Report Size (5)
+    0x75, 0x03,             //     Report Size (3)
     0x81, 0x03,             //     Input (Constant) — padding to byte boundary
 
     // --- X, Y (16-bit signed) ---

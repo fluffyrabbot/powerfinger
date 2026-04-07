@@ -7,6 +7,7 @@
 #include "mock_hal.h"
 #include "companion_protocol.h"
 #include "ble_central.h"
+#include "gesture_engine.h"
 #include "hub_identity.h"
 #include "role_engine.h"
 
@@ -31,6 +32,7 @@ static void reset(void)
     mock_hal_reset();
     mock_ble_central_clear_connected_rings();
     mock_ble_central_clear_bonds();
+    TEST_ASSERT_EQUAL(HAL_OK, gesture_engine_init());
     TEST_ASSERT_EQUAL(HAL_OK, role_engine_init());
 }
 
@@ -234,6 +236,70 @@ void test_get_ring_diagnostics_reports_known_but_disconnected_ring(void)
                                                      response,
                                                      sizeof(response)));
     TEST_ASSERT_TRUE(strcmp("ERR 409 ring_not_connected\n", response) == 0);
+}
+
+void test_get_gestures_returns_supported_trigger_table(void)
+{
+    reset();
+    char response[256] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("GET_GESTURES",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp(
+        "+ 0x01 0x00 cursor+scroll=disabled\n"
+        "+ 0x02 0x00 cursor+modifier=disabled\n"
+        "+ 0x03 0x00 scroll+modifier=disabled\n"
+        "+ 0x04 0x00 all_three=disabled\n"
+        "OK\n",
+        response) == 0);
+}
+
+void test_set_gesture_updates_persisted_mapping(void)
+{
+    reset();
+    char response[256] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("SET_GESTURE 0x01 0x02",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("OK\n", response) == 0);
+    TEST_ASSERT_EQUAL(GESTURE_ACTION_BACK,
+                      gesture_engine_get_action(GESTURE_TRIGGER_CURSOR_SCROLL_CLICK));
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("GET_GESTURES",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strstr(response, "+ 0x01 0x02 cursor+scroll=back\n") != NULL);
+}
+
+void test_set_gesture_rejects_known_but_unsupported_values(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("SET_GESTURE 0x05 0x01",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("ERR 501 unsupported_gesture_trigger\n", response) == 0);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("SET_GESTURE 0x01 0x05",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("ERR 501 unsupported_gesture_action\n", response) == 0);
 }
 
 void test_set_ring_setting_commands_update_live_ring_state(void)
@@ -523,6 +589,9 @@ void run_companion_protocol_tests(void)
     RUN_TEST(test_get_ring_settings_reports_known_but_disconnected_ring);
     RUN_TEST(test_get_ring_diagnostics_reads_live_snapshot_from_connected_ring);
     RUN_TEST(test_get_ring_diagnostics_reports_known_but_disconnected_ring);
+    RUN_TEST(test_get_gestures_returns_supported_trigger_table);
+    RUN_TEST(test_set_gesture_updates_persisted_mapping);
+    RUN_TEST(test_set_gesture_rejects_known_but_unsupported_values);
     RUN_TEST(test_set_ring_setting_commands_update_live_ring_state);
     RUN_TEST(test_set_ring_dpi_rejects_invalid_value);
     RUN_TEST(test_set_ring_dpi_reports_known_but_disconnected_ring);

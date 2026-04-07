@@ -1,14 +1,19 @@
 import {
     SERIAL_OPTIONS,
+    SUPPORTED_GESTURE_ACTIONS,
+    SUPPORTED_GESTURE_TRIGGERS,
     SUPPORTED_ROLES,
+    buildGetGesturesCommand,
     buildGetRingDiagnosticsCommand,
     buildGetRingSettingsCommand,
     buildForgetRingCommand,
+    buildSetGestureCommand,
     buildSetRingDeadZoneDistanceCommand,
     buildSetRingDeadZoneTimeCommand,
     buildSetRingDpiCommand,
     buildSetRoleCommand,
     buildSwapRolesCommand,
+    parseGesturesResponse,
     parseHubInfoResponse,
     parseProtocolResponse,
     parseRingDiagnosticsResponse,
@@ -29,6 +34,7 @@ const state = {
     pendingResponse: null,
     hubInfo: null,
     roles: [],
+    gestures: {},
     ringSettings: {},
     ringDiagnostics: {},
 };
@@ -45,6 +51,9 @@ const elements = {
     swapMacA: document.querySelector("#swap-mac-a"),
     swapMacB: document.querySelector("#swap-mac-b"),
     swapButton: document.querySelector("#swap-button"),
+    gestureForm: document.querySelector("#gesture-form"),
+    gestureGrid: document.querySelector("#gesture-grid"),
+    saveGesturesButton: document.querySelector("#save-gestures-button"),
     commandForm: document.querySelector("#command-form"),
     commandInput: document.querySelector("#command-input"),
     sendButton: document.querySelector("#send-button"),
@@ -102,10 +111,15 @@ function setBusy(disabled) {
     elements.swapButton.disabled = disabled || !connected || state.roles.length < 2;
     elements.swapMacA.disabled = disabled || !connected || state.roles.length < 2;
     elements.swapMacB.disabled = disabled || !connected || state.roles.length < 2;
+    elements.saveGesturesButton.disabled = disabled || !connected;
 
     for (const button of elements.quickButtons) {
         button.disabled = disabled || !connected;
     }
+
+    elements.gestureGrid.querySelectorAll("[data-gesture-select]").forEach((control) => {
+        control.disabled = disabled || !connected;
+    });
 
     elements.roleCards.querySelectorAll("[data-apply-role], [data-forget-ring], [data-inspect-ring], [data-load-settings], [data-load-diagnostics], [data-save-settings], [data-role-select], [data-setting-input]").forEach((control) => {
         control.disabled = disabled || !connected;
@@ -118,11 +132,13 @@ function updateConnectionUi() {
     elements.refreshButton.disabled = !connected;
     elements.commandInput.disabled = !connected;
     elements.sendButton.disabled = !connected;
+    elements.saveGesturesButton.disabled = !connected;
 
     if (!connected) {
         setConnectionState("Disconnected", "meta-pill-neutral");
     }
 
+    renderGestureControls();
     renderSwapSelectors();
     renderRoleCards();
 }
@@ -439,6 +455,29 @@ function renderSwapSelectors() {
     elements.swapButton.disabled = !state.port || state.roles.length < 2;
 }
 
+function renderGestureControls() {
+    elements.gestureGrid.innerHTML = SUPPORTED_GESTURE_TRIGGERS
+        .map((trigger) => {
+            const selectedAction = state.gestures[trigger.id] ?? "0x00";
+            const options = SUPPORTED_GESTURE_ACTIONS.map((action) => {
+                const selected = action.id === selectedAction ? " selected" : "";
+                return `<option value="${action.id}"${selected}>${action.label}</option>`;
+            }).join("");
+
+            return `
+                <label class="field gesture-field">
+                    <span>${trigger.label}</span>
+                    <select data-gesture-select="${trigger.id}" ${state.port ? "" : "disabled"}>
+                        ${options}
+                    </select>
+                </label>
+            `;
+        })
+        .join("");
+
+    elements.saveGesturesButton.disabled = !state.port;
+}
+
 function setLastResponse(response) {
     if (!response) {
         setResponseStatus("Idle", "response-status-neutral");
@@ -549,6 +588,7 @@ async function disconnectFromHub(reason = "Disconnected.") {
     state.readBuffer = "";
     state.hubInfo = null;
     state.roles = [];
+    state.gestures = {};
     state.ringSettings = {};
     state.ringDiagnostics = {};
     state.disconnecting = false;
@@ -699,12 +739,36 @@ async function refreshRoles() {
     renderSwapSelectors();
 }
 
+async function refreshGestures() {
+    const response = await sendCommand(buildGetGesturesCommand());
+    setLastResponse(response);
+
+    if (!response.ok) {
+        throw new Error(`${response.errorCode} ${response.errorMessage}`);
+    }
+
+    const nextGestures = {};
+    for (const entry of parseGesturesResponse(response)) {
+        nextGestures[entry.triggerId] = entry.actionId;
+    }
+
+    for (const trigger of SUPPORTED_GESTURE_TRIGGERS) {
+        if (!nextGestures[trigger.id]) {
+            nextGestures[trigger.id] = "0x00";
+        }
+    }
+
+    state.gestures = nextGestures;
+    renderGestureControls();
+}
+
 async function refreshAll() {
     setBusy(true);
 
     try {
         await refreshHubInfo();
         await refreshRoles();
+        await refreshGestures();
         setStatusNote("Snapshot refreshed from the hub.", "meta-pill-success");
     } catch (error) {
         setStatusNote(error.message, "meta-pill-danger");
@@ -909,6 +973,46 @@ async function handleSwap(event) {
     }
 }
 
+async function handleSaveGestures(event) {
+    event.preventDefault();
+
+    const commands = [];
+    try {
+        for (const trigger of SUPPORTED_GESTURE_TRIGGERS) {
+            const select = elements.gestureGrid.querySelector(
+                `[data-gesture-select="${trigger.id}"]`,
+            );
+            if (!select) {
+                throw new Error(`Could not find the gesture control for ${trigger.label}.`);
+            }
+            commands.push(buildSetGestureCommand(trigger.id, select.value));
+        }
+    } catch (error) {
+        setStatusNote(error.message, "meta-pill-danger");
+        return;
+    }
+
+    setBusy(true);
+
+    try {
+        for (const command of commands) {
+            const response = await sendCommand(command);
+            setLastResponse(response);
+
+            if (!response.ok) {
+                throw new Error(`${response.errorCode} ${response.errorMessage}`);
+            }
+        }
+
+        await refreshGestures();
+        setStatusNote("Updated the hub gesture mappings.", "meta-pill-success");
+    } catch (error) {
+        setStatusNote(error.message, "meta-pill-danger");
+    } finally {
+        setBusy(false);
+    }
+}
+
 async function handleManualCommand(event) {
     event.preventDefault();
 
@@ -949,6 +1053,7 @@ function bindEvents() {
 
     elements.refreshButton.addEventListener("click", refreshAll);
     elements.swapForm.addEventListener("submit", handleSwap);
+    elements.gestureForm.addEventListener("submit", handleSaveGestures);
     elements.commandForm.addEventListener("submit", handleManualCommand);
 
     for (const button of elements.quickButtons) {
@@ -972,6 +1077,7 @@ function init() {
     bindEvents();
     renderHubInfo();
     renderRoleCards();
+    renderGestureControls();
     renderSwapSelectors();
     setLastResponse(null);
     updateConnectionUi();

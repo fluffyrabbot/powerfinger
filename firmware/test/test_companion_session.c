@@ -7,6 +7,7 @@
 #include "mock_hal.h"
 #include "ble_central.h"
 #include "companion_session.h"
+#include "gesture_engine.h"
 #include "hub_identity.h"
 #include "role_engine.h"
 
@@ -59,6 +60,7 @@ static void reset(void)
     mock_hal_reset();
     mock_ble_central_clear_connected_rings();
     mock_ble_central_clear_bonds();
+    TEST_ASSERT_EQUAL(HAL_OK, gesture_engine_init());
     TEST_ASSERT_EQUAL(HAL_OK, role_engine_init());
     memset(s_emitted, 0, sizeof(s_emitted));
     s_emitted_len = 0;

@@ -2,15 +2,18 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+    buildGetGesturesCommand,
     buildGetRingDiagnosticsCommand,
     buildGetRingSettingsCommand,
     buildForgetRingCommand,
+    buildSetGestureCommand,
     buildSetRingDeadZoneDistanceCommand,
     buildSetRingDeadZoneTimeCommand,
     buildSetRingDpiCommand,
     buildSetRoleCommand,
     buildSwapRolesCommand,
     parseHubInfoResponse,
+    parseGesturesResponse,
     parseProtocolResponse,
     parseRingInfoResponse,
     parseRingDiagnosticsResponse,
@@ -131,6 +134,31 @@ test("parseRingDiagnosticsResponse extracts live battery and health state", () =
     });
 });
 
+test("parseGesturesResponse extracts supported gesture mappings", () => {
+    const gestures = parseGesturesResponse(
+        "+ 0x01 0x02 cursor+scroll=back\n"
+        + "+ 0x02 0x00 cursor+modifier=disabled\n"
+        + "OK\n",
+    );
+
+    assert.deepEqual(gestures, [
+        {
+            triggerId: "0x01",
+            actionId: "0x02",
+            triggerLabel: "Cursor + Scroll simultaneous click",
+            actionLabel: "Back",
+            description: "cursor+scroll=back",
+        },
+        {
+            triggerId: "0x02",
+            actionId: "0x00",
+            triggerLabel: "Cursor + Modifier simultaneous click",
+            actionLabel: "Disabled",
+            description: "cursor+modifier=disabled",
+        },
+    ]);
+});
+
 test("command builders normalize and validate arguments", () => {
     assert.equal(
         buildSetRoleCommand("aa:bb:cc:dd:ee:01", "scroll"),
@@ -145,12 +173,20 @@ test("command builders normalize and validate arguments", () => {
         "FORGET_RING AA:BB:CC:DD:EE:03",
     );
     assert.equal(
+        buildGetGesturesCommand(),
+        "GET_GESTURES",
+    );
+    assert.equal(
         buildGetRingSettingsCommand("aa:bb:cc:dd:ee:01"),
         "GET_RING_SETTINGS AA:BB:CC:DD:EE:01",
     );
     assert.equal(
         buildGetRingDiagnosticsCommand("aa:bb:cc:dd:ee:01"),
         "GET_RING_DIAGNOSTICS AA:BB:CC:DD:EE:01",
+    );
+    assert.equal(
+        buildSetGestureCommand("0x01", "0x03"),
+        "SET_GESTURE 0x01 0x03",
     );
     assert.equal(
         buildSetRingDpiCommand("aa:bb:cc:dd:ee:01", "20"),

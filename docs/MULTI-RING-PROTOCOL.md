@@ -294,7 +294,12 @@ ERR <code> <message>\n
 The current parser uses HTTP-like numeric codes for readability:
 - `400` — invalid syntax or invalid argument
 - `404` — unknown MAC / missing entry
+- `409` — known ring exists but is not currently in a state that can satisfy
+  the request (for example `ring_not_connected`)
 - `500` — internal hub-side failure while applying a command
+- `501` — known command/value exists in the broader spec but is not supported by
+  the current pre-hardware implementation
+- `503` — ring exists but its relay surface is not ready yet
 
 Unlike a transport failure, these `ERR` responses are still a successful parser
 call from the firmware's point of view. `companion_protocol_handle_line()`
@@ -472,6 +477,49 @@ Write the ring's click dead-zone distance over the hub BLE relay.
 SET_RING_DEAD_ZONE_DISTANCE <mac> <dead_zone_distance>
 ```
 
+#### `GET_GESTURES`
+
+Return the hub-owned gesture table that currently feeds the event composer.
+
+**Arguments:** none.
+
+**Response:**
+
+```
++ 0x01 0x01 cursor+scroll=middle_click
++ 0x02 0x00 cursor+modifier=disabled
++ 0x03 0x02 scroll+modifier=back
++ 0x04 0x03 all_three=forward
+OK
+```
+
+**Current implementation:** always returns the four supported simultaneous-click
+trigger rows in trigger order. The human-readable `name=value` suffix is
+informational; the machine-meaningful fields are the two hex IDs.
+
+#### `SET_GESTURE`
+
+Configure one hub-owned gesture mapping.
+
+**Arguments:**
+```
+SET_GESTURE <trigger> <action>
+```
+
+**Current implementation:** the parser accepts decimal or `0xNN` byte tokens,
+validates that the IDs are known, then narrows to the currently shipped subset:
+
+- Supported trigger IDs: `0x01`-`0x04`
+- Supported action IDs: `0x00`-`0x03`
+
+Known but deferred triggers (`0x05`, `0x06`) return
+`ERR 501 unsupported_gesture_trigger`. Known but deferred actions (`0x04`,
+`0x05`) return `ERR 501 unsupported_gesture_action`.
+
+On success the hub updates both the persisted gesture blob and the live
+`event_composer` cache, so the new gesture behavior takes effect immediately
+for subsequent composed USB reports.
+
 #### `SET_ROLE`
 
 Assign a specific role to a specific ring.
@@ -595,31 +643,48 @@ Executed by `event_composer_compose()` under spinlock:
 
 ```
 cursor_dx = 0, cursor_dy = 0
-scroll_h_acc = 0, scroll_v_acc = 0  (int16_t, wider than output)
+scroll_h_acc = 0, scroll_v_acc = 0
 buttons = 0
 
+cursor_pressed = any connected CURSOR ring with (buttons_i & 0x01)
+scroll_pressed = any connected SCROLL ring with (buttons_i & 0x01)
+modifier_pressed = any connected MODIFIER ring with (buttons_i & 0x01)
+
+active_trigger = exact simultaneous-click match:
+    cursor+scroll       -> 0x01
+    cursor+modifier     -> 0x02
+    scroll+modifier     -> 0x03
+    cursor+scroll+mod   -> 0x04
+
+active_gesture_action = cached_gesture_action[active_trigger]
+
 for each connected ring i:
+    suppress_ring = active_gesture_action != NONE &&
+                    (buttons_i & 0x01) &&
+                    ring role participates in active_trigger
+
     switch role_i:
         CURSOR:
-            buttons |= (buttons_i & 0x01)        // left click
-            cursor_dx += acc_dx_i
-            cursor_dy += acc_dy_i
+            if !suppress_ring:
+                buttons |= (buttons_i & 0x01)    // left click
+                cursor_dx += acc_dx_i
+                cursor_dy += acc_dy_i
 
         SCROLL:
-            if (buttons_i & 0x01):
-                buttons |= 0x02                   // right click
-            scroll_h_acc += acc_dx_i
-            scroll_v_acc += acc_dy_i
+            if !suppress_ring:
+                if (buttons_i & 0x01):
+                    buttons |= 0x02              // right click
+                scroll_h_acc += acc_dx_i
+                scroll_v_acc += acc_dy_i
 
         MODIFIER:
-            if (buttons_i & 0x01):
-                buttons |= 0x04                   // middle click
+            if !suppress_ring && (buttons_i & 0x01):
+                buttons |= 0x04                  // middle click
 
-    // Clear this ring's accumulators
     acc_dx_i = 0
     acc_dy_i = 0
 
-// Clamp scroll to int8_t after summing across all scroll-role rings
+buttons |= gesture_button_mask(active_gesture_action)
 scroll_h = clamp(scroll_h_acc, -127, 127)
 scroll_v = clamp(scroll_v_acc, -127, 127)
 ```
@@ -649,6 +714,21 @@ saturating addition via `sat_add_i16()`. Overflow wraps to `INT16_MAX` or
 **P-6 (Modifier ignores deltas):** A MODIFIER-role ring's dx/dy are accumulated
 but never read by the composition loop. They are cleared on compose like any
 other ring. This means motion data from a MODIFIER ring is silently discarded.
+
+**P-7 (Gesture overlay):** If a configured simultaneous-click gesture is active,
+the participating rings' normal role behavior is suppressed for that compose
+window. Their click mapping and delta contribution are replaced by the gesture
+action's output button.
+
+**P-8 (Exact-match gesture selection):** The current implementation chooses only
+one active trigger and only on exact simultaneous-click sets. The three-ring
+gesture (`0x04`) takes precedence over any two-ring pair. There is no partial
+or additive gesture stacking in the current firmware.
+
+**P-9 (Five-button host output):** The USB HID report now carries five mouse
+buttons. Base role mapping still uses left/right/middle (`0x01`, `0x02`,
+`0x04`), and gesture actions can additionally emit back/forward (`0x08`,
+`0x10`).
 
 ### 5.4 Disconnect Composition Semantics
 
@@ -819,16 +899,17 @@ The following protocol pieces are still incomplete in the current codebase:
 
 | Function | Module | Purpose |
 |----------|--------|---------|
-| Remaining hub companion commands | Existing parser + CDC stack | Extend the current role-management, ring-settings relay, and diagnostics readback surface with gesture, OTA, RSSI, and hub-settings commands |
+| Remaining hub companion commands | Existing parser + CDC stack | Extend the current role-management, ring-settings relay, diagnostics readback, and gesture surface with OTA, RSSI, and hub-settings commands |
 
 ### 7.2 Thread Safety Summary
 
 | Resource | Protection | Accessed by |
 |----------|-----------|-------------|
 | `s_entries[]` (role engine) | FreeRTOS mutex | NimBLE task (via `role_engine_get_role`), companion command task |
+| `s_entries[]` (gesture engine) | FreeRTOS mutex | companion command task, main boot sync |
 | `s_rings[]` (event composer) | portMUX spinlock | NimBLE task (via `feed`, `ring_disconnected`), main loop (via `compose`) |
 | `s_rings[]` (BLE central) | portMUX spinlock for slot snapshots + semaphore/mutex for synchronous relay ops | NimBLE task (GAP / GATT callbacks), companion command task |
-| NVS writes | Single background flush task | Role engine flush worker only |
+| NVS writes | Dedicated background flush task per engine | role engine flush worker, gesture engine flush worker |
 
 **Current behavior:** Companion or NimBLE callers mutate in-memory role state
 under the role-engine mutex and stage a new blob snapshot. A dedicated
@@ -994,9 +1075,11 @@ These items require BDFL decision before implementation:
    Requiring manual disconnect is an unnecessary friction point, especially for
    accessibility users.
 
-4. **Companion command serialization.** NVS writes are already centralized in a
-   background flush worker, but companion commands still need a coherent policy
-   for applying live role changes to connected rings.
-   **Recommendation:** Route companion role changes through one command task or
-   queue so role-engine mutation and `event_composer_set_role()` happen as one
-   ordered operation.
+4. **Should simultaneous-click gestures suppress motion as well as button
+   mapping?** The current implementation suppresses both the participating
+   rings' click semantics and their dx/dy contribution for that compose window
+   before overlaying the gesture action. That keeps gesture activation
+   predictable, but it also means users cannot "click-combo while still
+   nudging" in the same poll window. **Recommendation:** keep the current
+   suppression behavior until accessibility testing shows a clear need for
+   mixed motion + gesture semantics.

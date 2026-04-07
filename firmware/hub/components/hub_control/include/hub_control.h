@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "gesture_engine.h"
 #include "role_engine.h"
 
 // Reassign a ring's role by MAC and, if the ring is currently connected, update
@@ -21,3 +22,7 @@ hal_status_t hub_control_swap_roles(const uint8_t mac_a[6], const uint8_t mac_b[
 // connected, requesting disconnect, deleting the current bond entry, and
 // removing the persisted role assignment.
 hal_status_t hub_control_forget_ring(const uint8_t mac[6]);
+
+// Update one hub-owned gesture mapping and keep the live event-composer cache
+// aligned with the persisted gesture table.
+hal_status_t hub_control_set_gesture(uint8_t trigger, gesture_action_t action);

@@ -147,6 +147,14 @@ target_include_directories(hub_identity PUBLIC
     ../ring/components/pf_hal/include
 )
 
+add_library(gesture_engine STATIC
+    ../hub/components/gesture_engine/gesture_engine.c
+)
+target_include_directories(gesture_engine PUBLIC
+    ../hub/components/gesture_engine/include
+    ../ring/components/pf_hal/include
+)
+
 add_library(role_engine STATIC
     ../hub/components/role_engine/role_engine.c
 )
@@ -162,6 +170,7 @@ add_library(hub_control STATIC
 target_include_directories(hub_control PUBLIC
     ../hub/components/hub_control/include
     ../hub/components/event_composer/include
+    ../hub/components/gesture_engine/include
     ../hub/components/role_engine/include
     ../hub/components/ble_central/include
     ../ring/components/pf_hal/include
@@ -173,6 +182,7 @@ add_library(companion_protocol STATIC
 target_include_directories(companion_protocol PUBLIC
     ../hub/components/companion_protocol/include
     ../hub/components/hub_control/include
+    ../hub/components/gesture_engine/include
     ../hub/components/role_engine/include
     ../hub/components/ble_central/include
     ../ring/components/pf_hal/include
@@ -196,6 +206,7 @@ add_library(event_composer STATIC
 )
 target_include_directories(event_composer PUBLIC
     ../hub/components/event_composer/include
+    ../hub/components/gesture_engine/include
     ../hub/components/role_engine/include
     ../hub/components/ble_central/include
     ../ring/components/pf_hal/include
@@ -209,6 +220,7 @@ add_library(usb_hid STATIC
 target_include_directories(usb_hid PUBLIC
     ../hub/components/usb_hid/include
     ../hub/components/event_composer/include
+    ../hub/components/gesture_engine/include
     ../hub/components/role_engine/include
     ../hub/components/ble_central/include
     ../ring/components/pf_hal/include
@@ -311,6 +323,7 @@ add_executable(powerfinger_tests
     test_ring_identity.c
     test_app_controller.c
     test_hub_identity.c
+    test_gesture_engine.c
     test_role_engine.c
     test_hub_control.c
     test_companion_protocol.c
@@ -332,6 +345,7 @@ target_link_libraries(powerfinger_tests
     ring_settings
     ring_identity
     hub_identity
+    gesture_engine
     role_engine
     hub_control
     companion_session
@@ -351,6 +365,7 @@ target_include_directories(powerfinger_tests PRIVATE
     ../ring/components/pf_hal/include
     ../ring/components/app_controller/include
     ../hub/components/hub_identity/include
+    ../hub/components/gesture_engine/include
     ../hub/components/role_engine/include
     ../hub/components/hub_control/include
     ../hub/components/companion_protocol/include

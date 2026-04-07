@@ -468,6 +468,28 @@ select:focus-visible {
     gap: var(--space-md);
 }
 
+.gesture-section {
+    margin-top: var(--space-xl);
+    padding-top: var(--space-lg);
+    border-top: 1px solid rgba(22, 35, 33, 0.08);
+}
+
+.gesture-header {
+    margin-bottom: var(--space-md);
+}
+
+.gesture-grid {
+    display: grid;
+    gap: var(--space-sm);
+}
+
+.gesture-field {
+    padding: 0.85rem 0.9rem;
+    border: 1px solid rgba(22, 35, 33, 0.08);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.56);
+}
+
 .field {
     display: grid;
     gap: 0.45rem;

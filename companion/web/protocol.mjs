@@ -12,6 +12,20 @@ export const SUPPORTED_ROLES = Object.freeze([
     "MODIFIER",
 ]);
 
+export const SUPPORTED_GESTURE_TRIGGERS = Object.freeze([
+    Object.freeze({ id: "0x01", label: "Cursor + Scroll simultaneous click" }),
+    Object.freeze({ id: "0x02", label: "Cursor + Modifier simultaneous click" }),
+    Object.freeze({ id: "0x03", label: "Scroll + Modifier simultaneous click" }),
+    Object.freeze({ id: "0x04", label: "All three simultaneous click" }),
+]);
+
+export const SUPPORTED_GESTURE_ACTIONS = Object.freeze([
+    Object.freeze({ id: "0x00", label: "Disabled" }),
+    Object.freeze({ id: "0x01", label: "Middle click" }),
+    Object.freeze({ id: "0x02", label: "Back" }),
+    Object.freeze({ id: "0x03", label: "Forward" }),
+]);
+
 export const RING_SETTINGS_LIMITS = Object.freeze({
     dpiMultiplier: Object.freeze({ min: 1, max: 255 }),
     deadZoneTimeMs: Object.freeze({ min: 0, max: 2000 }),
@@ -92,6 +106,46 @@ export function buildGetRingSettingsCommand(mac) {
 
 export function buildGetRingDiagnosticsCommand(mac) {
     return `GET_RING_DIAGNOSTICS ${normalizeMac(mac)}`;
+}
+
+export function buildGetGesturesCommand() {
+    return "GET_GESTURES";
+}
+
+function normalizeGestureId(value, label, supportedIds) {
+    if (typeof value !== "string") {
+        throw new TypeError(`${label} must be a string.`);
+    }
+
+    const trimmed = value.trim();
+    const normalized = /^0x[0-9a-f]{2}$/i.test(trimmed)
+        ? `0x${trimmed.slice(2).toUpperCase()}`
+        : trimmed.toUpperCase();
+    if (!supportedIds.includes(normalized)) {
+        throw new Error(`Invalid ${label.toLowerCase()}: ${value}`);
+    }
+
+    return normalized;
+}
+
+export function normalizeGestureTriggerId(triggerId) {
+    return normalizeGestureId(
+        triggerId,
+        "Gesture trigger",
+        SUPPORTED_GESTURE_TRIGGERS.map((trigger) => trigger.id),
+    );
+}
+
+export function normalizeGestureActionId(actionId) {
+    return normalizeGestureId(
+        actionId,
+        "Gesture action",
+        SUPPORTED_GESTURE_ACTIONS.map((action) => action.id),
+    );
+}
+
+export function buildSetGestureCommand(triggerId, actionId) {
+    return `SET_GESTURE ${normalizeGestureTriggerId(triggerId)} ${normalizeGestureActionId(actionId)}`;
 }
 
 export function buildSetRingDpiCommand(mac, dpiMultiplier) {
@@ -316,4 +370,31 @@ export function parseRingDiagnosticsResponse(response) {
             RING_DIAGNOSTICS_LIMITS.diagnosticsVersion,
         ),
     };
+}
+
+export function parseGesturesResponse(response) {
+    const parsed = typeof response === "string" ? parseProtocolResponse(response) : response;
+    if (!parsed?.ok) {
+        throw new Error("Gestures response was not successful.");
+    }
+
+    return parsed.dataLines.map((line) => {
+        const match = /^\+\s+(0x[0-9A-F]{2})\s+(0x[0-9A-F]{2})(?:\s+(.+))?$/i.exec(line);
+        if (!match) {
+            throw new Error(`Expected gesture entry, got: ${line}`);
+        }
+
+        const triggerId = normalizeGestureTriggerId(match[1]);
+        const actionId = normalizeGestureActionId(match[2]);
+        const trigger = SUPPORTED_GESTURE_TRIGGERS.find((entry) => entry.id === triggerId);
+        const action = SUPPORTED_GESTURE_ACTIONS.find((entry) => entry.id === actionId);
+
+        return {
+            triggerId,
+            actionId,
+            triggerLabel: trigger?.label ?? triggerId,
+            actionLabel: action?.label ?? actionId,
+            description: String(match[3] ?? ""),
+        };
+    });
 }
