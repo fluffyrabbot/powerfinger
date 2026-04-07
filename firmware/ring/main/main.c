@@ -16,11 +16,11 @@
 #include "nvs_flash.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
+#include "app_controller.h"
 #include "hal_timer.h"
 #include "hal_ble.h"
 #include "ring_settings.h"
 #include "ble_hid_mouse.h"
-#include "ble_config.h"
 #include "ring_state.h"
 #include "ring_config.h"
 #include "sensor_interface.h"
@@ -47,20 +47,6 @@ static const char *TAG = POWERFINGER_APP_LOG_TAG;
 // --- Event queue: BLE callback -> main loop ---
 
 #define EVT_QUEUE_LEN 8
-
-typedef enum {
-    APP_EVT_RING_STATE = 0,
-    APP_EVT_BOND_RESTORED,
-    APP_EVT_BOND_FAILED,
-    APP_EVT_CONN_PARAMS_UPDATED,
-    APP_EVT_CONN_PARAMS_REJECTED,
-} app_event_type_t;
-
-typedef struct {
-    app_event_type_t type;
-    ring_event_t ring_evt;
-    uint16_t conn_interval_1_25ms;
-} app_event_t;
 
 static QueueHandle_t s_evt_queue = NULL;
 static atomic_uint s_evt_queue_dropped = ATOMIC_VAR_INIT(0);
@@ -96,62 +82,6 @@ static void sync_pen_wake_diagnostics(ring_diagnostics_t *diagnostics)
 #else
     (void)diagnostics;
 #endif
-}
-
-static void log_diagnostics_snapshot(const char *reason,
-                                     const ring_diagnostics_t *diagnostics)
-{
-    ring_diag_snapshot_t snapshot = ring_diagnostics_snapshot(diagnostics);
-    uint32_t interval_centims = (uint32_t)snapshot.conn_interval_1_25ms * 125U;
-    uint32_t interval_ms_whole = interval_centims / 100U;
-    uint32_t interval_ms_frac = interval_centims % 100U;
-
-    if (snapshot.conn_interval_1_25ms == 0) {
-        ESP_LOGI(TAG,
-                 "diag[%s]: state=%s sensor=%s cal=%s bond=%s conn=unknown rejected=%s batt=%u%% (%lumV)"
-#ifdef CONFIG_POWERFINGER_FORM_FACTOR_PEN
-                 " drv5032=%s spur=%u"
-#endif
-                 ,
-                 reason,
-                 ring_state_name(snapshot.ring_state),
-                 ring_diag_sensor_state_name(snapshot.sensor_state),
-                 snapshot.calibration_valid ? "valid" : "pending",
-                 ring_diag_bond_state_name(snapshot.bond_state),
-                 snapshot.conn_param_rejected ? "yes" : "no",
-                 snapshot.battery_pct,
-                 (unsigned long)snapshot.battery_mv
-#ifdef CONFIG_POWERFINGER_FORM_FACTOR_PEN
-                 ,
-                 snapshot.drv5032_wake_enabled ? "enabled" : "disabled",
-                 snapshot.spurious_wake_count
-#endif
-                 );
-        return;
-    }
-
-    ESP_LOGI(TAG,
-             "diag[%s]: state=%s sensor=%s cal=%s bond=%s conn=%lu.%02lums rejected=%s batt=%u%% (%lumV)"
-#ifdef CONFIG_POWERFINGER_FORM_FACTOR_PEN
-             " drv5032=%s spur=%u"
-#endif
-             ,
-             reason,
-             ring_state_name(snapshot.ring_state),
-             ring_diag_sensor_state_name(snapshot.sensor_state),
-             snapshot.calibration_valid ? "valid" : "pending",
-             ring_diag_bond_state_name(snapshot.bond_state),
-             (unsigned long)interval_ms_whole,
-             (unsigned long)interval_ms_frac,
-             snapshot.conn_param_rejected ? "yes" : "no",
-             snapshot.battery_pct,
-             (unsigned long)snapshot.battery_mv
-#ifdef CONFIG_POWERFINGER_FORM_FACTOR_PEN
-             ,
-             snapshot.drv5032_wake_enabled ? "enabled" : "disabled",
-             snapshot.spurious_wake_count
-#endif
-             );
 }
 
 static void publish_ble_diagnostics(const ring_diagnostics_t *diagnostics)
@@ -247,157 +177,35 @@ static void handle_hid_send_result(ring_runtime_health_t *runtime_health,
     }
 }
 
-static void note_connected_transition(ring_diagnostics_t *diagnostics,
-                                      ring_runtime_health_t *runtime_health,
-                                      uint32_t *adv_start_ms,
-                                      uint8_t *prev_buttons,
-                                      uint16_t conn_interval_1_25ms,
-                                      const char *reason)
-{
-    if (adv_start_ms) {
-        *adv_start_ms = 0;
-    }
-
-    power_manager_on_connect();
-
-    if (runtime_health) {
-        ring_runtime_health_reset_hid_send(runtime_health);
-    }
-
-    if (diagnostics) {
-        ring_diagnostics_note_connected(diagnostics, conn_interval_1_25ms);
-        log_diagnostics_snapshot(reason, diagnostics);
-    }
-
-    if (prev_buttons) {
-        *prev_buttons = 0;
-    }
-}
-
-static void note_disconnected_transition(ring_diagnostics_t *diagnostics,
-                                         ring_runtime_health_t *runtime_health,
-                                         dead_zone_ctx_t *primary_dead_zone,
-                                         dead_zone_ctx_t *secondary_dead_zone,
-                                         uint32_t *adv_start_ms,
-                                         uint8_t *prev_buttons,
-                                         uint32_t now_ms,
-                                         const char *reason)
-{
-    if (primary_dead_zone) {
-        dead_zone_reset(primary_dead_zone);
-    }
-    if (secondary_dead_zone) {
-        dead_zone_reset(secondary_dead_zone);
-    }
-    if (adv_start_ms) {
-        *adv_start_ms = now_ms;
-    }
-
-    power_manager_on_disconnect();
-
-    if (runtime_health) {
-        ring_runtime_health_reset_hid_send(runtime_health);
-    }
-
-    if (diagnostics) {
-        ring_diagnostics_note_disconnected(diagnostics);
-        log_diagnostics_snapshot(reason, diagnostics);
-    }
-
-    if (prev_buttons) {
-        *prev_buttons = 0;
-    }
-}
-
-static void reconcile_ble_event_drops(ring_diagnostics_t *diagnostics,
-                                      ring_runtime_health_t *runtime_health,
-                                      dead_zone_ctx_t *primary_dead_zone,
-                                      dead_zone_ctx_t *secondary_dead_zone,
-                                      uint32_t *adv_start_ms,
-                                      uint8_t *prev_buttons,
-                                      uint32_t now_ms)
-{
-    unsigned int dropped = atomic_exchange(&s_evt_queue_dropped, 0U);
-    if (dropped == 0U) {
-        return;
-    }
-
-    bool connected = hal_ble_is_connected();
-    ring_state_t state = ring_state_get();
-
-    ESP_LOGW(TAG,
-             "BLE event queue dropped %u event(s) — reconciling state=%s connected=%s",
-             dropped,
-             ring_state_name(state),
-             connected ? "yes" : "no");
-
-    ring_actions_t actions;
-    memset(&actions, 0, sizeof(actions));
-
-    if (connected && state == RING_STATE_ADVERTISING) {
-        ring_state_dispatch(RING_EVT_BLE_CONNECTED, &actions);
-        ring_diagnostics_note_ring_state(diagnostics, ring_state_get());
-        execute_actions(&actions);
-        note_connected_transition(diagnostics,
-                                  runtime_health,
-                                  adv_start_ms,
-                                  prev_buttons,
-                                  0,
-                                  "queue-reconcile-connect");
-        return;
-    }
-
-    if (!connected &&
-        (state == RING_STATE_CONNECTED_ACTIVE || state == RING_STATE_CONNECTED_IDLE)) {
-        ring_state_dispatch(RING_EVT_BLE_DISCONNECTED, &actions);
-        ring_diagnostics_note_ring_state(diagnostics, ring_state_get());
-        execute_actions(&actions);
-        note_disconnected_transition(diagnostics,
-                                     runtime_health,
-                                     primary_dead_zone,
-                                     secondary_dead_zone,
-                                     adv_start_ms,
-                                     prev_buttons,
-                                     now_ms,
-                                     "queue-reconcile-disconnect");
-        return;
-    }
-
-    ESP_LOGW(TAG,
-             "BLE queue drop did not require topology repair (state=%s connected=%s)",
-             ring_state_name(state),
-             connected ? "yes" : "no");
-}
-
 // --- BLE event callback (posts to queue, never dispatches directly) ---
 
 static void ble_event_callback(const hal_ble_event_data_t *evt, void *arg)
 {
     (void)arg;
-    app_event_t app_evt = {0};
+    app_controller_event_t app_evt = {0};
 
     switch (evt->type) {
     case HAL_BLE_EVT_CONNECTED:
-        app_evt.type = APP_EVT_RING_STATE;
+        app_evt.type = APP_CONTROLLER_EVT_RING_STATE;
         app_evt.ring_evt = RING_EVT_BLE_CONNECTED;
         app_evt.conn_interval_1_25ms = evt->data.conn_params.conn_interval_1_25ms;
         break;
     case HAL_BLE_EVT_DISCONNECTED:
-        app_evt.type = APP_EVT_RING_STATE;
+        app_evt.type = APP_CONTROLLER_EVT_RING_STATE;
         app_evt.ring_evt = RING_EVT_BLE_DISCONNECTED;
         break;
     case HAL_BLE_EVT_BOND_RESTORED:
-        app_evt.type = APP_EVT_BOND_RESTORED;
+        app_evt.type = APP_CONTROLLER_EVT_BOND_RESTORED;
         break;
     case HAL_BLE_EVT_BOND_FAILED:
-        app_evt.type = APP_EVT_BOND_FAILED;
+        app_evt.type = APP_CONTROLLER_EVT_BOND_FAILED;
         break;
     case HAL_BLE_EVT_CONN_PARAMS_UPDATED:
-        app_evt.type = APP_EVT_CONN_PARAMS_UPDATED;
+        app_evt.type = APP_CONTROLLER_EVT_CONN_PARAMS_UPDATED;
         app_evt.conn_interval_1_25ms = evt->data.conn_params.conn_interval_1_25ms;
         break;
     case HAL_BLE_EVT_CONN_PARAMS_REJECTED:
-        app_evt.type = APP_EVT_CONN_PARAMS_REJECTED;
+        app_evt.type = APP_CONTROLLER_EVT_CONN_PARAMS_REJECTED;
         break;
     default:
         return;
@@ -415,26 +223,6 @@ static void ble_event_callback(const hal_ble_event_data_t *evt, void *arg)
     }
 }
 
-// --- Execute state machine action flags ---
-
-static void execute_actions(const ring_actions_t *a)
-{
-    if (a->stop_advertising) {
-        hal_ble_stop_advertising();
-    }
-    if (a->start_advertising) {
-        if (hal_ble_start_advertising(BLE_ADVERTISE_TIMEOUT_MS) != HAL_OK) {
-            ESP_LOGE(TAG, "advertising start failed — entering deep sleep");
-            power_manager_enter_sleep(true);
-            return;
-        }
-    }
-    if (a->enter_deep_sleep) {
-        power_manager_enter_sleep(true);
-        // Does not return for deep sleep
-    }
-}
-
 // --- Phase 0: fake circular motion for BLE HID validation ---
 
 #if defined(CONFIG_SENSOR_NONE) && defined(CONFIG_CLICK_NONE)
@@ -447,12 +235,14 @@ static void phase0_fake_motion_loop(void)
     ESP_LOGI(TAG, "Phase 0: fake motion mode (no sensor, no click)");
 
     uint32_t tick = 0;
-    uint32_t adv_start_ms = hal_timer_get_ms();
     ring_runtime_health_t runtime_health;
     ring_runtime_health_init(&runtime_health);
     ring_diagnostics_t diagnostics;
     ring_diagnostics_init(&diagnostics);
     ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
+    app_controller_t controller;
+    app_controller_init(&controller, &diagnostics, &runtime_health, NULL, NULL);
+    controller.advertising_started_ms = hal_timer_get_ms();
     sync_battery_diagnostics(&diagnostics);
     publish_ble_diagnostics(&diagnostics);
 
@@ -460,65 +250,19 @@ static void phase0_fake_motion_loop(void)
         hal_timer_delay_ms(FAKE_MOTION_PERIOD_MS);
 
         // Drain BLE event queue (connection/disconnection)
-        app_event_t queued_evt;
-        ring_actions_t actions;
+        app_controller_event_t queued_evt;
         while (xQueueReceive(s_evt_queue, &queued_evt, 0) == pdTRUE) {
-            if (queued_evt.type == APP_EVT_RING_STATE) {
-                ring_state_dispatch(queued_evt.ring_evt, &actions);
-                ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
-                execute_actions(&actions);
-                if (queued_evt.ring_evt == RING_EVT_BLE_CONNECTED) {
-                    note_connected_transition(&diagnostics,
-                                              &runtime_health,
-                                              &adv_start_ms,
-                                              NULL,
-                                              queued_evt.conn_interval_1_25ms,
-                                              "connect");
-                }
-                if (queued_evt.ring_evt == RING_EVT_BLE_DISCONNECTED) {
-                    note_disconnected_transition(&diagnostics,
-                                                 &runtime_health,
-                                                 NULL,
-                                                 NULL,
-                                                 &adv_start_ms,
-                                                 NULL,
-                                                 hal_timer_get_ms(),
-                                                 "disconnect");
-                }
-            } else if (queued_evt.type == APP_EVT_BOND_RESTORED) {
-                ring_diagnostics_note_bond_restored(&diagnostics);
-                log_diagnostics_snapshot("bond-restored", &diagnostics);
-            } else if (queued_evt.type == APP_EVT_BOND_FAILED) {
-                ring_diagnostics_note_bond_failed(&diagnostics);
-                log_diagnostics_snapshot("bond-failed", &diagnostics);
-            } else if (queued_evt.type == APP_EVT_CONN_PARAMS_UPDATED) {
-                ring_diagnostics_note_conn_params_updated(&diagnostics,
-                                                          queued_evt.conn_interval_1_25ms);
-                log_diagnostics_snapshot("conn-update", &diagnostics);
-            } else if (queued_evt.type == APP_EVT_CONN_PARAMS_REJECTED) {
-                ring_diagnostics_note_conn_param_rejected(&diagnostics);
-                log_diagnostics_snapshot("conn-rejected", &diagnostics);
-            }
+            app_controller_handle_event(&controller, &queued_evt, hal_timer_get_ms());
         }
 
-        reconcile_ble_event_drops(&diagnostics,
-                                  &runtime_health,
-                                  NULL,
-                                  NULL,
-                                  &adv_start_ms,
-                                  NULL,
-                                  hal_timer_get_ms());
+        app_controller_reconcile_ble_event_drops(&controller,
+                                                 atomic_exchange(&s_evt_queue_dropped, 0U),
+                                                 hal_ble_is_connected(),
+                                                 hal_timer_get_ms());
 
         // Check advertising timeout
         uint32_t now = hal_timer_get_ms();
-        if (adv_start_ms != 0 &&
-            ring_state_get() == RING_STATE_ADVERTISING &&
-            (now - adv_start_ms) >= RECONNECT_TIMEOUT_MS) {
-            ring_state_dispatch(RING_EVT_BLE_ADV_TIMEOUT, &actions);
-            ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
-            execute_actions(&actions);
-            log_diagnostics_snapshot("adv-timeout", &diagnostics);
-        }
+        app_controller_check_advertising_timeout(&controller, now);
 
         publish_ble_diagnostics(&diagnostics);
 
@@ -562,7 +306,7 @@ void app_main(void)
     ESP_ERROR_CHECK(ret);
 
     // Create BLE event queue (must exist before BLE init)
-    s_evt_queue = xQueueCreate(EVT_QUEUE_LEN, sizeof(app_event_t));
+    s_evt_queue = xQueueCreate(EVT_QUEUE_LEN, sizeof(app_controller_event_t));
     if (!s_evt_queue) {
         ESP_LOGE(TAG, "BLE event queue alloc failed — restarting");
         esp_restart();
@@ -622,9 +366,14 @@ void app_main(void)
     dead_zone_ctx_t secondary_dead_zone;
     dead_zone_init(&dead_zone);
     dead_zone_init(&secondary_dead_zone);
+    app_controller_t controller;
+    app_controller_init(&controller,
+                        &diagnostics,
+                        &runtime_health,
+                        &dead_zone,
+                        &secondary_dead_zone);
 
     // Run calibration (blocks until complete)
-    ring_actions_t actions;
     hal_status_t cal_ret = HAL_ERR_TIMEOUT;
     if (sensor_ok) {
         cal_ret = calibration_run();
@@ -644,25 +393,28 @@ void app_main(void)
             ESP_LOGW(TAG, "failed to gate sensor power after sensor init error: %d", gate_rc);
         }
     }
-    if (cal_ret == HAL_OK) {
-        ring_state_dispatch(RING_EVT_CALIBRATION_DONE, &actions);
-    } else {
+    ring_event_t calibration_event = RING_EVT_CALIBRATION_DONE;
+    if (cal_ret != HAL_OK) {
 #ifdef CONFIG_POWERFINGER_FORM_FACTOR_PEN
         pen_wake_debounce_note_validation_failure();
 #endif
-        ring_state_dispatch(RING_EVT_CALIBRATION_FAILED, &actions);
+        calibration_event = RING_EVT_CALIBRATION_FAILED;
     }
-    ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
-    sync_sensor_diagnostics(&diagnostics, sensor_ok, sensor_calibrated);
-    sync_pen_wake_diagnostics(&diagnostics);
-    execute_actions(&actions);
 
-    // Initialize BLE HID (state machine already set ADVERTISING + action flag)
+    // Initialize BLE HID before executing the boot transition that starts
+    // advertising, so one controller owns state actions and the live stack.
     if (ble_hid_mouse_init(ble_event_callback, NULL) != HAL_OK) {
         ESP_LOGE(TAG, "BLE init failed — entering deep sleep");
         power_manager_enter_sleep(true);
         return;  // unreachable after deep sleep
     }
+    app_controller_dispatch_ring_event(&controller,
+                                       calibration_event,
+                                       0,
+                                       hal_timer_get_ms(),
+                                       NULL);
+    sync_sensor_diagnostics(&diagnostics, sensor_ok, sensor_calibrated);
+    sync_pen_wake_diagnostics(&diagnostics);
 
     hal_ble_set_battery_level(power_manager_get_battery_level());
     sync_battery_diagnostics(&diagnostics);
@@ -675,81 +427,31 @@ void app_main(void)
     esp_ota_mark_app_valid_cancel_rollback();
 
     ESP_LOGI(TAG, "%s firmware ready", POWERFINGER_APP_FIRMWARE_NAME);
-    log_diagnostics_snapshot("boot", &diagnostics);
+    app_controller_log_diagnostics_snapshot("boot", &diagnostics);
 
 #if defined(CONFIG_SENSOR_NONE) && defined(CONFIG_CLICK_NONE)
     phase0_fake_motion_loop();
 #else
     // --- Main loop: state machine driven ---
-    uint32_t adv_start_ms = hal_timer_get_ms();  // track advertising timeout
-    uint8_t prev_buttons = 0;
     uint32_t next_settings_flush_ms = 0;
 
     while (1) {
         uint32_t now = hal_timer_get_ms();
         ring_settings_snapshot_t settings = ring_settings_snapshot();
-        memset(&actions, 0, sizeof(actions));
 
         // --- Drain BLE event queue (serializes all state machine access) ---
-        app_event_t queued_evt;
+        app_controller_event_t queued_evt;
         while (xQueueReceive(s_evt_queue, &queued_evt, 0) == pdTRUE) {
-            if (queued_evt.type == APP_EVT_RING_STATE) {
-                ring_state_dispatch(queued_evt.ring_evt, &actions);
-                ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
-                execute_actions(&actions);
-
-                if (queued_evt.ring_evt == RING_EVT_BLE_CONNECTED) {
-                    note_connected_transition(&diagnostics,
-                                              &runtime_health,
-                                              &adv_start_ms,
-                                              &prev_buttons,
-                                              queued_evt.conn_interval_1_25ms,
-                                              "connect");
-                }
-                if (queued_evt.ring_evt == RING_EVT_BLE_DISCONNECTED) {
-                    note_disconnected_transition(&diagnostics,
-                                                 &runtime_health,
-                                                 &dead_zone,
-                                                 &secondary_dead_zone,
-                                                 &adv_start_ms,
-                                                 &prev_buttons,
-                                                 now,
-                                                 "disconnect");
-                }
-            } else if (queued_evt.type == APP_EVT_BOND_RESTORED) {
-                ring_diagnostics_note_bond_restored(&diagnostics);
-                log_diagnostics_snapshot("bond-restored", &diagnostics);
-            } else if (queued_evt.type == APP_EVT_BOND_FAILED) {
-                ring_diagnostics_note_bond_failed(&diagnostics);
-                log_diagnostics_snapshot("bond-failed", &diagnostics);
-            } else if (queued_evt.type == APP_EVT_CONN_PARAMS_UPDATED) {
-                ring_diagnostics_note_conn_params_updated(&diagnostics,
-                                                          queued_evt.conn_interval_1_25ms);
-                log_diagnostics_snapshot("conn-update", &diagnostics);
-            } else if (queued_evt.type == APP_EVT_CONN_PARAMS_REJECTED) {
-                ring_diagnostics_note_conn_param_rejected(&diagnostics);
-                log_diagnostics_snapshot("conn-rejected", &diagnostics);
-            }
+            app_controller_handle_event(&controller, &queued_evt, now);
         }
 
-        reconcile_ble_event_drops(&diagnostics,
-                                  &runtime_health,
-                                  &dead_zone,
-                                  &secondary_dead_zone,
-                                  &adv_start_ms,
-                                  &prev_buttons,
-                                  now);
+        app_controller_reconcile_ble_event_drops(&controller,
+                                                 atomic_exchange(&s_evt_queue_dropped, 0U),
+                                                 hal_ble_is_connected(),
+                                                 now);
 
         // --- Advertising timeout ---
-        if (adv_start_ms != 0 &&
-            ring_state_get() == RING_STATE_ADVERTISING &&
-            (now - adv_start_ms) >= RECONNECT_TIMEOUT_MS) {
-            memset(&actions, 0, sizeof(actions));
-            ring_state_dispatch(RING_EVT_BLE_ADV_TIMEOUT, &actions);
-            ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
-            execute_actions(&actions);
-            log_diagnostics_snapshot("adv-timeout", &diagnostics);
-        }
+        app_controller_check_advertising_timeout(&controller, now);
 
         // --- Read sensor ---
         sensor_reading_t reading = {0};
@@ -769,7 +471,7 @@ void app_main(void)
                     ESP_LOGI(TAG, "sensor recovery succeeded — motion input restored");
                 }
                 sync_sensor_diagnostics(&diagnostics, sensor_ok, sensor_calibrated);
-                log_diagnostics_snapshot("sensor-recovered", &diagnostics);
+                app_controller_log_diagnostics_snapshot("sensor-recovered", &diagnostics);
             } else {
                 sensor_ok = false;
                 ESP_LOGW(TAG, "sensor recovery attempt failed: %d", recovery_rc);
@@ -784,7 +486,7 @@ void app_main(void)
             dead_zone_reset(&dead_zone);
             dead_zone_reset(&secondary_dead_zone);
             sync_sensor_diagnostics(&diagnostics, sensor_ok, sensor_calibrated);
-            log_diagnostics_snapshot("late-calibration", &diagnostics);
+            app_controller_log_diagnostics_snapshot("late-calibration", &diagnostics);
         }
 
         if (sensor_ok && sensor_calibrated) {
@@ -807,10 +509,11 @@ void app_main(void)
                     pen_wake_debounce_note_motion();
                     sync_pen_wake_diagnostics(&diagnostics);
 #endif
-                    memset(&actions, 0, sizeof(actions));
-                    ring_state_dispatch(RING_EVT_MOTION_DETECTED, &actions);
-                    ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
-                    execute_actions(&actions);
+                    app_controller_dispatch_ring_event(&controller,
+                                                       RING_EVT_MOTION_DETECTED,
+                                                       0,
+                                                       now,
+                                                       NULL);
                     power_manager_on_motion();
                 }
             } else {
@@ -825,7 +528,7 @@ void app_main(void)
                     dead_zone_reset(&secondary_dead_zone);
                     sensor_ok = false;
                     sync_sensor_diagnostics(&diagnostics, sensor_ok, sensor_calibrated);
-                    log_diagnostics_snapshot("sensor-degraded", &diagnostics);
+                    app_controller_log_diagnostics_snapshot("sensor-degraded", &diagnostics);
                 }
             }
         }
@@ -856,10 +559,11 @@ void app_main(void)
             }
 #endif
             if (ring_state_get() == RING_STATE_CONNECTED_IDLE) {
-                memset(&actions, 0, sizeof(actions));
-                ring_state_dispatch(RING_EVT_CLICK_ACTIVITY, &actions);
-                ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
-                execute_actions(&actions);
+                app_controller_dispatch_ring_event(&controller,
+                                                   RING_EVT_CLICK_ACTIVITY,
+                                                   0,
+                                                   now,
+                                                   NULL);
             }
         }
 
@@ -884,7 +588,7 @@ void app_main(void)
         }
 
         // --- Send HID report if in active state ---
-        bool button_changed = (buttons != prev_buttons);
+        bool button_changed = (buttons != app_controller_previous_buttons(&controller));
         if (ring_state_get() == RING_STATE_CONNECTED_ACTIVE &&
             (sensor_valid || button_changed)) {
             handle_hid_send_result(&runtime_health,
@@ -894,7 +598,7 @@ void app_main(void)
                                                       0),
                                    now);
         }
-        prev_buttons = buttons;
+        app_controller_set_previous_buttons(&controller, buttons);
 
         // Validate DRV5032 deep-sleep wakes shortly after boot and suppress the
         // motion wake source if it repeatedly wakes without real motion.
@@ -906,22 +610,7 @@ void app_main(void)
         // --- Power management tick ---
         power_event_t pwr_evt = power_manager_tick(now);
         if (pwr_evt != POWER_EVT_NONE) {
-            // Map power events to ring state machine events
-            ring_event_t ring_evt = RING_EVT_NONE;
-            if (pwr_evt == POWER_EVT_IDLE_TIMEOUT)       ring_evt = RING_EVT_IDLE_TIMEOUT;
-            if (pwr_evt == POWER_EVT_LOW_BATTERY)        ring_evt = RING_EVT_LOW_BATTERY;
-            if (pwr_evt == POWER_EVT_SLEEP_TIMEOUT)      ring_evt = RING_EVT_SLEEP_TIMEOUT;
-            // Thermal emergency reuses the LOW_BATTERY invariant path:
-            // both force immediate deep sleep from any state, unconditionally.
-            if (pwr_evt == POWER_EVT_THERMAL_SHUTDOWN)   ring_evt = RING_EVT_LOW_BATTERY;
-
-            if (ring_evt != RING_EVT_NONE) {
-                memset(&actions, 0, sizeof(actions));
-                ring_state_dispatch(ring_evt, &actions);
-                ring_diagnostics_note_ring_state(&diagnostics, ring_state_get());
-                execute_actions(&actions);
-                log_diagnostics_snapshot("power-event", &diagnostics);
-            }
+            app_controller_handle_power_event(&controller, pwr_evt, now);
         }
         hal_ble_set_battery_level(power_manager_get_battery_level());
         sync_battery_diagnostics(&diagnostics);

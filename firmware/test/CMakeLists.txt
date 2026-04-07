@@ -54,6 +54,20 @@ target_include_directories(ring_diagnostics PUBLIC
     ../ring/components/pf_hal/include
 )
 
+add_library(app_controller STATIC
+    ../ring/components/app_controller/app_controller.c
+)
+target_include_directories(app_controller PUBLIC
+    ../ring/components/app_controller/include
+    ../ring/components/ble_hid/include
+    ../ring/components/click/include
+    ../ring/components/diagnostics/include
+    ../ring/components/power/include
+    ../ring/components/runtime_health/include
+    ../ring/components/state_machine/include
+    ../ring/components/pf_hal/include
+)
+
 add_library(calibration STATIC
     ../ring/components/click/calibration.c
 )
@@ -295,6 +309,7 @@ add_executable(powerfinger_tests
     test_ring_runtime_health.c
     test_ring_settings.c
     test_ring_identity.c
+    test_app_controller.c
     test_hub_identity.c
     test_role_engine.c
     test_hub_control.c
@@ -307,6 +322,7 @@ add_executable(powerfinger_tests
 target_link_libraries(powerfinger_tests
     unity
     mock_hal
+    app_controller
     state_machine
     dead_zone
     ring_diagnostics
@@ -333,6 +349,7 @@ target_include_directories(powerfinger_tests PRIVATE
     ../ring/components/runtime_health/include
     ../ring/components/ble_hid/include
     ../ring/components/pf_hal/include
+    ../ring/components/app_controller/include
     ../hub/components/hub_identity/include
     ../hub/components/role_engine/include
     ../hub/components/hub_control/include

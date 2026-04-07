@@ -36,6 +36,10 @@ static hal_status_t s_ble_conn_param_status = HAL_OK;
 static int s_ble_conn_param_request_count = 0;
 static uint16_t s_ble_conn_param_min = 0;
 static uint16_t s_ble_conn_param_max = 0;
+static bool s_ble_connected = false;
+static int s_ble_adv_start_count = 0;
+static int s_ble_adv_stop_count = 0;
+static uint32_t s_ble_last_adv_timeout_ms = 0;
 static hal_pin_t s_last_gpio_set_pin = HAL_PIN_NONE;
 static bool s_last_gpio_set_level = false;
 static int s_gpio_set_count = 0;
@@ -95,6 +99,10 @@ void mock_hal_reset(void)
     s_ble_conn_param_request_count = 0;
     s_ble_conn_param_min = 0;
     s_ble_conn_param_max = 0;
+    s_ble_connected = false;
+    s_ble_adv_start_count = 0;
+    s_ble_adv_stop_count = 0;
+    s_ble_last_adv_timeout_ms = 0;
     s_last_gpio_set_pin = HAL_PIN_NONE;
     s_last_gpio_set_level = false;
     s_gpio_set_count = 0;
@@ -191,6 +199,26 @@ void mock_hal_set_gpio_input(hal_pin_t pin, bool level)
 void mock_hal_set_wake_cause(hal_wake_cause_t cause)
 {
     s_wake_cause = cause;
+}
+
+void mock_hal_set_ble_connected(bool connected)
+{
+    s_ble_connected = connected;
+}
+
+int mock_hal_get_ble_adv_start_count(void)
+{
+    return s_ble_adv_start_count;
+}
+
+int mock_hal_get_ble_adv_stop_count(void)
+{
+    return s_ble_adv_stop_count;
+}
+
+uint32_t mock_hal_get_last_ble_adv_timeout_ms(void)
+{
+    return s_ble_last_adv_timeout_ms;
 }
 
 void mock_hal_set_gpio_read_sequence(hal_pin_t pin, const bool *values, int count)
@@ -558,8 +586,17 @@ hal_status_t hal_spi_deinit(hal_spi_handle_t h) { (void)h; return HAL_OK; }
 
 // --- hal_ble (with failure injection) ---
 hal_status_t hal_ble_init(const char *n, hal_ble_event_cb_t cb, void *a) { (void)n;(void)cb;(void)a; return HAL_OK; }
-hal_status_t hal_ble_start_advertising(uint32_t t) { (void)t; return HAL_OK; }
-hal_status_t hal_ble_stop_advertising(void) { return HAL_OK; }
+hal_status_t hal_ble_start_advertising(uint32_t t)
+{
+    s_ble_adv_start_count++;
+    s_ble_last_adv_timeout_ms = t;
+    return HAL_OK;
+}
+hal_status_t hal_ble_stop_advertising(void)
+{
+    s_ble_adv_stop_count++;
+    return HAL_OK;
+}
 hal_status_t hal_ble_send_mouse_report(const hal_hid_mouse_report_t *r) {
     (void)r;
     if (s_ble_send_fail_count > 0) {
@@ -581,7 +618,7 @@ void hal_ble_set_diagnostic_payload(const uint8_t *data, size_t len)
     (void)data;
     (void)len;
 }
-bool hal_ble_is_connected(void) { return false; }
+bool hal_ble_is_connected(void) { return s_ble_connected; }
 
 // --- hal_ota ---
 hal_status_t hal_ota_begin(hal_ota_handle_t *h) { (void)h; return HAL_OK; }

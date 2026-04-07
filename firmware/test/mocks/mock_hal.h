@@ -67,3 +67,7 @@ void mock_hal_set_ble_conn_param_status(hal_status_t status);
 int mock_hal_get_ble_conn_param_request_count(void);
 void mock_hal_get_last_ble_conn_param_request(uint16_t *min_1_25ms,
                                               uint16_t *max_1_25ms);
+void mock_hal_set_ble_connected(bool connected);
+int mock_hal_get_ble_adv_start_count(void);
+int mock_hal_get_ble_adv_stop_count(void);
+uint32_t mock_hal_get_last_ble_adv_timeout_ms(void);
