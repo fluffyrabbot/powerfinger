@@ -55,7 +55,7 @@ static const char *TAG = "usb_hid";
 #define USB_CDC_EP_IN 0x83
 #define USB_CDC_EP_NOTIF_SIZE 8
 #define USB_HID_EP_SIZE 16
-#define USB_HID_POLL_INTERVAL_MS 10
+#define USB_HID_POLL_INTERVAL_MS 1
 #define TUSB_DESC_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_HID_DESC_LEN)
 
 static bool s_usb_initialized = false;

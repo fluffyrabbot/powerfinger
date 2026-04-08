@@ -8,6 +8,7 @@
 #include "ble_central.h"
 #include "companion_session.h"
 #include "gesture_engine.h"
+#include "hub_settings.h"
 #include "hub_identity.h"
 #include "role_engine.h"
 
@@ -29,6 +30,7 @@ static void fill_hub_info(companion_protocol_hub_info_t *info_out, void *arg)
         .max_rings = HUB_MAX_RINGS,
         .usb_poll_ms = 1,
         .scan_policy = 1,
+        .expected_rings = 2,
     };
 }
 
@@ -61,6 +63,7 @@ static void reset(void)
     mock_ble_central_clear_connected_rings();
     mock_ble_central_clear_bonds();
     TEST_ASSERT_EQUAL(HAL_OK, gesture_engine_init());
+    TEST_ASSERT_EQUAL(HAL_OK, hub_settings_init());
     TEST_ASSERT_EQUAL(HAL_OK, role_engine_init());
     memset(s_emitted, 0, sizeof(s_emitted));
     s_emitted_len = 0;
@@ -89,6 +92,7 @@ void test_companion_session_processes_chunked_commands(void)
         "+ max_rings=4\n"
         "+ usb_poll_ms=1\n"
         "+ scan_policy=1\n"
+        "+ expected_rings=2\n"
         "OK\n",
         s_emitted) == 0);
 }
@@ -133,6 +137,7 @@ void test_companion_session_rejects_overlong_line_and_recovers(void)
         "+ max_rings=4\n"
         "+ usb_poll_ms=1\n"
         "+ scan_policy=1\n"
+        "+ expected_rings=2\n"
         "OK\n",
         s_emitted) == 0);
 }

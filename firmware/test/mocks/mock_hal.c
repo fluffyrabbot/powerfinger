@@ -79,8 +79,11 @@ static bool s_mock_ring_present[HUB_MAX_RINGS] = {0};
 static uint8_t s_mock_ring_macs[HUB_MAX_RINGS][6] = {{0}};
 static hub_ring_settings_t s_mock_ring_settings[HUB_MAX_RINGS] = {0};
 static hub_ring_diagnostics_t s_mock_ring_diagnostics[HUB_MAX_RINGS] = {0};
+static int8_t s_mock_ring_rssi[HUB_MAX_RINGS] = {0};
 static bool s_mock_bond_present[HUB_MAX_RINGS] = {0};
 static uint8_t s_mock_bond_macs[HUB_MAX_RINGS][6] = {{0}};
+static uint8_t s_mock_scan_policy = 1U;
+static uint8_t s_mock_expected_rings = 2U;
 
 #define MOCK_RING_DPI_DEFAULT               10U
 #define MOCK_RING_DEAD_ZONE_TIME_DEFAULT_MS 50U
@@ -147,8 +150,11 @@ void mock_hal_reset(void)
     memset(s_mock_ring_macs, 0, sizeof(s_mock_ring_macs));
     memset(s_mock_ring_settings, 0, sizeof(s_mock_ring_settings));
     memset(s_mock_ring_diagnostics, 0, sizeof(s_mock_ring_diagnostics));
+    memset(s_mock_ring_rssi, 0, sizeof(s_mock_ring_rssi));
     memset(s_mock_bond_present, 0, sizeof(s_mock_bond_present));
     memset(s_mock_bond_macs, 0, sizeof(s_mock_bond_macs));
+    s_mock_scan_policy = 1U;
+    s_mock_expected_rings = 2U;
 }
 
 void mock_hal_set_time_ms(uint32_t ms) { s_time_ms = ms; }
@@ -323,6 +329,7 @@ void mock_ble_central_clear_connected_rings(void)
     memset(s_mock_ring_macs, 0, sizeof(s_mock_ring_macs));
     memset(s_mock_ring_settings, 0, sizeof(s_mock_ring_settings));
     memset(s_mock_ring_diagnostics, 0, sizeof(s_mock_ring_diagnostics));
+    memset(s_mock_ring_rssi, 0, sizeof(s_mock_ring_rssi));
 }
 
 void mock_ble_central_set_connected_ring(uint8_t ring_index, const uint8_t mac[6])
@@ -353,6 +360,16 @@ void mock_ble_central_set_connected_ring(uint8_t ring_index, const uint8_t mac[6
     s_mock_ring_diagnostics[ring_index].battery_mv = MOCK_RING_BATTERY_MV_DEFAULT;
     s_mock_ring_diagnostics[ring_index].conn_interval_1_25ms =
         MOCK_RING_CONN_INTERVAL_DEFAULT;
+    s_mock_ring_rssi[ring_index] = -54;
+}
+
+void mock_ble_central_set_ring_rssi(uint8_t ring_index, int8_t rssi_dbm)
+{
+    if (ring_index >= HUB_MAX_RINGS) {
+        return;
+    }
+
+    s_mock_ring_rssi[ring_index] = rssi_dbm;
 }
 
 void mock_ble_central_clear_bonds(void)
@@ -397,6 +414,16 @@ bool mock_ble_central_has_bond(const uint8_t mac[6])
     }
 
     return false;
+}
+
+uint8_t mock_ble_central_get_scan_policy(void)
+{
+    return s_mock_scan_policy;
+}
+
+uint8_t mock_ble_central_get_expected_rings(void)
+{
+    return s_mock_expected_rings;
 }
 
 int mock_hal_get_ble_conn_param_request_count(void)
@@ -753,6 +780,24 @@ hal_status_t ble_central_get_ring_diagnostics_by_mac(const uint8_t mac[6],
     return HAL_ERR_NOT_FOUND;
 }
 
+hal_status_t ble_central_get_ring_rssi_by_mac(const uint8_t mac[6],
+                                              int8_t *rssi_dbm_out)
+{
+    if (!mac || !rssi_dbm_out) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    for (uint8_t i = 0; i < HUB_MAX_RINGS; i++) {
+        if (s_mock_ring_present[i] &&
+            memcmp(s_mock_ring_macs[i], mac, sizeof(s_mock_ring_macs[i])) == 0) {
+            *rssi_dbm_out = s_mock_ring_rssi[i];
+            return HAL_OK;
+        }
+    }
+
+    return HAL_ERR_NOT_FOUND;
+}
+
 hal_status_t ble_central_set_ring_dpi_by_mac(const uint8_t mac[6],
                                              uint8_t dpi_multiplier)
 {
@@ -805,4 +850,32 @@ hal_status_t ble_central_set_ring_dead_zone_distance_by_mac(const uint8_t mac[6]
     }
 
     return HAL_ERR_NOT_FOUND;
+}
+
+uint8_t ble_central_connected_count(void)
+{
+    uint8_t count = 0;
+
+    for (uint8_t i = 0; i < HUB_MAX_RINGS; i++) {
+        if (s_mock_ring_present[i]) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+hal_status_t ble_central_set_scan_policy(uint8_t scan_policy,
+                                         uint8_t expected_rings)
+{
+    if (expected_rings == 0U || expected_rings > HUB_MAX_RINGS) {
+        return HAL_ERR_INVALID_ARG;
+    }
+    if (scan_policy > 2U) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    s_mock_scan_policy = scan_policy;
+    s_mock_expected_rings = expected_rings;
+    return HAL_OK;
 }

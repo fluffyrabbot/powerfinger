@@ -42,6 +42,9 @@ void ble_store_config_init(void);
 // starve BLE connections already in flight.
 #define BLE_SCAN_INTERVAL         0x50   // 50ms
 #define BLE_SCAN_WINDOW           0x30   // 30ms
+// Boot-only scan policy gets one bounded discovery window instead of a
+// forever-running background scan.
+#define BLE_BOOT_SCAN_DURATION_MS 30000
 
 // Descriptor discovery range for HID Report characteristic.
 // Covers CCCD (0x2902) + Report Reference (0x2908) + margin.
@@ -83,6 +86,21 @@ static portMUX_TYPE s_rings_lock = portMUX_INITIALIZER_UNLOCKED;
 static hub_ring_report_cb_t s_report_cb = NULL;
 static hub_ring_conn_cb_t s_conn_cb = NULL;
 static void *s_cb_arg = NULL;
+
+// Matches the companion-surface scan-policy enum. Keep duplicated here so the
+// BLE central can apply policy without depending on the hub-settings module.
+#define BLE_CENTRAL_SCAN_POLICY_BOOT_ONLY  0U
+#define BLE_CENTRAL_SCAN_POLICY_CONTINUOUS 1U
+#define BLE_CENTRAL_SCAN_POLICY_EXPECTED   2U
+
+typedef enum {
+    SCAN_TRIGGER_BOOT = 0,
+    SCAN_TRIGGER_CAPACITY_CHANGE,
+    SCAN_TRIGGER_SETTINGS_CHANGE,
+} scan_trigger_t;
+
+static uint8_t s_scan_policy = BLE_CENTRAL_SCAN_POLICY_CONTINUOUS;
+static uint8_t s_expected_rings = 2U;
 
 // H8: timeout for GATT discovery. If a ring is connected but not subscribed
 // within this window, disconnect it and let rescan/reconnect retry.
@@ -271,8 +289,26 @@ static bool adv_has_powerfinger_identity(const struct ble_hs_adv_fields *fields)
                   sizeof(POWERFINGER_SERVICE_DATA)) == 0;
 }
 
+static bool should_scan_locked(scan_trigger_t trigger)
+{
+    if (s_connected_count >= HUB_MAX_RINGS) {
+        return false;
+    }
+
+    switch (s_scan_policy) {
+    case BLE_CENTRAL_SCAN_POLICY_BOOT_ONLY:
+        return trigger == SCAN_TRIGGER_BOOT;
+    case BLE_CENTRAL_SCAN_POLICY_CONTINUOUS:
+        return true;
+    case BLE_CENTRAL_SCAN_POLICY_EXPECTED:
+        return s_connected_count < s_expected_rings;
+    default:
+        return true;
+    }
+}
+
 // --- Forward declarations ---
-static void start_scan(void);
+static void start_scan(scan_trigger_t trigger);
 static int gap_event_handler(struct ble_gap_event *event, void *arg);
 static int on_disc_dsc(uint16_t conn_handle, const struct ble_gatt_error *error,
                        uint16_t chr_val_handle, const struct ble_gatt_dsc *dsc,
@@ -647,7 +683,7 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
         );
         if (rc != 0) {
             ESP_LOGW(TAG, "ble_gap_connect failed: %d (will retry on next scan)", rc);
-            start_scan();
+            start_scan(SCAN_TRIGGER_CAPACITY_CHANGE);
         }
         break;
     }
@@ -655,7 +691,7 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_CONNECT: {
         if (event->connect.status != 0) {
             ESP_LOGW(TAG, "connection failed, status=%d", event->connect.status);
-            start_scan();
+            start_scan(SCAN_TRIGGER_CAPACITY_CHANGE);
             break;
         }
 
@@ -728,7 +764,7 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
         }
 
         // Resume scanning for more rings
-        start_scan();
+        start_scan(SCAN_TRIGGER_CAPACITY_CHANGE);
         break;
     }
 
@@ -750,7 +786,7 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
         }
 
         // Resume scanning
-        start_scan();
+        start_scan(SCAN_TRIGGER_CAPACITY_CHANGE);
         break;
     }
 
@@ -814,14 +850,26 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
 
 // --- Scanning ---
 
-static void start_scan(void)
+static void start_scan(scan_trigger_t trigger)
 {
-    // M3: read s_connected_count under lock for dual-core consistency
+    bool should_scan = false;
+    uint8_t count = 0;
+    uint8_t scan_policy = BLE_CENTRAL_SCAN_POLICY_CONTINUOUS;
+
     RINGS_LOCK();
-    uint8_t count = s_connected_count;
+    count = s_connected_count;
+    scan_policy = s_scan_policy;
+    should_scan = should_scan_locked(trigger);
     RINGS_UNLOCK();
-    if (count >= HUB_MAX_RINGS) {
-        ESP_LOGI(TAG, "all slots full, not scanning");
+
+    if (!should_scan) {
+        if (count >= HUB_MAX_RINGS) {
+            ESP_LOGI(TAG, "all slots full, not scanning");
+        }
+        return;
+    }
+
+    if (ble_gap_disc_active()) {
         return;
     }
 
@@ -834,7 +882,11 @@ static void start_scan(void)
         .filter_duplicates = 1,
     };
 
-    int rc = ble_gap_disc(BLE_OWN_ADDR_PUBLIC, BLE_HS_FOREVER,
+    int32_t duration_ms = (scan_policy == BLE_CENTRAL_SCAN_POLICY_BOOT_ONLY)
+        ? BLE_BOOT_SCAN_DURATION_MS
+        : BLE_HS_FOREVER;
+
+    int rc = ble_gap_disc(BLE_OWN_ADDR_PUBLIC, duration_ms,
                           &scan_params, gap_event_handler, NULL);
     if (rc != 0 && rc != BLE_HS_EALREADY) {
         ESP_LOGE(TAG, "scan start failed: %d", rc);
@@ -847,7 +899,7 @@ static void on_sync(void)
 {
     ESP_LOGI(TAG, "BLE host synced, starting scan");
     ble_hs_util_ensure_addr(0);
-    start_scan();
+    start_scan(SCAN_TRIGGER_BOOT);
 }
 
 static void on_reset(int reason)
@@ -902,6 +954,8 @@ hal_status_t ble_central_init(hub_ring_report_cb_t report_cb,
 #ifdef ESP_PLATFORM
     memset(s_rings, 0, sizeof(s_rings));
     s_connected_count = 0;
+    s_scan_policy = BLE_CENTRAL_SCAN_POLICY_CONTINUOUS;
+    s_expected_rings = 2U;
     memset(&s_gatt_relay, 0, sizeof(s_gatt_relay));
 
     s_gatt_relay.mutex = xSemaphoreCreateMutex();
@@ -1201,6 +1255,38 @@ hal_status_t ble_central_get_ring_diagnostics_by_mac(const uint8_t mac[6],
 #endif
 }
 
+hal_status_t ble_central_get_ring_rssi_by_mac(const uint8_t mac[6],
+                                              int8_t *rssi_dbm_out)
+{
+    if (!mac || !rssi_dbm_out) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+#ifdef ESP_PLATFORM
+    ring_relay_target_t target = {0};
+    hal_status_t target_rc = copy_ring_relay_target_by_mac(mac, &target);
+    if (target_rc != HAL_OK) {
+        return target_rc;
+    }
+
+    int8_t rssi_dbm = 127;
+    int rc = ble_gap_conn_rssi(target.conn_handle, &rssi_dbm);
+    if (rc != 0) {
+        return map_gatt_status(rc);
+    }
+    if (rssi_dbm == 127) {
+        return HAL_ERR_NOT_SUPPORTED;
+    }
+
+    *rssi_dbm_out = rssi_dbm;
+    return HAL_OK;
+#else
+    (void)mac;
+    (void)rssi_dbm_out;
+    return HAL_ERR_NOT_FOUND;
+#endif
+}
+
 hal_status_t ble_central_set_ring_dpi_by_mac(const uint8_t mac[6],
                                              uint8_t dpi_multiplier)
 {
@@ -1299,6 +1385,46 @@ uint8_t ble_central_connected_count(void)
 #else
     return 0;
 #endif
+}
+
+hal_status_t ble_central_set_scan_policy(uint8_t scan_policy,
+                                         uint8_t expected_rings)
+{
+    if (expected_rings == 0U || expected_rings > HUB_MAX_RINGS) {
+        return HAL_ERR_INVALID_ARG;
+    }
+    if (scan_policy != BLE_CENTRAL_SCAN_POLICY_BOOT_ONLY &&
+        scan_policy != BLE_CENTRAL_SCAN_POLICY_CONTINUOUS &&
+        scan_policy != BLE_CENTRAL_SCAN_POLICY_EXPECTED) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+#ifdef ESP_PLATFORM
+    bool should_scan = false;
+
+    RINGS_LOCK();
+    s_scan_policy = scan_policy;
+    s_expected_rings = expected_rings;
+    should_scan = should_scan_locked(SCAN_TRIGGER_SETTINGS_CHANGE);
+    RINGS_UNLOCK();
+
+    if (!should_scan && ble_gap_disc_active()) {
+        int cancel_rc = ble_gap_disc_cancel();
+        if (cancel_rc != 0 && cancel_rc != BLE_HS_EALREADY) {
+            return map_gatt_status(cancel_rc);
+        }
+        return HAL_OK;
+    }
+
+    if (should_scan) {
+        start_scan(SCAN_TRIGGER_SETTINGS_CHANGE);
+    }
+#else
+    (void)scan_policy;
+    (void)expected_rings;
+#endif
+
+    return HAL_OK;
 }
 
 void ble_central_check_discovery_timeout(void)

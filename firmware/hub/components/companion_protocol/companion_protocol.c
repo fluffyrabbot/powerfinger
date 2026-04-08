@@ -6,6 +6,7 @@
 #include "ble_central.h"
 #include "gesture_engine.h"
 #include "hub_control.h"
+#include "hub_settings.h"
 #include "role_engine.h"
 
 #include <ctype.h>
@@ -262,6 +263,29 @@ static hal_status_t parse_auto_base_byte_token(const char *token,
     return HAL_OK;
 }
 
+static hal_status_t parse_hub_settings_param_token(const char *token,
+                                                   hub_settings_param_t *param_out)
+{
+    if (!token || !param_out) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    if (token_equals_ignore_case(token, "usb_poll_ms")) {
+        *param_out = HUB_SETTINGS_PARAM_USB_POLL_MS;
+        return HAL_OK;
+    }
+    if (token_equals_ignore_case(token, "scan_policy")) {
+        *param_out = HUB_SETTINGS_PARAM_SCAN_POLICY;
+        return HAL_OK;
+    }
+    if (token_equals_ignore_case(token, "expected_rings")) {
+        *param_out = HUB_SETTINGS_PARAM_EXPECTED_RINGS;
+        return HAL_OK;
+    }
+
+    return HAL_ERR_INVALID_ARG;
+}
+
 static hal_status_t lookup_known_ring(const uint8_t mac[6], ring_role_t *role_out)
 {
     if (!mac || !role_out) {
@@ -424,13 +448,15 @@ static hal_status_t handle_get_hub_info(const companion_protocol_hub_info_t *hub
                                     "+ max_rings=%u\n"
                                     "+ usb_poll_ms=%u\n"
                                     "+ scan_policy=%u\n"
+                                    "+ expected_rings=%u\n"
                                     "OK\n",
                                     hub_info->firmware_revision,
                                     hub_info->hardware_revision,
                                     hub_info->connected_rings,
                                     hub_info->max_rings,
                                     hub_info->usb_poll_ms,
-                                    hub_info->scan_policy);
+                                    hub_info->scan_policy,
+                                    hub_info->expected_rings);
     return rc;
 }
 
@@ -560,6 +586,11 @@ static hal_status_t handle_get_ring_info(char *args,
 
     uint8_t ring_index = 0;
     bool connected = (ble_central_find_ring_index_by_mac(mac, &ring_index) == HAL_OK);
+    int8_t rssi_dbm = 0;
+    bool has_rssi = false;
+    if (connected && ble_central_get_ring_rssi_by_mac(mac, &rssi_dbm) == HAL_OK) {
+        has_rssi = true;
+    }
     char formatted_mac[18] = {0};
     rc = format_mac(mac, formatted_mac, sizeof(formatted_mac));
     if (rc != HAL_OK) {
@@ -572,14 +603,29 @@ static hal_status_t handle_get_ring_info(char *args,
         .used = 0,
     };
 
+    if (has_rssi) {
+        return append_format(&builder,
+                             "+ mac=%s\n"
+                             "+ role=%s\n"
+                             "+ connected=%u\n"
+                             "+ rssi_dbm=%d\n"
+                             "OK\n",
+                             formatted_mac,
+                             role_engine_role_name(role),
+                             connected ? 1U : 0U,
+                             (int)rssi_dbm);
+    }
+
     return append_format(&builder,
                          "+ mac=%s\n"
                          "+ role=%s\n"
                          "+ connected=%u\n"
+                         "+ rssi_dbm=%s\n"
                          "OK\n",
                          formatted_mac,
                          role_engine_role_name(role),
-                         connected ? 1U : 0U);
+                         connected ? 1U : 0U,
+                         connected ? "unavailable" : "disconnected");
 }
 
 static hal_status_t handle_get_ring_settings(char *args,
@@ -849,6 +895,82 @@ static hal_status_t handle_set_gesture(char *args,
                                     response_out_len,
                                     500,
                                     "gesture_write_failed");
+    }
+
+    response_builder_t builder = {
+        .buf = response_out,
+        .len = response_out_len,
+        .used = 0,
+    };
+    return append_format(&builder, "OK\n");
+}
+
+static hal_status_t handle_set_hub(char *args,
+                                   char *response_out,
+                                   size_t response_out_len)
+{
+    char *cursor = args;
+    char *param_token = next_token(&cursor);
+    char *value_token = next_token(&cursor);
+
+    if (!param_token || !value_token) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_args");
+    }
+    if (next_token(&cursor) != NULL) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "unexpected_args");
+    }
+
+    hub_settings_param_t param = HUB_SETTINGS_PARAM_USB_POLL_MS;
+    if (parse_hub_settings_param_token(param_token, &param) != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_param");
+    }
+
+    unsigned long raw_value = 0;
+    if (parse_unsigned_long_token(value_token, 0UL, 255UL, &raw_value) != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_value");
+    }
+
+    uint8_t value = (uint8_t)raw_value;
+    bool valid = false;
+    switch (param) {
+    case HUB_SETTINGS_PARAM_USB_POLL_MS:
+        valid = hub_settings_usb_poll_ms_supported(value);
+        break;
+    case HUB_SETTINGS_PARAM_SCAN_POLICY:
+        valid = hub_settings_scan_policy_supported(value);
+        break;
+    case HUB_SETTINGS_PARAM_EXPECTED_RINGS:
+        valid = hub_settings_expected_rings_supported(value);
+        break;
+    default:
+        break;
+    }
+
+    if (!valid) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    400,
+                                    "invalid_value");
+    }
+
+    hal_status_t rc = hub_control_set_hub_setting(param, value);
+    if (rc != HAL_OK) {
+        return write_protocol_error(response_out,
+                                    response_out_len,
+                                    500,
+                                    "hub_settings_write_failed");
     }
 
     response_builder_t builder = {
@@ -1332,6 +1454,10 @@ hal_status_t companion_protocol_handle_line(const char *line,
 
     if (token_equals_ignore_case(command, "SET_RING_DPI")) {
         return handle_set_ring_dpi(args, response_out, response_out_len);
+    }
+
+    if (token_equals_ignore_case(command, "SET_HUB")) {
+        return handle_set_hub(args, response_out, response_out_len);
     }
 
     if (token_equals_ignore_case(command, "SET_GESTURE")) {

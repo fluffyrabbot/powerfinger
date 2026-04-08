@@ -9,6 +9,7 @@
 #include "hub_control.h"
 #include "event_composer.h"
 #include "gesture_engine.h"
+#include "hub_settings.h"
 
 static const uint8_t MAC_A[6] = { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15 };
 static const uint8_t MAC_B[6] = { 0x20, 0x21, 0x22, 0x23, 0x24, 0x25 };
@@ -19,6 +20,7 @@ static void reset(void)
     mock_ble_central_clear_connected_rings();
     mock_ble_central_clear_bonds();
     TEST_ASSERT_EQUAL(HAL_OK, gesture_engine_init());
+    TEST_ASSERT_EQUAL(HAL_OK, hub_settings_init());
     TEST_ASSERT_EQUAL(HAL_OK, role_engine_init());
     TEST_ASSERT_EQUAL(HAL_OK, event_composer_init());
 }
@@ -196,6 +198,28 @@ void test_set_gesture_persists_and_updates_live_event_composer_cache(void)
                       gesture_engine_get_action(GESTURE_TRIGGER_CURSOR_SCROLL_CLICK));
 }
 
+void test_set_hub_setting_persists_and_updates_live_scan_policy(void)
+{
+    reset();
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      hub_control_set_hub_setting(HUB_SETTINGS_PARAM_SCAN_POLICY, 2));
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      hub_control_set_hub_setting(HUB_SETTINGS_PARAM_EXPECTED_RINGS, 3));
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      hub_control_set_hub_setting(HUB_SETTINGS_PARAM_USB_POLL_MS, 4));
+
+    TEST_ASSERT_EQUAL(2, mock_ble_central_get_scan_policy());
+    TEST_ASSERT_EQUAL(3, mock_ble_central_get_expected_rings());
+    TEST_ASSERT_EQUAL(4, hub_settings_get_usb_poll_ms());
+
+    hub_settings_flush_if_dirty();
+    TEST_ASSERT_EQUAL(HAL_OK, hub_settings_init());
+    TEST_ASSERT_EQUAL(4, hub_settings_get_usb_poll_ms());
+    TEST_ASSERT_EQUAL(2, hub_settings_get_scan_policy());
+    TEST_ASSERT_EQUAL(3, hub_settings_get_expected_rings());
+}
+
 void run_hub_control_tests(void)
 {
     printf("Hub control tests:\n");
@@ -209,4 +233,5 @@ void run_hub_control_tests(void)
     RUN_TEST(test_forget_ring_drops_live_input_before_disconnect_completes);
     RUN_TEST(test_forget_ring_rejects_unknown_mac);
     RUN_TEST(test_set_gesture_persists_and_updates_live_event_composer_cache);
+    RUN_TEST(test_set_hub_setting_persists_and_updates_live_scan_policy);
 }

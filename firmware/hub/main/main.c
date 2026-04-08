@@ -16,6 +16,7 @@
 #include "hal_timer.h"
 #include "ble_central.h"
 #include "companion_cdc.h"
+#include "hub_settings.h"
 #include "role_engine.h"
 #include "gesture_engine.h"
 #include "event_composer.h"
@@ -23,14 +24,6 @@
 #include "usb_hid_mouse.h"
 
 static const char *TAG = "powerfinger_hub";
-
-// USB HID poll interval (1ms for USB full-speed)
-#define USB_POLL_INTERVAL_MS 1
-
-// Companion protocol exposes the hub's current scan behavior as a small enum.
-// The current firmware continuously scans for eligible rings between connect
-// events, so report that explicitly instead of a bare literal.
-#define HUB_SCAN_POLICY_CONTINUOUS 1
 
 // Poll for rings stuck in GATT discovery at a human timescale, not every
 // USB tick. 1s granularity is plenty for a 10s discovery timeout.
@@ -94,13 +87,17 @@ static void fill_companion_hub_info(companion_protocol_hub_info_t *info_out, voi
         return;
     }
 
+    hub_settings_snapshot_t settings = {0};
+    hub_settings_get(&settings);
+
     *info_out = (companion_protocol_hub_info_t) {
         .firmware_revision = hub_identity_firmware_revision(),
         .hardware_revision = hub_identity_hardware_revision(),
         .connected_rings = ble_central_connected_count(),
         .max_rings = HUB_MAX_RINGS,
-        .usb_poll_ms = USB_POLL_INTERVAL_MS,
-        .scan_policy = HUB_SCAN_POLICY_CONTINUOUS,
+        .usb_poll_ms = settings.usb_poll_ms,
+        .scan_policy = settings.scan_policy,
+        .expected_rings = settings.expected_rings,
     };
 }
 
@@ -133,6 +130,10 @@ void app_main(void)
         ESP_LOGE(TAG, "gesture engine init failed — restarting");
         esp_restart();
     }
+    if (hub_settings_init() != HAL_OK) {
+        ESP_LOGE(TAG, "hub settings init failed — restarting");
+        esp_restart();
+    }
     event_composer_init();
     sync_persisted_gestures_to_event_composer();
     if (usb_hid_mouse_init() != HAL_OK) {
@@ -141,6 +142,11 @@ void app_main(void)
     }
     if (ble_central_init(on_ring_report, on_ring_connection, NULL) != HAL_OK) {
         ESP_LOGE(TAG, "BLE central init failed — hub cannot function");
+        esp_restart();
+    }
+    if (ble_central_set_scan_policy(hub_settings_get_scan_policy(),
+                                    hub_settings_get_expected_rings()) != HAL_OK) {
+        ESP_LOGE(TAG, "BLE central scan policy init failed — restarting");
         esp_restart();
     }
     companion_cdc_config_t companion_cfg = {
@@ -213,6 +219,6 @@ void app_main(void)
         }
 
         esp_task_wdt_reset();
-        hal_timer_delay_ms(USB_POLL_INTERVAL_MS);
+        hal_timer_delay_ms(hub_settings_get_usb_poll_ms());
     }
 }

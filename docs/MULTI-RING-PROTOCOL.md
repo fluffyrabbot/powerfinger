@@ -322,10 +322,13 @@ Return one human-readable snapshot of hub identity and top-level state.
 + max_rings=<connection capacity>
 + usb_poll_ms=<configured USB HID poll interval>
 + scan_policy=<configured scan policy enum>
++ expected_rings=<configured expected ring count>
 OK
 ```
 
-**Current implementation:** implemented by `handle_get_hub_info()`.
+**Current implementation:** implemented by `handle_get_hub_info()`. The
+current pre-hardware firmware applies `usb_poll_ms` to the hub's main
+compose/send cadence. The USB HID endpoint still enumerates at 1 ms.
 
 #### `GET_ROLES`
 
@@ -377,14 +380,17 @@ GET_RING_INFO <mac>
 + mac=AA:BB:CC:DD:EE:FF
 + role=CURSOR
 + connected=1
++ rssi_dbm=-62
 OK
 ```
 
 **Current implementation:** role comes from the persisted role engine entry.
 `connected=1` means the BLE central currently has an active slot for that MAC;
 `connected=0` means the role entry exists but the ring is not live right now.
-Battery and diagnostics now live under `GET_RING_DIAGNOSTICS`; RSSI remains
-future work.
+`rssi_dbm` reports the most recently measured BLE link RSSI for connected
+rings, `disconnected` for offline rings, and `unavailable` if the controller
+could not provide a current reading. Battery and diagnostics still live under
+`GET_RING_DIAGNOSTICS`.
 
 #### `GET_RING_SETTINGS`
 
@@ -476,6 +482,27 @@ Write the ring's click dead-zone distance over the hub BLE relay.
 ```
 SET_RING_DEAD_ZONE_DISTANCE <mac> <dead_zone_distance>
 ```
+
+#### `SET_HUB`
+
+Update one persisted hub-owned setting.
+
+**Arguments:**
+```
+SET_HUB <param> <value>
+```
+
+**Supported parameters in the current implementation:**
+- `usb_poll_ms` — one of `1`, `2`, `4`, `8`
+- `scan_policy` — one of `0`, `1`, `2`
+- `expected_rings` — `1` through `4`
+
+**Current implementation:** validates the parameter token and value in the
+companion parser, persists the setting via the hub-settings engine, and applies
+live side effects where possible. `usb_poll_ms` changes the hub's main
+compose/send cadence immediately. `scan_policy` and `expected_rings` are pushed
+into the BLE central immediately so background scanning behavior updates in the
+current session.
 
 #### `GET_GESTURES`
 
@@ -899,7 +926,7 @@ The following protocol pieces are still incomplete in the current codebase:
 
 | Function | Module | Purpose |
 |----------|--------|---------|
-| Remaining hub companion commands | Existing parser + CDC stack | Extend the current role-management, ring-settings relay, diagnostics readback, and gesture surface with OTA, RSSI, and hub-settings commands |
+| Remaining hub companion commands | Existing parser + CDC stack | Extend the current role-management, ring-settings relay, diagnostics readback, gesture surface, and hub-settings surface with OTA commands |
 
 ### 7.2 Thread Safety Summary
 

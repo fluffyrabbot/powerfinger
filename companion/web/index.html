@@ -49,7 +49,8 @@
                         <h2>Current snapshot</h2>
                     </div>
                     <p class="panel-note">
-                        Backed by <code>GET_HUB_INFO</code>. This is the live USB CDC
+                        Backed by <code>GET_HUB_INFO</code> plus the current
+                        <code>SET_HUB</code> surface. This is the live USB CDC
                         view of the hub, not a cached app model.
                     </p>
                 </div>
@@ -78,7 +79,51 @@
                         <dt>Scan Policy</dt>
                         <dd>—</dd>
                     </div>
+                    <div class="stat-card">
+                        <dt>Expected Rings</dt>
+                        <dd>—</dd>
+                    </div>
                 </dl>
+
+                <form id="hub-settings-form" class="stack-form hub-settings-form">
+                    <div class="hub-settings-grid">
+                        <label class="field">
+                            <span>USB Poll (ms)</span>
+                            <select id="hub-usb-poll" disabled>
+                                <option value="1">1 ms</option>
+                                <option value="2">2 ms</option>
+                                <option value="4">4 ms</option>
+                                <option value="8">8 ms</option>
+                            </select>
+                        </label>
+
+                        <label class="field">
+                            <span>Scan Policy</span>
+                            <select id="hub-scan-policy" disabled>
+                                <option value="0">Boot only</option>
+                                <option value="1">Continuous</option>
+                                <option value="2">While under expected count</option>
+                            </select>
+                        </label>
+
+                        <label class="field">
+                            <span>Expected Rings</span>
+                            <input
+                                id="hub-expected-rings"
+                                type="number"
+                                min="1"
+                                max="4"
+                                step="1"
+                                value="2"
+                                disabled
+                            >
+                        </label>
+                    </div>
+
+                    <button id="save-hub-settings-button" class="secondary-button" type="submit" disabled>
+                        Save Hub Settings
+                    </button>
+                </form>
             </section>
 
             <section class="panel">
@@ -90,9 +135,8 @@
                     <p class="panel-note">
                         The current hub firmware merges persisted roles with live
                         connected/disconnected status and can now relay the live
-                        tuning surface plus battery and diagnostics readback for
-                        connected rings. RSSI plus OTA flows are still future
-                        commands.
+                        tuning surface plus battery, diagnostics, and RSSI
+                        readback for connected rings. OTA remains future work.
                     </p>
                 </div>
                 <div id="role-cards" class="ring-grid">

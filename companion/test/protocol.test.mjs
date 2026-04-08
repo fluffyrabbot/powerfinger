@@ -6,6 +6,7 @@ import {
     buildGetRingDiagnosticsCommand,
     buildGetRingSettingsCommand,
     buildForgetRingCommand,
+    buildSetHubCommand,
     buildSetGestureCommand,
     buildSetRingDeadZoneDistanceCommand,
     buildSetRingDeadZoneTimeCommand,
@@ -42,7 +43,7 @@ test("parseProtocolResponse handles protocol errors", () => {
 
 test("parseHubInfoResponse extracts key fields", () => {
     const info = parseHubInfoResponse(
-        "+ fw=0.1.0\n+ hw=DEVBOARD-S3\n+ rings=2\n+ max_rings=4\n+ usb_poll_ms=1\n+ scan_policy=1\nOK\n",
+        "+ fw=0.1.0\n+ hw=DEVBOARD-S3\n+ rings=2\n+ max_rings=4\n+ usb_poll_ms=1\n+ scan_policy=1\n+ expected_rings=2\nOK\n",
     );
 
     assert.deepEqual(info, {
@@ -52,6 +53,7 @@ test("parseHubInfoResponse extracts key fields", () => {
         maxRings: "4",
         usbPollMs: "1",
         scanPolicy: "1",
+        expectedRings: "2",
     });
 });
 
@@ -79,13 +81,15 @@ test("parseRingsResponse includes live connection status", () => {
 
 test("parseRingInfoResponse extracts ring snapshot", () => {
     const ringInfo = parseRingInfoResponse(
-        "+ mac=AA:BB:CC:DD:EE:01\n+ role=CURSOR\n+ connected=1\nOK\n",
+        "+ mac=AA:BB:CC:DD:EE:01\n+ role=CURSOR\n+ connected=1\n+ rssi_dbm=-62\nOK\n",
     );
 
     assert.deepEqual(ringInfo, {
         mac: "AA:BB:CC:DD:EE:01",
         role: "CURSOR",
         connected: true,
+        rssiDbm: -62,
+        rssiStatus: "ready",
     });
 });
 
@@ -189,6 +193,18 @@ test("command builders normalize and validate arguments", () => {
         "SET_GESTURE 0x01 0x03",
     );
     assert.equal(
+        buildSetHubCommand("usb_poll_ms", "4"),
+        "SET_HUB usb_poll_ms 4",
+    );
+    assert.equal(
+        buildSetHubCommand("scan_policy", "2"),
+        "SET_HUB scan_policy 2",
+    );
+    assert.equal(
+        buildSetHubCommand("expected_rings", "3"),
+        "SET_HUB expected_rings 3",
+    );
+    assert.equal(
         buildSetRingDpiCommand("aa:bb:cc:dd:ee:01", "20"),
         "SET_RING_DPI AA:BB:CC:DD:EE:01 20",
     );
@@ -206,5 +222,9 @@ test("ring tuning builders reject blank required values", () => {
     assert.throws(
         () => buildSetRingDpiCommand("aa:bb:cc:dd:ee:01", ""),
         /required/i,
+    );
+    assert.throws(
+        () => buildSetHubCommand("usb_poll_ms", "3"),
+        /1, 2, 4, or 8/i,
     );
 });

@@ -5,8 +5,8 @@
 // USB CDC task and other hub-side control surfaces. Today it supports
 // GET_HUB_INFO, GET_ROLES, GET_RINGS, GET_RING_INFO, GET_RING_SETTINGS,
 // GET_RING_DIAGNOSTICS, GET_GESTURES, and the current mutating hub commands
-// (SET_RING_*, SET_GESTURE, SET_ROLE, SWAP_ROLES, and FORGET_RING) so
-// companion tooling can exercise both role and live ring inspection flows
+// (SET_RING_*, SET_HUB, SET_GESTURE, SET_ROLE, SWAP_ROLES, and FORGET_RING)
+// so companion tooling can exercise both role and live ring inspection flows
 // over the real transport.
 
 #pragma once
@@ -24,6 +24,7 @@ typedef struct {
     uint8_t max_rings;
     uint8_t usb_poll_ms;
     uint8_t scan_policy;
+    uint8_t expected_rings;
 } companion_protocol_hub_info_t;
 
 // Parses one command line and writes the protocol response into response_out.

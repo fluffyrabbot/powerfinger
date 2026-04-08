@@ -12,6 +12,14 @@ export const SUPPORTED_ROLES = Object.freeze([
     "MODIFIER",
 ]);
 
+export const SUPPORTED_USB_POLL_MS = Object.freeze([1, 2, 4, 8]);
+
+export const SUPPORTED_SCAN_POLICIES = Object.freeze([
+    Object.freeze({ id: "0", label: "Boot only" }),
+    Object.freeze({ id: "1", label: "Continuous" }),
+    Object.freeze({ id: "2", label: "While under expected count" }),
+]);
+
 export const SUPPORTED_GESTURE_TRIGGERS = Object.freeze([
     Object.freeze({ id: "0x01", label: "Cursor + Scroll simultaneous click" }),
     Object.freeze({ id: "0x02", label: "Cursor + Modifier simultaneous click" }),
@@ -37,6 +45,10 @@ export const RING_DIAGNOSTICS_LIMITS = Object.freeze({
     batteryMv: Object.freeze({ min: 0, max: 65535 }),
     connInterval125Ms: Object.freeze({ min: 0, max: 65535 }),
     diagnosticsVersion: Object.freeze({ min: 1, max: 255 }),
+});
+
+export const HUB_SETTINGS_LIMITS = Object.freeze({
+    expectedRings: Object.freeze({ min: 1, max: 4 }),
 });
 
 export function normalizeMac(mac) {
@@ -110,6 +122,41 @@ export function buildGetRingDiagnosticsCommand(mac) {
 
 export function buildGetGesturesCommand() {
     return "GET_GESTURES";
+}
+
+export function buildSetHubCommand(parameter, value) {
+    if (typeof parameter !== "string") {
+        throw new TypeError("Hub setting parameter must be a string.");
+    }
+
+    const normalizedParameter = parameter.trim().toLowerCase();
+    if (!["usb_poll_ms", "scan_policy", "expected_rings"].includes(normalizedParameter)) {
+        throw new Error(`Invalid hub setting parameter: ${parameter}`);
+    }
+
+    let normalizedValue = value;
+    if (normalizedParameter === "usb_poll_ms") {
+        normalizedValue = normalizeInteger(value, "USB poll interval", {
+            min: Math.min(...SUPPORTED_USB_POLL_MS),
+            max: Math.max(...SUPPORTED_USB_POLL_MS),
+        });
+        if (!SUPPORTED_USB_POLL_MS.includes(normalizedValue)) {
+            throw new Error("USB poll interval must be one of 1, 2, 4, or 8.");
+        }
+    } else if (normalizedParameter === "scan_policy") {
+        normalizedValue = normalizeInteger(value, "Scan policy", { min: 0, max: 2 });
+        if (!SUPPORTED_SCAN_POLICIES.some((policy) => Number(policy.id) === normalizedValue)) {
+            throw new Error("Scan policy must be 0, 1, or 2.");
+        }
+    } else {
+        normalizedValue = normalizeInteger(
+            value,
+            "Expected rings",
+            HUB_SETTINGS_LIMITS.expectedRings,
+        );
+    }
+
+    return `SET_HUB ${normalizedParameter} ${normalizedValue}`;
 }
 
 function normalizeGestureId(value, label, supportedIds) {
@@ -250,6 +297,7 @@ export function parseHubInfoResponse(response) {
         maxRings: fields.max_rings ?? "—",
         usbPollMs: fields.usb_poll_ms ?? "—",
         scanPolicy: fields.scan_policy ?? "—",
+        expectedRings: fields.expected_rings ?? "—",
     };
 }
 
@@ -299,10 +347,14 @@ export function parseRingInfoResponse(response) {
     }
 
     const fields = parseKeyValueDataLines(parsed.dataLines);
+    const rawRssi = String(fields.rssi_dbm ?? "unavailable");
+    const rssiDbm = /^-?\d+$/.test(rawRssi) ? Number(rawRssi) : null;
     return {
         mac: normalizeMac(fields.mac ?? ""),
         role: normalizeRole(fields.role ?? ""),
         connected: fields.connected === "1",
+        rssiDbm,
+        rssiStatus: rssiDbm === null ? rawRssi : "ready",
     };
 }
 

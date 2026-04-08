@@ -14,15 +14,16 @@ serial number) for bring-up and companion readback, plus a read-only
 diagnostic snapshot characteristic. On the hub side, the text command core now
 implements host-tested `GET_HUB_INFO`, `GET_ROLES`, `GET_RINGS`,
 `GET_RING_INFO`, `GET_RING_SETTINGS`, `GET_RING_DIAGNOSTICS`, `SET_RING_DPI`,
-`SET_RING_DEAD_ZONE_TIME`, `SET_RING_DEAD_ZONE_DISTANCE`, `GET_GESTURES`,
-`SET_GESTURE`, `SET_ROLE`, and `SWAP_ROLES` handling behind a
+`SET_RING_DEAD_ZONE_TIME`, `SET_RING_DEAD_ZONE_DISTANCE`, `SET_HUB`,
+`GET_GESTURES`, `SET_GESTURE`, `SET_ROLE`, and `SWAP_ROLES` handling behind a
 transport-agnostic parser, and `FORGET_RING` now tears down live input,
 removes the persisted role entry, and deletes the current public-address bond
 entry by MAC. USB CDC transport is now live on the hub, and the local Web
-Serial UI under `companion/web/` can inspect and relay per-ring tuning, battery
-/ diagnostics inspection, and the current shipped gesture subset for connected
-rings. The remaining deferred work is the rest of the hub command set: OTA,
-RSSI, hub policy/settings, and the broader app stack.
+Serial UI under `companion/web/` can inspect and relay per-ring tuning, live
+RSSI, battery / diagnostics inspection, the current shipped gesture subset, and
+the current shipped hub-settings subset for connected rings. The remaining
+deferred work is the rest of the hub command set: OTA and the broader app
+stack.
 
 **What the app configures:**
 - Role assignment (which ring is cursor, which is scroll, which is modifier)
@@ -120,7 +121,7 @@ event composer before emitting the USB HID report.
 
 | Setting | Type | Range | Default | Meaning |
 |---------|------|-------|---------|---------|
-| USB poll rate | uint8_t | 1, 2, 4, 8 | 1 | USB HID polling interval in ms |
+| USB poll rate | uint8_t | 1, 2, 4, 8 | 1 | Hub report-send cadence in ms. The current pre-hardware firmware still enumerates the USB HID endpoint at 1 ms. |
 | Scan policy | uint8_t | 0, 1, 2 | 1 | 0 = scan only on boot, 1 = scan continuously for new rings, 2 = scan only when fewer than expected rings connected |
 | Expected ring count | uint8_t | 1-4 | 2 | Used by scan policy 2 to know when to stop scanning |
 
@@ -389,6 +390,7 @@ Implemented in the current hub firmware over USB CDC:
 - `SET_RING_DPI`
 - `SET_RING_DEAD_ZONE_TIME`
 - `SET_RING_DEAD_ZONE_DISTANCE`
+- `SET_HUB`
 - `SET_GESTURE`
 - `SET_ROLE`
 - `SWAP_ROLES`
@@ -411,6 +413,7 @@ Returns hub firmware version, hardware revision, and connected ring count.
 + max_rings=4
 + usb_poll_ms=1
 + scan_policy=1
++ expected_rings=2
 OK
 ```
 
@@ -493,12 +496,13 @@ Returns the current snapshot for a known ring.
 + mac=AA:BB:CC:DD:EE:01
 + role=CURSOR
 + connected=1
++ rssi_dbm=-62
 OK
 ```
 
-The current pre-hardware implementation reports only the persisted role plus
-whether the ring is currently connected. Battery and diagnostics now live under
-`GET_RING_DIAGNOSTICS`; RSSI remains deferred.
+The current pre-hardware implementation reports the persisted role, whether the
+ring is currently connected, and the most recently measured BLE link RSSI when
+available. Battery and diagnostics still live under `GET_RING_DIAGNOSTICS`.
 
 If the ring is known but not currently connected:
 
@@ -507,6 +511,7 @@ If the ring is known but not currently connected:
 + mac=AA:BB:CC:DD:EE:01
 + role=CURSOR
 + connected=0
++ rssi_dbm=disconnected
 OK
 ```
 
@@ -623,8 +628,13 @@ Error if invalid parameter or value:
 
 ```
 > SET_HUB usb_poll_ms 3
-ERR 400 invalid_value (must be 1, 2, 4, or 8)
+ERR 400 invalid_value
 ```
+
+The current implementation applies `usb_poll_ms` to the hub's main report-send
+cadence immediately and persists it for next boot. The USB HID endpoint still
+enumerates at a fixed 1 ms interval during this pre-hardware phase. Scan-policy
+changes are applied live to the BLE central.
 
 #### SET_GESTURE
 

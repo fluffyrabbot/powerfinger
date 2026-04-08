@@ -3,10 +3,13 @@ import {
     SUPPORTED_GESTURE_ACTIONS,
     SUPPORTED_GESTURE_TRIGGERS,
     SUPPORTED_ROLES,
+    SUPPORTED_SCAN_POLICIES,
+    SUPPORTED_USB_POLL_MS,
     buildGetGesturesCommand,
     buildGetRingDiagnosticsCommand,
     buildGetRingSettingsCommand,
     buildForgetRingCommand,
+    buildSetHubCommand,
     buildSetGestureCommand,
     buildSetRingDeadZoneDistanceCommand,
     buildSetRingDeadZoneTimeCommand,
@@ -35,6 +38,7 @@ const state = {
     hubInfo: null,
     roles: [],
     gestures: {},
+    ringInfo: {},
     ringSettings: {},
     ringDiagnostics: {},
 };
@@ -46,6 +50,11 @@ const elements = {
     connectionState: document.querySelector("#connection-state"),
     statusNote: document.querySelector("#status-note"),
     hubInfoGrid: document.querySelector("#hub-info-grid"),
+    hubSettingsForm: document.querySelector("#hub-settings-form"),
+    hubUsbPoll: document.querySelector("#hub-usb-poll"),
+    hubScanPolicy: document.querySelector("#hub-scan-policy"),
+    hubExpectedRings: document.querySelector("#hub-expected-rings"),
+    saveHubSettingsButton: document.querySelector("#save-hub-settings-button"),
     roleCards: document.querySelector("#role-cards"),
     swapForm: document.querySelector("#swap-form"),
     swapMacA: document.querySelector("#swap-mac-a"),
@@ -111,6 +120,10 @@ function setBusy(disabled) {
     elements.swapButton.disabled = disabled || !connected || state.roles.length < 2;
     elements.swapMacA.disabled = disabled || !connected || state.roles.length < 2;
     elements.swapMacB.disabled = disabled || !connected || state.roles.length < 2;
+    elements.hubUsbPoll.disabled = disabled || !connected;
+    elements.hubScanPolicy.disabled = disabled || !connected;
+    elements.hubExpectedRings.disabled = disabled || !connected;
+    elements.saveHubSettingsButton.disabled = disabled || !connected;
     elements.saveGesturesButton.disabled = disabled || !connected;
 
     for (const button of elements.quickButtons) {
@@ -132,6 +145,10 @@ function updateConnectionUi() {
     elements.refreshButton.disabled = !connected;
     elements.commandInput.disabled = !connected;
     elements.sendButton.disabled = !connected;
+    elements.hubUsbPoll.disabled = !connected;
+    elements.hubScanPolicy.disabled = !connected;
+    elements.hubExpectedRings.disabled = !connected;
+    elements.saveHubSettingsButton.disabled = !connected;
     elements.saveGesturesButton.disabled = !connected;
 
     if (!connected) {
@@ -151,6 +168,7 @@ function renderHubInfo() {
         maxRings: "—",
         usbPollMs: "—",
         scanPolicy: "—",
+        expectedRings: "—",
     };
 
     const stats = [
@@ -159,7 +177,8 @@ function renderHubInfo() {
         ["Connected Rings", values.connectedRings],
         ["Capacity", values.maxRings],
         ["USB Poll", values.usbPollMs === "—" ? "—" : `${values.usbPollMs} ms`],
-        ["Scan Policy", values.scanPolicy],
+        ["Scan Policy", describeScanPolicy(values.scanPolicy)],
+        ["Expected Rings", values.expectedRings],
     ];
 
     elements.hubInfoGrid.innerHTML = stats
@@ -172,13 +191,27 @@ function renderHubInfo() {
             `,
         )
         .join("");
+
+    if (values.usbPollMs !== "—") {
+        elements.hubUsbPoll.value = String(values.usbPollMs);
+    }
+    if (values.scanPolicy !== "—") {
+        elements.hubScanPolicy.value = String(values.scanPolicy);
+    }
+    if (values.expectedRings !== "—") {
+        elements.hubExpectedRings.value = String(values.expectedRings);
+    }
 }
 
 function pruneCachedRingData() {
+    const nextRingInfo = {};
     const nextSettings = {};
     const nextDiagnostics = {};
 
     for (const entry of state.roles) {
+        if (state.ringInfo[entry.mac]) {
+            nextRingInfo[entry.mac] = state.ringInfo[entry.mac];
+        }
         if (state.ringSettings[entry.mac]) {
             nextSettings[entry.mac] = state.ringSettings[entry.mac];
         }
@@ -187,8 +220,16 @@ function pruneCachedRingData() {
         }
     }
 
+    state.ringInfo = nextRingInfo;
     state.ringSettings = nextSettings;
     state.ringDiagnostics = nextDiagnostics;
+}
+
+function describeScanPolicy(policyValue) {
+    const matchingPolicy = SUPPORTED_SCAN_POLICIES.find(
+        (policy) => policy.id === String(policyValue),
+    );
+    return matchingPolicy?.label ?? String(policyValue ?? "—");
 }
 
 function formatConnectionIntervalMs(connInterval125Ms) {
@@ -228,6 +269,22 @@ function describeDiagnosticsFlags(diagnostics) {
     return parts.join(" · ");
 }
 
+function describeRssi(ringInfo, connected) {
+    if (!connected) {
+        return "RSSI unavailable while disconnected.";
+    }
+    if (!ringInfo) {
+        return "Refresh or inspect this ring to read live RSSI.";
+    }
+    if (typeof ringInfo.rssiDbm === "number") {
+        return `Live RSSI ${ringInfo.rssiDbm} dBm.`;
+    }
+    if (ringInfo.rssiStatus === "unavailable") {
+        return "Live RSSI is temporarily unavailable.";
+    }
+    return `RSSI ${ringInfo.rssiStatus}.`;
+}
+
 function renderRoleCards() {
     if (state.roles.length === 0) {
         const message = state.port
@@ -240,6 +297,7 @@ function renderRoleCards() {
 
     elements.roleCards.innerHTML = state.roles
         .map((entry) => {
+            const ringInfo = state.ringInfo[entry.mac] ?? null;
             const settings = state.ringSettings[entry.mac] ?? null;
             const diagnostics = state.ringDiagnostics[entry.mac] ?? null;
             const options = SUPPORTED_ROLES.map((role) => {
@@ -257,6 +315,7 @@ function renderRoleCards() {
                 : entry.connected
                     ? "Load battery and diagnostics readback from the ring."
                     : "Reconnect this ring to inspect battery and diagnostics.";
+            const linkStatus = describeRssi(ringInfo, entry.connected);
             const diagnosticsBody = diagnostics
                 ? `
                             <div class="ring-telemetry-grid">
@@ -302,6 +361,8 @@ function renderRoleCards() {
                             </span>
                         </div>
                     </div>
+
+                    <p class="ring-link-note">${linkStatus}</p>
 
                     <label class="field">
                         <span>Assigned role</span>
@@ -589,6 +650,7 @@ async function disconnectFromHub(reason = "Disconnected.") {
     state.hubInfo = null;
     state.roles = [];
     state.gestures = {};
+    state.ringInfo = {};
     state.ringSettings = {};
     state.ringDiagnostics = {};
     state.disconnecting = false;
@@ -739,6 +801,51 @@ async function refreshRoles() {
     renderSwapSelectors();
 }
 
+async function loadRingInfo(mac, announce = true) {
+    const response = await sendCommand(`GET_RING_INFO ${mac}`);
+    setLastResponse(response);
+
+    if (!response.ok) {
+        throw new Error(`${response.errorCode} ${response.errorMessage}`);
+    }
+
+    state.ringInfo[mac] = parseRingInfoResponse(response);
+    renderRoleCards();
+
+    if (announce) {
+        const ringInfo = state.ringInfo[mac];
+        const rssiText = typeof ringInfo.rssiDbm === "number"
+            ? ` RSSI ${ringInfo.rssiDbm} dBm.`
+            : "";
+        setStatusNote(
+            `${ringInfo.mac} is ${ringInfo.connected ? "connected" : "disconnected"} as ${ringInfo.role}.${rssiText}`,
+            "meta-pill-success",
+        );
+    }
+}
+
+async function refreshConnectedRingInfo() {
+    for (const entry of state.roles) {
+        if (!entry.connected) {
+            continue;
+        }
+
+        try {
+            await loadRingInfo(entry.mac, false);
+        } catch (error) {
+            state.ringInfo[entry.mac] = {
+                mac: entry.mac,
+                role: entry.role,
+                connected: entry.connected,
+                rssiDbm: null,
+                rssiStatus: "unavailable",
+            };
+        }
+    }
+
+    renderRoleCards();
+}
+
 async function refreshGestures() {
     const response = await sendCommand(buildGetGesturesCommand());
     setLastResponse(response);
@@ -768,6 +875,7 @@ async function refreshAll() {
     try {
         await refreshHubInfo();
         await refreshRoles();
+        await refreshConnectedRingInfo();
         await refreshGestures();
         setStatusNote("Snapshot refreshed from the hub.", "meta-pill-success");
     } catch (error) {
@@ -864,19 +972,16 @@ async function handleInspectRing(mac) {
     setBusy(true);
 
     try {
-        const response = await sendCommand(`GET_RING_INFO ${mac}`);
-        setLastResponse(response);
-
-        if (!response.ok) {
-            throw new Error(`${response.errorCode} ${response.errorMessage}`);
-        }
-
-        const ringInfo = parseRingInfoResponse(response);
+        await loadRingInfo(mac, false);
+        const ringInfo = state.ringInfo[mac];
         if (ringInfo.connected) {
             await loadRingDiagnostics(mac, false);
             const diagnostics = state.ringDiagnostics[mac];
+            const rssiText = typeof ringInfo.rssiDbm === "number"
+                ? ` RSSI ${ringInfo.rssiDbm} dBm.`
+                : "";
             setStatusNote(
-                `${ringInfo.mac} is connected as ${ringInfo.role}. Battery ${describeDiagnosticsStatus(diagnostics)}.`,
+                `${ringInfo.mac} is connected as ${ringInfo.role}.${rssiText} Battery ${describeDiagnosticsStatus(diagnostics)}.`,
                 "meta-pill-success",
             );
             return;
@@ -952,6 +1057,42 @@ async function handleSaveRingSettings(mac) {
 
         await loadRingSettings(mac, false);
         setStatusNote(`Saved live tuning for ${mac}.`, "meta-pill-success");
+    } catch (error) {
+        setStatusNote(error.message, "meta-pill-danger");
+    } finally {
+        setBusy(false);
+    }
+}
+
+async function handleSaveHubSettings(event) {
+    event.preventDefault();
+
+    let commands = [];
+    try {
+        commands = [
+            buildSetHubCommand("usb_poll_ms", elements.hubUsbPoll.value),
+            buildSetHubCommand("scan_policy", elements.hubScanPolicy.value),
+            buildSetHubCommand("expected_rings", elements.hubExpectedRings.value),
+        ];
+    } catch (error) {
+        setStatusNote(error.message, "meta-pill-danger");
+        return;
+    }
+
+    setBusy(true);
+
+    try {
+        for (const command of commands) {
+            const response = await sendCommand(command);
+            setLastResponse(response);
+
+            if (!response.ok) {
+                throw new Error(`${response.errorCode} ${response.errorMessage}`);
+            }
+        }
+
+        await refreshAll();
+        setStatusNote("Updated the hub settings.", "meta-pill-success");
     } catch (error) {
         setStatusNote(error.message, "meta-pill-danger");
     } finally {
@@ -1052,6 +1193,7 @@ function bindEvents() {
     });
 
     elements.refreshButton.addEventListener("click", refreshAll);
+    elements.hubSettingsForm.addEventListener("submit", handleSaveHubSettings);
     elements.swapForm.addEventListener("submit", handleSwap);
     elements.gestureForm.addEventListener("submit", handleSaveGestures);
     elements.commandForm.addEventListener("submit", handleManualCommand);

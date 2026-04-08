@@ -8,6 +8,7 @@
 #include "companion_protocol.h"
 #include "ble_central.h"
 #include "gesture_engine.h"
+#include "hub_settings.h"
 #include "hub_identity.h"
 #include "role_engine.h"
 
@@ -23,6 +24,7 @@ static companion_protocol_hub_info_t default_hub_info(uint8_t connected_rings)
         .max_rings = HUB_MAX_RINGS,
         .usb_poll_ms = 1,
         .scan_policy = 1,
+        .expected_rings = 2,
     };
     return info;
 }
@@ -33,6 +35,7 @@ static void reset(void)
     mock_ble_central_clear_connected_rings();
     mock_ble_central_clear_bonds();
     TEST_ASSERT_EQUAL(HAL_OK, gesture_engine_init());
+    TEST_ASSERT_EQUAL(HAL_OK, hub_settings_init());
     TEST_ASSERT_EQUAL(HAL_OK, role_engine_init());
 }
 
@@ -55,6 +58,7 @@ void test_get_hub_info_formats_truthful_snapshot(void)
         "+ max_rings=4\n"
         "+ usb_poll_ms=1\n"
         "+ scan_policy=1\n"
+        "+ expected_rings=2\n"
         "OK\n",
         response) == 0);
 }
@@ -124,6 +128,7 @@ void test_get_ring_info_reports_known_ring_snapshot(void)
 
     TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
     mock_ble_central_set_connected_ring(0, MAC_A);
+    mock_ble_central_set_ring_rssi(0, -61);
 
     TEST_ASSERT_EQUAL(HAL_OK,
                       companion_protocol_handle_line("GET_RING_INFO 10:11:12:13:14:15",
@@ -134,6 +139,7 @@ void test_get_ring_info_reports_known_ring_snapshot(void)
         "+ mac=10:11:12:13:14:15\n"
         "+ role=CURSOR\n"
         "+ connected=1\n"
+        "+ rssi_dbm=-61\n"
         "OK\n",
         response) == 0);
 }
@@ -300,6 +306,67 @@ void test_set_gesture_rejects_known_but_unsupported_values(void)
                                                      response,
                                                      sizeof(response)));
     TEST_ASSERT_TRUE(strcmp("ERR 501 unsupported_gesture_action\n", response) == 0);
+}
+
+void test_set_hub_updates_persisted_settings_and_live_scan_policy(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("SET_HUB usb_poll_ms 4",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("OK\n", response) == 0);
+    TEST_ASSERT_EQUAL(4, hub_settings_get_usb_poll_ms());
+
+    memset(response, 0, sizeof(response));
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("SET_HUB scan_policy 2",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("OK\n", response) == 0);
+    TEST_ASSERT_EQUAL(2, mock_ble_central_get_scan_policy());
+
+    memset(response, 0, sizeof(response));
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("SET_HUB expected_rings 3",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("OK\n", response) == 0);
+    TEST_ASSERT_EQUAL(3, mock_ble_central_get_expected_rings());
+}
+
+void test_set_hub_rejects_unknown_parameter(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("SET_HUB nope 1",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("ERR 400 invalid_param\n", response) == 0);
+}
+
+void test_set_hub_rejects_invalid_value(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("SET_HUB usb_poll_ms 3",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("ERR 400 invalid_value\n", response) == 0);
 }
 
 void test_set_ring_setting_commands_update_live_ring_state(void)
@@ -592,6 +659,9 @@ void run_companion_protocol_tests(void)
     RUN_TEST(test_get_gestures_returns_supported_trigger_table);
     RUN_TEST(test_set_gesture_updates_persisted_mapping);
     RUN_TEST(test_set_gesture_rejects_known_but_unsupported_values);
+    RUN_TEST(test_set_hub_updates_persisted_settings_and_live_scan_policy);
+    RUN_TEST(test_set_hub_rejects_unknown_parameter);
+    RUN_TEST(test_set_hub_rejects_invalid_value);
     RUN_TEST(test_set_ring_setting_commands_update_live_ring_state);
     RUN_TEST(test_set_ring_dpi_rejects_invalid_value);
     RUN_TEST(test_set_ring_dpi_reports_known_but_disconnected_ring);

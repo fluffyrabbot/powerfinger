@@ -6,6 +6,7 @@
 #include "ble_central.h"
 #include "event_composer.h"
 #include "gesture_engine.h"
+#include "hub_settings.h"
 
 #include <string.h>
 
@@ -154,5 +155,39 @@ hal_status_t hub_control_set_gesture(uint8_t trigger, gesture_action_t action)
     }
 
     event_composer_set_gesture_action(trigger, action);
+    return HAL_OK;
+}
+
+hal_status_t hub_control_set_hub_setting(hub_settings_param_t param, uint8_t value)
+{
+    hal_status_t rc = HAL_OK;
+
+    switch (param) {
+    case HUB_SETTINGS_PARAM_USB_POLL_MS:
+        rc = hub_settings_set_usb_poll_ms(value);
+        break;
+
+    case HUB_SETTINGS_PARAM_SCAN_POLICY:
+        rc = hub_settings_set_scan_policy(value);
+        break;
+
+    case HUB_SETTINGS_PARAM_EXPECTED_RINGS:
+        rc = hub_settings_set_expected_rings(value);
+        break;
+
+    default:
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    if (rc != HAL_OK) {
+        return rc;
+    }
+
+    if (param == HUB_SETTINGS_PARAM_SCAN_POLICY ||
+        param == HUB_SETTINGS_PARAM_EXPECTED_RINGS) {
+        return ble_central_set_scan_policy(hub_settings_get_scan_policy(),
+                                           hub_settings_get_expected_rings());
+    }
+
     return HAL_OK;
 }

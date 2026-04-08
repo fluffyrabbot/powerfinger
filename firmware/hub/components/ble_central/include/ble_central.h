@@ -85,6 +85,10 @@ hal_status_t ble_central_get_ring_settings_by_mac(const uint8_t mac[6],
 hal_status_t ble_central_get_ring_diagnostics_by_mac(const uint8_t mac[6],
                                                      hub_ring_diagnostics_t *diagnostics_out);
 
+// Read the most recent link RSSI for a connected ring by MAC.
+hal_status_t ble_central_get_ring_rssi_by_mac(const uint8_t mac[6],
+                                              int8_t *rssi_dbm_out);
+
 // Write one settings value to a connected ring over BLE.
 hal_status_t ble_central_set_ring_dpi_by_mac(const uint8_t mac[6],
                                              uint8_t dpi_multiplier);
@@ -95,6 +99,10 @@ hal_status_t ble_central_set_ring_dead_zone_distance_by_mac(const uint8_t mac[6]
 
 // Get number of currently connected rings
 uint8_t ble_central_connected_count(void);
+
+// Update the live scanning policy used for discovering new rings.
+hal_status_t ble_central_set_scan_policy(uint8_t scan_policy,
+                                         uint8_t expected_rings);
 
 // H8: Check for rings stuck in GATT discovery (connected but not subscribed
 // after GATT_DISCOVERY_TIMEOUT_MS). Disconnects them so rescan can retry.

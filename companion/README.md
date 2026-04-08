@@ -9,8 +9,9 @@ The companion app is optional configuration software, not a runtime dependency.
   `localhost`.
 - Implemented hub commands today: `GET_HUB_INFO`, `GET_ROLES`, `GET_RINGS`,
   `GET_RING_INFO`, `GET_RING_SETTINGS`, `GET_RING_DIAGNOSTICS`, `SET_RING_DPI`,
-  `SET_RING_DEAD_ZONE_TIME`, `SET_RING_DEAD_ZONE_DISTANCE`, `GET_GESTURES`,
-  `SET_GESTURE`, `SET_ROLE`, `SWAP_ROLES`, `ROLE_SWAP`, and `FORGET_RING`.
+  `SET_RING_DEAD_ZONE_TIME`, `SET_RING_DEAD_ZONE_DISTANCE`, `SET_HUB`,
+  `GET_GESTURES`, `SET_GESTURE`, `SET_ROLE`, `SWAP_ROLES`, `ROLE_SWAP`, and
+  `FORGET_RING`.
 - The current gesture UI covers the shipped hub subset only: simultaneous-click
   triggers (`0x01`-`0x04`) mapped to disabled, middle-click, back, or forward
   (`0x00`-`0x03`).
@@ -36,9 +37,10 @@ Web Serial.
 
 - Hub snapshot via `GET_HUB_INFO`
 - Known-ring list with live connected/disconnected state via `GET_RINGS`
-- Per-ring snapshot via `GET_RING_INFO`
+- Per-ring snapshot plus live RSSI readback via `GET_RING_INFO`
 - Per-ring live tuning readback via `GET_RING_SETTINGS`
 - Per-ring battery and diagnostics readback via `GET_RING_DIAGNOSTICS`
+- Hub-owned settings writes via `SET_HUB`
 - Per-ring live tuning writes via the `SET_RING_*` relay commands
 - Hub-owned simultaneous-click gesture mapping via `GET_GESTURES` /
   `SET_GESTURE`
@@ -66,6 +68,6 @@ Web Serial.
 
 - OTA update UX
 - Packaged desktop and mobile variants
-- Hub-side policy, RSSI, and broader settings configuration
+- Broader hub policy/configuration beyond the current shipped settings subset
 
 See `docs/COMPANION-APP-ARCH.md` for the deferred architecture sketch.
