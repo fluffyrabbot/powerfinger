@@ -16,3 +16,8 @@
 const char *hub_identity_firmware_revision(void);
 const char *hub_identity_hardware_revision(void);
 void hub_identity_firmware_version(uint8_t out_version[3]);
+
+// Formats a stable serial from a 6-byte MAC as 12 uppercase hex digits.
+hal_status_t hub_identity_format_serial(const uint8_t mac[6],
+                                        char *out_serial,
+                                        size_t out_len);

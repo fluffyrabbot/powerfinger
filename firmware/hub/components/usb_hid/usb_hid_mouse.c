@@ -35,6 +35,8 @@ static void pack_report(const composed_report_t *report, uint8_t out[USB_HID_REP
 // ============================================================
 
 #include "esp_log.h"
+#include "esp_mac.h"
+#include "hub_identity.h"
 #include "tinyusb.h"
 #include "tinyusb_default_config.h"
 #include "class/cdc/cdc_device.h"
@@ -42,6 +44,8 @@ static void pack_report(const composed_report_t *report, uint8_t out[USB_HID_REP
 
 static const char *TAG = "usb_hid";
 
+#define USB_VENDOR_ID_ESPRESSIF_DEV 0x303A
+#define USB_PRODUCT_ID_POWERFINGER_HUB_DEV 0x8001
 #define USB_CONFIG_INDEX 1
 #define USB_INTERFACE_COUNT 3
 #define USB_STRING_INDEX_MANUFACTURER 1
@@ -56,9 +60,11 @@ static const char *TAG = "usb_hid";
 #define USB_CDC_EP_NOTIF_SIZE 8
 #define USB_HID_EP_SIZE 16
 #define USB_HID_POLL_INTERVAL_MS 1
+#define USB_SERIAL_STRING_LEN 13
 #define TUSB_DESC_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_HID_DESC_LEN)
 
 static bool s_usb_initialized = false;
+static char s_usb_serial_string[USB_SERIAL_STRING_LEN] = "UNKNOWN";
 
 // TinyUSB descriptor callbacks — required by the TinyUSB stack.
 
@@ -71,8 +77,8 @@ static const tusb_desc_device_t s_device_desc = {
     .bDeviceSubClass    = 0x00,
     .bDeviceProtocol    = 0x00,
     .bMaxPacketSize0    = CFG_TUD_ENDPOINT0_SIZE,
-    .idVendor           = 0x303A,       // Espressif VID (development only)
-    .idProduct          = 0x8001,       // PowerFinger hub (development PID)
+    .idVendor           = USB_VENDOR_ID_ESPRESSIF_DEV,      // Development-only VID
+    .idProduct          = USB_PRODUCT_ID_POWERFINGER_HUB_DEV, // Development-only PID
     .bcdDevice          = 0x0100,
     .iManufacturer      = 0x01,
     .iProduct           = 0x02,
@@ -85,7 +91,7 @@ static const char *s_string_desc[] = {
     [0] = (const char[]){0x09, 0x04},   // Language: English (US)
     [1] = "PowerFinger",                 // Manufacturer
     [2] = "PowerFinger Hub",             // Product
-    [3] = "000001",                      // Serial
+    [3] = s_usb_serial_string,           // Serial
     [4] = "PowerFinger Control",         // CDC interface
     [5] = "PowerFinger HID",             // HID interface
 };
@@ -135,11 +141,40 @@ void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id,
     (void)buffer; (void)bufsize;
 }
 
+static void set_unknown_usb_serial(void)
+{
+    strncpy(s_usb_serial_string, "UNKNOWN", sizeof(s_usb_serial_string) - 1);
+    s_usb_serial_string[sizeof(s_usb_serial_string) - 1] = '\0';
+}
+
+static void populate_usb_serial_string(void)
+{
+    uint8_t bt_mac[6] = {0};
+    esp_err_t mac_rc = esp_read_mac(bt_mac, ESP_MAC_BT);
+    if (mac_rc != ESP_OK) {
+        ESP_LOGW(TAG, "esp_read_mac failed, using fallback serial: %s",
+                 esp_err_to_name(mac_rc));
+        set_unknown_usb_serial();
+        return;
+    }
+
+    hal_status_t status = hub_identity_format_serial(bt_mac,
+                                                     s_usb_serial_string,
+                                                     sizeof(s_usb_serial_string));
+    if (status != HAL_OK) {
+        ESP_LOGW(TAG, "hub_identity_format_serial failed (%d), using fallback serial",
+                 status);
+        set_unknown_usb_serial();
+    }
+}
+
 hal_status_t usb_hid_mouse_init(void)
 {
     if (s_usb_initialized) {
         return HAL_OK;
     }
+
+    populate_usb_serial_string();
 
     tinyusb_config_t tusb_cfg = TINYUSB_DEFAULT_CONFIG();
 
@@ -158,7 +193,8 @@ hal_status_t usb_hid_mouse_init(void)
     }
 
     s_usb_initialized = true;
-    ESP_LOGI(TAG, "USB HID+CDC composite device initialized (report size=%d)",
+    ESP_LOGI(TAG, "USB HID+CDC composite device initialized (serial=%s, report size=%d)",
+             s_usb_serial_string,
              USB_HID_REPORT_SIZE);
     return HAL_OK;
 }
