@@ -313,6 +313,10 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg);
 static int on_disc_dsc(uint16_t conn_handle, const struct ble_gatt_error *error,
                        uint16_t chr_val_handle, const struct ble_gatt_dsc *dsc,
                        void *arg);
+static int on_subscribe_cccd_write(uint16_t conn_handle,
+                                   const struct ble_gatt_error *error,
+                                   struct ble_gatt_attr *attr,
+                                   void *arg);
 static int on_gatt_relay_read(uint16_t conn_handle,
                               const struct ble_gatt_error *error,
                               struct ble_gatt_attr *attr,
@@ -359,18 +363,14 @@ static int on_disc_dsc(uint16_t conn_handle,
         RINGS_UNLOCK();
 
         if (cccd_handle != 0) {
-            // C1 fix: check CCCD write result. Only mark subscribed on
-            // success. A failed write means no HID notifications — the
-            // ring would appear connected but produce no input.
+            // Queue the ATT write and only mark the ring subscribed from the
+            // completion callback once the procedure actually succeeds.
             uint8_t cccd_val[2] = { 0x01, 0x00 };
             int rc = ble_gattc_write_flat(ring_conn_handle, cccd_handle,
-                                          cccd_val, sizeof(cccd_val), NULL, NULL);
-            if (rc == 0) {
-                RINGS_LOCK();
-                s_rings[ring_idx].subscribed = true;
-                RINGS_UNLOCK();
-                ESP_LOGI(TAG, "ring %d: subscribed to HID notifications", ring_idx);
-            } else {
+                                          cccd_val, sizeof(cccd_val),
+                                          on_subscribe_cccd_write,
+                                          (void *)(intptr_t)ring_idx);
+            if (rc != 0) {
                 ESP_LOGE(TAG, "ring %d: CCCD write failed (rc=%d) — "
                          "HID notifications will not arrive, disconnecting",
                          ring_idx, rc);
@@ -385,6 +385,40 @@ static int on_disc_dsc(uint16_t conn_handle,
             ble_gap_terminate(ring_conn_handle2, BLE_ERR_REM_USER_CONN_TERM);
         }
     }
+    return 0;
+}
+
+static int on_subscribe_cccd_write(uint16_t conn_handle,
+                                   const struct ble_gatt_error *error,
+                                   struct ble_gatt_attr *attr,
+                                   void *arg)
+{
+    (void)attr;
+
+    int ring_idx = (int)(intptr_t)arg;
+    if (ring_idx < 0 || ring_idx >= HUB_MAX_RINGS) {
+        return 0;
+    }
+
+    RINGS_LOCK();
+    bool slot_valid = s_rings[ring_idx].connected &&
+                      s_rings[ring_idx].conn_handle == conn_handle;
+    RINGS_UNLOCK();
+    if (!slot_valid) {
+        return 0;
+    }
+
+    if (error->status == 0) {
+        RINGS_LOCK();
+        s_rings[ring_idx].subscribed = true;
+        RINGS_UNLOCK();
+        ESP_LOGI(TAG, "ring %d: subscribed to HID notifications", ring_idx);
+        return 0;
+    }
+
+    ESP_LOGE(TAG, "ring %d: CCCD write completed with error=%d — disconnecting",
+             ring_idx, error->status);
+    ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
     return 0;
 }
 
@@ -1100,8 +1134,13 @@ hal_status_t ble_central_delete_bond_by_mac(const uint8_t mac[6])
     memcpy(peer_addr.val, mac, 6);
 
     int rc = ble_store_util_delete_peer(&peer_addr);
+    if (rc == 0 || rc == BLE_HS_ENOENT) {
+        return HAL_OK;
+    }
+
     if (rc != 0) {
         ESP_LOGW(TAG, "delete bond by MAC failed (public-address assumption): rc=%d", rc);
+        return HAL_ERR_IO;
     }
 #else
     (void)mac;

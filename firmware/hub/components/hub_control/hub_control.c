@@ -160,34 +160,46 @@ hal_status_t hub_control_set_gesture(uint8_t trigger, gesture_action_t action)
 
 hal_status_t hub_control_set_hub_setting(hub_settings_param_t param, uint8_t value)
 {
-    hal_status_t rc = HAL_OK;
+    hub_settings_snapshot_t next = {0};
+    hub_settings_get(&next);
 
     switch (param) {
     case HUB_SETTINGS_PARAM_USB_POLL_MS:
-        rc = hub_settings_set_usb_poll_ms(value);
+        next.usb_poll_ms = value;
         break;
 
     case HUB_SETTINGS_PARAM_SCAN_POLICY:
-        rc = hub_settings_set_scan_policy(value);
+        next.scan_policy = value;
         break;
 
     case HUB_SETTINGS_PARAM_EXPECTED_RINGS:
-        rc = hub_settings_set_expected_rings(value);
+        next.expected_rings = value;
         break;
 
     default:
         return HAL_ERR_INVALID_ARG;
     }
 
-    if (rc != HAL_OK) {
-        return rc;
-    }
-
     if (param == HUB_SETTINGS_PARAM_SCAN_POLICY ||
         param == HUB_SETTINGS_PARAM_EXPECTED_RINGS) {
-        return ble_central_set_scan_policy(hub_settings_get_scan_policy(),
-                                           hub_settings_get_expected_rings());
+        // Apply the candidate pair to the live central before persisting so a
+        // runtime failure does not leave the command reporting failure after
+        // mutating hub-owned settings.
+        hal_status_t apply_rc = ble_central_set_scan_policy(next.scan_policy,
+                                                            next.expected_rings);
+        if (apply_rc != HAL_OK) {
+            return apply_rc;
+        }
     }
 
-    return HAL_OK;
+    switch (param) {
+    case HUB_SETTINGS_PARAM_USB_POLL_MS:
+        return hub_settings_set_usb_poll_ms(value);
+    case HUB_SETTINGS_PARAM_SCAN_POLICY:
+        return hub_settings_set_scan_policy(value);
+    case HUB_SETTINGS_PARAM_EXPECTED_RINGS:
+        return hub_settings_set_expected_rings(value);
+    default:
+        return HAL_ERR_INVALID_ARG;
+    }
 }

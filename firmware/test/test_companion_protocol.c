@@ -341,6 +341,23 @@ void test_set_hub_updates_persisted_settings_and_live_scan_policy(void)
     TEST_ASSERT_EQUAL(3, mock_ble_central_get_expected_rings());
 }
 
+void test_set_hub_reports_live_apply_failures_without_mutating_settings(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    mock_ble_central_inject_scan_policy_failure(HAL_ERR_IO, 1);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("SET_HUB scan_policy 2",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("ERR 500 hub_settings_write_failed\n", response) == 0);
+    TEST_ASSERT_EQUAL(1, hub_settings_get_scan_policy());
+}
+
 void test_set_hub_rejects_unknown_parameter(void)
 {
     reset();
@@ -601,6 +618,26 @@ void test_forget_ring_forgets_known_ring(void)
     TEST_ASSERT_FALSE(mock_ble_central_has_bond(MAC_A));
 }
 
+void test_forget_ring_reports_bond_delete_failures(void)
+{
+    reset();
+    char response[64] = {0};
+    companion_protocol_hub_info_t info = default_hub_info(0);
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    mock_ble_central_seed_bond(MAC_A);
+    mock_ble_central_inject_delete_bond_failure(HAL_ERR_IO, 1);
+
+    TEST_ASSERT_EQUAL(HAL_OK,
+                      companion_protocol_handle_line("FORGET_RING 10:11:12:13:14:15",
+                                                     &info,
+                                                     response,
+                                                     sizeof(response)));
+    TEST_ASSERT_TRUE(strcmp("ERR 500 forget_failed\n", response) == 0);
+    TEST_ASSERT_TRUE(mock_ble_central_has_bond(MAC_A));
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+}
+
 void test_forget_ring_rejects_invalid_mac_format(void)
 {
     reset();
@@ -660,6 +697,7 @@ void run_companion_protocol_tests(void)
     RUN_TEST(test_set_gesture_updates_persisted_mapping);
     RUN_TEST(test_set_gesture_rejects_known_but_unsupported_values);
     RUN_TEST(test_set_hub_updates_persisted_settings_and_live_scan_policy);
+    RUN_TEST(test_set_hub_reports_live_apply_failures_without_mutating_settings);
     RUN_TEST(test_set_hub_rejects_unknown_parameter);
     RUN_TEST(test_set_hub_rejects_invalid_value);
     RUN_TEST(test_set_ring_setting_commands_update_live_ring_state);
@@ -675,6 +713,7 @@ void run_companion_protocol_tests(void)
     RUN_TEST(test_swap_roles_rejects_identical_macs);
     RUN_TEST(test_swap_roles_rejects_unknown_mac);
     RUN_TEST(test_forget_ring_forgets_known_ring);
+    RUN_TEST(test_forget_ring_reports_bond_delete_failures);
     RUN_TEST(test_forget_ring_rejects_invalid_mac_format);
     RUN_TEST(test_command_forget_ring_rejects_unknown_mac);
     RUN_TEST(test_extra_args_are_rejected);

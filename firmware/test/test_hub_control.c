@@ -171,6 +171,19 @@ void test_forget_ring_rejects_unknown_mac(void)
     TEST_ASSERT_EQUAL(HAL_ERR_NOT_FOUND, hub_control_forget_ring(MAC_A));
 }
 
+void test_forget_ring_surfaces_bond_delete_failure(void)
+{
+    reset();
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    mock_ble_central_seed_bond(MAC_A);
+    mock_ble_central_inject_delete_bond_failure(HAL_ERR_IO, 1);
+
+    TEST_ASSERT_EQUAL(HAL_ERR_IO, hub_control_forget_ring(MAC_A));
+    TEST_ASSERT_EQUAL(1, role_entry_count());
+    TEST_ASSERT_TRUE(mock_ble_central_has_bond(MAC_A));
+}
+
 void test_set_gesture_persists_and_updates_live_event_composer_cache(void)
 {
     reset();
@@ -220,6 +233,18 @@ void test_set_hub_setting_persists_and_updates_live_scan_policy(void)
     TEST_ASSERT_EQUAL(3, hub_settings_get_expected_rings());
 }
 
+void test_set_hub_setting_does_not_persist_when_live_apply_fails(void)
+{
+    reset();
+
+    mock_ble_central_inject_scan_policy_failure(HAL_ERR_IO, 1);
+
+    TEST_ASSERT_EQUAL(HAL_ERR_IO,
+                      hub_control_set_hub_setting(HUB_SETTINGS_PARAM_SCAN_POLICY, 2));
+    TEST_ASSERT_EQUAL(1, hub_settings_get_scan_policy());
+    TEST_ASSERT_EQUAL(1, mock_ble_central_get_scan_policy());
+}
+
 void run_hub_control_tests(void)
 {
     printf("Hub control tests:\n");
@@ -232,6 +257,8 @@ void run_hub_control_tests(void)
     RUN_TEST(test_forget_ring_removes_assignment_and_bond_for_disconnected_ring);
     RUN_TEST(test_forget_ring_drops_live_input_before_disconnect_completes);
     RUN_TEST(test_forget_ring_rejects_unknown_mac);
+    RUN_TEST(test_forget_ring_surfaces_bond_delete_failure);
     RUN_TEST(test_set_gesture_persists_and_updates_live_event_composer_cache);
     RUN_TEST(test_set_hub_setting_persists_and_updates_live_scan_policy);
+    RUN_TEST(test_set_hub_setting_does_not_persist_when_live_apply_fails);
 }
