@@ -46,6 +46,8 @@ static int s_gpio_set_count = 0;
 static uint64_t s_last_wake_gpio_mask = 0;
 static bool s_last_wake_gpio_level = false;
 static int s_wake_gpio_config_count = 0;
+static uint32_t s_last_wake_timer_us = 0;
+static int s_wake_timer_config_count = 0;
 static hal_sleep_mode_t s_last_sleep_mode = HAL_SLEEP_LIGHT;
 static int s_sleep_enter_count = 0;
 static bool s_gpio_level[MOCK_GPIO_MAX_PINS] = {0};
@@ -84,6 +86,10 @@ static bool s_mock_bond_present[HUB_MAX_RINGS] = {0};
 static uint8_t s_mock_bond_macs[HUB_MAX_RINGS][6] = {{0}};
 static uint8_t s_mock_scan_policy = 1U;
 static uint8_t s_mock_expected_rings = 2U;
+static hal_status_t s_mock_delete_bond_status = HAL_OK;
+static int s_mock_delete_bond_fail_count = 0;
+static hal_status_t s_mock_scan_policy_status = HAL_OK;
+static int s_mock_scan_policy_fail_count = 0;
 
 #define MOCK_RING_DPI_DEFAULT               10U
 #define MOCK_RING_DEAD_ZONE_TIME_DEFAULT_MS 50U
@@ -121,6 +127,8 @@ void mock_hal_reset(void)
     s_last_wake_gpio_mask = 0;
     s_last_wake_gpio_level = false;
     s_wake_gpio_config_count = 0;
+    s_last_wake_timer_us = 0;
+    s_wake_timer_config_count = 0;
     s_last_sleep_mode = HAL_SLEEP_LIGHT;
     s_sleep_enter_count = 0;
     memset(s_gpio_level, 0, sizeof(s_gpio_level));
@@ -155,6 +163,10 @@ void mock_hal_reset(void)
     memset(s_mock_bond_macs, 0, sizeof(s_mock_bond_macs));
     s_mock_scan_policy = 1U;
     s_mock_expected_rings = 2U;
+    s_mock_delete_bond_status = HAL_OK;
+    s_mock_delete_bond_fail_count = 0;
+    s_mock_scan_policy_status = HAL_OK;
+    s_mock_scan_policy_fail_count = 0;
 }
 
 void mock_hal_set_time_ms(uint32_t ms) { s_time_ms = ms; }
@@ -175,6 +187,8 @@ void mock_hal_get_last_wake_gpio_mask(uint64_t *pin_mask, bool *level)
     if (level) *level = s_last_wake_gpio_level;
 }
 int mock_hal_get_wake_gpio_config_count(void) { return s_wake_gpio_config_count; }
+uint32_t mock_hal_get_last_wake_timer_us(void) { return s_last_wake_timer_us; }
+int mock_hal_get_wake_timer_config_count(void) { return s_wake_timer_config_count; }
 void mock_hal_set_gpio_input(hal_pin_t pin, bool level)
 {
     if (pin >= MOCK_GPIO_MAX_PINS) {
@@ -426,6 +440,18 @@ uint8_t mock_ble_central_get_expected_rings(void)
     return s_mock_expected_rings;
 }
 
+void mock_ble_central_inject_delete_bond_failure(hal_status_t status, int count)
+{
+    s_mock_delete_bond_status = status;
+    s_mock_delete_bond_fail_count = count;
+}
+
+void mock_ble_central_inject_scan_policy_failure(hal_status_t status, int count)
+{
+    s_mock_scan_policy_status = status;
+    s_mock_scan_policy_fail_count = count;
+}
+
 int mock_hal_get_ble_conn_param_request_count(void)
 {
     return s_ble_conn_param_request_count;
@@ -526,7 +552,12 @@ hal_status_t hal_sleep_configure_wake_gpio_mask(uint64_t pin_mask, bool level)
     s_wake_gpio_config_count++;
     return HAL_OK;
 }
-hal_status_t hal_sleep_configure_wake_timer(uint32_t us) { (void)us; return HAL_OK; }
+hal_status_t hal_sleep_configure_wake_timer(uint32_t us)
+{
+    s_last_wake_timer_us = us;
+    s_wake_timer_config_count++;
+    return HAL_OK;
+}
 hal_wake_cause_t hal_sleep_get_wake_cause(void) { return s_wake_cause; }
 
 // --- hal_storage ---
@@ -732,6 +763,11 @@ hal_status_t ble_central_delete_bond_by_mac(const uint8_t mac[6])
         return HAL_ERR_INVALID_ARG;
     }
 
+    if (s_mock_delete_bond_fail_count > 0) {
+        s_mock_delete_bond_fail_count--;
+        return s_mock_delete_bond_status;
+    }
+
     for (uint8_t i = 0; i < HUB_MAX_RINGS; i++) {
         if (s_mock_bond_present[i] &&
             memcmp(s_mock_bond_macs[i], mac, sizeof(s_mock_bond_macs[i])) == 0) {
@@ -873,6 +909,11 @@ hal_status_t ble_central_set_scan_policy(uint8_t scan_policy,
     }
     if (scan_policy > 2U) {
         return HAL_ERR_INVALID_ARG;
+    }
+
+    if (s_mock_scan_policy_fail_count > 0) {
+        s_mock_scan_policy_fail_count--;
+        return s_mock_scan_policy_status;
     }
 
     s_mock_scan_policy = scan_policy;

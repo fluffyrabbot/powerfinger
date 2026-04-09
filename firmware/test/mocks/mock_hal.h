@@ -28,6 +28,8 @@ void mock_hal_get_last_gpio_set(hal_pin_t *pin, bool *level);
 int mock_hal_get_gpio_set_count(void);
 void mock_hal_get_last_wake_gpio_mask(uint64_t *pin_mask, bool *level);
 int mock_hal_get_wake_gpio_config_count(void);
+uint32_t mock_hal_get_last_wake_timer_us(void);
+int mock_hal_get_wake_timer_config_count(void);
 void mock_hal_set_gpio_input(hal_pin_t pin, bool level);
 void mock_hal_set_wake_cause(hal_wake_cause_t cause);
 
@@ -51,6 +53,8 @@ void mock_ble_central_seed_bond(const uint8_t mac[6]);
 bool mock_ble_central_has_bond(const uint8_t mac[6]);
 uint8_t mock_ble_central_get_scan_policy(void);
 uint8_t mock_ble_central_get_expected_rings(void);
+void mock_ble_central_inject_delete_bond_failure(hal_status_t status, int count);
+void mock_ble_central_inject_scan_policy_failure(hal_status_t status, int count);
 
 // --- ADC per-channel mock (for ball+Hall sensor tests) ---
 void mock_hal_set_adc_mv_channel(uint8_t channel, uint32_t mv);
