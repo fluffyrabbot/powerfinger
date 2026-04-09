@@ -5,6 +5,41 @@
   (uuid "aac5e3f1-75e3-472b-ac9c-9eca636b4115")
   (paper "A4")
   (lib_symbols)
+  (text "Recovery/control interface scaffold: boot, reset, UART pads, and status indication terminate on this sheet."
+    (at 20.32 20.32 0)
+    (effects (font (size 1.27 1.27)))
+    (uuid "b9719567-c79d-4cd7-aa5e-f047b15a717f")
+  )
+  (hierarchical_label "EN"
+    (shape output)
+    (at 58.42 25.4 270)
+    (effects (font (size 1.27 1.27)))
+    (uuid "9386b86b-5523-4d11-a92a-bdf12abfeb6a")
+  )
+  (hierarchical_label "BOOT_N"
+    (shape output)
+    (at 66.04 25.4 270)
+    (effects (font (size 1.27 1.27)))
+    (uuid "0bc75b94-78bf-47a0-83b0-b63246166e39")
+  )
+  (hierarchical_label "UART_TX_DBG"
+    (shape input)
+    (at 73.66 25.4 270)
+    (effects (font (size 1.27 1.27)))
+    (uuid "d29d1637-8a7f-4bce-87e7-d71e5df0a385")
+  )
+  (hierarchical_label "UART_RX_DBG"
+    (shape output)
+    (at 81.28 25.4 270)
+    (effects (font (size 1.27 1.27)))
+    (uuid "4cb1db2b-75b8-40ea-b7f8-8b8e55de7a55")
+  )
+  (hierarchical_label "LED_STATUS"
+    (shape input)
+    (at 88.9 25.4 270)
+    (effects (font (size 1.27 1.27)))
+    (uuid "00f6805f-a341-4051-aefa-cb066fcca497")
+  )
   (sheet_instances
     (path "/" (page "1"))
   )

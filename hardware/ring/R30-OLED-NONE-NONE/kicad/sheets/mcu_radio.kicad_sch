@@ -5,6 +5,35 @@
   (uuid "7ec81ef6-c70d-4639-aae2-c8fc76432e41")
   (paper "A4")
   (lib_symbols)
+  (text "MCU-side power interface scaffold: these labels match the top-sheet power contract and the firmware-facing sense/control nets."
+    (at 20.32 20.32 0)
+    (effects (font (size 1.27 1.27)))
+    (uuid "1dc5b622-f8f2-4ab8-bdaa-412f0046521e")
+  )
+  (hierarchical_label "VREG_3V3"
+    (shape input)
+    (at 25.4 38.1 0)
+    (effects (font (size 1.27 1.27)))
+    (uuid "fdd991f0-4277-4982-bc52-67a0504f74b5")
+  )
+  (hierarchical_label "VBAT_SENSE"
+    (shape input)
+    (at 25.4 45.72 0)
+    (effects (font (size 1.27 1.27)))
+    (uuid "b9cdcd4f-92eb-48b4-b126-37e0f2250eae")
+  )
+  (hierarchical_label "NTC_SENSE"
+    (shape input)
+    (at 25.4 53.34 0)
+    (effects (font (size 1.27 1.27)))
+    (uuid "e0f30364-62d8-47fd-9c32-bb219e7339ec")
+  )
+  (hierarchical_label "CHARGE_EN"
+    (shape output)
+    (at 187.96 53.34 180)
+    (effects (font (size 1.27 1.27)))
+    (uuid "b96da081-0636-4c8b-a8d2-782784948031")
+  )
   (sheet_instances
     (path "/" (page "1"))
   )

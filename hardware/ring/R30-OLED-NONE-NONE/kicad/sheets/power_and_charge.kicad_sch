@@ -5,6 +5,35 @@
   (uuid "3bb73a68-f2e3-4fdc-8035-844d8d9ecf61")
   (paper "A4")
   (lib_symbols)
+  (text "Power-path interface scaffold: regulator, sensing, and charge-gate nets are locked here before component symbols land."
+    (at 20.32 20.32 0)
+    (effects (font (size 1.27 1.27)))
+    (uuid "94e49311-1e80-4605-bc62-f0ec3ed53a13")
+  )
+  (hierarchical_label "VREG_3V3"
+    (shape output)
+    (at 187.96 38.1 180)
+    (effects (font (size 1.27 1.27)))
+    (uuid "0dedd666-04e1-450f-b9d3-0c2acf90e269")
+  )
+  (hierarchical_label "VBAT_SENSE"
+    (shape output)
+    (at 187.96 45.72 180)
+    (effects (font (size 1.27 1.27)))
+    (uuid "2248745d-0e9c-4bfc-a060-cd7c8c7a1da7")
+  )
+  (hierarchical_label "NTC_SENSE"
+    (shape output)
+    (at 187.96 53.34 180)
+    (effects (font (size 1.27 1.27)))
+    (uuid "f03a478d-87a0-48bb-95e9-40b1d8ad6f73")
+  )
+  (hierarchical_label "CHARGE_EN"
+    (shape input)
+    (at 25.4 53.34 0)
+    (effects (font (size 1.27 1.27)))
+    (uuid "2f77b608-7bac-4cd1-a7fa-8eb0bb33edf3")
+  )
   (sheet_instances
     (path "/" (page "1"))
   )
