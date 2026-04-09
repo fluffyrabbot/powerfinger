@@ -6,9 +6,16 @@ lane. It is intentionally honest about its state: there is no finished KiCad
 project here yet, only the inputs and layout constraints that should drive the
 first capture.
 
+## Current Source Files
+
+- `r30_oled_none_none.kicad_sch` — root sheet for the active optical ring lane
+- `sheets/power_and_charge.kicad_sch`
+- `sheets/mcu_radio.kicad_sch`
+- `sheets/sensor_and_click.kicad_sch`
+- `sheets/usb_and_service.kicad_sch`
+
 ## What Belongs Here Next
 
-- `r30_oled_none_none.kicad_sch`
 - `r30_oled_none_none.kicad_pcb`
 - Local symbol and footprint references only where upstream libraries are not
   enough
@@ -35,3 +42,5 @@ first capture.
 - Do not substitute the LDO, charge resistor, or battery safety path without
   updating the variant manifest and BOM.
 - Do not let convenience routing eat the antenna keep-out.
+- Treat the current schematic files as hierarchy scaffolds, not proof that the
+  active components or footprints have already been validated in KiCad.

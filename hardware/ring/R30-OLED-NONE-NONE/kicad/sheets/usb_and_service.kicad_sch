@@ -1,0 +1,12 @@
+(kicad_sch
+  (version 20250114)
+  (generator "powerfinger_capture")
+  (generator_version "0.1")
+  (uuid "5cdf6bc0-1d6d-4761-b5b2-853e85c36594")
+  (paper "A4")
+  (lib_symbols)
+  (sheet_instances
+    (path "/" (page "1"))
+  )
+  (embedded_fonts no)
+)

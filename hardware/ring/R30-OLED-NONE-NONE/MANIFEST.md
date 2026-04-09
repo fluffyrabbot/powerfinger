@@ -6,11 +6,11 @@
 - Variant ID: `R30-OLED-NONE-NONE`
 - Form factor: ring
 - Lane: active validation lane
-- Publication state: BOM-backed hardware packet plus source skeletons
+- Publication state: BOM-backed hardware packet plus source skeletons and top-sheet schematic sources
 - BOM source: [hardware/bom/R30-OLED-NONE-NONE.csv](../../bom/R30-OLED-NONE-NONE.csv)
 - BOM target: `~$9` at prototype scale
 - Source skeletons:
-  - `kicad/` — KiCad-oriented schematic/layout inputs and placement notes
+  - `kicad/` — KiCad-oriented schematic/layout inputs, hierarchy scaffolds, and placement notes
   - `cad/` — OpenSCAD shell blank for the first parametric ring pass
 
 This packet documents the minimum repairability and assembly expectations for
@@ -44,7 +44,7 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
 
 ## Missing Artifacts
 
-- Completed schematic capture and symbol/footprint binding
+- Completed component capture and symbol/footprint binding
 - Routed PCB with antenna keep-out and charge-path validation
 - Fit-validated shell CAD and printable/exported models
 - Measured ring stackup with focal-distance verification

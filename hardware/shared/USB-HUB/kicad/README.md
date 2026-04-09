@@ -8,9 +8,15 @@ There is no routed KiCad project here yet. The purpose of this skeleton is to
 pin down the board blocks and placement rules before a small USB dongle PCB is
 captured in a way that fights serviceability or native USB.
 
+## Current Source Files
+
+- `usb_hub.kicad_sch` — root sheet for the active hub lane
+- `sheets/usb_and_power.kicad_sch`
+- `sheets/mcu_radio.kicad_sch`
+- `sheets/controls_and_indicators.kicad_sch`
+
 ## What Belongs Here Next
 
-- `usb_hub.kicad_sch`
 - `usb_hub.kicad_pcb`
 - Optional local footprints if the chosen connector or enclosure retention needs
   a custom land pattern
@@ -35,3 +41,5 @@ captured in a way that fights serviceability or native USB.
   bridge into the normal data path.
 - Treat [PLACEMENT-CONSTRAINTS.md](PLACEMENT-CONSTRAINTS.md) as a blocker list.
 - Connector mechanical support matters as much as the schematic.
+- Treat the current schematic files as hierarchy scaffolds, not proof that the
+  connector, recovery controls, or protection footprints are already validated.
