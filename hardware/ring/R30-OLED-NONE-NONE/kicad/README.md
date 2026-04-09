@@ -13,6 +13,7 @@ first capture.
 - Local symbol and footprint references only where upstream libraries are not
   enough
 - Plot and fabrication presets once routing exists
+- `INTERFACE-CONTRACT.md` — first-pass electrical pin contract for capture and firmware
 - `SCHEMATIC-CAPTURE.md` — sheet split, net naming, and capture order
 - `BOM-BLOCK-MAP.md` — turn the BOM into schematic blocks without drift
 - `RECOMMENDED-FIRST-CAPTURE.md` — the recommended P0 scope boundary

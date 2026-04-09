@@ -65,7 +65,7 @@ static const char *TAG = "power_mgr";
 #endif
 
 // NTC temperature monitoring (Kconfig-gated: only present on boards with NTC)
-#ifdef CONFIG_POWERFINGER_NTC_ADC_CHANNEL
+#if defined(CONFIG_POWERFINGER_NTC_ADC_CHANNEL) && (CONFIG_POWERFINGER_NTC_ADC_CHANNEL >= 0)
 #define NTC_ADC_CHANNEL ((hal_adc_channel_t)CONFIG_POWERFINGER_NTC_ADC_CHANNEL)
 #define HAS_NTC 1
 #else
@@ -75,7 +75,7 @@ static const char *TAG = "power_mgr";
 // Charge enable GPIO (Kconfig-gated: P-ch MOSFET gate on VBUS line)
 // GPIO high = gate high = MOSFET off = charge DISABLED (safe default via pull-up)
 // GPIO low  = gate low  = MOSFET on  = charge ENABLED
-#ifdef CONFIG_POWERFINGER_CHARGE_ENABLE_PIN
+#if defined(CONFIG_POWERFINGER_CHARGE_ENABLE_PIN) && (CONFIG_POWERFINGER_CHARGE_ENABLE_PIN >= 0)
 #define PIN_CHARGE_ENABLE ((hal_pin_t)CONFIG_POWERFINGER_CHARGE_ENABLE_PIN)
 #define HAS_CHARGE_CONTROL 1
 #else
@@ -84,7 +84,7 @@ static const char *TAG = "power_mgr";
 #endif
 
 // VBUS detection GPIO (Kconfig-gated: reads USB 5V presence)
-#ifdef CONFIG_POWERFINGER_VBUS_DETECT_PIN
+#if defined(CONFIG_POWERFINGER_VBUS_DETECT_PIN) && (CONFIG_POWERFINGER_VBUS_DETECT_PIN >= 0)
 #define PIN_VBUS_DETECT ((hal_pin_t)CONFIG_POWERFINGER_VBUS_DETECT_PIN)
 #define HAS_VBUS_DETECT 1
 #else

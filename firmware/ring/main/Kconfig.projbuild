@@ -113,6 +113,30 @@ menu "PowerFinger Configuration"
         int "VBAT ADC channel number"
         default 0
 
+    config POWERFINGER_NTC_ADC_CHANNEL
+        int "NTC ADC channel number (-1 if not populated)"
+        default -1
+        help
+            ADC channel used for the cell-temperature NTC divider.
+            Set to -1 for pre-hardware dev boards or variants where the
+            charging-safety thermistor is not yet populated.
+
+    config POWERFINGER_CHARGE_ENABLE_PIN
+        int "Charge-enable MOSFET GPIO pin (-1 if not populated)"
+        default -1
+        help
+            GPIO driving the P-channel MOSFET gate that enables VBUS into
+            the charge controller. Set to -1 when the board has no firmware-
+            controlled charge gate yet.
+
+    config POWERFINGER_VBUS_DETECT_PIN
+        int "USB VBUS detect GPIO pin (-1 if not populated)"
+        default -1
+        help
+            GPIO that reads USB VBUS presence through a resistor divider.
+            Set to -1 for dev-board bring-up or boards without the finished
+            charge/safety path.
+
     config POWERFINGER_HALL_POWER_PIN
         int "Hall sensor power gate GPIO pin"
         default 9

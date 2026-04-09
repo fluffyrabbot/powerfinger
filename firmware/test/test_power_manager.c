@@ -18,10 +18,10 @@
 #define NTC_ADC_MV_7C   2312   // 7°C — above cold resume (safe to resume)
 
 // Test Kconfig pin assignments (must match CMakeLists.txt compile definitions):
-// NTC_ADC_CHANNEL=1, CHARGE_ENABLE_PIN=3, VBUS_DETECT_PIN=4
+// NTC_ADC_CHANNEL=1, CHARGE_ENABLE_PIN=10, VBUS_DETECT_PIN=3
 #define TEST_NTC_CH       1
-#define TEST_CHARGE_PIN   3
-#define TEST_VBUS_PIN     4
+#define TEST_CHARGE_PIN   10
+#define TEST_VBUS_PIN     3
 
 static void reset(void)
 {
