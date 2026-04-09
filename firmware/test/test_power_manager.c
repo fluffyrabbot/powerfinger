@@ -7,6 +7,22 @@
 #include "ble_config.h"
 #include "ring_config.h"
 
+// --- NTC ADC test values (computed from B3950 equation with R0=10k, Rdiv=10k, VCC=3300) ---
+// These are mV values that map to specific temperatures via the NTC beta equation.
+#define NTC_ADC_MV_25C  1650   // 25°C — room temperature (safe)
+#define NTC_ADC_MV_38C  1204   // 38°C — below resume threshold (safe to resume)
+#define NTC_ADC_MV_43C  1050   // ~43°C — between cutoff and resume (still locked out)
+#define NTC_ADC_MV_46C   973   // 46°C — above cutoff threshold (disable charging)
+#define NTC_ADC_MV_62C   620   // 62°C — above emergency threshold (force shutdown)
+#define NTC_ADC_MV_NEG2C 2603  // −2°C — below cold cutoff (disable charging)
+#define NTC_ADC_MV_7C   2312   // 7°C — above cold resume (safe to resume)
+
+// Test Kconfig pin assignments (must match CMakeLists.txt compile definitions):
+// NTC_ADC_CHANNEL=1, CHARGE_ENABLE_PIN=3, VBUS_DETECT_PIN=4
+#define TEST_NTC_CH       1
+#define TEST_CHARGE_PIN   3
+#define TEST_VBUS_PIN     4
+
 static void reset(void)
 {
     mock_hal_reset();
@@ -126,6 +142,15 @@ void test_low_battery_cutoff_triggers_shutdown(void)
     TEST_ASSERT_EQUAL(POWER_EVT_LOW_BATTERY, evt);
 }
 
+void test_boot_below_cutoff_reenters_low_battery_shutdown_immediately(void)
+{
+    reset();
+    mock_hal_set_adc_mv(LOW_VOLTAGE_CUTOFF_MV - 1);
+
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
+    TEST_ASSERT_EQUAL(POWER_EVT_LOW_BATTERY, power_manager_tick(1));
+}
+
 void test_adc_failure_threshold_forces_shutdown(void)
 {
     reset();
@@ -231,21 +256,24 @@ void test_runtime_wake_gpio_mask_override_is_applied(void)
     TEST_ASSERT_FALSE(level);
 }
 
-// --- NTC ADC test values (computed from B3950 equation with R0=10k, Rdiv=10k, VCC=3300) ---
-// These are mV values that map to specific temperatures via the NTC beta equation.
-#define NTC_ADC_MV_25C  1650   // 25°C — room temperature (safe)
-#define NTC_ADC_MV_38C  1204   // 38°C — below resume threshold (safe to resume)
-#define NTC_ADC_MV_43C  1050   // ~43°C — between cutoff and resume (still locked out)
-#define NTC_ADC_MV_46C   973   // 46°C — above cutoff threshold (disable charging)
-#define NTC_ADC_MV_62C   620   // 62°C — above emergency threshold (force shutdown)
-#define NTC_ADC_MV_NEG2C 2603  // −2°C — below cold cutoff (disable charging)
-#define NTC_ADC_MV_7C   2312   // 7°C — above cold resume (safe to resume)
+void test_low_battery_lockout_prefers_vbus_wake_without_timer(void)
+{
+    reset();
+    mock_hal_set_adc_mv(LOW_VOLTAGE_CUTOFF_MV - 1);
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
 
-// Test Kconfig pin assignments (must match CMakeLists.txt compile definitions):
-// NTC_ADC_CHANNEL=1, CHARGE_ENABLE_PIN=3, VBUS_DETECT_PIN=4
-#define TEST_NTC_CH       1
-#define TEST_CHARGE_PIN   3
-#define TEST_VBUS_PIN     4
+    TEST_ASSERT_EQUAL(POWER_EVT_LOW_BATTERY, power_manager_tick(1));
+    power_manager_enter_sleep(true);
+
+    uint64_t mask = 0;
+    bool level = false;
+    mock_hal_get_last_wake_gpio_mask(&mask, &level);
+    TEST_ASSERT_EQUAL(1ULL << TEST_VBUS_PIN, mask);
+    TEST_ASSERT_TRUE(level);
+    TEST_ASSERT_EQUAL(1, mock_hal_get_wake_gpio_config_count());
+    TEST_ASSERT_EQUAL(0, mock_hal_get_wake_timer_config_count());
+    TEST_ASSERT_EQUAL(HAL_SLEEP_DEEP, mock_hal_get_last_sleep_mode());
+}
 
 // Helper: set NTC to a safe temperature and VBUS present, then tick to
 // evaluate charge state. Returns the power event from the tick.
@@ -466,12 +494,14 @@ void run_power_manager_tests(void)
     RUN_TEST(test_sleep_timeout_requires_idle_first);
     RUN_TEST(test_disconnect_suppresses_connected_timeouts);
     RUN_TEST(test_low_battery_cutoff_triggers_shutdown);
+    RUN_TEST(test_boot_below_cutoff_reenters_low_battery_shutdown_immediately);
     RUN_TEST(test_adc_failure_threshold_forces_shutdown);
     RUN_TEST(test_rejected_active_params_retry_after_new_connection);
     RUN_TEST(test_sensor_power_can_be_gated_for_calibration_failure);
     RUN_TEST(test_click_activity_restores_sensor_power_after_gate_off);
     RUN_TEST(test_deep_sleep_uses_configured_wake_gpio_mask);
     RUN_TEST(test_runtime_wake_gpio_mask_override_is_applied);
+    RUN_TEST(test_low_battery_lockout_prefers_vbus_wake_without_timer);
 
     printf("\nThermal safety + charge control tests:\n");
     RUN_TEST(test_init_disables_charging_by_default);

@@ -108,6 +108,7 @@ static bool s_hall_power_ready = false;
 static bool s_hall_power_state_known = false;
 static bool s_hall_power_enabled = false;
 static uint64_t s_wake_gpio_mask = 0;
+static bool s_low_battery_lockout = false;
 
 // Thermal / charge state
 static int8_t s_last_cell_temp_c = INT8_MIN;  // INT8_MIN = never read / not configured
@@ -300,6 +301,7 @@ hal_status_t power_manager_init(void)
     s_hall_power_state_known = false;
     s_hall_power_enabled = false;
     s_wake_gpio_mask = WAKE_GPIO_MASK;
+    s_low_battery_lockout = false;
     s_last_cell_temp_c = INT8_MIN;
     s_charging_enabled = false;
     s_vbus_present = false;
@@ -364,6 +366,9 @@ hal_status_t power_manager_init(void)
     uint32_t vbat_mv = 0;
     if (hal_adc_read_mv(VBAT_ADC_CHANNEL, &vbat_mv) == HAL_OK) {
         update_battery_cache(vbat_mv);
+        if (vbat_mv < LOW_VOLTAGE_CUTOFF_MV && !s_vbus_present) {
+            s_low_battery_lockout = true;
+        }
     }
 
     // Prime thermal cache and evaluate initial charge state
@@ -431,6 +436,17 @@ power_event_t power_manager_tick(uint32_t now_ms)
 #if HAS_VBUS_DETECT
     s_vbus_present = hal_gpio_get(PIN_VBUS_DETECT);
 #endif
+
+    if (s_low_battery_lockout) {
+        if (!s_vbus_present) {
+            return POWER_EVT_LOW_BATTERY;
+        }
+
+        // USB power is present again, so normal charging / thermal handling
+        // may resume on this boot.
+        s_low_battery_lockout = false;
+        s_last_activity_ms = now_ms;
+    }
 
     bool thermal_check_due = false;
     if (HAS_NTC) {
@@ -503,6 +519,7 @@ power_event_t power_manager_tick(uint32_t now_ms)
             }
 
             if (vbat_mv < LOW_VOLTAGE_CUTOFF_MV) {
+                s_low_battery_lockout = !s_vbus_present;
 #ifdef ESP_PLATFORM
                 ESP_LOGW(TAG, "low battery: %lu mV < %d mV cutoff",
                          (unsigned long)vbat_mv, LOW_VOLTAGE_CUTOFF_MV);
@@ -520,6 +537,7 @@ power_event_t power_manager_tick(uint32_t now_ms)
             s_adc_fail_count++;
 #endif
             if (s_adc_fail_count >= ADC_FAIL_THRESHOLD) {
+                s_low_battery_lockout = !s_vbus_present;
 #ifdef ESP_PLATFORM
                 ESP_LOGE(TAG, "VBAT ADC failed %d consecutive reads — forcing shutdown (LiPo safety)",
                          s_adc_fail_count);
@@ -621,28 +639,51 @@ void power_manager_enter_sleep(bool deep)
         // Configure wake sources. Both must be attempted; we track whether at
         // least one succeeded to prevent entering an unwakeable deep sleep.
         bool has_wake_source = false;
+        bool low_battery_vbus_only = s_low_battery_lockout;
+
+        if (low_battery_vbus_only) {
+#if HAS_VBUS_DETECT
+            hal_status_t vbus_rc = hal_sleep_configure_wake_gpio(PIN_VBUS_DETECT, true);
+            if (vbus_rc == HAL_OK) {
+                has_wake_source = true;
+            } else {
+#ifdef ESP_PLATFORM
+                ESP_LOGW(TAG, "low-battery VBUS wake config failed (%d) — falling back to timer wake",
+                         vbus_rc);
+#endif
+            }
+#else
+#ifdef ESP_PLATFORM
+            ESP_LOGW(TAG, "low-battery lockout requested but no VBUS detect pin is configured");
+#endif
+#endif
+        }
 
         hal_status_t gpio_rc = HAL_ERR_NOT_SUPPORTED;
-        if (s_wake_gpio_mask != 0) {
+        if (!low_battery_vbus_only && s_wake_gpio_mask != 0) {
             gpio_rc = hal_sleep_configure_wake_gpio_mask(s_wake_gpio_mask, false);
         }
-        if (gpio_rc == HAL_OK) {
+        if (!low_battery_vbus_only && gpio_rc == HAL_OK) {
             has_wake_source = true;
-        } else if (s_wake_gpio_mask != 0) {
+        } else if (!low_battery_vbus_only && s_wake_gpio_mask != 0) {
 #ifdef ESP_PLATFORM
             ESP_LOGW(TAG, "wake GPIO mask 0x%llx config failed (%d) — timer wake only",
                      (unsigned long long)s_wake_gpio_mask, gpio_rc);
 #endif
         }
-        // Safety net: timer wake so device eventually wakes even if dome pin
-        // is unavailable (e.g. piezo variant). 60s — check USB charging voltage.
-        hal_status_t timer_rc = hal_sleep_configure_wake_timer(60 * 1000 * 1000);
-        if (timer_rc == HAL_OK) {
-            has_wake_source = true;
-        } else {
+        // Safety net: timer wake so device eventually wakes even if a GPIO wake
+        // source is unavailable. When low-battery lockout is active we prefer a
+        // VBUS-only wake, but still fall back to a timer so the device is not
+        // left in an unrecoverable sleep if board support is incomplete.
+        if (!has_wake_source) {
+            hal_status_t timer_rc = hal_sleep_configure_wake_timer(60 * 1000 * 1000);
+            if (timer_rc == HAL_OK) {
+                has_wake_source = true;
+            } else {
 #ifdef ESP_PLATFORM
-            ESP_LOGE(TAG, "wake timer config failed (%d)", timer_rc);
+                ESP_LOGE(TAG, "wake timer config failed (%d)", timer_rc);
 #endif
+            }
         }
 
         // Guard: if no wake source is available, deep sleep is permanent.
