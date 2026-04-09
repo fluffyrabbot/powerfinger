@@ -34,10 +34,10 @@ References:
 
 ## What This Unblocks Next
 
-- place `J1`, `U2`, `D1`, `C2`, and `C3` as real symbols on
-  `sheets/usb_and_power.kicad_sch`
-- decide whether `J1` needs a local footprint only or a local courtyard plus
-  enclosure support geometry
+- turn the new `usb_and_power` symbol placement into a real footprint-backed
+  capture by adding `USB_A_Plug_SOFNG_USB-05.kicad_mod`
+- place `R1` only after the first ESP32-S3 native USB reference check confirms
+  whether external series resistors are still needed on the custom board
 - run the first honest board-envelope and host-clearance check against the
   direct-plug dongle assumption
 

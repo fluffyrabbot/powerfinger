@@ -57,6 +57,9 @@ References:
 - The hub BOM now carries both USB-side ESD protection and an explicit 3.3V
   regulator baseline. Capture them now instead of hand-waving `VREG_3V3` as
   something the board will “figure out later.”
+- `usb_and_power.kicad_sch` now contains a first real placement pass for
+  `J1`, `D1`, `U2`, `C2`, and `C3`; the next step is footprint realization and
+  the `R1` reference-check decision, not a return to generic placeholders.
 - Preserve the service access defined in
   [BRINGUP-SERVICE-MATRIX.md](BRINGUP-SERVICE-MATRIX.md) even if the final
   enclosure is a compact dongle.

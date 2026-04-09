@@ -14,6 +14,7 @@ captured in a way that fights serviceability or native USB.
 - `sheets/usb_and_power.kicad_sch`
 - `sheets/mcu_radio.kicad_sch`
 - `sheets/controls_and_indicators.kicad_sch`
+- `PowerFinger_USB.pretty/` — local footprint library stub for direct-plug connector work
 
 ## What Belongs Here Next
 
@@ -46,5 +47,7 @@ captured in a way that fights serviceability or native USB.
   from a hidden dev-board assumption.
 - The current P0 path locks `J1`, `U2`, and `D1`; future capture commits should
   place those exact parts before inventing new alternates.
+- `usb_and_power.kicad_sch` now contains the first actual symbol placement for
+  the locked USB/power path; footprint and routing validation still remain.
 - Treat the current schematic files as hierarchy scaffolds, not proof that the
   connector, recovery controls, or protection footprints are already validated.
