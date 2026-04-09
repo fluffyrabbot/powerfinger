@@ -10,6 +10,11 @@
     (effects (font (size 1.27 1.27)))
     (uuid "001955a5-a022-4c74-896e-2184b53fbfe0")
   )
+  (text "Locked P0 path: J1=SOFNG USB-05, U2=RT9080-33GJ5, D1=USBLC6-2SC6, C2/C3=0603. Use vendor geometry, not generic library stand-ins."
+    (at 20.32 27.94 0)
+    (effects (font (size 1.27 1.27)))
+    (uuid "e3d94936-d13d-4de3-b296-a0eb3f6b1653")
+  )
   (hierarchical_label "VREG_3V3"
     (shape output)
     (at 187.96 38.1 180)

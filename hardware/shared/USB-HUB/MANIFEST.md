@@ -6,7 +6,7 @@
 - Variant ID: `USB-HUB`
 - Form factor: shared accessory / hub dongle
 - Lane: active validation-lane accessory
-- Publication state: BOM-backed hardware packet plus source skeletons and top-sheet schematic sources
+- Publication state: BOM-backed hardware packet plus source skeletons, top-sheet schematic sources, and locked first-board USB/power components
 - BOM source: [hardware/bom/USB-HUB.csv](../../bom/USB-HUB.csv)
 - BOM target: `~$5-6` at prototype scale
 - Source skeletons:
@@ -38,7 +38,7 @@ dongle that composes multiple PowerFinger devices into one USB HID mouse.
 
 ## Missing Artifacts
 
-- Completed component capture and symbol/footprint binding
+- Completed symbol placement and footprint files for the locked first-board parts
 - Routed PCB with USB connector reinforcement details
 - Fit-validated enclosure CAD
 - Fit notes for USB-A versus USB-C physical packaging

@@ -14,6 +14,9 @@ connector mechanics or host clearance prove worse than expected.
 - It keeps the first hub board aligned with the published `$5-6` target.
 - It removes USB-C sink-attach circuitry from the first hub board and lets the
   native USB data path stay visually simple in the schematic.
+- The current P0 lock set (`SOFNG USB-05` + `RT9080-33GJ5` + `USBLC6-2SC6`)
+  now matches that direction and keeps the first board from drifting back into
+  generic placeholders.
 
 ## Fallback Trigger
 

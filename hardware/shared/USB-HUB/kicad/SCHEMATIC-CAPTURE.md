@@ -9,6 +9,7 @@ References:
 - [INTERFACE-CONTRACT.md](INTERFACE-CONTRACT.md)
 - [BRINGUP-SERVICE-MATRIX.md](BRINGUP-SERVICE-MATRIX.md)
 - [CAPTURE-BINDINGS.md](CAPTURE-BINDINGS.md)
+- [P0-COMPONENT-LOCKS.md](P0-COMPONENT-LOCKS.md)
 - [PLACEMENT-CONSTRAINTS.md](PLACEMENT-CONSTRAINTS.md)
 - [BOM-BLOCK-MAP.md](BOM-BLOCK-MAP.md)
 - [RECOMMENDED-FIRST-CAPTURE.md](RECOMMENDED-FIRST-CAPTURE.md)
@@ -50,6 +51,9 @@ References:
 - Use [CAPTURE-BINDINGS.md](CAPTURE-BINDINGS.md) before choosing connector,
   module, and recovery-control footprints so the first hub board does not drift
   into generic placeholders.
+- Use [P0-COMPONENT-LOCKS.md](P0-COMPONENT-LOCKS.md) when placing the first real
+  `usb_and_power` symbols so the chosen dongle connector and USB protector do
+  not get "temporarily" swapped for library-default stand-ins.
 - The hub BOM now carries both USB-side ESD protection and an explicit 3.3V
   regulator baseline. Capture them now instead of hand-waving `VREG_3V3` as
   something the board will “figure out later.”
