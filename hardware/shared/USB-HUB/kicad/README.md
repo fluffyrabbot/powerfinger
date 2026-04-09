@@ -14,6 +14,8 @@ captured in a way that fights serviceability or native USB.
 - `usb_hub.kicad_pcb`
 - Optional local footprints if the chosen connector or enclosure retention needs
   a custom land pattern
+- `INTERFACE-CONTRACT.md` — first-pass native USB and recovery-pin contract
+- `BRINGUP-SERVICE-MATRIX.md` — mandatory recovery access and first-board checks
 - `SCHEMATIC-CAPTURE.md` — sheet split, net naming, and capture order
 - `BOM-BLOCK-MAP.md` — map the BOM into the first hub schematic
 - `RECOMMENDED-FIRST-CAPTURE.md` — the recommended first board scope

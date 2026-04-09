@@ -28,6 +28,6 @@ the following become credible during capture or enclosure work:
 
 - native USB direct to the ESP32-S3
 - serviceable boot/reset access
+- recoverable `EN` / `BOOT_N` / UART0 access even if native USB bring-up fails
 - USB-side protection consistent with the regulatory pre-scan
 - connector reinforcement by both PCB and enclosure, not solder alone
-

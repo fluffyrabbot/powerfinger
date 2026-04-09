@@ -26,6 +26,8 @@ References:
   and enclosure support; solder joints alone are not enough.
 - Boot/reset access must be possible during bring-up without making accidental
   presses likely in normal use.
+- Recovery pads for `EN`, `GPIO0`, and UART0 must remain reachable by probes or
+  pogo pins after the board is installed.
 - Status LED should be visible without forcing a non-serviceable enclosure seam.
 
 ## Service Rules
@@ -41,4 +43,3 @@ References:
   but allow honest growth if connector support or antenna clearance needs it.
 - Keep USB-A plug versus USB-C-plus-cable as an explicit design choice, not an
   accidental side effect of the first footprint used.
-

@@ -10,6 +10,7 @@ This file keeps the first hub schematic aligned with the published BOM.
 | Board decoupling | `C1`, `C2` | Board-level decoupling and bulk cap placement | Keep this close to the S3 power entry |
 | Status indication | `LED1`, `R2` | Optional but capture-ready status LED path | Do not let this become mechanically unserviceable |
 | Bring-up control | `SW1` | Boot/reset access path | Recessed is fine, unreachable is not |
+| Service / recovery | `—` | `EN`, `BOOT_N`, `UART_TX_DBG`, `UART_RX_DBG`, `3V3`, and `GND` service pads | Required capture item even though it is mostly copper and pad geometry, not BOM line items |
 | Mechanics | `PCB1`, `ENCL1` | Mechanical notes and connector-support expectations | The schematic should carry enough notes that the PCB is not designed like a floating connector tongue |
 
 ## Capture Boundary
