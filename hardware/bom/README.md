@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: CERN-OHL-S-2.0 -->
 # Bills of Materials
 
 Pre-schematic BOMs for P0 and P1 prototype variants. These are intent documents
@@ -13,6 +14,13 @@ these files become reference.
 | `R30-BALL-NONE-NONE.csv` | Ball+Hall ring (30°, dome click) | ~$11 | P1 |
 | `WSTD-BALL-NONE-NONE.csv` | Ball+Hall wand (standard tip) | ~$14 | P1 |
 | `USB-HUB.csv` | USB hub dongle (BLE central + USB HID) | ~$5–6 | P0 |
+
+Matching publication packets live under:
+
+- `hardware/ring/R30-OLED-NONE-NONE/`
+- `hardware/ring/R30-BALL-NONE-NONE/`
+- `hardware/wand/WSTD-BALL-NONE-NONE/`
+- `hardware/shared/USB-HUB/`
 
 ## Format
 
