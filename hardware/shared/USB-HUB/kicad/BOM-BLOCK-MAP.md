@@ -2,6 +2,8 @@
 # USB-HUB BOM To Block Map
 
 This file keeps the first hub schematic aligned with the published BOM.
+Read it together with [CAPTURE-BINDINGS.md](CAPTURE-BINDINGS.md) so the block
+map and the actual symbol/footprint choices stay aligned.
 
 | Schematic block | BOM refs | What belongs in the first capture | Notes |
 |-----------------|----------|-----------------------------------|-------|

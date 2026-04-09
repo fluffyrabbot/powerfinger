@@ -7,7 +7,7 @@ R1,2,USB data line resistors,—,0402,—,—,LCSC,—,$0.01,"Per USB spec. Valu
 D1,1,USB ESD protection array,2-channel low-capacitance TVS,SOT-23-6 or equivalent,—,—,LCSC,—,$0.03–0.10,"USB-side protection promoted into the first hub capture. Place near the connector, not after a long stub."
 LED1,1,Status LED (connection indicator),green,0402,—,—,LCSC,—,$0.01,"Optional. Shows pairing/connection state."
 R2,1,LED current limit resistor,1kΩ,0402,—,—,LCSC,—,$0.01,"For status LED."
-SW1,1,Boot/reset service button,tactile switch,6x6mm,—,—,LCSC,—,$0.03,"Bring-up and recovery access. Recessed is fine; unreachable is not. If a single switch is kept, the board still needs service pads for the rest of the bootstrap path."
+SW1,1,Boot/reset service button,tactile switch,service-size TBD,—,—,LCSC,—,$0.03,"Bring-up and recovery access. Do not force a 6x6mm tact onto the ~20x12mm dongle if that breaks the board envelope; a smaller tact or pad-actuated recovery path is acceptable. If a single switch is kept, the board still needs service pads for the rest of the bootstrap path."
 PCB1,1,Rigid PCB,—,~20x12mm,JLCPCB,—,—,—,$0.30–0.50,"Small 2-layer board. USB stick form factor."
 ENCL1,1,Enclosure,—,USB stick form,—,—,—,—,$0.30–0.50,"3D-printed prototype enclosure should mechanically support the connector and reopen for service. Heat-shrink alone is not the preferred P0 service baseline."
 ,,,,,,,,,,"—"

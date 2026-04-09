@@ -16,6 +16,7 @@ captured in a way that fights serviceability or native USB.
   a custom land pattern
 - `INTERFACE-CONTRACT.md` — first-pass native USB and recovery-pin contract
 - `BRINGUP-SERVICE-MATRIX.md` — mandatory recovery access and first-board checks
+- `CAPTURE-BINDINGS.md` — which active BOM lines need stock, vendor, or custom binding
 - `SCHEMATIC-CAPTURE.md` — sheet split, net naming, and capture order
 - `BOM-BLOCK-MAP.md` — map the BOM into the first hub schematic
 - `RECOMMENDED-FIRST-CAPTURE.md` — the recommended first board scope

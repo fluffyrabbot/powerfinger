@@ -2,6 +2,8 @@
 # R30-OLED-NONE-NONE BOM To Block Map
 
 This file keeps the first schematic capture aligned with the published BOM.
+Read it together with [CAPTURE-BINDINGS.md](CAPTURE-BINDINGS.md) so the block
+map and the actual symbol/footprint choices do not drift apart.
 
 | Schematic block | BOM refs | What belongs in the first capture | Notes |
 |-----------------|----------|-----------------------------------|-------|

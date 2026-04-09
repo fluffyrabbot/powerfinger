@@ -7,6 +7,7 @@ real KiCad schematic for the active optical ring lane.
 References:
 
 - [INTERFACE-CONTRACT.md](INTERFACE-CONTRACT.md)
+- [CAPTURE-BINDINGS.md](CAPTURE-BINDINGS.md)
 - [PLACEMENT-CONSTRAINTS.md](PLACEMENT-CONSTRAINTS.md)
 - [BOM-BLOCK-MAP.md](BOM-BLOCK-MAP.md)
 - [RECOMMENDED-FIRST-CAPTURE.md](RECOMMENDED-FIRST-CAPTURE.md)
@@ -63,6 +64,9 @@ easier to branch.
   capture items rather than optional cleanup.
 - Use [INTERFACE-CONTRACT.md](INTERFACE-CONTRACT.md) as the pin-assignment
   source of truth before naming MCU-side nets in KiCad.
+- Use [CAPTURE-BINDINGS.md](CAPTURE-BINDINGS.md) before selecting which active
+  BOM lines can use stock packages and which require vendor-specific or custom
+  footprints.
 - Keep the PAW3204 capture P0-specific. Do not fold PMW3360 rails or haptic
   circuitry into this first schematic.
 - The NTC and charge-enable path are not optional. The battery safety docs have

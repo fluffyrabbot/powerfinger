@@ -8,6 +8,7 @@ References:
 
 - [INTERFACE-CONTRACT.md](INTERFACE-CONTRACT.md)
 - [BRINGUP-SERVICE-MATRIX.md](BRINGUP-SERVICE-MATRIX.md)
+- [CAPTURE-BINDINGS.md](CAPTURE-BINDINGS.md)
 - [PLACEMENT-CONSTRAINTS.md](PLACEMENT-CONSTRAINTS.md)
 - [BOM-BLOCK-MAP.md](BOM-BLOCK-MAP.md)
 - [RECOMMENDED-FIRST-CAPTURE.md](RECOMMENDED-FIRST-CAPTURE.md)
@@ -45,6 +46,9 @@ References:
   USB-UART bridge.
 - Use [INTERFACE-CONTRACT.md](INTERFACE-CONTRACT.md) as the source of truth for
   the native USB, boot, reset, and UART recovery nets before assigning GPIOs.
+- Use [CAPTURE-BINDINGS.md](CAPTURE-BINDINGS.md) before choosing connector,
+  module, and recovery-control footprints so the first hub board does not drift
+  into generic placeholders.
 - The hub BOM now carries USB-side ESD protection as a baseline first-capture
   item. Capture it now instead of pretending the board is “too small” to need it.
 - Preserve the service access defined in
