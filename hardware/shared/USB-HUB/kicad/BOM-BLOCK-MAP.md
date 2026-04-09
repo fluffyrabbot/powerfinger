@@ -1,0 +1,19 @@
+<!-- SPDX-License-Identifier: CERN-OHL-S-2.0 -->
+# USB-HUB BOM To Block Map
+
+This file keeps the first hub schematic aligned with the published BOM.
+
+| Schematic block | BOM refs | What belongs in the first capture | Notes |
+|-----------------|----------|-----------------------------------|-------|
+| MCU / radio | `U1` | `ESP32-S3-MINI-1-N8` module and required decoupling | Native USB and BLE central both live here |
+| USB connector path | `J1`, `R1` | USB connector plus any USB-side resistors and protection required by the chosen connector path | Keep the connector decision explicit |
+| Board decoupling | `C1`, `C2` | Board-level decoupling and bulk cap placement | Keep this close to the S3 power entry |
+| Status indication | `LED1`, `R2` | Optional but capture-ready status LED path | Do not let this become mechanically unserviceable |
+| Bring-up control | `SW1` | Boot/reset access path | Recessed is fine, unreachable is not |
+| Mechanics | `PCB1`, `ENCL1` | Mechanical notes and connector-support expectations | The schematic should carry enough notes that the PCB is not designed like a floating connector tongue |
+
+## Capture Boundary
+
+The first schematic should support the hub’s active role: BLE central plus USB
+HID bridge, with minimal bring-up controls and honest connector serviceability.
+

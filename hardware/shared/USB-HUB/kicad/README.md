@@ -14,6 +14,10 @@ captured in a way that fights serviceability or native USB.
 - `usb_hub.kicad_pcb`
 - Optional local footprints if the chosen connector or enclosure retention needs
   a custom land pattern
+- `SCHEMATIC-CAPTURE.md` — sheet split, net naming, and capture order
+- `BOM-BLOCK-MAP.md` — map the BOM into the first hub schematic
+- `RECOMMENDED-FIRST-CAPTURE.md` — the recommended first board scope
+
 
 ## Capture Order
 
@@ -28,4 +32,3 @@ captured in a way that fights serviceability or native USB.
   bridge into the normal data path.
 - Treat [PLACEMENT-CONSTRAINTS.md](PLACEMENT-CONSTRAINTS.md) as a blocker list.
 - Connector mechanical support matters as much as the schematic.
-

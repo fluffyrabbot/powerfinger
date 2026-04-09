@@ -13,6 +13,9 @@ first capture.
 - Local symbol and footprint references only where upstream libraries are not
   enough
 - Plot and fabrication presets once routing exists
+- `SCHEMATIC-CAPTURE.md` — sheet split, net naming, and capture order
+- `BOM-BLOCK-MAP.md` — turn the BOM into schematic blocks without drift
+- `RECOMMENDED-FIRST-CAPTURE.md` — the recommended P0 scope boundary
 
 ## Capture Order
 
@@ -30,4 +33,3 @@ first capture.
 - Do not substitute the LDO, charge resistor, or battery safety path without
   updating the variant manifest and BOM.
 - Do not let convenience routing eat the antenna keep-out.
-
