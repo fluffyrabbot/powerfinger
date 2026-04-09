@@ -126,7 +126,7 @@ implementation versus planning:
 |------|-----------------|-----------|
 | Firmware | Real ESP-IDF targets for `ring`, `hub`, `pen`, and `puck`, plus a host-side unit test suite. The active validation lane is `ring` + `hub`. | `scripts/verify-firmware-local.sh`, `docs/FIRMWARE-VERIFY-LOCAL.md` |
 | Companion | A minimal local Web Serial app now lives under `companion/web/`. It talks to the hub's existing USB CDC text protocol and covers hub info, role assignment, swaps, forget, hub settings, per-ring tuning, live RSSI plus battery/diagnostics inspection, and hub-owned simultaneous-click gesture mapping. | `companion/README.md`, `companion/web/`, `docs/COMPANION-APP-ARCH.md` |
-| Hardware | BOM intent files still anchor the lane, but each BOM-backed variant now has a hardware publication packet with a manifest plus assembly/disassembly baseline. KiCad and CAD deliverables are not checked in yet. | `hardware/README.md`, `hardware/bom/README.md` |
+| Hardware | BOM intent files still anchor the lane, and each BOM-backed variant now has a hardware publication packet with a manifest plus assembly/disassembly baseline. The active `R30-OLED-NONE-NONE` ring and `USB-HUB` now also have initial KiCad-oriented and OpenSCAD skeletons; routed PCBs and validated CAD are still pending. | `hardware/README.md`, `hardware/bom/README.md` |
 | Docs | Design, validation, accessibility, and IP docs are the most complete part of the repo today. | `docs/` |
 
 ## Quick Start
@@ -172,7 +172,8 @@ analysis are documented, and the repo already contains real firmware projects
 plus a local verification path. Active scope is frozen to the optical ring +
 hub validation lane, with the wand as the hedge lane. The companion lane now
 has a minimal local Web Serial scaffold, while the hardware tree contains BOM-
-backed publication packets and service baselines rather than CAD/PCB drops. See
+backed publication packets, service baselines, and first-pass source skeletons
+for the active ring + hub lane rather than finished CAD/PCB drops. See
 [docs/FIRMWARE-ROADMAP.md](docs/FIRMWARE-ROADMAP.md) for the firmware build
 order — every phase runs on a $3 ESP32-C3 dev board before prototype hardware
 arrives.

@@ -6,12 +6,14 @@ publication record.
 
 ## Current Repo Status
 
-- The committed hardware artifacts today are still BOM-first, but each BOM-backed
+- The committed hardware artifacts are still BOM-first, but each BOM-backed
   variant now has a publication packet with a manifest plus pre-CAD assembly and
   disassembly guidance.
-- No KiCad projects or CAD models are checked in yet.
-- The new packets document intended serviceability and replacement boundaries;
-  they are not build-validated proof that the mechanical design already works.
+- The active validation lane now also has initial source skeletons:
+  - `ring/R30-OLED-NONE-NONE/{kicad,cad}/`
+  - `shared/USB-HUB/{kicad,cad}/`
+- Those skeletons are design-starting points, not validated schematics, routed
+  PCBs, or mechanically proven CAD.
 
 ## Required Structure
 
@@ -35,6 +37,11 @@ Each packet includes:
   repairability boundaries
 - `ASSEMBLY.md` — non-destructive assembly expectations for the first hardware drop
 - `DISASSEMBLY.md` — battery-safe teardown order and replacement expectations
+
+Active-lane packets may also include:
+
+- `kicad/` — schematic-capture and placement inputs for KiCad work
+- `cad/` — editable OpenSCAD source for first-pass mechanical envelopes
 
 ## Non-Negotiables
 

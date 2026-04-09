@@ -5,10 +5,12 @@ This directory is reserved for ring-specific hardware deliverables.
 
 ## Current Repo Status
 
-- No ring KiCad or CAD sources are checked in yet.
 - The current ring-side publication packets are:
   - `R30-OLED-NONE-NONE/`
   - `R30-BALL-NONE-NONE/`
+- `R30-OLED-NONE-NONE/` now includes first-pass `kicad/` and `cad/` skeletons
+  for the active optical validation lane.
+- `R30-BALL-NONE-NONE/` remains BOM + service-baseline only.
 - Those packets are grounded in the BOM intent files in `hardware/bom/` and define
   the minimum serviceability baseline for the first real hardware drop.
 - The first hardware lane to prove itself remains the optical ring pair + hub

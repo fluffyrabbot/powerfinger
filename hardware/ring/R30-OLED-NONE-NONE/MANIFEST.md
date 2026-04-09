@@ -6,9 +6,12 @@
 - Variant ID: `R30-OLED-NONE-NONE`
 - Form factor: ring
 - Lane: active validation lane
-- Publication state: BOM-backed hardware packet, pre-CAD, pre-PCB
+- Publication state: BOM-backed hardware packet plus source skeletons
 - BOM source: [hardware/bom/R30-OLED-NONE-NONE.csv](../../bom/R30-OLED-NONE-NONE.csv)
 - BOM target: `~$9` at prototype scale
+- Source skeletons:
+  - `kicad/` — KiCad-oriented schematic/layout inputs and placement notes
+  - `cad/` — OpenSCAD shell blank for the first parametric ring pass
 
 This packet documents the minimum repairability and assembly expectations for
 the first optical ring hardware drop. It does not claim the package geometry,
@@ -41,8 +44,9 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
 
 ## Missing Artifacts
 
-- KiCad source and generated fabrication outputs
-- Shell CAD source and printable/exported models
+- Completed schematic capture and symbol/footprint binding
+- Routed PCB with antenna keep-out and charge-path validation
+- Fit-validated shell CAD and printable/exported models
 - Measured ring stackup with focal-distance verification
 - Assembly photos, torque values, and validated fit tolerances
 - Test notes tied to [docs/GO-NO-GO-RUBRIC.md](../../../docs/GO-NO-GO-RUBRIC.md)
@@ -55,4 +59,3 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   [docs/BATTERY-SAFETY.md](../../../docs/BATTERY-SAFETY.md)
 - Shell can be opened and reclosed without destroying the battery bay, sensor
   mount, or antenna keep-out
-
