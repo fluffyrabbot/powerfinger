@@ -7,9 +7,9 @@ map and the actual symbol/footprint choices stay aligned.
 
 | Schematic block | BOM refs | What belongs in the first capture | Notes |
 |-----------------|----------|-----------------------------------|-------|
-| MCU / radio | `U1` | `ESP32-S3-MINI-1-N8` module and required decoupling | Native USB and BLE central both live here |
-| USB connector path | `J1`, `R1`, `D1` | USB connector, USB-side resistors, and USB ESD protection | Keep the connector decision explicit and the protection close to the connector |
-| Board decoupling | `C1`, `C2` | Board-level decoupling and bulk cap placement | Keep this close to the S3 power entry |
+| MCU / radio | `U1`, `C1` | `ESP32-S3-MINI-1-N8` module and local decoupling | Native USB and BLE central both live here |
+| USB connector path | `J1`, `R1`, `D1`, `C2` | USB connector, USB-side resistors, ESD protection, and VBUS-side bulk/input capacitance | Keep the connector decision explicit and the protection close to the connector |
+| Regulation | `U2`, `C1`, `C3` | `RT9080-33GJ5` 5V-to-3.3V rail and required output capacitance | `VREG_3V3` belongs to the `usb_and_power` sheet, not to an implied dev-board rail |
 | Status indication | `LED1`, `R2` | Optional but capture-ready status LED path | Do not let this become mechanically unserviceable |
 | Bring-up control | `SW1` | Boot/reset access path | Recessed is fine, unreachable is not |
 | Service / recovery | `—` | `EN`, `BOOT_N`, `UART_TX_DBG`, `UART_RX_DBG`, `3V3`, and `GND` service pads | Required capture item even though it is mostly copper and pad geometry, not BOM line items |

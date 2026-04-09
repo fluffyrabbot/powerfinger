@@ -19,8 +19,9 @@ References:
 ## Recommended Sheet Split
 
 1. `usb_and_power`
-   Includes connector choice, native USB D+/D- path, any VBUS protection,
-   decoupling, and any USB-side ESD support included during capture.
+   Includes connector choice, `VBUS_5V` entry, `RT9080-33GJ5` regulation,
+   native USB D+/D- path, required input/output capacitors, and any USB-side
+   ESD support included during capture.
 2. `mcu_radio`
    Includes `ESP32-S3-MINI-1-N8`, boot/enable support, and module decoupling.
 3. `controls_and_indicators`
@@ -49,8 +50,9 @@ References:
 - Use [CAPTURE-BINDINGS.md](CAPTURE-BINDINGS.md) before choosing connector,
   module, and recovery-control footprints so the first hub board does not drift
   into generic placeholders.
-- The hub BOM now carries USB-side ESD protection as a baseline first-capture
-  item. Capture it now instead of pretending the board is “too small” to need it.
+- The hub BOM now carries both USB-side ESD protection and an explicit 3.3V
+  regulator baseline. Capture them now instead of hand-waving `VREG_3V3` as
+  something the board will “figure out later.”
 - Preserve the service access defined in
   [BRINGUP-SERVICE-MATRIX.md](BRINGUP-SERVICE-MATRIX.md) even if the final
   enclosure is a compact dongle.
@@ -59,6 +61,8 @@ References:
 
 - Pick the connector path intentionally, not by whichever footprint is fastest
   to drag into the sheet.
+- Lock the `VBUS_5V` to `VREG_3V3` path intentionally, including the LDO and its
+  required capacitors, in the same pass as the connector decision.
 - Put a note block on the top sheet pointing back to
   [PLACEMENT-CONSTRAINTS.md](PLACEMENT-CONSTRAINTS.md).
 - Reserve the S3 antenna consequence early so connector mechanics do not crowd it.

@@ -55,6 +55,8 @@ References:
 - The USB-A-first path from [RECOMMENDED-FIRST-CAPTURE.md](RECOMMENDED-FIRST-CAPTURE.md)
   is still the default. If capture pivots to USB-C plus a short cable, preserve
   the same native USB and recovery nets.
+- The first custom board owns `VBUS_5V` to `VREG_3V3` regulation locally. Do
+  not treat `VREG_3V3` as a dev-board inheritance or an off-page assumption.
 - `GPIO19` and `GPIO20` are used by the S3 USB block by default. Do not hang
   LEDs, strap resistors, or unrelated debug logic on them.
 - `GPIO43` and `GPIO44` are the default UART0 pins. Even if the first board

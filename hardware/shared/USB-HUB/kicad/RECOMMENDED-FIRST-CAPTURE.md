@@ -27,6 +27,7 @@ the following become credible during capture or enclosure work:
 ## Must-Haves Even In The Simple Path
 
 - native USB direct to the ESP32-S3
+- explicit `VBUS_5V` to `VREG_3V3` regulation on the custom board
 - serviceable boot/reset access
 - recoverable `EN` / `BOOT_N` / UART0 access even if native USB bring-up fails
 - USB-side protection consistent with the regulatory pre-scan

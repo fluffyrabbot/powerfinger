@@ -11,6 +11,7 @@ References:
 
 - `ESP32-S3-MINI-1-N8`
 - USB connector and native USB data path
+- `RT9080-33GJ5` regulation path with required input/output capacitors
 - Decoupling and bulk capacitance
 - Status LED and current limit resistor
 - Boot/reset control
@@ -22,6 +23,8 @@ References:
   connector shell or a metal enclosure feature.
 - Keep the USB D+/D- path short, direct, and symmetric enough for a small full-
   speed device board.
+- Keep `VBUS_5V` entry, the LDO, and its output capacitor physically coherent so
+  the board does not treat `VREG_3V3` like an abstract off-page supply.
 - The connector must have mechanical reinforcement from both PCB footprinting
   and enclosure support; solder joints alone are not enough.
 - Boot/reset access must be possible during bring-up without making accidental

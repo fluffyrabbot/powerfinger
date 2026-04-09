@@ -5,7 +5,7 @@
   (uuid "9cb4453f-b33a-4286-ac9e-aeb00c3298c5")
   (paper "A4")
   (lib_symbols)
-  (text "USB/power interface scaffold: native USB pair and regulated 3V3 rail are locked here before symbol placement."
+  (text "USB/power interface scaffold: VBUS_5V entry, RT9080-class 3V3 regulation, native USB pair, and connector-side protection are locked here before symbol placement."
     (at 20.32 20.32 0)
     (effects (font (size 1.27 1.27)))
     (uuid "001955a5-a022-4c74-896e-2184b53fbfe0")
