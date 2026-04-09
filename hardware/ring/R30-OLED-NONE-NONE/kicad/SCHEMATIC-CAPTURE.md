@@ -57,8 +57,9 @@ easier to branch.
 
 ## Capture-Specific Notes
 
-- If the board keeps a USB-C receptacle, include the sink-attach CC resistors in
-  the schematic even though the current BOM CSV does not list them yet.
+- The current BOM now includes the USB-C sink-attach pull-down resistors, the
+  USB ESD array, and the SPI clock damping resistor. Treat them as baseline P0
+  capture items rather than optional cleanup.
 - Keep the PAW3204 capture P0-specific. Do not fold PMW3360 rails or haptic
   circuitry into this first schematic.
 - The NTC and charge-enable path are not optional. The battery safety docs have
@@ -77,4 +78,3 @@ easier to branch.
   rather than a single fully locked MPN.
 - Mark every service-facing electrical interface that must remain accessible for
   bring-up or repair.
-

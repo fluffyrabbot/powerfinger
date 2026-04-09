@@ -28,6 +28,8 @@ re-checking fit, current draw, thermal safety, or accessibility impact.
 | Ring / wand Hall sensor | `DRV5053VAQDBZR` | `SS49E` with explicit power-budget re-check | Pin-incompatible Hall parts dropped in by footprint hope | Hall current dominates the ball+Hall power lane |
 | Charge controller | `TP4054` | `LTC4054ES5-4.2` | `TP4056` or `MCP73831` without board re-layout | Pinout and thermal behavior matter in tiny enclosures |
 | LDO | `RT9080-33GJ5` | `XC6220B331MR` with documented sleep penalty | `AP2112K`-class high-Iq regulators | Deep-sleep current is load-bearing for accessibility and battery life |
+| USB ESD protection | Low-capacitance 2-channel USB TVS array | Equivalent 2-line USB ESD arrays from major vendors | Leaving USB data unprotected because the board is “just a prototype” | USB service and immunity realism matter before layout hardens |
+| USB-C sink attach resistors | 5.1kΩ pull-downs on `CC1` / `CC2` | Any accurate commodity `5.1 kohm` resistors | Ad-hoc values or omitted CC resistors on a receptacle design | USB-C service/debug paths should enumerate honestly and attach cleanly |
 | Ring / wand battery | 3.7V LiPo with integrated PCM and UN 38.3 docs | Alternate protected pouch cells within envelope and charge-rate limits | Bare cells, harvested cells, or undocumented packs | Replaceability cannot come at the cost of unsafe charging or transport ambiguity |
 | Dome click | `Snaptron SQ-05400N` | Similar 4–6 mm domes from Murata or C&K | Adhesive-only switches that force destructive shell entry | Click feel and replacement path both matter |
 | Wand barrel switch | `Kailh GM8.0` | `Omron D2FC-F-7N` class switches | Single-source boutique switches | Wand repair needs commodity mouse-switch replacements |
@@ -42,4 +44,3 @@ re-checking fit, current draw, thermal safety, or accessibility impact.
 - Where AliExpress is listed, treat it as a prototype-procurement lane, not the
   only acceptable source. The packet should keep at least one distributor-grade
   fallback wherever possible.
-

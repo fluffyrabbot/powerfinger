@@ -41,9 +41,8 @@ References:
 
 - Native USB is load-bearing. Do not route the user-facing data path through a
   USB-UART bridge.
-- The hub is the clean place to take the regulatory pre-scan recommendation for
-  USB-side protection seriously. If ESD protection is added, capture it now
-  instead of pretending the board is “too small” to need it.
+- The hub BOM now carries USB-side ESD protection as a baseline first-capture
+  item. Capture it now instead of pretending the board is “too small” to need it.
 - Preserve service access for boot/reset and basic bring-up even if the final
   enclosure is a compact dongle.
 
@@ -55,4 +54,3 @@ References:
   [PLACEMENT-CONSTRAINTS.md](PLACEMENT-CONSTRAINTS.md).
 - Reserve the S3 antenna consequence early so connector mechanics do not crowd it.
 - Add service/test pads before the board outline gets tiny.
-
