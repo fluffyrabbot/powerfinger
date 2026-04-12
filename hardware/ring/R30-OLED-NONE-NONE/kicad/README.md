@@ -25,6 +25,8 @@ first capture.
 - `SCHEMATIC-CAPTURE.md` — sheet split, net naming, and capture order
 - `BOM-BLOCK-MAP.md` — turn the BOM into schematic blocks without drift
 - `RECOMMENDED-FIRST-CAPTURE.md` — the recommended P0 scope boundary
+- `../FIRST-BOARD-CHECKLIST.md` — the execution checklist that decides when this
+  packet is allowed to move on to secondary variants
 
 ## Capture Order
 
@@ -44,3 +46,5 @@ first capture.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic files as hierarchy scaffolds, not proof that the
   active components or footprints have already been validated in KiCad.
+- Close `../FIRST-BOARD-CHECKLIST.md` and `../STACKUP-VERIFY.md` before treating
+  this lane as hardware-ready.

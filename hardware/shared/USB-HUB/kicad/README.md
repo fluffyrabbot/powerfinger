@@ -28,6 +28,8 @@ captured in a way that fights serviceability or native USB.
 - `SCHEMATIC-CAPTURE.md` — sheet split, net naming, and capture order
 - `BOM-BLOCK-MAP.md` — map the BOM into the first hub schematic
 - `RECOMMENDED-FIRST-CAPTURE.md` — the recommended first board scope
+- `../FIRST-BOARD-CHECKLIST.md` — the execution checklist that decides when this
+  packet is allowed to move on to secondary variants
 
 
 ## Capture Order
@@ -51,3 +53,5 @@ captured in a way that fights serviceability or native USB.
   the locked USB/power path; footprint and routing validation still remain.
 - Treat the current schematic files as hierarchy scaffolds, not proof that the
   connector, recovery controls, or protection footprints are already validated.
+- Close `../FIRST-BOARD-CHECKLIST.md` and
+  `../CONNECTOR-RETENTION-VERIFY.md` before treating this lane as hardware-ready.

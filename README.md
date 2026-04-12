@@ -9,6 +9,10 @@ schematics, PCB layouts, 3D models, BOMs, and assembly docs — are published
 under CERN-OHL-S 2.0. Firmware and software, including the companion app, are
 published under MIT.
 
+**Primary validation claim:** a user with limited wrist mobility can browse,
+click, drag, and scroll on everyday surfaces without host-side remapping
+software.
+
 ## Philosophy
 
 Computer input is a solved problem for people who can sit at a desk and grip a
@@ -42,6 +46,29 @@ better as a common good. We design for:
 - **Privacy.** Fully offline operation. No cloud, no telemetry, no account. Your
   movement data stays on your device.
 
+## Active Program
+
+### Active Validation Lane
+
+- `R30-OLED-NONE-NONE` optical ring pair plus `USB-HUB`
+- Goal: prove the no-host-remapping cursor + click + scroll workflow first
+- Source of truth: [docs/ACTIVE-LANE-CHECKLIST.md](docs/ACTIVE-LANE-CHECKLIST.md)
+
+### Hedge Lane
+
+- `WSTD-BALL-NONE-NONE` wand
+- Use this lane only after the active ring + hub lane clears its gates or if
+  the ring fails package-closure / safety reality in a way that forces a
+  productization pivot
+
+### Deferred Until Gate 6
+
+- Ball+Hall ring
+- Puck variants
+- Pro optical-on-ball ring
+- OCR / camera and other rich companion features
+- IMU hybrids and additional mountings beyond defensive publication coverage
+
 ## Form Factors
 
 ### Ring
@@ -66,6 +93,9 @@ software-defined combinations of those four primitives.
 | Ball+Hall ring (P1) | ~$11 | Target: glass, fabric, skin, and other hard cases | ~15–60 DPI |
 | Optical-on-ball ring (Pro) | ~$17 | Target: any rollable surface, pending validation | Up to 12,000 CPI |
 
+Only the optical ring is in the active validation lane. The other ring variants
+remain documented for defensive publication and later research.
+
 A USB hub dongle (~$6) is the intended path for composing two or more rings into
 a single USB HID mouse without host-side remapping software.
 
@@ -73,7 +103,8 @@ a single USB HID mouse without host-side remapping software.
 
 A pen-shaped BLE HID pointing device with a ball+Hall sensor at the tip. This
 is the hedge lane: a handheld form factor designed for the surfaces and angles
-that defeat optical pen mice. ~$14 BOM.
+that defeat optical pen mice. It is not the primary validation lane while the
+ring + hub proof remains red. ~$14 BOM.
 
 No existing product fills this space. Commercial pen mice ($35–150) use optical
 sensors that fail on glass and degrade past ~20 degrees of pen tilt. Assistive
@@ -95,7 +126,8 @@ landscape, accessibility case, and patent analysis.
 The electronics module is invariant; the harness adapts it to any body position.
 The ring shell is just one harness. Others: toe ring, knuckle strap, wrist
 bracelet, prosthetic mount, headband. Same PCB, same firmware, different
-physical mounting. The companion app assigns meaning.
+physical mounting. The companion app assigns meaning. These remain design-space
+and defensive-publication coverage, not active implementation work.
 
 See [docs/COMBINATORICS.md](docs/COMBINATORICS.md) for the full design space.
 
@@ -108,13 +140,14 @@ See [docs/COMBINATORICS.md](docs/COMBINATORICS.md) for the full design space.
 | Direct laser (VCSEL) | More surfaces than LED | None | ~$2–5 | Good (2000+ CPI) |
 | Optical on captive ball | Target: any rollable surface, pending validation | Ball only | ~$5–8 | Excellent (12K CPI) |
 
-## Optional Capabilities
+## Deferred Capabilities
 
 - **OCR camera** — scan text from physical books/documents, send to companion
   app for local OCR (Tesseract/PaddleOCR), translation, or text-to-speech.
-  Requires companion app; pointing function works without it.
+  Requires companion app; pointing function works without it. Deferred until the
+  active validation lane clears Gate 4.
 - **Guidance laser** — red dot on the surface shows exactly where you're
-  pointing/scanning
+  pointing/scanning. Deferred until the active validation lane clears Gate 4.
 
 ## What Exists Today
 
@@ -124,9 +157,9 @@ implementation versus planning:
 
 | Area | Current reality | Start here |
 |------|-----------------|-----------|
-| Firmware | Real ESP-IDF targets for `ring`, `hub`, `pen`, and `puck`, plus a host-side unit test suite. The active validation lane is `ring` + `hub`. | `scripts/verify-firmware-local.sh`, `docs/FIRMWARE-VERIFY-LOCAL.md` |
+| Firmware | Real ESP-IDF targets exist for `ring`, `hub`, `pen`, and `puck`, but the shared verification contract is the active `ring` + `hub` lane plus host-side tests. | `scripts/verify-firmware-local.sh`, `docs/FIRMWARE-VERIFY-LOCAL.md` |
 | Companion | A minimal local Web Serial app now lives under `companion/web/`. It talks to the hub's existing USB CDC text protocol and covers hub info, role assignment, swaps, forget, hub settings, per-ring tuning, live RSSI plus battery/diagnostics inspection, and hub-owned simultaneous-click gesture mapping. | `companion/README.md`, `companion/web/`, `docs/COMPANION-APP-ARCH.md` |
-| Hardware | BOM intent files still anchor the lane, and each BOM-backed variant now has a hardware publication packet with a manifest plus assembly/disassembly baseline. The active `R30-OLED-NONE-NONE` ring and `USB-HUB` now also have initial KiCad-oriented and OpenSCAD skeletons; routed PCBs and validated CAD are still pending. | `hardware/README.md`, `hardware/bom/README.md` |
+| Hardware | BOM intent files still anchor the lane, and each BOM-backed variant now has a hardware publication packet with a manifest plus assembly/disassembly baseline. The active `R30-OLED-NONE-NONE` ring and `USB-HUB` now also have first-board checklists and validation templates alongside their KiCad/OpenSCAD skeletons; routed PCBs and measured hardware evidence are still pending. | `hardware/README.md`, `hardware/bom/README.md` |
 | Docs | Design, validation, accessibility, and IP docs are the most complete part of the repo today. | `docs/` |
 
 ## Quick Start
@@ -134,6 +167,8 @@ implementation versus planning:
 For local software verification:
 
 ```bash
+scripts/setup-esp-idf-local.sh
+eval "$(scripts/setup-esp-idf-local.sh --export)"
 scripts/verify-firmware-local.sh
 ```
 
@@ -159,11 +194,12 @@ scripts/serve-companion-local.sh
 Then open `http://127.0.0.1:4173` in Chrome or Edge and connect to the hub over
 Web Serial.
 
-See [docs/FIRMWARE-VERIFY-LOCAL.md](docs/FIRMWARE-VERIFY-LOCAL.md) for the
-local verification flow, [docs/COMBINATORICS.md](docs/COMBINATORICS.md) for
-what to build first, [docs/PROTOTYPE-SPEC.md](docs/PROTOTYPE-SPEC.md) for the
-EE/ME build spec, and [docs/GO-NO-GO-RUBRIC.md](docs/GO-NO-GO-RUBRIC.md) for
-the validation gate order.
+See [docs/ACTIVE-LANE-CHECKLIST.md](docs/ACTIVE-LANE-CHECKLIST.md) for the
+canonical active-lane checklist, [docs/FIRMWARE-VERIFY-LOCAL.md](docs/FIRMWARE-VERIFY-LOCAL.md)
+for the local verification flow, [docs/PROTOTYPE-SPEC.md](docs/PROTOTYPE-SPEC.md)
+for the active build spec, [docs/COMBINATORICS.md](docs/COMBINATORICS.md) for
+the broader design space, and [docs/GO-NO-GO-RUBRIC.md](docs/GO-NO-GO-RUBRIC.md)
+for the validation gate order.
 
 ## Project Status
 
@@ -172,11 +208,12 @@ analysis are documented, and the repo already contains real firmware projects
 plus a local verification path. Active scope is frozen to the optical ring +
 hub validation lane, with the wand as the hedge lane. The companion lane now
 has a minimal local Web Serial scaffold, while the hardware tree contains BOM-
-backed publication packets, service baselines, and first-pass source skeletons
-for the active ring + hub lane rather than finished CAD/PCB drops. See
-[docs/FIRMWARE-ROADMAP.md](docs/FIRMWARE-ROADMAP.md) for the firmware build
-order — every phase runs on a $3 ESP32-C3 dev board before prototype hardware
-arrives.
+backed publication packets, service baselines, first-pass source skeletons, and
+active-lane first-board checklists for the ring + hub proof path rather than
+finished CAD/PCB drops. See
+[docs/ACTIVE-LANE-CHECKLIST.md](docs/ACTIVE-LANE-CHECKLIST.md) for the current
+program order and [docs/FIRMWARE-ROADMAP.md](docs/FIRMWARE-ROADMAP.md) for the
+firmware build order that runs on dev boards before prototype hardware arrives.
 
 ## License
 

@@ -5,7 +5,7 @@
 
 - Variant ID: `R30-BALL-NONE-NONE`
 - Form factor: ring
-- Lane: exploratory hedge ring, not the primary validation lane
+- Lane: deferred research ring, not the active validation lane or hedge lane
 - Publication state: BOM-backed hardware packet, pre-CAD, pre-PCB
 - BOM source: [hardware/bom/R30-BALL-NONE-NONE.csv](../../bom/R30-BALL-NONE-NONE.csv)
 - BOM target: `~$11` at prototype scale
@@ -51,4 +51,3 @@ or Hall delta quality yet.
 - Ball can be removed for cleaning or replacement without shell destruction
 - Roller and magnet alignment is serviceable and repeatable
 - Hall power gating remains compatible with the published BOM and power budget
-

@@ -23,6 +23,7 @@ The companion app is optional configuration software, not a runtime dependency.
 - No cloud dependency
 - No workflow automation dependency
 - No blocking role in P0 validation
+- Richer app work stays deferred until the active ring + hub lane clears Gate 4
 
 ## Run It Locally
 
@@ -54,6 +55,9 @@ Web Serial.
 - No direct BLE mode for single-ring tuning
 - No OTA UX
 - No packaged installable app
+
+Those gaps are intentional for the current program order, not missing blockers
+for the active validation lane.
 
 ## What To Read First
 

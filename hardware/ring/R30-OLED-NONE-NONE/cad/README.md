@@ -34,3 +34,6 @@ or focal-distance stack are already validated.
 - Battery fit with real wiring and connector strain relief
 - Focal-distance proof on physical surfaces
 
+Use [../FIRST-BOARD-CHECKLIST.md](../FIRST-BOARD-CHECKLIST.md) and
+[../STACKUP-VERIFY.md](../STACKUP-VERIFY.md) as the active-lane source of truth
+for what this CAD needs to prove before secondary variants move forward.

@@ -12,6 +12,8 @@
 - Source skeletons:
   - `kicad/` — KiCad-oriented schematic/layout inputs, hierarchy scaffolds, and placement notes
   - `cad/` — OpenSCAD shell blank for the first parametric ring pass
+  - `FIRST-BOARD-CHECKLIST.md` — concrete first-board outputs required before secondary variants
+  - `STACKUP-VERIFY.md` — measured package-closure template for height, focal distance, battery, and RF evidence
 
 This packet documents the minimum repairability and assembly expectations for
 the first optical ring hardware drop. It does not claim the package geometry,
@@ -42,6 +44,13 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
 - UHMWPE glide pads
 - Dome click element
 
+## Tracked First-Board Outputs
+
+- [FIRST-BOARD-CHECKLIST.md](FIRST-BOARD-CHECKLIST.md) — active capture / routing / CAD closure checklist
+- [STACKUP-VERIFY.md](STACKUP-VERIFY.md) — package-closure evidence template
+- `kicad/r30_oled_none_none.kicad_pcb` — first routed PCB source (not checked in yet)
+- Printable shell exports derived from `cad/r30_oled_none_none_shell_blank.scad`
+
 ## Missing Artifacts
 
 - Completed component capture and symbol/footprint binding
@@ -59,3 +68,5 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   [docs/BATTERY-SAFETY.md](../../../docs/BATTERY-SAFETY.md)
 - Shell can be opened and reclosed without destroying the battery bay, sensor
   mount, or antenna keep-out
+- Record package-closure evidence in [STACKUP-VERIFY.md](STACKUP-VERIFY.md)
+  before starting secondary ring or puck hardware

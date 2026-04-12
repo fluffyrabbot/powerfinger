@@ -28,3 +28,7 @@ not claim the final fit, connector style, or strain-relief geometry is done.
 - Final retention details for top/bottom shells
 - Host-port interference if USB-A plug geometry is used
 
+Use [../FIRST-BOARD-CHECKLIST.md](../FIRST-BOARD-CHECKLIST.md) and
+[../CONNECTOR-RETENTION-VERIFY.md](../CONNECTOR-RETENTION-VERIFY.md) as the
+active-lane source of truth for what this enclosure needs to prove before
+secondary hardware moves forward.

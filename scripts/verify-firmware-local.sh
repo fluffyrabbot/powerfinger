@@ -10,6 +10,9 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 build_root="${POWERFINGER_IDF_BUILD_ROOT:-$repo_root/build-idf}"
+idf_version="${POWERFINGER_IDF_VERSION:-v5.2.2}"
+idf_root="${POWERFINGER_IDF_ROOT:-$HOME/.powerfinger-sdk}"
+idf_setup_script="$repo_root/scripts/setup-esp-idf-local.sh"
 
 run_host_tests=true
 run_firmware=true
@@ -34,6 +37,8 @@ Defaults:
   - Host-side tests run first
   - Firmware verification builds the active lane: ring + hub
   - ESP-IDF build outputs go under build-idf/<project>/
+  - If idf.py is not already in PATH, the script will try a repo-pinned
+    local ESP-IDF install under $HOME/.powerfinger-sdk/
 
 Examples:
   scripts/verify-firmware-local.sh
@@ -59,16 +64,47 @@ parse_target() {
     sed -n 's/^CONFIG_IDF_TARGET="\([^"]*\)"$/\1/p' "$defaults_file" | head -n 1
 }
 
-require_idf() {
+activate_local_idf() {
+    local export_snippet
+
     if command -v idf.py >/dev/null 2>&1; then
+        return 0
+    fi
+    if [[ ! -x "$idf_setup_script" ]]; then
+        return 1
+    fi
+
+    export_snippet="$("$idf_setup_script" --export 2>/dev/null || true)"
+    if [[ -z "$export_snippet" ]]; then
+        return 1
+    fi
+
+    # setup-esp-idf-local.sh emits trusted shell exports for the repo-pinned
+    # local toolchain path. This keeps the shared verifier usable on a fresh
+    # machine without forcing contributors to manage their shell profile first.
+    eval "$export_snippet"
+    command -v idf.py >/dev/null 2>&1
+}
+
+require_idf() {
+    if activate_local_idf; then
         return
     fi
 
-    cat >&2 <<'EOF'
+    cat >&2 <<EOF
 error: idf.py is not available in PATH.
 
-Export the ESP-IDF environment before running firmware builds, for example:
-  . $IDF_PATH/export.sh
+Pinned active-lane baseline: ESP-IDF ${idf_version}
+Expected local install root: ${idf_root}
+
+To install the repo-pinned local toolchain:
+  ${idf_setup_script}
+
+To activate that toolchain in your current shell:
+  eval "\$(${idf_setup_script} --export)"
+
+If you already manage ESP-IDF yourself, export it before running firmware builds:
+  . \$IDF_PATH/export.sh
 
 If you only want the host-side unit tests, rerun with:
   scripts/verify-firmware-local.sh --host-tests-only

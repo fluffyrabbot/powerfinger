@@ -26,7 +26,7 @@ publication record.
 ## Publication Packets Present Today
 
 - `ring/R30-OLED-NONE-NONE/` — active validation-lane ring packet
-- `ring/R30-BALL-NONE-NONE/` — hedge ring packet for ball+Hall sensing
+- `ring/R30-BALL-NONE-NONE/` — deferred research packet for ball+Hall sensing
 - `wand/WSTD-BALL-NONE-NONE/` — wand hedge-lane packet
 - `shared/USB-HUB/` — hub packet used by multi-device composition
 - `shared/SOURCE-ALTERNATIVES.md` — cross-variant second-source baseline
@@ -49,3 +49,5 @@ Active-lane packets may also include:
 - Every battery selection must satisfy `docs/BATTERY-SAFETY.md`.
 - Claims in hardware notes must match `docs/GO-NO-GO-RUBRIC.md`.
 - Do not mark unvalidated variants as production-ready.
+- Do not start secondary hardware variants before the active ring + hub packets
+  have concrete first-board outputs and linked validation evidence.

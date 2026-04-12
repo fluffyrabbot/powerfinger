@@ -1,4 +1,4 @@
-# Prototype Spec — 3 Builds for EE/ME
+# Prototype Spec — Active Validation Lane
 
 Open-source assistive ring mouse. BLE HID. Full design space and rationale at
 the links below — this document is the concise build spec.
@@ -10,8 +10,17 @@ the links below — this document is the concise build spec.
 
 This spec follows the active scope freeze in
 [GO-NO-GO-RUBRIC.md](GO-NO-GO-RUBRIC.md): the optical ring pair + hub is the
-primary validation lane, the puck pair validates keyboard coexistence, and the
-wand is the hedge lane.
+primary validation lane, the wand is the hedge lane, and everything else is
+deferred until the active lane clears Gate 4.
+
+Immediate build scope:
+
+- `R30-OLED-NONE-NONE` optical ring pair
+- `USB-HUB`
+- `WSTD-BALL-NONE-NONE` wand as hedge-only backup work
+
+Deferred reference builds remain documented below for defensive publication and
+later research, not for current execution.
 
 ---
 
@@ -39,7 +48,7 @@ This is the P0 build. Everything else depends on this working.
 
 ---
 
-## Prototype 2 — Ball+Hall Ring Pair (x2 identical units)
+## Deferred Reference Build — Ball+Hall Ring Pair (x2 identical units)
 
 | Component | Spec |
 |-----------|------|
@@ -56,10 +65,11 @@ This is the P0 build. Everything else depends on this working.
 Surface-agnostic target: glass, fabric, skin, mirror, and other hard cases.
 This prototype exists to validate whether the Hall sensor array can actually
 resolve usable cursor deltas from a 5mm ball at finger-pressure force levels.
+It is not active implementation scope while the optical ring + hub lane is red.
 
 ---
 
-## Prototype 3 — Optical Puck Pair (x2 identical units)
+## Deferred Reference Build — Optical Puck Pair (x2 identical units)
 
 | Component | Spec |
 |-----------|------|
@@ -78,6 +88,7 @@ Two identical units. Same two-device composition model as the ring pair — the
 hub assigns roles (cursor + left click on one, scroll + right click on the
 other). The puck validates the keyboard-coexistent form factor: can users
 productively alternate between typing and fingertip pointing on desktop pucks?
+This is deferred until the active ring + hub lane clears Gate 4.
 
 Key design differences from the ring:
 - **Rigid PCB** (not flex/rigid-flex) — cheaper, more reliable, simpler layout
@@ -89,7 +100,7 @@ See [POWERPUCK-SPEC.md](POWERPUCK-SPEC.md) for the full design specification.
 
 ---
 
-## Prototype 4 — Ball+Hall Wand (x1)
+## Hedge Lane — Ball+Hall Wand (x1)
 
 | Component | Spec |
 |-----------|------|
@@ -110,19 +121,19 @@ those claims remain hypotheses until bench testing is complete. See
 
 ---
 
-## USB Hub Dongle (x1)
+## Active Accessory — USB Hub Dongle (x1)
 
 | Component | Spec |
 |-----------|------|
 | MCU | ESP32-S3 (BLE 5.0 + native USB OTG) |
-| Role | BLE central — pairs with all rings/pucks/wands over BLE |
+| Role | BLE central for the active ring pair first, with future-safe room for other PowerFinger devices later |
 | Output | USB HID mouse — single unified mouse to the host OS |
 | Connector | USB-A or USB-C |
 | Enclosure | 3D-printed, small USB-stick form factor |
 | BOM target | ~$5-6 |
 
-The hub is the intended P0 composition path: it pairs with multiple PowerFinger
-devices over BLE, assigns roles (first ring = cursor + left click, second =
+The hub is the intended P0 composition path: it pairs with the active optical
+ring pair first, assigns roles (first ring = cursor + left click, second =
 scroll + right click), composes their events into a single USB HID mouse
 report, and presents to the OS as one mouse. No host-side remapping software is
 required if this path validates cleanly.
@@ -151,24 +162,25 @@ standard BLE HID mouse for basic cursor + click.
 
 ## What We Need From You
 
-- **Schematic + PCB layout** — rigid for wand, flex or rigid-flex for ring
+- **Schematic + PCB layout** — flex or rigid-flex for ring, rigid for hub, and
+  rigid for wand only if the hedge lane is deliberately activated
 - **Ring shell CAD** — parametric for finger circumference and sensor angle.
   OpenSCAD, FreeCAD, or Fusion 360. Should accept at minimum: `finger_circumference`
   (mm) and `angle` (degrees)
-- **Puck shell CAD** — simple disc, 22–28mm diameter, 10–15mm height, concave top.
-  Non-parametric (one size). Test at 22mm, 25mm, and 28mm diameter for ergonomic
-  comparison
+- **Hub enclosure CAD** — reopenable small USB-stick form factor with connector
+  reinforcement and service access
 - **Wand body CAD** — tube with internal component mounting
-- **Assembled prototypes** — even ugly is fine. We are validating sensing
-  geometry, BLE connectivity, and ergonomics, not aesthetics
-- **Firmware is handled separately.** You just need to verify the ESP-IDF BLE
-  HID mouse example flashes and pairs successfully on the assembled hardware
+- **Assembled prototypes** — build the optical ring pair + hub first; touch the
+  wand only as hedge work once that priority is explicit
+- **Firmware is handled separately.** Hardware work should preserve bring-up,
+  flashing, battery-safety, and native-USB access for the repo firmware rather
+  than assuming a stock example is the final validation path
 
 ### Scope
 
-Four small PCBs (ring, puck, wand, hub). Three shell designs (ring + puck +
-wand). Assembly. No application software beyond verifying the stock ESP-IDF BLE
-HID example runs and pairs.
+Immediate scope is the optical ring pair + hub. The wand remains available as a
+hedge path, but it is not a second primary program. Puck, secondary ring, Pro,
+and OCR-adjacent work remain deferred until the active lane clears Gate 4.
 
 ---
 

@@ -5,6 +5,7 @@ the existing design, firmware, safety, and regulatory docs into a blocking
 validation sequence.
 
 References:
+- Active lane checklist: [ACTIVE-LANE-CHECKLIST.md](ACTIVE-LANE-CHECKLIST.md)
 - Prototype spec: [PROTOTYPE-SPEC.md](PROTOTYPE-SPEC.md)
 - Firmware roadmap: [FIRMWARE-ROADMAP.md](FIRMWARE-ROADMAP.md)
 - Surface test protocol: [SURFACE-TEST-PROTOCOL.md](SURFACE-TEST-PROTOCOL.md)

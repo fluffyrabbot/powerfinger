@@ -12,13 +12,16 @@
 - Source skeletons:
   - `kicad/` — KiCad-oriented schematic/layout inputs, hierarchy scaffolds, and placement notes
   - `cad/` — OpenSCAD enclosure blank for the first serviceable hub pass
+  - `FIRST-BOARD-CHECKLIST.md` — concrete first-board outputs required before secondary variants
+  - `CONNECTOR-RETENTION-VERIFY.md` — mechanical evidence template for direct-plug safety and serviceability
 
 This packet documents the intended repair and assembly baseline for the hub
 dongle that composes multiple PowerFinger devices into one USB HID mouse.
 
 ## Intended Use
 
-- BLE central for rings, pucks, and wand variants
+- BLE central for the active optical ring pair, with future-safe room for other
+  PowerFinger device classes later
 - USB HID mouse bridge to the host OS
 - Optional local companion control port over the same USB connection
 
@@ -36,6 +39,13 @@ dongle that composes multiple PowerFinger devices into one USB HID mouse.
 - Boot/reset switch
 - Enclosure shell
 
+## Tracked First-Board Outputs
+
+- [FIRST-BOARD-CHECKLIST.md](FIRST-BOARD-CHECKLIST.md) — active capture / routing / enclosure closure checklist
+- [CONNECTOR-RETENTION-VERIFY.md](CONNECTOR-RETENTION-VERIFY.md) — connector strain and serviceability evidence template
+- `kicad/usb_hub.kicad_pcb` — first routed PCB source (not checked in yet)
+- Printable enclosure exports derived from `cad/usb_hub_enclosure_blank.scad`
+
 ## Missing Artifacts
 
 - Completed footprint files and KiCad validation for the locked first-board parts
@@ -49,3 +59,6 @@ dongle that composes multiple PowerFinger devices into one USB HID mouse.
 - Connector strain does not rely solely on solder joints
 - Enclosure can be reopened without sacrificing the PCB
 - Boot/reset access does not interfere with normal use
+- Record direct-plug mechanical evidence in
+  [CONNECTOR-RETENTION-VERIFY.md](CONNECTOR-RETENTION-VERIFY.md) before
+  starting secondary hardware work

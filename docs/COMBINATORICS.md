@@ -14,15 +14,17 @@ companion app can reassign later.
 |----------|--------------|-----|----------|-----|
 | **P0** | R30-OLED-NONE-NONE (dome click) | **×2** | ~$9 | Cheapest first proof of the ring control loop |
 | **P0** | USB hub dongle (ESP32-S3) | ×1 | ~$6 | Multi-ring composition — two devices = one USB mouse |
-| **P1** | P-OLED-NONE-NONE (dome click, puck) | ×2 | ~$7 | Keyboard-coexistent desktop form factor |
-| **P1** | R30-BALL-NONE-NONE (dome click) | ×2 | ~$11 | Surface-agnostic ring hypothesis (glass, fabric, skin) |
-| **P1** | WSTD-BALL-NONE-NONE (wand) | ×1 | ~$14 | Hedge lane for pen-grip / off-desk use |
+| **Hedge** | WSTD-BALL-NONE-NONE (wand) | ×1 | ~$14 | Backup path for pen-grip / off-desk use if the ring lane fails package or safety reality |
+| **Deferred until Gate 6** | P-OLED-NONE-NONE (dome click, puck) | ×2 | ~$7 | Keyboard-coexistent desktop form factor |
+| **Deferred until Gate 6** | R30-BALL-NONE-NONE (dome click) | ×2 | ~$11 | Surface-agnostic ring hypothesis (glass, fabric, skin) |
 
 P0 is the gate. If the optical ring pair works as a mouse through the hub,
-everything else follows. The puck pair at P1 validates the keyboard-coexistent
-form factor — same hub, same firmware, different shell. See
-[PROTOTYPE-SPEC.md](PROTOTYPE-SPEC.md) for the full build spec and
-[POWERPUCK-SPEC.md](POWERPUCK-SPEC.md) for the puck design.
+everything else follows. The wand is the only sanctioned hedge lane while the
+active optical ring + hub path is red. The puck pair and the ball+Hall ring
+remain design backlog plus defensive-publication coverage rather than current
+implementation work. See [PROTOTYPE-SPEC.md](PROTOTYPE-SPEC.md) for the active
+build spec and [ACTIVE-LANE-CHECKLIST.md](ACTIVE-LANE-CHECKLIST.md) for the
+current program order.
 
 ---
 
@@ -37,8 +39,8 @@ orthogonal axes. This serves two purposes:
    The enumeration makes it harder for anyone to patent these combinations after
    this publication date. See [IP-STRATEGY.md](IP-STRATEGY.md).
 
-The opinionated defaults above are what we recommend building. The matrix below
-is what's possible.
+The opinionated defaults above are what we recommend building now. The matrix
+below remains the broader design space and defensive publication record.
 
 ---
 

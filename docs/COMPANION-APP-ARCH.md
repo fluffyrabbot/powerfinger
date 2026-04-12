@@ -23,7 +23,8 @@ Serial UI under `companion/web/` can inspect and relay per-ring tuning, live
 RSSI, battery / diagnostics inspection, the current shipped gesture subset, and
 the current shipped hub-settings subset for connected rings. The remaining
 deferred work is the rest of the hub command set: OTA and the broader app
-stack.
+stack. Those items stay deferred until the active ring + hub lane clears its
+Gate 0–4 proof sequence.
 
 **What the app configures:**
 - Role assignment (which ring is cursor, which is scroll, which is modifier)
