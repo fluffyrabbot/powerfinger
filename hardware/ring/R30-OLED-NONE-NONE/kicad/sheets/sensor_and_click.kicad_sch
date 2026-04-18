@@ -5,6 +5,47 @@
   (uuid "2a3d71b7-dde7-490b-8acb-3d79c6e6cc8f")
   (paper "A4")
   (lib_symbols)
+  (text "Sensor and click interface scaffold: optical SPI, motion interrupt, and dome-click nets are locked here before the PAW3204 symbol and dome footprint land."
+    (at 20.32 20.32 0)
+    (effects (font (size 1.27 1.27)))
+    (uuid "7f3a2b8c-4d1e-4a72-8f91-2c5e9b4d8a61")
+  )
+  (hierarchical_label "VREG_3V3"
+    (shape input)
+    (at 25.4 38.1 0)
+    (effects (font (size 1.27 1.27)))
+    (uuid "1e8d4f62-4a39-4b18-9d7c-6a5b3e9f4c82")
+  )
+  (hierarchical_label "SENSOR_SCLK"
+    (shape input)
+    (at 25.4 45.72 0)
+    (effects (font (size 1.27 1.27)))
+    (uuid "2d9e5a73-4b4a-4c29-ae8d-7b6c4fa05d93")
+  )
+  (hierarchical_label "SENSOR_NRESET"
+    (shape input)
+    (at 25.4 53.34 0)
+    (effects (font (size 1.27 1.27)))
+    (uuid "3ea06b84-4c5b-4d3a-bf9e-8c7d5a016ea4")
+  )
+  (hierarchical_label "SENSOR_SDIO"
+    (shape bidirectional)
+    (at 187.96 38.1 180)
+    (effects (font (size 1.27 1.27)))
+    (uuid "4fb17c95-4d6c-4e4b-80af-9d8e6b127fb5")
+  )
+  (hierarchical_label "SENSOR_MOTION_N"
+    (shape output)
+    (at 187.96 45.72 180)
+    (effects (font (size 1.27 1.27)))
+    (uuid "50c28da6-4e7d-4f5c-91b0-ae9f7c238ac6")
+  )
+  (hierarchical_label "CLICK_PRIMARY_N"
+    (shape output)
+    (at 187.96 53.34 180)
+    (effects (font (size 1.27 1.27)))
+    (uuid "61d39eb7-4f8e-4a6d-a2c1-bfa08d349bd7")
+  )
   (sheet_instances
     (path "/" (page "1"))
   )
