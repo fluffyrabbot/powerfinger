@@ -34,13 +34,22 @@ From the repo root:
 
 ```bash
 scripts/setup-esp-idf-local.sh
-eval "$(scripts/setup-esp-idf-local.sh --export)"
+scripts/verify-firmware-local.sh
 ```
 
 The installer keeps the toolchain under `~/.powerfinger-sdk/` by default so the
 repo stays clean. After the initial install, `scripts/verify-firmware-local.sh`
-will try to activate that same local toolchain automatically if `idf.py` is not
-already in `PATH`.
+will try to activate that same local toolchain automatically from a fresh shell.
+If `idf.py` is already in `PATH` but points at a different ESP-IDF version, the
+verifier will prefer the pinned local baseline instead of silently building
+against the wrong SDK.
+
+If you want `idf.py` available in your current shell for direct one-off
+iteration, export it explicitly:
+
+```bash
+eval "$(scripts/setup-esp-idf-local.sh --export)"
+```
 
 ## Prerequisites
 

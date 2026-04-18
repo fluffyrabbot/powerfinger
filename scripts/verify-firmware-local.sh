@@ -64,10 +64,45 @@ parse_target() {
     sed -n 's/^CONFIG_IDF_TARGET="\([^"]*\)"$/\1/p' "$defaults_file" | head -n 1
 }
 
-activate_local_idf() {
-    local export_snippet
+normalize_idf_version() {
+    local raw="$1"
 
-    if command -v idf.py >/dev/null 2>&1; then
+    case "$raw" in
+        ESP-IDF\ v*)
+            printf 'v%s\n' "${raw#ESP-IDF v}"
+            ;;
+        v[0-9]*)
+            printf '%s\n' "$raw"
+            ;;
+        [0-9]*)
+            printf 'v%s\n' "$raw"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+detect_active_idf_version() {
+    local raw_version
+
+    if ! command -v idf.py >/dev/null 2>&1; then
+        return 1
+    fi
+
+    raw_version="$(idf.py --version 2>/dev/null | head -n 1 || true)"
+    if [[ -z "$raw_version" ]]; then
+        return 1
+    fi
+
+    normalize_idf_version "$raw_version"
+}
+
+activate_local_idf() {
+    local export_snippet active_version
+
+    active_version="$(detect_active_idf_version || true)"
+    if [[ "$active_version" == "$idf_version" ]]; then
         return 0
     fi
     if [[ ! -x "$idf_setup_script" ]]; then
@@ -83,19 +118,37 @@ activate_local_idf() {
     # local toolchain path. This keeps the shared verifier usable on a fresh
     # machine without forcing contributors to manage their shell profile first.
     eval "$export_snippet"
-    command -v idf.py >/dev/null 2>&1
+
+    active_version="$(detect_active_idf_version || true)"
+    [[ "$active_version" == "$idf_version" ]]
 }
 
 require_idf() {
+    local active_version=""
+
     if activate_local_idf; then
         return
     fi
 
+    active_version="$(detect_active_idf_version || true)"
+
     cat >&2 <<EOF
-error: idf.py is not available in PATH.
+error: pinned ESP-IDF ${idf_version} is not active in this shell.
 
 Pinned active-lane baseline: ESP-IDF ${idf_version}
 Expected local install root: ${idf_root}
+EOF
+
+    if [[ -n "$active_version" ]]; then
+        cat >&2 <<EOF
+Detected idf.py version on PATH: ${active_version}
+
+The shared verifier only trusts the pinned baseline. Install or reactivate the
+repo-pinned toolchain before running firmware builds.
+EOF
+    fi
+
+    cat >&2 <<EOF
 
 To install the repo-pinned local toolchain:
   ${idf_setup_script}

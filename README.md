@@ -168,12 +168,19 @@ For local software verification:
 
 ```bash
 scripts/setup-esp-idf-local.sh
-eval "$(scripts/setup-esp-idf-local.sh --export)"
 scripts/verify-firmware-local.sh
 ```
 
-That runs the host-side unit tests and then builds the active firmware lane:
-`ring` + `hub`. To build every ESP-IDF firmware target instead:
+After the one-time bootstrap, `scripts/verify-firmware-local.sh` can run from a
+fresh shell and will auto-activate the repo-pinned ESP-IDF baseline if needed.
+If you want `idf.py` available in your current shell for direct iteration, run:
+
+```bash
+eval "$(scripts/setup-esp-idf-local.sh --export)"
+```
+
+The shared verifier runs the host-side unit tests and then builds the active
+firmware lane: `ring` + `hub`. To build every ESP-IDF firmware target instead:
 
 ```bash
 scripts/verify-firmware-local.sh --all

@@ -723,7 +723,28 @@ static int ble_delete_all_bonds(void)
         return rc;
     }
 
-    return ble_store_util_delete_all(BLE_STORE_OBJ_TYPE_CSFC, NULL);
+#ifdef BLE_STORE_OBJ_TYPE_PEER_DEV_REC
+    rc = ble_store_util_delete_all(BLE_STORE_OBJ_TYPE_PEER_DEV_REC, NULL);
+    if (rc != 0) {
+        return rc;
+    }
+#endif
+
+#ifdef BLE_STORE_OBJ_TYPE_LOCAL_IRK
+    rc = ble_store_util_delete_all(BLE_STORE_OBJ_TYPE_LOCAL_IRK, NULL);
+    if (rc != 0) {
+        return rc;
+    }
+#endif
+
+#ifdef BLE_STORE_OBJ_TYPE_CSFC
+    rc = ble_store_util_delete_all(BLE_STORE_OBJ_TYPE_CSFC, NULL);
+    if (rc != 0) {
+        return rc;
+    }
+#endif
+
+    return 0;
 }
 
 // --- Public API ---

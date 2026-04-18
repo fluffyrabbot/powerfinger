@@ -26,8 +26,9 @@ Defaults:
 
 Common workflow:
   scripts/setup-esp-idf-local.sh
-  eval "$(scripts/setup-esp-idf-local.sh --export)"
   scripts/verify-firmware-local.sh
+  # Optional: activate idf.py in the current shell for direct iteration
+  eval "$(scripts/setup-esp-idf-local.sh --export)"
 EOF
 }
 
@@ -98,7 +99,9 @@ case "$mode" in
         echo "==> Installing ESP-IDF tools for ${targets}"
         "${idf_dir}/install.sh" "$targets"
         echo "==> Local ESP-IDF baseline ready"
-        echo "==> Activate it in your current shell with:"
+        echo "==> The shared verifier can auto-activate this pinned toolchain"
+        echo "==> from a fresh shell."
+        echo "==> If you want idf.py in your current shell for direct iteration:"
         echo "eval \"\$(scripts/setup-esp-idf-local.sh --export)\""
         echo
         echo "The first hub build will still resolve esp_tinyusb via Espressif's"

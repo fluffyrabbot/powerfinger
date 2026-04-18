@@ -8,6 +8,35 @@
 #include "esp_log.h"
 
 static const char *TAG = "hal_sleep";
+static const gpio_int_type_t GPIO_WAKE_HIGH = GPIO_INTR_HIGH_LEVEL;
+static const gpio_int_type_t GPIO_WAKE_LOW = GPIO_INTR_LOW_LEVEL;
+
+static hal_status_t configure_wake_pin(hal_pin_t pin, bool level)
+{
+    gpio_int_type_t intr_type = level ? GPIO_WAKE_HIGH : GPIO_WAKE_LOW;
+
+    if (!GPIO_IS_VALID_GPIO((gpio_num_t)pin)) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    esp_err_t ret = gpio_wakeup_enable((gpio_num_t)pin, intr_type);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "gpio_wakeup_enable failed for pin %lu: %s",
+                 (unsigned long)pin, esp_err_to_name(ret));
+        return HAL_ERR_IO;
+    }
+
+#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+    ret = gpio_deep_sleep_wakeup_enable((gpio_num_t)pin, intr_type);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "gpio_deep_sleep_wakeup_enable failed for pin %lu: %s",
+                 (unsigned long)pin, esp_err_to_name(ret));
+        return HAL_ERR_IO;
+    }
+#endif
+
+    return HAL_OK;
+}
 
 hal_status_t hal_sleep_enter(hal_sleep_mode_t mode)
 {
@@ -40,10 +69,22 @@ hal_status_t hal_sleep_configure_wake_gpio(hal_pin_t pin, bool level)
 
 hal_status_t hal_sleep_configure_wake_gpio_mask(uint64_t pin_mask, bool level)
 {
-    esp_err_t ret = esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown(
-        pin_mask,
-        level ? ESP_GPIO_WAKEUP_GPIO_HIGH : ESP_GPIO_WAKEUP_GPIO_LOW
-    );
+    if (pin_mask == 0) {
+        return HAL_ERR_INVALID_ARG;
+    }
+
+    for (uint8_t pin = 0; pin < 64; ++pin) {
+        if ((pin_mask & (1ULL << pin)) == 0) {
+            continue;
+        }
+
+        hal_status_t pin_rc = configure_wake_pin((hal_pin_t)pin, level);
+        if (pin_rc != HAL_OK) {
+            return pin_rc;
+        }
+    }
+
+    esp_err_t ret = esp_sleep_enable_gpio_wakeup();
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "configure wake GPIO mask 0x%llx failed: %s",
                  (unsigned long long)pin_mask, esp_err_to_name(ret));
@@ -64,15 +105,16 @@ hal_status_t hal_sleep_configure_wake_timer(uint32_t us)
 
 hal_wake_cause_t hal_sleep_get_wake_cause(void)
 {
-    uint32_t causes = esp_sleep_get_wakeup_causes();
+    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
 
-    if (causes == 0) {
+    if (cause == ESP_SLEEP_WAKEUP_UNDEFINED) {
         return HAL_WAKE_CAUSE_COLD_BOOT;
     }
-    if (causes & (1UL << ESP_SLEEP_WAKEUP_GPIO)) {
+    if (cause == ESP_SLEEP_WAKEUP_GPIO || cause == ESP_SLEEP_WAKEUP_EXT0 ||
+        cause == ESP_SLEEP_WAKEUP_EXT1) {
         return HAL_WAKE_CAUSE_GPIO;
     }
-    if (causes & (1UL << ESP_SLEEP_WAKEUP_TIMER)) {
+    if (cause == ESP_SLEEP_WAKEUP_TIMER) {
         return HAL_WAKE_CAUSE_TIMER;
     }
     return HAL_WAKE_CAUSE_OTHER;

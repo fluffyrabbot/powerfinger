@@ -17,6 +17,6 @@ set(HAL_SRCS
 idf_component_register(
     SRCS ${HAL_SRCS}
     INCLUDE_DIRS "include"
-    REQUIRES esp_driver_gpio esp_driver_spi nvs_flash esp_timer esp_adc esp_pm bt esp_app_format esp_hw_support
+    REQUIRES driver nvs_flash esp_timer esp_adc esp_pm bt esp_app_format esp_hw_support
     PRIV_REQUIRES app_update
 )
