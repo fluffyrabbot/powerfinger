@@ -34,6 +34,48 @@
     (effects (font (size 1.27 1.27)))
     (uuid "b96da081-0636-4c8b-a8d2-782784948031")
   )
+  (hierarchical_label "SENSOR_SCLK"
+    (shape output)
+    (at 187.96 60.96 180)
+    (effects (font (size 1.27 1.27)))
+    (uuid "d4f15032-4bcd-4e23-af45-6ba789cd0123")
+  )
+  (hierarchical_label "SENSOR_SDIO"
+    (shape bidirectional)
+    (at 187.96 68.58 180)
+    (effects (font (size 1.27 1.27)))
+    (uuid "e5025143-4cde-4f34-b056-7cb89ade1234")
+  )
+  (hierarchical_label "SENSOR_MOTION_N"
+    (shape input)
+    (at 187.96 76.2 180)
+    (effects (font (size 1.27 1.27)))
+    (uuid "f6136254-4def-4045-a167-8dc9be02f345")
+  )
+  (hierarchical_label "SENSOR_NRESET"
+    (shape output)
+    (at 187.96 83.82 180)
+    (effects (font (size 1.27 1.27)))
+    (uuid "a7247365-4ef0-4156-8278-9eda01f03456")
+  )
+  (hierarchical_label "CLICK_PRIMARY_N"
+    (shape input)
+    (at 187.96 91.44 180)
+    (effects (font (size 1.27 1.27)))
+    (uuid "b8358476-40f1-4267-9389-afeb02014567")
+  )
+  (hierarchical_label "USB_D+"
+    (shape bidirectional)
+    (at 187.96 99.06 180)
+    (effects (font (size 1.27 1.27)))
+    (uuid "c946a587-4102-4378-a49a-b0fc03125678")
+  )
+  (hierarchical_label "USB_D-"
+    (shape bidirectional)
+    (at 187.96 106.68 180)
+    (effects (font (size 1.27 1.27)))
+    (uuid "da56b698-4213-4489-b5ab-c10d04236789")
+  )
   (sheet_instances
     (path "/" (page "1"))
   )

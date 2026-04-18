@@ -34,6 +34,12 @@
     (effects (font (size 1.27 1.27)))
     (uuid "2f77b608-7bac-4cd1-a7fa-8eb0bb33edf3")
   )
+  (hierarchical_label "VBUS_5V"
+    (shape input)
+    (at 25.4 60.96 0)
+    (effects (font (size 1.27 1.27)))
+    (uuid "c3e04f21-4abc-4d12-9e34-5fa678bc9012")
+  )
   (sheet_instances
     (path "/" (page "1"))
   )
