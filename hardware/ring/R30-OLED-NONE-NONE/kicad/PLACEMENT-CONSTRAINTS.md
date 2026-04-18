@@ -57,3 +57,23 @@ References:
 - Preserve a migration path to flex or rigid-flex by avoiding placement choices
   that only work on a large rectangular dev board.
 
+## Flex Migration Readiness
+
+The first board is a rigid P0. A later flex or rigid-flex respin must be
+possible without re-choosing footprints. That invariant lives here rather than
+at respin time.
+
+- Treat the MCU / radio region, the optical sensor + lens + dome region, and
+  the battery + charge-path region as three independent footprint zones.
+- No component, copper pour, or keep-out on a zone edge may overhang into an
+  adjacent zone's footprint. A valid rigid-to-flex split line must already
+  exist between each zone pair on the rigid P0.
+- `J1` USB-C entry belongs in the battery + charge-path zone, near the VBUS
+  entry rule in `Safety / Service Rules`, not across the zone boundary into
+  the MCU region.
+- `J_BAT` battery harness connector belongs in the battery zone and must not
+  force the battery envelope across the MCU or sensor zone boundary.
+- Antenna keep-out, battery envelope, sensor aperture, and dome actuation area
+  are zone-bounded by earlier rules — do not compromise those boundaries to
+  save a small amount of copper on the rigid P0.
+
