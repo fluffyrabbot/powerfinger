@@ -37,15 +37,18 @@ work moves from abstract bindings into actual first-board symbol placement.
 ## Required Non-BOM Capture Items
 
 - service pads for `EN`, `BOOT_N`, `UART_TX_DBG`, `UART_RX_DBG`, `3V3`, and `GND`
-- explicit native USB routing notes for `USB_D+` and `USB_D-`
+- explicit native USB routing notes for `USB_D+` and `USB_D-`; the clean pass
+  leaves USB data inspection to trace/connector access rather than connected
+  service pads
 - an explicit note that `usb_and_power` owns `VBUS_5V` to `VREG_3V3`
 - connector reinforcement notes shared between PCB and enclosure
-- `C5` / `C6` DNI shunt-cap footprints near the ESP32-S3 side of the USB pair
+- `C5` / `C6` no-BOM mechanical DNI footprints near the ESP32-S3 side of the
+  USB pair; they are intentionally unconnected in the first DRC-clean routing
 - `R3` / `C4` EN RC support on the first PCB pass so `EN` is not left floating
 
 ## Remaining Checks Before Fabrication
 
-- run KiCad ERC/DRC with the local footprints loaded
+- keep KiCad ERC/DRC clean with the local footprints loaded
 - compare the SOFNG USB-05 footprint against a printed 1:1 plot before ordering
 - carry the `MH1` / `MH2` shell-clamp holes into the enclosure CAD
 - confirm the stepped USB-A body clears adjacent host ports

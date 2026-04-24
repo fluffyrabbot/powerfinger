@@ -31,7 +31,7 @@
         )
       )
       (symbol "ESP32-S3-MINI-1-N8_FirstBoard_1_1"
-        (pin power_in line (at -12.7 12.7 0) (length 2.54)
+        (pin passive line (at -12.7 12.7 0) (length 2.54)
           (name "GND" (effects (font (size 1.27 1.27))))
           (number "1" (effects (font (size 1.27 1.27))))
         )
@@ -39,7 +39,7 @@
           (name "3V3" (effects (font (size 1.27 1.27))))
           (number "3" (effects (font (size 1.27 1.27))))
         )
-        (pin input line (at 12.7 -7.62 180) (length 2.54)
+        (pin passive line (at 12.7 -7.62 180) (length 2.54)
           (name "IO0/BOOT_N" (effects (font (size 1.27 1.27))))
           (number "4" (effects (font (size 1.27 1.27))))
         )
@@ -59,15 +59,15 @@
           (name "TXD0" (effects (font (size 1.27 1.27))))
           (number "39" (effects (font (size 1.27 1.27))))
         )
-        (pin input line (at 12.7 0 180) (length 2.54)
+        (pin passive line (at 12.7 0 180) (length 2.54)
           (name "RXD0" (effects (font (size 1.27 1.27))))
           (number "40" (effects (font (size 1.27 1.27))))
         )
-        (pin input line (at 12.7 -10.16 180) (length 2.54)
+        (pin passive line (at 12.7 -10.16 180) (length 2.54)
           (name "EN" (effects (font (size 1.27 1.27))))
           (number "45" (effects (font (size 1.27 1.27))))
         )
-        (pin power_in line (at 0 13.97 270) (length 2.54)
+        (pin passive line (at 0 13.97 270) (length 2.54)
           (name "EPAD/GND" (effects (font (size 1.27 1.27))))
           (number "61" (effects (font (size 1.27 1.27))))
         )
@@ -128,32 +128,82 @@
     (uuid "4d4fe348-dcd1-4d88-9d51-07719f0cf6be")
   )
   (label "VREG_3V3"
-    (at 91.44 55.88 0)
+    (at 38.1 38.1 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid "A217556E-90A7-451C-BDB2-403E12E0C292")
   )
+  (label "USB_D+"
+    (at 38.1 45.72 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "935B2479-A75D-4908-9F17-3425ED9C2956")
+  )
   (label "USB_D-"
-    (at 91.44 63.5 0)
+    (at 38.1 53.34 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid "E520E0EA-7D41-41D5-8123-6B2F1484532C")
   )
+  (label "EN"
+    (at 58.42 101.6 90)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "7EF7A7B9-A574-4998-81EA-4445738F6754")
+  )
+  (label "BOOT_N"
+    (at 66.04 101.6 90)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "7BECA38C-F96A-4A1C-84CD-3444548892BA")
+  )
+  (label "UART_TX_DBG"
+    (at 73.66 101.6 90)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "1F6755C7-FD40-49DF-B550-B90C4888BA8F")
+  )
+  (label "UART_RX_DBG"
+    (at 81.28 101.6 90)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "F970BA9A-F7FB-4DF7-86F4-382954790CF1")
+  )
+  (label "LED_STATUS"
+    (at 88.9 101.6 90)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "DA0E814F-CFD6-4F5A-92E7-8C2FDDE3FE2D")
+  )
+  (label "GND"
+    (at 91.44 55.88 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "6BB95F74-C68D-48D9-A066-A101617169EC")
+  )
   (label "USB_D+"
-    (at 91.44 66.04 0)
+    (at 91.44 71.12 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "BD8D135A-2173-4082-8F45-899F8B07556E")
+  )
+  (label "USB_D-"
+    (at 91.44 73.66 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "7E45BC7B-E5EF-44B8-B9DB-9E4CB985620F")
+  )
+  (label "VREG_3V3"
+    (at 91.44 81.28 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "96F8D4AE-E0B4-45A8-9935-FD65B6862BAA")
+  )
+  (label "USB_D+"
+    (at 91.44 71.12 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid "6ACEEB60-4DAA-46D6-B7C7-1B0E3B79947EB")
   )
   (label "GND"
-    (at 91.44 81.28 0)
+    (at 111.76 50.8 90)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid "6BB95F74-C68D-48D9-A066-A101617169EC")
+    (uuid "1BA8043F-D142-4D5E-A590-5C691B0C5148")
   )
   (label "EN"
-    (at 132.08 58.42 0)
+    (at 132.08 78.74 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid "6EC411FB-40FE-4D5D-80E2-1D749055EDDD")
   )
   (label "BOOT_N"
-    (at 132.08 60.96 0)
+    (at 132.08 76.2 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid "1E0DC35E-75E5-4348-B939-4AA11797F0E2")
   )
@@ -172,10 +222,69 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid "B4F36D6A-4B89-4EEC-B463-B79B994A187F")
   )
-  (label "GND"
-    (at 111.76 86.36 90)
-    (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid "1BA8043F-D142-4D5E-A590-5C691B0C5148")
+  (wire
+    (pts
+      (xy 25.4 38.1)
+      (xy 38.1 38.1)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "8F560E2A-22A2-457A-9786-4E18179FC7A3")
+  )
+  (wire
+    (pts
+      (xy 25.4 45.72)
+      (xy 38.1 45.72)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "E84EF2C5-90C3-436A-A568-3D5436A887E8")
+  )
+  (wire
+    (pts
+      (xy 25.4 53.34)
+      (xy 38.1 53.34)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "DBA58F93-1E32-45B5-804D-D5A3412E6798")
+  )
+  (wire
+    (pts
+      (xy 58.42 109.22)
+      (xy 58.42 101.6)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "F42A513F-C366-4F36-A293-F77108142705")
+  )
+  (wire
+    (pts
+      (xy 66.04 109.22)
+      (xy 66.04 101.6)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "01F10A00-3FD7-4E58-BEB0-C73490B19950")
+  )
+  (wire
+    (pts
+      (xy 73.66 109.22)
+      (xy 73.66 101.6)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "C8E5E4E0-7041-4260-9F44-7826A70BC6AF")
+  )
+  (wire
+    (pts
+      (xy 81.28 109.22)
+      (xy 81.28 101.6)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "7A98A5F6-A6CD-4B1D-9D7C-6CBE90A6211D")
+  )
+  (wire
+    (pts
+      (xy 88.9 109.22)
+      (xy 88.9 101.6)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "45D2B3A9-E129-4617-9E2F-C6F1AD42F391")
   )
   (wire
     (pts
@@ -183,23 +292,23 @@
       (xy 99.06 55.88)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "8F560E2A-22A2-457A-9786-4E18179FC7A3")
+    (uuid "D2185520-2F66-46A5-A71A-A863A3EBE4C6")
   )
   (wire
     (pts
-      (xy 91.44 63.5)
-      (xy 99.06 63.5)
+      (xy 91.44 71.12)
+      (xy 99.06 71.12)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "E84EF2C5-90C3-436A-A568-3D5436A887E8")
+    (uuid "8255B43A-8D64-4DD0-A752-4343B10B4E0B")
   )
   (wire
     (pts
-      (xy 91.44 66.04)
-      (xy 99.06 66.04)
+      (xy 91.44 73.66)
+      (xy 99.06 73.66)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "DBA58F93-1E32-45B5-804D-D5A3412E6798")
+    (uuid "D41D5D89-F79D-496F-B4B9-5E5DFA08E99F")
   )
   (wire
     (pts
@@ -207,31 +316,15 @@
       (xy 99.06 81.28)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "F42A513F-C366-4F36-A293-F77108142705")
+    (uuid "C8851256-C138-46B2-BD60-2383256C4C8B")
   )
   (wire
     (pts
-      (xy 111.76 82.55)
-      (xy 111.76 86.36)
+      (xy 111.76 54.61)
+      (xy 111.76 50.8)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "01F10A00-3FD7-4E58-BEB0-C73490B19950")
-  )
-  (wire
-    (pts
-      (xy 124.46 58.42)
-      (xy 132.08 58.42)
-    )
-    (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "C8E5E4E0-7041-4260-9F44-7826A70BC6AF")
-  )
-  (wire
-    (pts
-      (xy 124.46 60.96)
-      (xy 132.08 60.96)
-    )
-    (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "7A98A5F6-A6CD-4B1D-9D7C-6CBE90A6211D")
+    (uuid "E9726A7D-51DC-4E1D-8F30-5ACBC4011141")
   )
   (wire
     (pts
@@ -239,7 +332,7 @@
       (xy 132.08 66.04)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "45D2B3A9-E129-4617-9E2F-C6F1AD42F391")
+    (uuid "A7708341-934C-4DA4-A69A-1092C8DF3E09")
   )
   (wire
     (pts
@@ -247,7 +340,7 @@
       (xy 132.08 68.58)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "D2185520-2F66-46A5-A71A-A863A3EBE4C6")
+    (uuid "85D7C88F-88D3-4CF6-B1A7-0F2FB96448E8")
   )
   (wire
     (pts
@@ -255,7 +348,41 @@
       (xy 132.08 71.12)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "8255B43A-8D64-4DD0-A752-4343B10B4E0B")
+    (uuid "E2F0A2B0-AFD7-45FA-9B6E-15B7DDE13F69")
+  )
+  (wire
+    (pts
+      (xy 124.46 76.2)
+      (xy 132.08 76.2)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "473A2FD6-92DE-4F1B-A125-F0B545D05BF6")
+  )
+  (wire
+    (pts
+      (xy 124.46 78.74)
+      (xy 132.08 78.74)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "3C0583A8-4336-4657-8B91-614AB588B510")
+  )
+  (symbol (lib_id "power:PWR_FLAG") (at 91.44 55.88 0) (unit 1)
+    (in_bom no) (on_board no) (dnp no)
+    (uuid "24035F6D-0C76-418E-BE74-2D8987EAB689")
+    (property "Reference" "#FLG0301" (at 91.44 53.975 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "PWR_FLAG" (at 91.44 52.07 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (pin "1" (uuid "8FB8F2B3-E6E6-4364-858A-C83CEBF41128"))
+    (instances
+      (project "usb_hub"
+        (path "/"
+          (reference "#FLG0301") (unit 1)
+        )
+      )
+    )
   )
   (symbol (lib_id "PowerFinger:ESP32-S3-MINI-1-N8_FirstBoard") (at 111.76 68.58 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)

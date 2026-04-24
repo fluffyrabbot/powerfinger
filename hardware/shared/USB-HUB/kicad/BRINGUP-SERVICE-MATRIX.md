@@ -15,7 +15,7 @@ be recoverable without destructive rework.
 | `VBUS_5V` | Confirm host power reaches the board | Probeable pad or connector-visible test point |
 | `VREG_3V3` | Confirm regulator and brownout margin | Probeable pad |
 | `GND` | Common reference for debug and measurement | Probeable pad |
-| `USB_D+` / `USB_D-` | Inspect continuity and connector damage | Reachable test pads or trace access near connector |
+| `USB_D+` / `USB_D-` | Inspect continuity and connector damage | Trace/connector access near `J1`, `D1`, and `R1A` / `R1B`; the first clean routing does not add connected USB data service pads |
 | `EN` | Reset and recovery sequencing | Pad and/or recessed switch |
 | `BOOT_N` (`GPIO0`) | Force ROM download mode | Pad and/or recessed switch |
 | `UART_TX_DBG` / `UART_RX_DBG` | Recover if native USB path is broken | Probeable pads even if no permanent header is stuffed |

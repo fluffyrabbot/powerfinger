@@ -19,9 +19,10 @@ symbol/footprint choices stay aligned.
 ## First-Board Support Parts
 
 `usb_hub.kicad_pcb` also includes `R3` / `C4` as an EN RC support pair and
-`C5` / `C6` as DNI USB shunt-cap footprints. These are board-reality support
-items rather than a new product feature; they keep the native-USB board
-recoverable and still fit the current low-cost hub intent.
+`C5` / `C6` as no-BOM mechanical DNI USB shunt-cap placeholders. The clean
+first routing does not connect those shunt pads; adding them back to the nets
+requires SI evidence and a fresh DRC pass so the native-USB board stays inside
+the current low-cost hub intent.
 
 ## Capture Boundary
 

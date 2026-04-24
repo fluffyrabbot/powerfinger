@@ -56,9 +56,6 @@ dongle that composes multiple PowerFinger devices into one USB HID mouse.
 
 ## Missing Artifacts
 
-- KiCad DRC/ERC closure. KiCad CLI now runs locally, but this routed pass still
-  reports real DRC/ERC violations around connector escape, service-channel
-  routing, and schematic connectivity.
 - Fit-validated enclosure CAD
 - Measured host-port clearance for the stepped USB-A direct-plug body
 - Measured connector strain and enclosure-retention observations
@@ -68,6 +65,7 @@ dongle that composes multiple PowerFinger devices into one USB HID mouse.
 - Connector strain does not rely solely on solder joints
 - Enclosure can be reopened without sacrificing the PCB
 - Boot/reset access does not interfere with normal use
+- KiCad CLI ERC and PCB DRC remain clean after local footprint/library loading
 - ESP32-S3 antenna zone remains clear of copper and metal enclosure features
 - Adjacent-port clearance is checked with the stepped USB-A nose and wider body,
   not assumed from the schematic

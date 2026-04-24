@@ -40,6 +40,71 @@
     (effects (font (size 1.27 1.27)))
     (uuid "00f6805f-a341-4051-aefa-cb066fcca497")
   )
+  (label "EN"
+    (at 58.42 33.02 90)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "6E2B52E5-52B3-4479-94D2-48B4D8A93B73")
+  )
+  (label "BOOT_N"
+    (at 66.04 33.02 90)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "AD914F12-1802-4E87-988D-742808BFB622")
+  )
+  (label "UART_TX_DBG"
+    (at 73.66 33.02 90)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "90F6A211-058A-4DB6-B6D6-C80E77B9AB1F")
+  )
+  (label "UART_RX_DBG"
+    (at 81.28 33.02 90)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "11118D7C-FD3D-46B6-BB01-A8B11BC7BF94")
+  )
+  (label "LED_STATUS"
+    (at 88.9 33.02 90)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "5CE41448-B6E9-42C1-BE70-AC8A6E0881BF")
+  )
+  (wire
+    (pts
+      (xy 58.42 25.4)
+      (xy 58.42 33.02)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "14A57216-6518-42DD-A91E-C66889646E86")
+  )
+  (wire
+    (pts
+      (xy 66.04 25.4)
+      (xy 66.04 33.02)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "8A48B9F8-F561-4E58-9C31-9906575D1984")
+  )
+  (wire
+    (pts
+      (xy 73.66 25.4)
+      (xy 73.66 33.02)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "25E497AA-BB0D-4E6A-9D00-09F41C40DBCB")
+  )
+  (wire
+    (pts
+      (xy 81.28 25.4)
+      (xy 81.28 33.02)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "B5C9749D-A107-4BD0-9AC8-81C70D049A74")
+  )
+  (wire
+    (pts
+      (xy 88.9 25.4)
+      (xy 88.9 33.02)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "36BFD0C6-E6A5-490B-BA0D-C76AB98C9083")
+  )
   (sheet_instances
     (path "/" (page "1"))
   )

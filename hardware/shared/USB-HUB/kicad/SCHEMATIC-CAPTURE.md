@@ -59,13 +59,12 @@ References:
   something the board will “figure out later.”
 - `usb_and_power.kicad_sch` now contains a first real placement pass for
   `J1`, `D1`, `U2`, `C2`, `C3`, and the resolved `R1A` / `R1B` native-USB
-  series resistors. KiCad ERC now runs locally and still reports real schematic
-  connectivity work before this packet is fabrication-ready.
+  series resistors. KiCad ERC now runs locally and passes at error severity.
 - `mcu_radio.kicad_sch` now places the first-board `ESP32-S3-MINI-1-N8`
   capture subset for native USB, recovery, UART, status, power, and EPAD/GND.
 - `usb_hub.kicad_pcb` carries first-board consequences that the sheet symbols
   alone cannot show: stepped board edge, connector reinforcement holes, service
-  pad row, rear antenna keep-out, and DNI USB shunt-cap pads.
+  pad row, rear antenna keep-out, and no-BOM DNI USB shunt-cap placeholders.
 - Preserve the service access defined in
   [BRINGUP-SERVICE-MATRIX.md](BRINGUP-SERVICE-MATRIX.md) even if the final
   enclosure is a compact dongle.

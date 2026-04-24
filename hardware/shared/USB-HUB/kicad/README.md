@@ -46,15 +46,17 @@ enclosure fit must be validated before the lane moves to secondary variants.
   plug. That is more honest than the earlier placeholder, but adjacent-port
   host clearance is now an explicit mechanical risk to verify.
 - `R1` is resolved as two 22R 0402 resistors (`R1A`, `R1B`) placed at the
-  ESP32-S3 side of the native USB pair. `C5` / `C6` are DNI 0402 pads reserved
-  for the Espressif-recommended shunt-cap option.
+  ESP32-S3 side of the native USB pair. `C5` / `C6` remain unconnected
+  no-BOM 0402 mechanical placeholders in this pass; shunt capacitors are not
+  part of the clean first-board routing until SI evidence calls for them.
 - `U1` is rotated so the ESP32-S3 antenna keep-out lands at the rear of the
   dongle, away from the USB shell and away from service pads.
 - `SW1` is a pad-actuated `BOOT_N` service path for this pass; `EN`, `BOOT_N`,
-  UART0, USB, power, and ground pads remain probeable along the reopenable seam.
-- KiCad CLI verification is active on this packet. The current PCB is still not
-  DRC-clean: connector escape, service-channel routing, and several unconnected
-  service/DNI pads must be closed before fabrication release.
+  UART0, power, and ground pads remain probeable along the reopenable seam.
+  USB data continuity is inspected at trace/connector access points rather than
+  dedicated connected USB data service pads in this pass.
+- KiCad CLI verification is active on this packet. The current schematic ERC
+  and PCB DRC pass at error severity with local footprints loaded.
 
 ## Hard Constraints
 

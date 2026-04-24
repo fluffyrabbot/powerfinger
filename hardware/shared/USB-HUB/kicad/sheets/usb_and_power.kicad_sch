@@ -112,7 +112,7 @@
         )
       )
       (symbol "USB_A_Plug_Male_1_1"
-        (pin passive line (at 7.62 7.62 180) (length 2.54)
+        (pin power_out line (at 7.62 7.62 180) (length 2.54)
           (name "VBUS" (effects (font (size 1.27 1.27))))
           (number "1" (effects (font (size 1.27 1.27))))
         )
@@ -157,7 +157,7 @@
           (name "I/O1" (effects (font (size 1.27 1.27))))
           (number "1" (effects (font (size 1.27 1.27))))
         )
-        (pin power_in line (at -7.62 -10.16 0) (length 2.54)
+        (pin passive line (at -7.62 -10.16 0) (length 2.54)
           (name "GND" (effects (font (size 1.27 1.27))))
           (number "2" (effects (font (size 1.27 1.27))))
         )
@@ -206,7 +206,7 @@
           (name "VIN" (effects (font (size 1.27 1.27))))
           (number "1" (effects (font (size 1.27 1.27))))
         )
-        (pin power_in line (at 0 -10.16 90) (length 2.54)
+        (pin passive line (at 0 -10.16 90) (length 2.54)
           (name "GND" (effects (font (size 1.27 1.27))))
           (number "2" (effects (font (size 1.27 1.27))))
         )
@@ -230,7 +230,7 @@
     (effects (font (size 1.27 1.27)))
     (uuid "2B3D36C2-DF10-4F73-8F5F-8A8789C343D6")
   )
-  (text "R1 decision: populate R1A/R1B as 22R 0402 USB series resistors near the ESP32-S3 side; C5/C6 shunt pads are reserved DNI on the PCB."
+  (text "R1 decision: populate R1A/R1B as 22R 0402 USB series resistors near the ESP32-S3 side; C5/C6 are no-net DNI placeholders in this clean pass."
     (at 20.32 27.94 0)
     (effects (font (size 1.27 1.27)))
     (uuid "ECEB93C5-E2F8-4C5C-9B47-57A575456B15")
@@ -254,9 +254,19 @@
     (uuid "6d120529-2a83-48e8-b34d-101e1c3711ee")
   )
   (label "VBUS_5V"
-    (at 60.96 60.96 0)
+    (at 60.96 40.64 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid "02210CFB-0605-4160-87A6-75C03E0C90C6")
+  )
+  (label "VBUS_5V"
+    (at 96.52 40.64 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "0D97C0F9-0265-4503-838A-8820899986BE")
+  )
+  (label "VBUS_5V"
+    (at 137.16 33.02 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "DA624B6B-9E8A-4038-911A-88C8B69E32B1")
   )
   (label "VBUS_5V"
     (at 129.54 43.18 0)
@@ -264,34 +274,59 @@
     (uuid "EC51F27B-17FF-4430-B9FB-AF442C74B29F")
   )
   (label "GND"
-    (at 60.96 40.64 0)
+    (at 60.96 55.88 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid "E223E609-C899-4C2F-8645-8265461F5EE7")
   )
   (label "GND"
-    (at 124.46 35.56 0)
+    (at 73.66 60.96 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid "95D18568-9315-41FF-AA27-5130E42EB99A")
   )
   (label "GND"
-    (at 157.48 27.94 0)
+    (at 129.54 35.56 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
-    (uuid "F194080D-9EB0-4F50-8852-880FD015E5A2")
+    (uuid "7287748E-A284-44E7-A0E7-6D18EF67F1A9")
+  )
+  (label "GND"
+    (at 160.02 48.26 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "C3893907-84A6-47D4-81A3-C248B9E49964")
   )
   (label "GND"
     (at 175.26 30.48 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "F194080D-9EB0-4F50-8852-880FD015E5A2")
+  )
+  (label "USB_D-_CONN"
+    (at 60.96 45.72 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid "1F5FCA29-B3F8-47A3-B5B5-FE9FE7226178")
   )
   (label "USB_D+_CONN"
-    (at 111.76 45.72 0)
+    (at 60.96 50.8 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid "6C7CE188-767D-49A4-B5EB-D66B3086B7C0")
   )
   (label "USB_D-_CONN"
-    (at 111.76 53.34 0)
+    (at 73.66 50.8 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid "AB1E9B4E-C750-4743-B1B2-0FCEFE2D62DA")
+  )
+  (label "USB_D+_CONN"
+    (at 73.66 55.88 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "7E44B07E-4E26-418F-B41E-1C2DE5781536")
+  )
+  (label "USB_D-_CONN"
+    (at 106.68 48.26 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "D49CA9A8-8EF3-479C-9B91-534310736461")
+  )
+  (label "USB_D+_CONN"
+    (at 106.68 55.88 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "44F5807F-34B3-4C02-BF6C-A45623F83437")
   )
   (junction
     (at 137.16 43.18)
@@ -306,21 +341,29 @@
     (uuid "F0430559-C21A-4C57-B9B9-0C9C9F413234")
   )
   (no_connect
-    (at 152.4 48.26)
+    (at 152.4 27.94)
     (uuid "F2A20D2F-8AF0-4DF1-8924-09811C2A0AFC")
   )
   (wire
     (pts
-      (xy 48.26 55.88)
-      (xy 48.26 60.96)
+      (xy 48.26 40.64)
+      (xy 60.96 40.64)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid "18FAAF51-2C77-432C-A9E4-7D92AD470398")
   )
   (wire
     (pts
-      (xy 48.26 60.96)
-      (xy 88.9 60.96)
+      (xy 60.96 40.64)
+      (xy 68.58 40.64)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "D5E89C29-751E-4D9B-9788-0060764377E4")
+  )
+  (wire
+    (pts
+      (xy 48.26 45.72)
+      (xy 60.96 45.72)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid "DAD138A3-4B4D-4578-94B0-DAF06272DAC0")
@@ -328,34 +371,87 @@
   (wire
     (pts
       (xy 48.26 50.8)
-      (xy 81.28 50.8)
+      (xy 60.96 50.8)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid "1D743DAB-121A-4EBC-B51E-3575108D1F80")
   )
   (wire
     (pts
-      (xy 48.26 45.72)
-      (xy 81.28 45.72)
+      (xy 48.26 55.88)
+      (xy 60.96 55.88)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid "72A7E378-D7CD-48F6-A9A5-CEDDC4D12232")
   )
   (wire
     (pts
-      (xy 48.26 40.64)
-      (xy 81.28 40.64)
+      (xy 60.96 55.88)
+      (xy 68.58 55.88)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "4762A772-43C4-4CC2-AC24-4A35426766AB")
+  )
+  (wire
+    (pts
+      (xy 81.28 50.8)
+      (xy 73.66 50.8)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid "2FDA88E6-98C2-4848-8DC4-E354F7418D74")
   )
   (wire
     (pts
-      (xy 96.52 53.34)
-      (xy 137.16 53.34)
+      (xy 81.28 55.88)
+      (xy 73.66 55.88)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid "60E27EFE-969D-4723-A084-8437E7F9260A")
+  )
+  (wire
+    (pts
+      (xy 81.28 60.96)
+      (xy 73.66 60.96)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "54A7F77F-D79B-4F80-9452-13F2D7726F9A")
+  )
+  (wire
+    (pts
+      (xy 88.9 40.64)
+      (xy 96.52 40.64)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "AADD8F30-1390-4275-8125-C5CA5F1352BC")
+  )
+  (wire
+    (pts
+      (xy 96.52 48.26)
+      (xy 106.68 48.26)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "24DE0F7F-A1F0-45F4-A825-5FA58C497B1C")
+  )
+  (wire
+    (pts
+      (xy 96.52 55.88)
+      (xy 106.68 55.88)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "DDF23375-7FB2-48CF-A7DE-7A121096064C")
+  )
+  (wire
+    (pts
+      (xy 137.16 53.34)
+      (xy 129.54 53.34)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "EF01D524-DB0D-4C52-9DF0-F4A708A7F1A3")
+  )
+  (label "USB_D-_CONN"
+    (at 129.54 53.34 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "ABED8279-7B94-4D43-8D26-F7BD21380158")
   )
   (wire
     (pts
@@ -363,15 +459,20 @@
       (xy 187.96 53.34)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "54A7F77F-D79B-4F80-9452-13F2D7726F9A")
+    (uuid "37F18EBB-F653-4E64-84F0-3D6FDCC4CF5B")
   )
   (wire
     (pts
-      (xy 96.52 45.72)
       (xy 137.16 45.72)
+      (xy 129.54 45.72)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "AADD8F30-1390-4275-8125-C5CA5F1352BC")
+    (uuid "93B9396D-20FF-47D3-91F3-8D04AE3DEE47")
+  )
+  (label "USB_D+_CONN"
+    (at 129.54 45.72 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "5AFA4E58-F8F1-4087-992E-A5C4B1057437")
   )
   (wire
     (pts
@@ -379,63 +480,55 @@
       (xy 187.96 45.72)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "24DE0F7F-A1F0-45F4-A825-5FA58C497B1C")
-  )
-  (wire
-    (pts
-      (xy 119.38 43.18)
-      (xy 144.78 43.18)
-    )
-    (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "DDF23375-7FB2-48CF-A7DE-7A121096064C")
-  )
-  (wire
-    (pts
-      (xy 137.16 43.18)
-      (xy 137.16 33.02)
-    )
-    (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "EF01D524-DB0D-4C52-9DF0-F4A708A7F1A3")
-  )
-  (wire
-    (pts
-      (xy 137.16 33.02)
-      (xy 144.78 33.02)
-    )
-    (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "37F18EBB-F653-4E64-84F0-3D6FDCC4CF5B")
-  )
-  (wire
-    (pts
-      (xy 119.38 35.56)
-      (xy 124.46 35.56)
-    )
-    (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "93B9396D-20FF-47D3-91F3-8D04AE3DEE47")
-  )
-  (wire
-    (pts
-      (xy 152.4 27.94)
-      (xy 157.48 27.94)
-    )
-    (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid "9ED9B686-C88A-4100-8F03-AEC6A98593D5")
   )
   (wire
     (pts
-      (xy 160.02 38.1)
-      (xy 170.18 38.1)
+      (xy 144.78 33.02)
+      (xy 137.16 33.02)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid "8149EB0C-80BF-45D5-B110-6569FF1F3F7E")
   )
   (wire
     (pts
-      (xy 170.18 38.1)
-      (xy 187.96 38.1)
+      (xy 144.78 43.18)
+      (xy 129.54 43.18)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid "65A15948-B699-46F4-A3AF-E786158C79AD")
+  )
+  (wire
+    (pts
+      (xy 119.38 35.56)
+      (xy 129.54 35.56)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "ACA54255-A47F-41B9-9B54-9758A4E0F2C0")
+  )
+  (wire
+    (pts
+      (xy 119.38 43.18)
+      (xy 129.54 43.18)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "D737A051-1C51-4C7F-9F3A-B1B195A2321B")
+  )
+  (wire
+    (pts
+      (xy 152.4 48.26)
+      (xy 160.02 48.26)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "90BE3240-F308-49DB-B418-CBB95A7BE82F")
+  )
+  (wire
+    (pts
+      (xy 160.02 38.1)
+      (xy 187.96 38.1)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "0505044E-6387-47D9-B3E3-26AB33859197")
   )
   (wire
     (pts
@@ -443,7 +536,43 @@
       (xy 175.26 30.48)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "ACA54255-A47F-41B9-9B54-9758A4E0F2C0")
+    (uuid "D39F76D3-17D0-4C69-95F5-2B49909F24A7")
+  )
+  (symbol (lib_id "power:PWR_FLAG") (at 68.58 40.64 0) (unit 1)
+    (in_bom no) (on_board no) (dnp no)
+    (uuid "E68AB02B-A165-4D57-A691-3B31D9D04D8C")
+    (property "Reference" "#FLG0101" (at 68.58 38.735 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "PWR_FLAG" (at 68.58 36.83 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (pin "1" (uuid "6168F97A-F308-4D52-B2AA-A2A7D5C2E201"))
+    (instances
+      (project "usb_hub"
+        (path "/"
+          (reference "#FLG0101") (unit 1)
+        )
+      )
+    )
+  )
+  (symbol (lib_id "power:PWR_FLAG") (at 68.58 55.88 0) (unit 1)
+    (in_bom no) (on_board no) (dnp no)
+    (uuid "82E6C783-8DF2-43D0-8212-74F75111241C")
+    (property "Reference" "#FLG0102" (at 68.58 53.975 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "PWR_FLAG" (at 68.58 52.07 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (pin "1" (uuid "F6A62E4E-1868-43A3-9D78-6349020B70E9"))
+    (instances
+      (project "usb_hub"
+        (path "/"
+          (reference "#FLG0102") (unit 1)
+        )
+      )
+    )
   )
   (symbol (lib_id "PowerFinger:USB_A_Plug_Male") (at 40.64 48.26 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)

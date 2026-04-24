@@ -33,7 +33,6 @@ References:
 
 ## What This Unblocks Next
 
-- clear the KiCad DRC/ERC failures now visible through `kicad-cli`
 - verify the stepped board-envelope and host-clearance assumption with real
   adjacent-port hosts
 - carry the shell-clamp holes and antenna keep-out into the printable enclosure
