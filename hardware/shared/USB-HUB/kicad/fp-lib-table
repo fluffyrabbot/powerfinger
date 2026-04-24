@@ -1,0 +1,9 @@
+(fp_lib_table
+  (lib (name "PowerFinger_USB")(type "KiCad")(uri "${KIPRJMOD}/PowerFinger_USB.pretty")(options "")(descr "PowerFinger USB-HUB local footprints"))
+  (lib (name "Package_TO_SOT_SMD")(type "KiCad")(uri "${KICAD10_FOOTPRINT_DIR}/Package_TO_SOT_SMD.pretty")(options "")(descr "KiCad SOT packages"))
+  (lib (name "Resistor_SMD")(type "KiCad")(uri "${KICAD10_FOOTPRINT_DIR}/Resistor_SMD.pretty")(options "")(descr "KiCad SMD resistors"))
+  (lib (name "Capacitor_SMD")(type "KiCad")(uri "${KICAD10_FOOTPRINT_DIR}/Capacitor_SMD.pretty")(options "")(descr "KiCad SMD capacitors"))
+  (lib (name "LED_SMD")(type "KiCad")(uri "${KICAD10_FOOTPRINT_DIR}/LED_SMD.pretty")(options "")(descr "KiCad SMD LEDs"))
+  (lib (name "MountingHole")(type "KiCad")(uri "${KICAD10_FOOTPRINT_DIR}/MountingHole.pretty")(options "")(descr "KiCad mounting holes"))
+  (lib (name "TestPoint")(type "KiCad")(uri "${KICAD10_FOOTPRINT_DIR}/TestPoint.pretty")(options "")(descr "KiCad test points"))
+)

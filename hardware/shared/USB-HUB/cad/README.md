@@ -10,7 +10,8 @@ not claim the final fit, connector style, or strain-relief geometry is done.
 
 ## Inputs Exposed Today
 
-- PCB envelope
+- PCB envelope; the KiCad pass now uses a stepped `54 x 26 mm` board with a
+  USB-A nose widened enough to carry the SOFNG USB-05 shell-tab pads
 - wall thickness and clearances
 - connector opening size
 - top/bottom shell split and exploded-view spacing
@@ -23,10 +24,13 @@ not claim the final fit, connector style, or strain-relief geometry is done.
 
 ## What Still Needs Real Validation
 
-- Exact connector footprint and board origin
-- Antenna clearance once the PCB is actually placed
-- Final retention details for top/bottom shells
-- Host-port interference if USB-A plug geometry is used
+- Carry `MH1` / `MH2` shell-clamp holes from `../kicad/usb_hub.kicad_pcb` into
+  the printed shell so connector strain does not rely only on solder
+- Keep the rear ESP32-S3 antenna zone plastic-only; do not add brass inserts,
+  metal labels, screws, or copper-backed decoration near the antenna end
+- Preserve a service seam or removable hatch over the pad row for `EN`,
+  `BOOT_N`, UART0, USB, power, and ground access
+- Verify host-port interference with the narrow USB-A nose and wider body
 
 Use [../FIRST-BOARD-CHECKLIST.md](../FIRST-BOARD-CHECKLIST.md) and
 [../CONNECTOR-RETENTION-VERIFY.md](../CONNECTOR-RETENTION-VERIFY.md) as the

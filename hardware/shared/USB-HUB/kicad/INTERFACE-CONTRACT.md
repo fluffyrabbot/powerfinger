@@ -47,7 +47,7 @@ References:
 | ROM download strap | `GPIO0` | `BOOT_N` | Fixed | Active-low service path only |
 | UART0 TX | `GPIO43` | `UART_TX_DBG` | Recommended first board | Default ROM/log UART TX |
 | UART0 RX | `GPIO44` | `UART_RX_DBG` | Recommended first board | Default ROM/log UART RX |
-| Status LED | non-strapping GPIO, chosen during capture | `LED_STATUS` | Required function, GPIO TBD | Keep off USB and strapping pins |
+| Status LED | `GPIO21` | `LED_STATUS` | First-board assignment | Non-strapping, kept off native USB and recovery pins |
 | Boot/reset button | `EN` and/or `GPIO0` access path | `SW_BOOT_RECOVERY` | Required service path | Single button is acceptable only if pads expose the rest of recovery |
 
 ## Notes For Capture
@@ -59,10 +59,12 @@ References:
   not treat `VREG_3V3` as a dev-board inheritance or an off-page assumption.
 - `GPIO19` and `GPIO20` are used by the S3 USB block by default. Do not hang
   LEDs, strap resistors, or unrelated debug logic on them.
+- `R1A` and `R1B` implement the first-board 22R series damping decision for
+  `GPIO19` / `GPIO20`; keep those parts close to the module side of the pair.
 - `GPIO43` and `GPIO44` are the default UART0 pins. Even if the first board
   does not stuff a connector for them, provide probeable service pads.
-- The status LED should not live on a strapping pin and should not force the
-  board to lose recovery access just to stay visible.
+- The status LED should stay on `GPIO21` unless a later layout pass proves that
+  it compromises antenna clearance or service access.
 
 ## Current Firmware Alignment
 

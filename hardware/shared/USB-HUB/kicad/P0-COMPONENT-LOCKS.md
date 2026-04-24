@@ -23,23 +23,20 @@ References:
 | `D1` | `USBLC6-2SC6` (`LCSC C7519`) | Official USB 2.0 ESD device with D+ / D- plus VBUS protection in the same package | Start from an ST `SOT23-6L`-compatible land pattern and check it against the package drawing before routing | Place adjacent to `J1`; do not route a long unprotected stub from the connector to the TVS |
 | `C2` | `10uF` input capacitor in `0603` | Makes the VBUS-side bulk part honest about effective capacitance on the first board | Commodity 0603 MLCC | Exact vendor can remain commodity, but the package should stay locked |
 | `C3` | `1uF` output capacitor in `0603` | The RT9080 requires at least `1uF` effective output capacitance for stability | Commodity 0603 MLCC | Exact dielectric and voltage rating still need the same-commit choice when the KiCad symbols land |
+| `R1A`, `R1B` | `22R` USB series resistors in `0402` | Espressif's ESP32-S3 guidance recommends 22/33 ohm series resistors on GPIO19/GPIO20 close to the chip; the short dongle route starts with 22R | `Resistor_SMD:R_0402_1005Metric` | These implement the BOM's two-count `R1` line. Place at the module side, after connector-side ESD. |
 
 ## Remaining Non-Locked Items
 
-- `R1` value is still intentionally open pending the first actual ESP32-S3
-  native USB schematic placement and reference-design check.
 - `SW1` remains a service-path choice, not a finalized part lock.
 - `LED1` and `R2` are deliberately left commodity until board edge visibility is
   checked against enclosure service seams.
 
 ## What This Unblocks Next
 
-- turn the new `usb_and_power` symbol placement into a real footprint-backed
-  capture by adding `USB_A_Plug_SOFNG_USB-05.kicad_mod`
-- place `R1` only after the first ESP32-S3 native USB reference check confirms
-  whether external series resistors are still needed on the custom board
-- run the first honest board-envelope and host-clearance check against the
-  direct-plug dongle assumption
+- clear the KiCad DRC/ERC failures now visible through `kicad-cli`
+- verify the stepped board-envelope and host-clearance assumption with real
+  adjacent-port hosts
+- carry the shell-clamp holes and antenna keep-out into the printable enclosure
 
 ## Source Links For The Locked Parts
 

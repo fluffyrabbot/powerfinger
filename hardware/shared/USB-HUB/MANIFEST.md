@@ -6,7 +6,8 @@
 - Variant ID: `USB-HUB`
 - Form factor: shared accessory / hub dongle
 - Lane: active validation-lane accessory
-- Publication state: BOM-backed hardware packet plus source skeletons, top-sheet schematic sources, locked first-board USB/power components, and first `usb_and_power` symbol placement
+- Publication state: BOM-backed hardware packet plus footprint-backed KiCad
+  first-board pass for the direct-plug native-USB hub
 - BOM source: [hardware/bom/USB-HUB.csv](../../bom/USB-HUB.csv)
 - BOM target: `~$5-6` at prototype scale
 - Source skeletons:
@@ -30,6 +31,11 @@ dongle that composes multiple PowerFinger devices into one USB HID mouse.
 - Native USB comes from the ESP32-S3 module, not an external USB bridge
 - The enclosure should be reopenable for button and connector service
 - The USB connector must be mechanically supported by the PCB and enclosure
+- The current direct-plug board is a stepped USB-A dongle, not the older
+  `~20 x 12 mm` placeholder: a host-side USB-A nose, a wider `54 x 26 mm`
+  module/service body, rear antenna keep-out, and probeable service pads along
+  the reopenable seam. The nose is widened to carry the SOFNG USB-05 shell-tab
+  pads, so adjacent-port clearance is an open mechanical check.
 
 ## Replaceable Subassemblies
 
@@ -43,15 +49,18 @@ dongle that composes multiple PowerFinger devices into one USB HID mouse.
 
 - [FIRST-BOARD-CHECKLIST.md](FIRST-BOARD-CHECKLIST.md) — active capture / routing / enclosure closure checklist
 - [CONNECTOR-RETENTION-VERIFY.md](CONNECTOR-RETENTION-VERIFY.md) — connector strain and serviceability evidence template
-- `kicad/usb_hub.kicad_pcb` — first routed PCB source (not checked in yet)
+- `kicad/usb_hub.kicad_pcb` — first routed PCB source with connector, ESD,
+  regulator, ESP32-S3 module, 22R USB series resistors, service pads, and
+  antenna keep-out represented
 - Printable enclosure exports derived from `cad/usb_hub_enclosure_blank.scad`
 
 ## Missing Artifacts
 
-- Completed footprint files and KiCad validation for the locked first-board parts
-- Routed PCB with USB connector reinforcement details
+- KiCad DRC/ERC closure. KiCad CLI now runs locally, but this routed pass still
+  reports real DRC/ERC violations around connector escape, service-channel
+  routing, and schematic connectivity.
 - Fit-validated enclosure CAD
-- Fit notes for USB-A versus USB-C physical packaging
+- Measured host-port clearance for the stepped USB-A direct-plug body
 - Measured connector strain and enclosure-retention observations
 
 ## Required First-Hardware Evidence
@@ -59,6 +68,9 @@ dongle that composes multiple PowerFinger devices into one USB HID mouse.
 - Connector strain does not rely solely on solder joints
 - Enclosure can be reopened without sacrificing the PCB
 - Boot/reset access does not interfere with normal use
+- ESP32-S3 antenna zone remains clear of copper and metal enclosure features
+- Adjacent-port clearance is checked with the stepped USB-A nose and wider body,
+  not assumed from the schematic
 - Record direct-plug mechanical evidence in
   [CONNECTOR-RETENTION-VERIFY.md](CONNECTOR-RETENTION-VERIFY.md) before
   starting secondary hardware work

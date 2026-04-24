@@ -5,7 +5,7 @@
   (uuid "aac5e3f1-75e3-472b-ac9c-9eca636b4115")
   (paper "A4")
   (lib_symbols)
-  (text "Recovery/control interface scaffold: boot, reset, UART pads, and status indication terminate on this sheet."
+  (text "Recovery/control interface scaffold: first PCB realizes BOOT_N as pad-actuated SW1, exposes TP6-TP9 for EN/BOOT/UART, and keeps LED1/R2 off strapping pins."
     (at 20.32 20.32 0)
     (effects (font (size 1.27 1.27)))
     (uuid "b9719567-c79d-4cd7-aa5e-f047b15a717f")

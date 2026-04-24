@@ -40,8 +40,8 @@ be recoverable without destructive rework.
 
 ## Capture Implications
 
-- If the schematic keeps only one tactile switch, the remaining recovery nets
-  still need pads.
+- The first board keeps `SW1` as a pad-actuated `BOOT_N` service footprint and
+  exposes `EN` separately at `TP6`; recovery still requires both points.
 - If the enclosure hides the USB connector shell inside a narrow cavity, leave
   extraction space for hot-air rework and non-destructive board removal.
 - If USB-A geometry makes `EN`/`BOOT_N` or UART pads unreachable, that is a real

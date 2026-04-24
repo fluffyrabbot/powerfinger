@@ -23,6 +23,8 @@ References:
   connector shell or a metal enclosure feature.
 - Keep the USB D+/D- path short, direct, and symmetric enough for a small full-
   speed device board.
+- Place `R1A` / `R1B` at the ESP32-S3 side of the pair, not at the connector;
+  connector-side protection belongs at `J1` / `D1`.
 - Keep `VBUS_5V` entry, the LDO, and its output capacitor physically coherent so
   the board does not treat `VREG_3V3` like an abstract off-page supply.
 - The connector must have mechanical reinforcement from both PCB footprinting
@@ -42,7 +44,13 @@ References:
 
 ## Packaging Direction
 
-- Start with a compact board envelope consistent with the BOM note (`~20 x 12 mm`)
-  but allow honest growth if connector support or antenna clearance needs it.
+- The first routed source uses a stepped outline: a USB-A nose widened enough
+  for the SOFNG USB-05 shell-tab pads, then a `54 x 26 mm` body once the
+  ESP32-S3 module, service pads, and antenna keep-out are real. Treat the older
+  BOM envelope as superseded by this board reality for enclosure work.
+- Keep the antenna end as plastic-only clearance: no copper pour, no service
+  pads, no screw insert, and no metal shell feature inside the keep-out.
+- Keep the service-pad row on the reopenable body edge; do not hide it under a
+  bonded seam or permanent strain-relief feature.
 - Keep USB-A plug versus USB-C-plus-cable as an explicit design choice, not an
   accidental side effect of the first footprint used.
