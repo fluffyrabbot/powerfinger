@@ -9,24 +9,37 @@ This checklist is the execution contract for the active hub hardware lane.
   `kicad/P0-COMPONENT-LOCKS.md`
 - [x] Resolve `R1` for native USB as `R1A` / `R1B`, 22R 0402 parts placed at
   the ESP32-S3 side of the pair; `C5` / `C6` remain no-BOM mechanical DNI
-  placeholders in this DRC-clean pass rather than connected shunt capacitors
+  placeholders in this routing pass rather than connected shunt capacitors
 - [x] Create `kicad/usb_hub.kicad_pcb` as a first routed placement pass
 - [x] Represent native USB routing, connector-side ESD placement, and local
   3.3 V regulation in the PCB source
 - [x] Keep boot/recovery and UART service pads reachable along the reopenable
   body edge
 - [x] Run KiCad CLI DRC/ERC once KiCad is available locally
-- [x] Clear KiCad ERC and PCB DRC failures before fabrication release review
+- [x] Clear KiCad ERC and PCB DRC failures before fabrication release review:
+  the 2026-04-24 KiCad CLI run passes ERC and PCB DRC at error severity after
+  the connector escape, service-channel nets, common ground, and support-part
+  schematic parity cleanup. The follow-up all-severity DRC pass has 0
+  schematic parity issues; the remaining all-severity items are footprint
+  library provenance warnings only.
 
 ## Enclosure Closure
 
-- [ ] Turn `cad/usb_hub_enclosure_blank.scad` into a printable reopenable
-  enclosure around the stepped `54 x 26 mm` first-board outline
+- [x] Turn `cad/usb_hub_enclosure_blank.scad` into a first reopenable
+  mechanical packet around the stepped `54 x 26 mm` first-board outline
 - [x] Provide deliberate connector reinforcement in the PCB source: plated
   shell tabs, guide holes, and shell-clamp holes are present before the CAD
   shell claims retention
-- [ ] Confirm enclosure retention does not block normal host insertion/removal
+- [x] Carry `MH1` / `MH2` shell-clamp geometry into the CAD source as aligned
+  bottom bosses, lid clearance holes, and clamp pads
+- [x] Preserve installed service access in CAD with a removable hatch over the
+  `TP1`-`TP9` row and `SW1`
+- [x] Make adjacent-port and insertion/removal constraints explicit in CAD
+  with host-face, shoulder, and neighboring-port reference gauges
+- [ ] Confirm the printed enclosure retention does not block normal host
+  insertion/removal
 - [ ] Confirm the wider body behind the narrow USB-A nose clears adjacent ports
+  on real hosts
 
 ## Bring-Up Evidence Required Before Secondary Variants
 
@@ -34,3 +47,4 @@ This checklist is the execution contract for the active hub hardware lane.
 - [ ] Link assembled board / enclosure observations from `MANIFEST.md`
 - [x] Keep the packet honest that this is a board-source pass, not measured
   mechanical evidence
+- [x] Run a local OpenSCAD sanity render for the enclosure source

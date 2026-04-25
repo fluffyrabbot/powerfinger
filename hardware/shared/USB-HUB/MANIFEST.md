@@ -7,12 +7,13 @@
 - Form factor: shared accessory / hub dongle
 - Lane: active validation-lane accessory
 - Publication state: BOM-backed hardware packet plus footprint-backed KiCad
-  first-board pass for the direct-plug native-USB hub
+  first-board pass and first mechanical enclosure packet for the direct-plug
+  native-USB hub
 - BOM source: [hardware/bom/USB-HUB.csv](../../bom/USB-HUB.csv)
 - BOM target: `~$5-6` at prototype scale
 - Source skeletons:
   - `kicad/` — KiCad-oriented schematic/layout inputs, hierarchy scaffolds, and placement notes
-  - `cad/` — OpenSCAD enclosure blank for the first serviceable hub pass
+  - `cad/` — OpenSCAD enclosure packet for the first serviceable hub pass
   - `FIRST-BOARD-CHECKLIST.md` — concrete first-board outputs required before secondary variants
   - `CONNECTOR-RETENTION-VERIFY.md` — mechanical evidence template for direct-plug safety and serviceability
 
@@ -36,6 +37,10 @@ dongle that composes multiple PowerFinger devices into one USB HID mouse.
   module/service body, rear antenna keep-out, and probeable service pads along
   the reopenable seam. The nose is widened to carry the SOFNG USB-05 shell-tab
   pads, so adjacent-port clearance is an open mechanical check.
+- The enclosure packet uses the board's `MH1` / `MH2` shell-clamp holes as the
+  explicit load path between the printed shell and PCB. Keep this reversible
+  and low-cost; do not pivot to adhesive, potting, brass inserts near the
+  antenna, or a cable-only topology without updating the active-lane decision.
 
 ## Replaceable Subassemblies
 
@@ -52,11 +57,13 @@ dongle that composes multiple PowerFinger devices into one USB HID mouse.
 - `kicad/usb_hub.kicad_pcb` — first routed PCB source with connector, ESD,
   regulator, ESP32-S3 module, 22R USB series resistors, service pads, and
   antenna keep-out represented
-- Printable enclosure exports derived from `cad/usb_hub_enclosure_blank.scad`
+- `cad/usb_hub_enclosure_blank.scad` — first reopenable enclosure packet with
+  stepped outline, `MH1` / `MH2` clamp bosses, removable service hatch, rear
+  antenna reference volume, and host-clearance gauges
 
 ## Missing Artifacts
 
-- Fit-validated enclosure CAD
+- Printed fit validation for the enclosure packet
 - Measured host-port clearance for the stepped USB-A direct-plug body
 - Measured connector strain and enclosure-retention observations
 
@@ -65,7 +72,11 @@ dongle that composes multiple PowerFinger devices into one USB HID mouse.
 - Connector strain does not rely solely on solder joints
 - Enclosure can be reopened without sacrificing the PCB
 - Boot/reset access does not interfere with normal use
-- KiCad CLI ERC and PCB DRC remain clean after local footprint/library loading
+- Service hatch exposes `EN`, `BOOT_N`, UART, power, ground, and trace access
+  pads without pulling on the USB connector
+- KiCad CLI ERC and PCB DRC remain clean at error severity after local
+  footprint/library loading; all-severity PCB DRC is limited to footprint
+  library provenance warnings, with 0 schematic parity issues
 - ESP32-S3 antenna zone remains clear of copper and metal enclosure features
 - Adjacent-port clearance is checked with the stepped USB-A nose and wider body,
   not assumed from the schematic

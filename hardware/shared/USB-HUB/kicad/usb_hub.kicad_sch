@@ -29,6 +29,10 @@
       (effects (font (size 1.27 1.27)) (justify right))
       (uuid "fff91eff-d24e-415a-ae2b-29101980a753")
     )
+    (pin "GND" passive (at 107.95 43.18 0)
+      (effects (font (size 1.27 1.27)) (justify right))
+      (uuid "5D1B44D5-5026-4271-AB53-21EEEC281F1B")
+    )
     (instances
       (project "usb_hub"
         (path "/f6052e82-96b1-45d5-b9bf-365e621dcadc/01fbeb16-2d9d-4c0f-beef-2507b172a240" (page "2"))
@@ -58,6 +62,10 @@
     (pin "USB_D-" passive (at 120.65 40.64 180)
       (effects (font (size 1.27 1.27)) (justify left))
       (uuid "d90e5883-a77a-42ee-998e-cc4e1eb21a2e")
+    )
+    (pin "GND" passive (at 120.65 43.18 180)
+      (effects (font (size 1.27 1.27)) (justify left))
+      (uuid "2AD7E4ED-5BC4-4726-81A0-DA44A90EA793")
     )
     (pin "EN" input (at 130.81 58.42 270)
       (effects (font (size 1.27 1.27)))
@@ -117,6 +125,14 @@
       (effects (font (size 1.27 1.27)))
       (uuid "ae6a1218-e812-4fc4-8292-71de082ff279")
     )
+    (pin "VREG_3V3" input (at 73.025 86.36 180)
+      (effects (font (size 1.27 1.27)) (justify left))
+      (uuid "862EF946-A6C0-40C4-95DE-EE40B738D84F")
+    )
+    (pin "GND" passive (at 73.025 88.9 180)
+      (effects (font (size 1.27 1.27)) (justify left))
+      (uuid "C7AB6EEB-00C0-465F-934C-CB2869A6A9BC")
+    )
     (instances
       (project "usb_hub"
         (path "/f6052e82-96b1-45d5-b9bf-365e621dcadc/ad3d8f0b-6ec2-4c2e-86fb-4abf0ec94a3f" (page "4"))
@@ -146,6 +162,58 @@
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid "79f07781-721f-4e36-84bc-9ea467db625d")
+  )
+  (wire
+    (pts
+      (xy 107.95 43.18)
+      (xy 120.65 43.18)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "73C023E6-FEC0-41C1-A491-B9A562839FD4")
+  )
+  (wire
+    (pts
+      (xy 111.76 35.56)
+      (xy 111.76 86.36)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "8AD3C9BE-FB1C-470E-BA1C-2B998469AF03")
+  )
+  (wire
+    (pts
+      (xy 111.76 86.36)
+      (xy 73.025 86.36)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "A27AE85C-1F06-4AC2-9660-FEACA05B47CF")
+  )
+  (wire
+    (pts
+      (xy 116.84 43.18)
+      (xy 116.84 88.9)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "F93ED488-1C4D-43EB-AF0E-09208F7F7F97")
+  )
+  (wire
+    (pts
+      (xy 116.84 88.9)
+      (xy 73.025 88.9)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "197B600B-EDF1-4F71-A301-25FE2DC0FC76")
+  )
+  (junction
+    (at 111.76 35.56)
+    (diameter 0)
+    (color 0 0 0 0)
+    (uuid "BAD22D76-FEA3-49D4-BCC1-B9D55FF9C4C3")
+  )
+  (junction
+    (at 116.84 43.18)
+    (diameter 0)
+    (color 0 0 0 0)
+    (uuid "A7BA0BE2-EA7F-4346-A7D8-BD8754885E22")
   )
   (wire
     (pts

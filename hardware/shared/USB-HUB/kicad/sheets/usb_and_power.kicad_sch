@@ -128,6 +128,14 @@
           (name "GND" (effects (font (size 1.27 1.27))))
           (number "4" (effects (font (size 1.27 1.27))))
         )
+        (pin passive line (at 7.62 -12.7 180) (length 2.54)
+          (name "SHIELD" (effects (font (size 1.27 1.27))))
+          (number "SH1" (effects (font (size 1.27 1.27))))
+        )
+        (pin passive line (at 7.62 -15.24 180) (length 2.54)
+          (name "SHIELD" (effects (font (size 1.27 1.27))))
+          (number "SH2" (effects (font (size 1.27 1.27))))
+        )
       )
     )
     (symbol "PowerFinger:USBLC6-2SC6" (pin_names (offset 0.508)) (in_bom yes) (on_board yes)
@@ -288,7 +296,8 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid "7287748E-A284-44E7-A0E7-6D18EF67F1A9")
   )
-  (label "GND"
+  (hierarchical_label "GND"
+    (shape passive)
     (at 160.02 48.26 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid "C3893907-84A6-47D4-81A3-C248B9E49964")
@@ -391,6 +400,32 @@
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid "4762A772-43C4-4CC2-AC24-4A35426766AB")
+  )
+  (wire
+    (pts
+      (xy 48.26 60.96)
+      (xy 60.96 60.96)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "A797EF2D-7A95-45ED-B30A-6C32F8BC0CF6")
+  )
+  (wire
+    (pts
+      (xy 48.26 63.5)
+      (xy 60.96 63.5)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "4FE5CBCD-D20A-40E2-8707-A65B02E36FEC")
+  )
+  (label "GND"
+    (at 60.96 60.96 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "ABA1CB74-3C66-4B1F-AA99-73CBE5B192F0")
+  )
+  (label "GND"
+    (at 60.96 63.5 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "E0410C77-35B2-40F9-8203-AF63D738EE13")
   )
   (wire
     (pts
@@ -599,6 +634,8 @@
     (pin "2" (uuid "37759F54-40E7-4BC6-8C41-C1EC15B6A03C"))
     (pin "3" (uuid "B4989D09-8151-496D-87F7-C6075D58402A"))
     (pin "4" (uuid "1BEBD4E1-8ACB-4276-8C13-A3B427D04F94"))
+    (pin "SH1" (uuid "F46E3D38-E189-4286-96AD-C887C11D8CF8"))
+    (pin "SH2" (uuid "6B86CEFB-7042-4295-AAED-34B5AE5BDE8A"))
     (instances
       (project "usb_hub"
         (path "/"
@@ -772,6 +809,57 @@
       (project "usb_hub"
         (path "/"
           (reference "C3") (unit 1)
+        )
+      )
+    )
+  )
+  (label "VREG_3V3"
+    (at 187.96 52.07 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "1991E2C6-6801-4C3E-9B7F-90B7B16F2E9C")
+  )
+  (label "GND"
+    (at 187.96 59.69 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid "2E46D8EC-4C49-433F-BE40-019F71663530")
+  )
+  (wire
+    (pts
+      (xy 180.34 52.07)
+      (xy 187.96 52.07)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "A0CFD7EF-3E89-42C0-8C82-5FC4C4DE7A08")
+  )
+  (wire
+    (pts
+      (xy 180.34 59.69)
+      (xy 187.96 59.69)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "B0689F9C-82D4-4BDF-A531-841603D2458C")
+  )
+  (symbol (lib_id "Device:C") (at 180.34 55.88 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (uuid "B01CFF65-414D-4B3D-94F8-FF5BC3B6BE70")
+    (property "Reference" "C1B" (at 175.26 49.53 0)
+      (effects (font (size 1.27 1.27)) (justify left))
+    )
+    (property "Value" "100nF" (at 175.26 52.07 0)
+      (effects (font (size 1.27 1.27)) (justify left))
+    )
+    (property "Footprint" "Capacitor_SMD:C_0402_1005Metric" (at 180.34 45.72 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "" (at 180.34 43.18 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1" (uuid "F5A74FFF-CA66-44B1-897B-B8AC8F360188"))
+    (pin "2" (uuid "637A7816-FCC3-46DC-9A7F-857F2DF7C283"))
+    (instances
+      (project "usb_hub"
+        (path "/"
+          (reference "C1B") (unit 1)
         )
       )
     )

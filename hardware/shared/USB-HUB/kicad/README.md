@@ -55,8 +55,14 @@ enclosure fit must be validated before the lane moves to secondary variants.
   UART0, power, and ground pads remain probeable along the reopenable seam.
   USB data continuity is inspected at trace/connector access points rather than
   dedicated connected USB data service pads in this pass.
-- KiCad CLI verification is active on this packet. The current schematic ERC
-  and PCB DRC pass at error severity with local footprints loaded.
+- The schematic now carries the routed board's common ground, EN RC support,
+  status LED path, and local decoupling instead of leaving those as PCB-only
+  drift. The USB shell tabs and ESP32-S3 module ground pads are now explicit
+  schematic pins tied to ground, and PCB footprint metadata matches the locked
+  schematic fields. KiCad CLI verification is active on this packet: the current
+  schematic ERC and PCB DRC pass at error severity with local footprints loaded.
+  The remaining all-severity report items are footprint-library provenance
+  warnings, not schematic parity drift or open connector/service routes.
 
 ## Hard Constraints
 
