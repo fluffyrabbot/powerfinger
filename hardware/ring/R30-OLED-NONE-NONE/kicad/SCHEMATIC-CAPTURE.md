@@ -43,6 +43,8 @@ easier to branch.
   - `VBAT_SENSE`
   - `VREG_3V3`
   - `CHARGE_EN`
+  - `CHARGE_GATE`
+  - `VBUS_CHG_SW`
   - `CHRG_STAT`
   - `NTC_SENSE`
 - USB / service:
@@ -71,6 +73,9 @@ easier to branch.
   circuitry into this first schematic.
 - The NTC and charge-enable path are not optional. The battery safety docs have
   already promoted them from “nice to have” to baseline hardware.
+- The first PCB pass routes `CHARGE_EN` through a small gate driver before the
+  P-channel VBUS switch. Preserve that separation in schematic capture so a
+  5 V gate pull-up cannot land on an ESP32-C3 GPIO.
 - Leave the antenna keep-out consequence visible in the schematic notes so the
   later board layout does not quietly compromise it.
 

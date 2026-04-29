@@ -58,3 +58,18 @@ It exists to stop two kinds of drift:
   `NTC = ADC1_CH1`, `VBUS detect = GPIO3`, `charge enable = GPIO10`.
 - Production ring firmware still treats these three nets as unpopulated by
   default until the actual optical-ring hardware capture lands.
+
+## Current PCB Alignment
+
+- `GPIO10` drives `CHARGE_EN` through a `Q2` low-side gate driver. Do not route
+  `GPIO10` directly to the P-channel gate while that gate has a `VBUS_5V`
+  pull-up.
+- `NTC_SENSE` is routed as the active NTC divider sense net near the battery
+  connector.
+- `VBAT_SENSE`, `VBUS detect`, and `CHRG_STAT` are represented as bring-up pads
+  in the first PCB pass, not production sense/status circuits. Add the missing
+  divider and pull-up BOM lines before enabling those firmware defaults on real
+  ring hardware.
+- PAW3204 `RST/QB/PD` and `MOTSWK` are exposed on local pads in the PCB pass
+  instead of consuming new MCU GPIOs. Keep this conservative until firmware
+  decides whether reset or motion wake is required for the first optical board.

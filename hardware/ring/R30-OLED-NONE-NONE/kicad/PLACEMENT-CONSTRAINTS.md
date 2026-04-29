@@ -21,6 +21,25 @@ References:
 - USB-C charge/debug entry
 - Protected `80-100 mAh` LiPo connection
 
+## First Board Footprint Locks
+
+The first routed PCB pass in `r30_oled_none_none.kicad_pcb` locks these
+placement classes for P0:
+
+- `U1`: `ESP32-C3-MINI-1-N4` module envelope, antenna end toward board `+X`
+  and shell exterior
+- `U2`: bottom-side `PAW3204DB-TJ3L` 8-pin optical package centered on the
+  aperture datum
+- `J_BAT`: JST-SH `SM02B-SRSS-TB`-class right-angle 2-pin 1.0 mm battery
+  receptacle
+- `J1`: `USB4215`-class 16-pin USB 2.0 Type-C receptacle with four through-hole
+  shell stakes
+- `U3`/`U4`: SOT-23-5 TP4054 and RT9080 footprints, with the TP4054 pinout kept
+  distinct from MCP73831-style chargers
+- `Q1`: SOT-23 P-channel VBUS switch before TP4054 `VCC`
+- `Q2`/`R6`: logic-safe charge-gate driver and pulldown; these must stay unless
+  the charge switch becomes a real logic-level load-switch part
+
 ## Mechanical / RF Placement Rules
 
 - Place the ESP32-C3 module so the antenna end faces outward toward the shell
@@ -37,6 +56,15 @@ References:
   metal around the aperture.
 - The battery envelope from the BOM (`<= 20 x 15 x 4 mm`) must fit without
   violating the reopenable service seam.
+- The first routed board pass is `42 x 18 mm`; that width matches the current
+  band-width placeholder, but it does not prove the shell closes. Treat this as
+  a red stackup item until the board outline, USB opening, battery bay, and
+  ESP32 antenna keep-out are checked against physical CAD or a print.
+- The current shell CAD now uses this board outline directly as a top pod and
+  maps `J1`, `J_BAT`, `SW1`, `U2`, and the antenna keep-out from KiCad
+  coordinates. Any PCB placement change to those references must be mirrored in
+  `cad/r30_oled_none_none_shell_blank.scad` before the packet is mechanically
+  honest.
 
 ## Safety / Service Rules
 
@@ -45,8 +73,14 @@ References:
   wishful thinking.
 - The charge MOSFET and TP4054 belong near the USB/VBUS entry, not deep inside
   the RF-sensitive region.
+- The P-channel charge MOSFET gate must not connect directly to ESP32-C3
+  `GPIO10` while a pull-up can take the gate to `VBUS_5V`; use the `Q2`/`R6`
+  gate-driver path or an equivalent logic-level load switch.
 - The USB-C connector cannot be the only structural retention point for the
   board inside the shell.
+- The first CAD retention path is molded side rails, side stop lugs, and lid
+  compression pads; do not add hidden adhesive, one-shot snaps, or metal clips
+  near the antenna keep-out without a BDFL decision and BOM update.
 - The dome switch path should remain replaceable without first excavating the
   battery.
 
@@ -76,4 +110,3 @@ at respin time.
 - Antenna keep-out, battery envelope, sensor aperture, and dome actuation area
   are zone-bounded by earlier rules — do not compromise those boundaries to
   save a small amount of copper on the rigid P0.
-
