@@ -16,11 +16,15 @@ This checklist is the execution contract for the active ring hardware lane.
 - [x] Validate the PAW3204-class sensor placement against the aperture datum in
   the PCB pass
 - [ ] Backfill schematic symbols to match the PCB pass and clear KiCad ERC/DRC
-  (local DRC currently reports violations and unconnected items)
-- [ ] Decide whether the `Q2`/`R6` charge-gate safety add is accepted into the
-  active BOM before fabrication
-- [ ] Add production `VBAT_SENSE`, `VBUS_DETECT`, and `CHRG_STAT` divider /
-  pull-up parts, or explicitly remove those firmware-facing claims
+  (current snapshot in `kicad/CURRENT-VIOLATIONS.md`: ERC=34, DRC=324,
+  unconnected=41, parity=27 — regenerate with
+  `scripts/verify-firmware-local.sh --kicad-only`)
+- [x] Accept the `Q2`/`R6` charge-gate safety add into the active BOM CSV
+- [x] Add starter `VBAT_SENSE` (`R7`/`R8`), `VBUS_DETECT` (`R9`/`R10`), and
+  `CHRG_STAT` (`R11`) divider / pull-up lines to the active BOM CSV
+- [ ] Lock BDFL-approved values for `R7`–`R11` and the production part for
+  `Q2` (2N7002 vs BSS138 vs an equivalent logic-level load switch) before
+  schematic capture
 - [ ] Prove the `42 x 18 mm` rigid board, USB-C opening, JST-SH service loop,
   and antenna keep-out fit the current shell CAD or revise the shell/board
 

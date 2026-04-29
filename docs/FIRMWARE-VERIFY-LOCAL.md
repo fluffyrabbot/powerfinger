@@ -100,6 +100,19 @@ Skip host tests and build only firmware:
 scripts/verify-firmware-local.sh --firmware-only ring hub
 ```
 
+Run hardware ERC/DRC against the active KiCad packets (requires `kicad-cli`):
+
+```bash
+scripts/verify-firmware-local.sh --kicad-only
+scripts/verify-firmware-local.sh --with-kicad        # alongside host tests + firmware
+scripts/verify-firmware-local.sh --kicad-only --kicad-strict   # exit nonzero on any violation
+```
+
+Reports land under `build-kicad/<packet>/`. The active packets currently carry
+a known-red baseline tracked in each `kicad/CURRENT-VIOLATIONS.md`; default
+behavior is to print counts and continue. Use `--kicad-strict` once a packet is
+expected to be clean.
+
 ## Direct IDF Iteration
 
 When iterating on a single target and you already know the project you want:

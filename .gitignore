@@ -2,6 +2,7 @@
 build/
 build-test/
 build-idf/
+build-kicad/
 
 # ESP-IDF
 sdkconfig
@@ -23,6 +24,9 @@ cmake_install.cmake
 
 # IDE
 .vscode/
+
+# KiCad per-user state (ProjectLocal)
+*.kicad_prl
 .idea/
 
 # OS

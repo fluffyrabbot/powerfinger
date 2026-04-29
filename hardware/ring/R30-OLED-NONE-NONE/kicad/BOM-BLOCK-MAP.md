@@ -22,8 +22,12 @@ map and the actual symbol/footprint choices do not drift apart.
 The first schematic should capture everything needed for the Standard optical
 ring claim and nothing that belongs exclusively to later Pro or hedge variants.
 
-The first PCB pass intentionally exposes three sense/status gaps rather than
+The first PCB pass intentionally exposed three sense/status gaps rather than
 silently adding hidden BOM lines: `VBAT_SENSE`, `VBUS_DETECT`, and `CHRG_STAT`
-currently land on bring-up pads only. Add the divider/pull-up parts in the same
-commit as the active BOM update before treating those firmware signals as
-production-routed.
+landed on bring-up pads only. The active BOM CSV now carries `R7`/`R8`
+(VBAT_SENSE 100k/100k starter divider), `R9`/`R10` (VBUS_DETECT 220k/100k
+starter divider), and `R11` (CHRG_STAT 100k pull-up to `VREG_3V3`) as starter
+recommendations pending BDFL value lock. The schematic and PCB must adopt
+those references before the firmware sense/status defaults are treated as
+production-routed. See [CURRENT-VIOLATIONS.md](CURRENT-VIOLATIONS.md) for the
+ERC/DRC snapshot that gates this packet.

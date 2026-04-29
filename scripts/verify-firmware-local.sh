@@ -16,11 +16,17 @@ idf_setup_script="$repo_root/scripts/setup-esp-idf-local.sh"
 
 run_host_tests=true
 run_firmware=true
+run_kicad_checks=false
+kicad_strict=false
 use_all_projects=false
 
 declare -a requested_projects=()
 declare -a all_projects=(ring pen puck hub)
 declare -a default_projects=(ring hub)
+declare -a kicad_packets=(
+    "R30-OLED-NONE-NONE|hardware/ring/R30-OLED-NONE-NONE/kicad/r30_oled_none_none.kicad_sch|hardware/ring/R30-OLED-NONE-NONE/kicad/r30_oled_none_none.kicad_pcb"
+    "USB-HUB|hardware/shared/USB-HUB/kicad/usb_hub.kicad_sch|hardware/shared/USB-HUB/kicad/usb_hub.kicad_pcb"
+)
 
 usage() {
     cat <<'EOF'
@@ -31,12 +37,20 @@ Options:
   --all               Build every ESP-IDF firmware project
   --firmware-only     Skip host-side unit tests
   --host-tests-only   Run only host-side unit tests
+  --with-kicad        Also run kicad-cli ERC/DRC on the active hardware packets
+  --kicad-only        Run kicad-cli ERC/DRC only (skips host tests + firmware)
+  --kicad-strict      Exit non-zero when kicad-cli reports any violation
+                      (default: report counts and continue, since the active
+                      packets currently have a known-red baseline tracked in
+                      kicad/CURRENT-VIOLATIONS.md)
   -h, --help          Show this help text
 
 Defaults:
   - Host-side tests run first
   - Firmware verification builds the active lane: ring + hub
   - ESP-IDF build outputs go under build-idf/<project>/
+  - kicad-cli checks are off by default (opt in with --with-kicad)
+  - kicad-cli reports go under build-kicad/<packet>/
   - If idf.py is not already in PATH, the script will try a repo-pinned
     local ESP-IDF install under $HOME/.powerfinger-sdk/
 
@@ -45,6 +59,9 @@ Examples:
   scripts/verify-firmware-local.sh hub
   scripts/verify-firmware-local.sh --all
   scripts/verify-firmware-local.sh --host-tests-only
+  scripts/verify-firmware-local.sh --with-kicad
+  scripts/verify-firmware-local.sh --kicad-only
+  scripts/verify-firmware-local.sh --kicad-only --kicad-strict
 EOF
 }
 
@@ -172,6 +189,92 @@ run_host_tests_step() {
     ctest --test-dir "$repo_root/build-test" --output-on-failure
 }
 
+run_kicad_checks_step() {
+    if ! command -v kicad-cli >/dev/null 2>&1; then
+        echo "warn: kicad-cli not found on PATH; skipping ERC/DRC checks" >&2
+        echo "      install with: brew install --cask kicad" >&2
+        if [[ "$kicad_strict" == true ]]; then
+            echo "error: --kicad-strict was requested but kicad-cli is not available" >&2
+            exit 1
+        fi
+        return 0
+    fi
+
+    local kicad_root="$repo_root/build-kicad"
+    mkdir -p "$kicad_root"
+
+    local total_violations=0
+    local total_unconnected=0
+    local total_parity=0
+
+    echo "==> Running kicad-cli ERC + DRC ($(kicad-cli version 2>/dev/null | head -1))"
+
+    local entry packet sch_path pcb_path packet_dir
+    local sch_output drc_output sch_violations drc_violations drc_unconnected drc_parity
+
+    for entry in "${kicad_packets[@]}"; do
+        IFS='|' read -r packet sch_path pcb_path <<<"$entry"
+        packet_dir="$kicad_root/$packet"
+        mkdir -p "$packet_dir"
+
+        if [[ ! -f "$repo_root/$sch_path" ]]; then
+            echo "  $packet: missing schematic at $sch_path; skipping" >&2
+            continue
+        fi
+        if [[ ! -f "$repo_root/$pcb_path" ]]; then
+            echo "  $packet: missing PCB at $pcb_path; skipping" >&2
+            continue
+        fi
+
+        sch_output="$packet_dir/erc.txt"
+        drc_output="$packet_dir/drc.txt"
+
+        sch_violations="$(
+            kicad-cli sch erc \
+                --severity-all \
+                -o "$sch_output" \
+                "$repo_root/$sch_path" 2>&1 \
+                | sed -n 's/^Found \([0-9][0-9]*\) violations$/\1/p' \
+                | head -1
+        )"
+        sch_violations="${sch_violations:-0}"
+
+        local drc_summary
+        drc_summary="$(
+            kicad-cli pcb drc \
+                --severity-all \
+                --schematic-parity \
+                -o "$drc_output" \
+                "$repo_root/$pcb_path" 2>&1
+        )"
+        drc_violations="$(printf '%s\n' "$drc_summary" | sed -n 's/^Found \([0-9][0-9]*\) violations$/\1/p' | head -1)"
+        drc_unconnected="$(printf '%s\n' "$drc_summary" | sed -n 's/^Found \([0-9][0-9]*\) unconnected items$/\1/p' | head -1)"
+        drc_parity="$(printf '%s\n' "$drc_summary" | sed -n 's/^Found \([0-9][0-9]*\) schematic parity issues$/\1/p' | head -1)"
+        drc_violations="${drc_violations:-0}"
+        drc_unconnected="${drc_unconnected:-0}"
+        drc_parity="${drc_parity:-0}"
+
+        printf "  %-22s ERC=%s  DRC=%s  unconnected=%s  parity=%s\n" \
+            "$packet" "$sch_violations" "$drc_violations" "$drc_unconnected" "$drc_parity"
+        printf "                          %s\n" "$sch_output"
+        printf "                          %s\n" "$drc_output"
+
+        total_violations=$((total_violations + sch_violations + drc_violations))
+        total_unconnected=$((total_unconnected + drc_unconnected))
+        total_parity=$((total_parity + drc_parity))
+    done
+
+    local total=$((total_violations + total_unconnected + total_parity))
+    printf "  %-22s total=%s (violations=%s, unconnected=%s, parity=%s)\n" \
+        "SUMMARY" "$total" "$total_violations" "$total_unconnected" "$total_parity"
+    echo "  Track changes against each packet's kicad/CURRENT-VIOLATIONS.md."
+
+    if [[ "$kicad_strict" == true && "$total" -gt 0 ]]; then
+        echo "error: --kicad-strict requested but $total kicad-cli violations remain" >&2
+        exit 1
+    fi
+}
+
 build_project_step() {
     local project="$1"
     local project_dir="$repo_root/firmware/$project"
@@ -210,6 +313,18 @@ while (($# > 0)); do
         --host-tests-only)
             run_firmware=false
             ;;
+        --with-kicad)
+            run_kicad_checks=true
+            ;;
+        --kicad-only)
+            run_host_tests=false
+            run_firmware=false
+            run_kicad_checks=true
+            ;;
+        --kicad-strict)
+            kicad_strict=true
+            run_kicad_checks=true
+            ;;
         -h|--help)
             usage
             exit 0
@@ -241,6 +356,10 @@ if [[ "$run_firmware" == true ]]; then
     for project in "${requested_projects[@]}"; do
         build_project_step "$project"
     done
+fi
+
+if [[ "$run_kicad_checks" == true ]]; then
+    run_kicad_checks_step
 fi
 
 echo "==> Verification complete"
