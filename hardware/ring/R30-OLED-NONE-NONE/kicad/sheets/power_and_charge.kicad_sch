@@ -1567,6 +1567,236 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "power:PWR_FLAG"
+			(power global)
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 0)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "#FLG"
+				(at 0 1.905 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "PWR_FLAG"
+				(at 0 3.81 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Special symbol for telling ERC where power comes from"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "flag power"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "PWR_FLAG_0_0"
+				(pin power_out line
+					(at 0 0 90)
+					(length 0)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(symbol "PWR_FLAG_0_1"
+				(polyline
+					(pts
+						(xy 0 0) (xy 0 1.27) (xy -1.016 1.905) (xy 0 2.54) (xy 1.016 1.905) (xy 0 1.27)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "power:GND"
+			(power global)
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 0)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "#PWR"
+				(at 0 -6.35 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "GND"
+				(at 0 -3.81 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "global power"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "GND_0_1"
+				(polyline
+					(pts
+						(xy 0 0) (xy 0 -1.27) (xy 1.27 -1.27) (xy 0 -2.54) (xy -1.27 -1.27) (xy 0 -1.27)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "GND_1_1"
+				(pin power_in line
+					(at 0 0 270)
+					(length 0)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 	)
 	(symbol
 		(lib_id "Device:Q_PMOS")
@@ -2934,6 +3164,616 @@
 				)
 			)
 		)
+	)
+	(symbol
+		(lib_id "power:PWR_FLAG")
+		(at 39.37 80.01 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "bccc98e5-6327-4b8f-be98-b17d071e9cd6")
+		(property "Reference" "#PWR0001"
+			(at 39.37 81.915 0.0000)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Value" "PWR_FLAG"
+			(at 39.37 74.93 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "3d6349b5-2a67-46a0-bf9d-b0a7a2ffc2b2")
+		)
+		(instances
+			(project "simple_circuit"
+				(path "/3bb73a68-f2e3-4fdc-8035-844d8d9ecf61"
+					(reference "#PWR0001")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:PWR_FLAG")
+		(at 95.25 74.93 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "0a993172-1856-4df5-8d85-305e11ed1ff6")
+		(property "Reference" "#PWR0002"
+			(at 95.25 76.835 0.0000)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Value" "PWR_FLAG"
+			(at 95.25 69.85 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "7fa480d8-487e-40c5-8bd6-1491c75636aa")
+		)
+		(instances
+			(project "simple_circuit"
+				(path "/3bb73a68-f2e3-4fdc-8035-844d8d9ecf61"
+					(reference "#PWR0002")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 39.37 119.38 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "8e3898ec-decd-45bf-9f4c-9cacfbda1a2f")
+		(property "Reference" "#PWR0003"
+			(at 39.37 113.03 0.0000)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 39.37 124.46 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "903695cf-08f7-47ff-8aa9-c216bd45fae4")
+		)
+		(instances
+			(project "simple_circuit"
+				(path "/3bb73a68-f2e3-4fdc-8035-844d8d9ecf61"
+					(reference "#PWR0003")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:PWR_FLAG")
+		(at 44.45 119.38 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "83b6efe4-57d3-4700-afdf-bf83db25362f")
+		(property "Reference" "#PWR0004"
+			(at 44.45 121.285 0.0000)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Value" "PWR_FLAG"
+			(at 44.45 114.3 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "05b87a97-b3b5-4528-96f4-3ecbc4aeccd3")
+		)
+		(instances
+			(project "simple_circuit"
+				(path "/3bb73a68-f2e3-4fdc-8035-844d8d9ecf61"
+					(reference "#PWR0004")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 39.37 119.38) (xy 44.45 119.38)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2ff8472a-8056-44ad-a7cb-4acb8a89bd99")
+	)
+	(label "VBUS_5V"
+		(at 82.55 95.25 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "bbd3c672-152a-4d6b-b90c-6c0e511ae65c")
+	)
+	(label "VBUS_CHG"
+		(at 82.55 85.09 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "0add65fe-8d8f-449f-8fb6-8612d03eb472")
+	)
+	(label "Q1_GATE"
+		(at 74.93 90.17 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "7e342649-193c-40ab-96a6-ad42a22e8b2c")
+	)
+	(label "Q1_GATE"
+		(at 62.23 95.25 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "71f27dca-9468-4c0b-bc55-ecba64d38d0d")
+	)
+	(label "GND"
+		(at 62.23 105.41 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "95fe14d1-4cf2-459d-bfa3-8e2bd8c4a7cf")
+	)
+	(label "CHARGE_EN"
+		(at 54.61 100.33 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "d3c42742-bca8-41a9-bd77-0af332e717af")
+	)
+	(label "VBUS_5V"
+		(at 69.85 76.2 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "93462abb-eacc-4ce5-b2ce-a6c019646ad6")
+	)
+	(label "Q1_GATE"
+		(at 69.85 83.82 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "3f1e79cf-036e-446b-864b-7da31d450ee9")
+	)
+	(label "CHARGE_EN"
+		(at 49.53 106.68 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "5c9312ae-f8c2-40aa-958a-4a549176b0aa")
+	)
+	(label "GND"
+		(at 49.53 114.3 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "9bcc55f0-b6be-4d37-a1a2-05038a02143b")
+	)
+	(label "CHRG_STAT_INT"
+		(at 120.65 92.71 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "a11a2db0-ee18-406d-8b8f-e84949756215")
+	)
+	(label "GND"
+		(at 110.49 97.79 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "7e68bf73-09ef-4ec8-8a30-94680053d928")
+	)
+	(label "VBAT_PROTECTED"
+		(at 120.65 87.63 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "4d32ef2f-da13-4d1a-8597-1a5a196ca6ee")
+	)
+	(label "VBUS_CHG"
+		(at 110.49 82.55 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "2cd3edf9-f7ba-4282-aa86-4dec615b9842")
+	)
+	(label "U3_PROG"
+		(at 100.33 92.71 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "e72d4f81-0a63-4932-b827-2a75cc1e3620")
+	)
+	(label "U3_PROG"
+		(at 124.46 101.6 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "df7e93c1-af4b-46b7-b3ef-b92790b72a54")
+	)
+	(label "GND"
+		(at 124.46 109.22 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "d5ce2fea-ab63-407b-8cea-4295b7791c0e")
+	)
+	(label "VREG_3V3"
+		(at 129.54 76.2 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "3ed82532-bcbc-4830-bc72-3ee822533ef2")
+	)
+	(label "CHRG_STAT_INT"
+		(at 129.54 83.82 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "cf4bd116-ea9c-463e-9175-6c26412a155b")
+	)
+	(label "VBAT_PROTECTED"
+		(at 152.4 87.63 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "c1de7f63-02fa-4c24-8fce-056ff0f78a8b")
+	)
+	(label "GND"
+		(at 160.02 97.79 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "6d30dcb6-94af-4e92-bd6f-1d2afafa1a34")
+	)
+	(label "VBAT_PROTECTED"
+		(at 152.4 90.17 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "b44c9078-dbce-468e-814e-705e94a9b2c0")
+	)
+	(label "VREG_3V3"
+		(at 167.64 87.63 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "909e2f7b-409b-4c55-a891-416da815e947")
+	)
+	(label "VBUS_CHG"
+		(at 105.41 106.68 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "387f7485-4963-42d2-9487-b05d7e26473a")
+	)
+	(label "GND"
+		(at 105.41 114.3 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "8baa2818-6f48-4d7e-b8e5-f433b75c1717")
+	)
+	(label "VBAT_PROTECTED"
+		(at 149.86 106.68 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "323b6ecf-842c-420f-96bc-b61cee93b8d4")
+	)
+	(label "GND"
+		(at 149.86 114.3 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "9a03a5b5-57f1-4bcf-ab5b-94b99b18b442")
+	)
+	(label "VREG_3V3"
+		(at 170.18 106.68 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "e49056de-4d68-46b5-b70d-cec1846ac370")
+	)
+	(label "GND"
+		(at 170.18 114.3 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "f5c6b347-03a7-40a3-a512-d04c10cc746c")
+	)
+	(label "VBAT_PROTECTED"
+		(at 139.7 125.73 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "c75c3ce3-ca47-422a-b329-23fd1133d608")
+	)
+	(label "VBAT_SENSE"
+		(at 139.7 133.35 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "ee4309e1-5bff-45fc-9934-0d3de57820c6")
+	)
+	(label "VBAT_SENSE"
+		(at 139.7 140.97 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "96fb6db8-8e72-41eb-89cc-c9e5d39c2014")
+	)
+	(label "GND"
+		(at 139.7 148.59 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "ee029c35-e7d9-481f-bd9e-9ca39d0c9701")
+	)
+	(label "VBUS_5V"
+		(at 59.69 125.73 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "f28c564b-d1d4-49a9-889b-3b471e15b2bd")
+	)
+	(label "VBUS_DETECT_INT"
+		(at 59.69 133.35 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "013a7516-3c47-4308-a164-59e37fd2a41b")
+	)
+	(label "VBUS_DETECT_INT"
+		(at 59.69 140.97 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "b5b1e9e1-5d42-4869-af91-724856b04a56")
+	)
+	(label "GND"
+		(at 59.69 148.59 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "c9700ae7-dbc8-4182-b336-e244e99fef02")
+	)
+	(label "VREG_3V3"
+		(at 170.18 156.21 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "555af899-f076-4a2d-8059-03167e9c2010")
+	)
+	(label "NTC_SENSE"
+		(at 170.18 163.83 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "0cdb854d-c4ee-402a-8ef2-6858b99b20a5")
+	)
+	(label "NTC_SENSE"
+		(at 170.18 140.97 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "341a7f1c-9022-4845-98f5-bf77dde8bb7e")
+	)
+	(label "GND"
+		(at 170.18 148.59 0.0000)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "8d2a0dfa-ee9a-42a5-8f87-181f242222db")
+	)
+	(label "VBUS_5V"
+		(at 39.37 80.01 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "c802887c-ca1f-4edb-a458-46c85a13a29f")
+	)
+	(label "VBUS_CHG"
+		(at 95.25 74.93 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "8e72e247-54a2-48d8-be69-e55e9d4208b2")
+	)
+	(label "GND"
+		(at 44.45 119.38 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "0de2d773-7698-4914-9eb7-67f81f7af3f2")
 	)
 	(hierarchical_label "VREG_3V3"
 		(shape input)
