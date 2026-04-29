@@ -184,6 +184,31 @@ void test_forget_ring_surfaces_bond_delete_failure(void)
     TEST_ASSERT_TRUE(mock_ble_central_has_bond(MAC_A));
 }
 
+void test_forget_ring_drops_live_input_even_when_bond_delete_fails(void)
+{
+    reset();
+
+    TEST_ASSERT_EQUAL(ROLE_CURSOR, role_engine_get_role(MAC_A));
+    mock_ble_central_set_connected_ring(0, MAC_A);
+    mock_ble_central_seed_bond(MAC_A);
+    mock_ble_central_inject_delete_bond_failure(HAL_ERR_IO, 1);
+    event_composer_mark_connected(0, ROLE_CURSOR);
+    event_composer_feed(0, 0x01, 7, 4);
+
+    TEST_ASSERT_EQUAL(HAL_ERR_IO, hub_control_forget_ring(MAC_A));
+
+    event_composer_feed(0, 0x01, 9, 9);
+
+    composed_report_t report;
+    event_composer_compose(&report);
+    TEST_ASSERT_EQUAL(0, report.buttons);
+    TEST_ASSERT_EQUAL(0, report.cursor_dx);
+    TEST_ASSERT_EQUAL(0, report.cursor_dy);
+    TEST_ASSERT_EQUAL(1, role_entry_count());
+    TEST_ASSERT_TRUE(mock_ble_central_has_bond(MAC_A));
+    TEST_ASSERT_EQUAL(HAL_ERR_NOT_FOUND, ble_central_find_ring_index_by_mac(MAC_A, &(uint8_t){0}));
+}
+
 void test_set_gesture_persists_and_updates_live_event_composer_cache(void)
 {
     reset();
@@ -258,6 +283,7 @@ void run_hub_control_tests(void)
     RUN_TEST(test_forget_ring_drops_live_input_before_disconnect_completes);
     RUN_TEST(test_forget_ring_rejects_unknown_mac);
     RUN_TEST(test_forget_ring_surfaces_bond_delete_failure);
+    RUN_TEST(test_forget_ring_drops_live_input_even_when_bond_delete_fails);
     RUN_TEST(test_set_gesture_persists_and_updates_live_event_composer_cache);
     RUN_TEST(test_set_hub_setting_persists_and_updates_live_scan_policy);
     RUN_TEST(test_set_hub_setting_does_not_persist_when_live_apply_fails);

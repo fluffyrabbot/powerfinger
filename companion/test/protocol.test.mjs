@@ -15,6 +15,7 @@ import {
     buildSwapRolesCommand,
     parseHubInfoResponse,
     parseGesturesResponse,
+    parseCommandLine,
     parseProtocolResponse,
     parseRingInfoResponse,
     parseRingDiagnosticsResponse,
@@ -90,6 +91,20 @@ test("parseRingInfoResponse extracts ring snapshot", () => {
         connected: true,
         rssiDbm: -62,
         rssiStatus: "ready",
+    });
+});
+
+test("parseRingInfoResponse preserves disconnected RSSI sentinel", () => {
+    const ringInfo = parseRingInfoResponse(
+        "+ mac=AA:BB:CC:DD:EE:01\n+ role=CURSOR\n+ connected=0\n+ rssi_dbm=disconnected\nOK\n",
+    );
+
+    assert.deepEqual(ringInfo, {
+        mac: "AA:BB:CC:DD:EE:01",
+        role: "CURSOR",
+        connected: false,
+        rssiDbm: null,
+        rssiStatus: "disconnected",
     });
 });
 
@@ -226,5 +241,23 @@ test("ring tuning builders reject blank required values", () => {
     assert.throws(
         () => buildSetHubCommand("usb_poll_ms", "3"),
         /1, 2, 4, or 8/i,
+    );
+});
+
+test("parseCommandLine canonicalizes alias commands and trims whitespace", () => {
+    assert.deepEqual(
+        parseCommandLine("  role_swap  aa:bb:cc:dd:ee:01   aa:bb:cc:dd:ee:02  "),
+        {
+            rawName: "role_swap",
+            name: "SWAP_ROLES",
+            args: ["aa:bb:cc:dd:ee:01", "aa:bb:cc:dd:ee:02"],
+        },
+    );
+});
+
+test("parseCommandLine rejects blank commands", () => {
+    assert.throws(
+        () => parseCommandLine("   "),
+        /empty/i,
     );
 });

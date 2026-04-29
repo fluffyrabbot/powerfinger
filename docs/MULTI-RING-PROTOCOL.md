@@ -565,7 +565,8 @@ SET_ROLE <mac> <role>
    `ERR 400 invalid_role` on parse failure.
 2. Call `hub_control_set_role(mac, role)`.
 3. If the MAC is unknown, return `ERR 404 unknown_mac`.
-4. If the live cache update or persistence path fails, return `ERR 500 set_failed`.
+4. If the live cache update or persistence path fails, return
+   `ERR 500 role_write_failed`.
 5. Otherwise return `OK`.
 
 **Postcondition:** NVS updated. If the ring is ACTIVE and the hub also calls
@@ -602,8 +603,8 @@ SWAP_ROLES <mac_a> <mac_b>
 **Procedure:**
 1. Read current roles: `role_a = role_engine_get_role(mac_a)`,
    `role_b = role_engine_get_role(mac_b)`.
-2. Apply both changes under a single mutex acquisition. This requires a new
-   internal function `role_engine_swap(mac_a, mac_b)` that:
+2. Apply both changes under a single mutex acquisition. The current
+   implementation uses `role_engine_swap(mac_a, mac_b)` to:
    a. Acquires the mutex.
    b. Finds both entries.
    c. Swaps their `role` fields.
@@ -619,7 +620,7 @@ the user's intent is a swap, and a momentary state where (e.g.) both rings are
 CURSOR would produce a jarring double-cursor effect. The single-mutex-acquisition
 `role_engine_swap()` eliminates this window.
 
-**New function signature:**
+**Current helper signature:**
 ```c
 hal_status_t role_engine_swap(const uint8_t mac_a[6], const uint8_t mac_b[6]);
 ```
@@ -640,14 +641,16 @@ FORGET_RING <mac>
 - MAC exists in role engine
 
 **Procedure:**
-1. If the ring is currently ACTIVE, disconnect it first (drop the BLE
-   connection via `ble_gap_terminate()`).
-2. Call `role_engine_forget(mac)`.
-3. Return OK.
+1. If the ring is currently ACTIVE, drop its live contribution from the event
+   composer first so no stale button or motion state survives the forget path.
+2. Disconnect the BLE link if the ring is currently connected.
+3. Delete the current public-address bond entry for that MAC.
+4. Call `role_engine_forget(mac)`.
+5. Return OK.
 
-**Postcondition:** Slot freed. NVS updated. If ring was connected, INV-1
-(no stuck buttons) is satisfied by the disconnect handler calling
-`event_composer_ring_disconnected()`.
+**Postcondition:** Slot freed. NVS updated. The live contribution is dropped
+before the asynchronous disconnect completes, so INV-1 (no stuck buttons) does
+not depend on the disconnect callback arriving later.
 
 ---
 

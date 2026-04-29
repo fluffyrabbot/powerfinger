@@ -283,10 +283,13 @@ app is the configuration UI — a luxury, not a requirement. It's how you
 customize, not how you use.
 
 **Pre-hardware status:** The hub now has shared identity strings plus a
-host-tested text command core for `GET_HUB_INFO`, `GET_ROLES`, `GET_RING_INFO`,
-`GET_RING_SETTINGS`, `GET_RING_DIAGNOSTICS`, `GET_GESTURES`, `SET_HUB`,
-`SET_ROLE`, `SWAP_ROLES`, and `FORGET_RING`, so the command contract no longer
-lives only in docs and the core role-mutation paths are already real.
+host-tested text command core for `GET_HUB_INFO`, `GET_ROLES`, `GET_RINGS`,
+`GET_RING_INFO`, `GET_RING_SETTINGS`, `GET_RING_DIAGNOSTICS`,
+`GET_GESTURES`, `SET_RING_DPI`, `SET_RING_DEAD_ZONE_TIME`,
+`SET_RING_DEAD_ZONE_DISTANCE`, `SET_HUB`, `SET_GESTURE`, `SET_ROLE`,
+`SWAP_ROLES`, and `FORGET_RING`, so the command contract no longer lives only
+in docs and the core role-mutation plus ring-inspection paths are already
+real.
 The current forget path assumes the ring's public-address identity mode, which
 matches today's BLE setup. USB CDC transport is now in place; the remaining
 hub-side work is the rest of the command set, broader BLE relay coverage, and

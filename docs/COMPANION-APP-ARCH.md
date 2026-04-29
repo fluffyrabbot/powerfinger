@@ -24,7 +24,9 @@ RSSI, battery / diagnostics inspection, the current shipped gesture subset, and
 the current shipped hub-settings subset for connected rings. The remaining
 deferred work is the rest of the hub command set: OTA and the broader app
 stack. Those items stay deferred until the active ring + hub lane clears its
-Gate 0–4 proof sequence.
+Gate 0–4 proof sequence. The local Web Serial path now also re-reads the
+affected shipped surface after successful writes and modeled manual-console
+commands so bring-up readback does not silently drift from hub state.
 
 **What the app configures:**
 - Role assignment (which ring is cursor, which is scroll, which is modifier)
@@ -32,7 +34,7 @@ Gate 0–4 proof sequence.
 - Dead zone parameters per ring
 - Gesture mapping (currently simultaneous-click triggers with disabled,
   middle-click, back, or forward actions)
-- Hub settings (USB poll rate, ring scan policy)
+- Hub settings (USB poll rate, ring scan policy, expected ring count)
 - Firmware updates (hub via USB serial, rings via BLE OTA through hub)
 
 **What the app does NOT do:**

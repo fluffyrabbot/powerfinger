@@ -93,6 +93,26 @@ export function normalizeInteger(value, label, { min, max }) {
     return numeric;
 }
 
+export function parseCommandLine(commandLine) {
+    if (typeof commandLine !== "string") {
+        throw new TypeError("Command line must be a string.");
+    }
+
+    const trimmed = commandLine.trim();
+    if (!trimmed) {
+        throw new Error("Command cannot be empty.");
+    }
+
+    const [rawName, ...args] = trimmed.split(/\s+/);
+    const uppercaseName = rawName.toUpperCase();
+
+    return {
+        rawName,
+        name: uppercaseName === "ROLE_SWAP" ? "SWAP_ROLES" : uppercaseName,
+        args,
+    };
+}
+
 export function buildSetRoleCommand(mac, role) {
     return `SET_ROLE ${normalizeMac(mac)} ${normalizeRole(role)}`;
 }

@@ -16,6 +16,7 @@ import {
     buildSetRingDpiCommand,
     buildSetRoleCommand,
     buildSwapRolesCommand,
+    parseCommandLine,
     parseGesturesResponse,
     parseHubInfoResponse,
     parseProtocolResponse,
@@ -91,6 +92,14 @@ function setConnectionState(message, tone = "meta-pill-neutral") {
 
 function setResponseStatus(message, tone = "response-status-neutral") {
     setPillState(elements.responseStatus, message, tone);
+}
+
+function formatProtocolError(response) {
+    return `${response.errorCode} ${response.errorMessage}`;
+}
+
+function formatRefreshFailureMessage(actionMessage, error) {
+    return `${actionMessage} Refresh failed: ${error.message}`;
 }
 
 function appendTranscript(direction, line) {
@@ -285,6 +294,128 @@ function describeRssi(ringInfo, connected) {
     return `RSSI ${ringInfo.rssiStatus}.`;
 }
 
+async function syncRolesSnapshot() {
+    await refreshRoles();
+    await refreshConnectedRingInfo();
+}
+
+async function syncKnownCommandState(command, response) {
+    if (!response?.ok) {
+        return;
+    }
+
+    const { name, args } = parseCommandLine(command);
+
+    switch (name) {
+    case "GET_HUB_INFO":
+        state.hubInfo = parseHubInfoResponse(response);
+        renderHubInfo();
+        break;
+
+    case "GET_RINGS":
+        state.roles = parseRingsResponse(response);
+        pruneCachedRingData();
+        renderRoleCards();
+        renderSwapSelectors();
+        break;
+
+    case "GET_RING_INFO": {
+        const ringInfo = parseRingInfoResponse(response);
+        state.ringInfo[ringInfo.mac] = ringInfo;
+        renderRoleCards();
+        break;
+    }
+
+    case "GET_RING_SETTINGS": {
+        const settings = parseRingSettingsResponse(response);
+        state.ringSettings[settings.mac] = settings;
+        renderRoleCards();
+        break;
+    }
+
+    case "GET_RING_DIAGNOSTICS": {
+        const diagnostics = parseRingDiagnosticsResponse(response);
+        state.ringDiagnostics[diagnostics.mac] = diagnostics;
+        renderRoleCards();
+        break;
+    }
+
+    case "GET_GESTURES": {
+        const nextGestures = {};
+        for (const entry of parseGesturesResponse(response)) {
+            nextGestures[entry.triggerId] = entry.actionId;
+        }
+        for (const trigger of SUPPORTED_GESTURE_TRIGGERS) {
+            if (!nextGestures[trigger.id]) {
+                nextGestures[trigger.id] = "0x00";
+            }
+        }
+        state.gestures = nextGestures;
+        renderGestureControls();
+        break;
+    }
+
+    case "SET_HUB":
+        await refreshHubInfo();
+        break;
+
+    case "SET_GESTURE":
+        await refreshGestures();
+        break;
+
+    case "SET_RING_DPI":
+    case "SET_RING_DEAD_ZONE_TIME":
+    case "SET_RING_DEAD_ZONE_DISTANCE":
+        if (args[0]) {
+            await loadRingSettings(args[0], false);
+        }
+        break;
+
+    case "SET_ROLE":
+    case "SWAP_ROLES":
+    case "FORGET_RING":
+        await syncRolesSnapshot();
+        break;
+
+    default:
+        break;
+    }
+}
+
+async function finishSuccessfulAction(successMessage, syncAfterSuccess) {
+    if (!syncAfterSuccess) {
+        setStatusNote(successMessage, "meta-pill-success");
+        return;
+    }
+
+    try {
+        await syncAfterSuccess();
+        setStatusNote(successMessage, "meta-pill-success");
+    } catch (error) {
+        setStatusNote(
+            formatRefreshFailureMessage(successMessage, error),
+            "meta-pill-warning",
+        );
+    }
+}
+
+async function finishPartiallySuccessfulAction(partialMessage, syncAfterSuccess, error) {
+    if (!syncAfterSuccess) {
+        setStatusNote(`${partialMessage} ${error.message}`, "meta-pill-warning");
+        return;
+    }
+
+    try {
+        await syncAfterSuccess();
+        setStatusNote(`${partialMessage} ${error.message}`, "meta-pill-warning");
+    } catch (syncError) {
+        setStatusNote(
+            `${partialMessage} ${error.message}. Refresh failed: ${syncError.message}`,
+            "meta-pill-warning",
+        );
+    }
+}
+
 function renderRoleCards() {
     if (state.roles.length === 0) {
         const message = state.port
@@ -306,7 +437,9 @@ function renderRoleCards() {
             }).join("");
 
             const tuningStatus = settings
-                ? `Loaded live tuning${settings.firmwareVersion ? ` · FW ${settings.firmwareVersion}` : ""}`
+                ? entry.connected
+                    ? `Loaded live tuning${settings.firmwareVersion ? ` · FW ${settings.firmwareVersion}` : ""}`
+                    : `Showing the last live tuning snapshot${settings.firmwareVersion ? ` · FW ${settings.firmwareVersion}` : ""}. Reconnect to confirm or change it.`
                 : entry.connected
                     ? "Load tuning to read the ring's live BLE settings."
                     : "Reconnect this ring to inspect or change tuning.";
@@ -869,14 +1002,18 @@ async function refreshGestures() {
     renderGestureControls();
 }
 
+async function refreshAllSnapshot() {
+    await refreshHubInfo();
+    await refreshRoles();
+    await refreshConnectedRingInfo();
+    await refreshGestures();
+}
+
 async function refreshAll() {
     setBusy(true);
 
     try {
-        await refreshHubInfo();
-        await refreshRoles();
-        await refreshConnectedRingInfo();
-        await refreshGestures();
+        await refreshAllSnapshot();
         setStatusNote("Snapshot refreshed from the hub.", "meta-pill-success");
     } catch (error) {
         setStatusNote(error.message, "meta-pill-danger");
@@ -931,16 +1068,48 @@ async function runCommand(command, successMessage) {
         setLastResponse(response);
 
         if (!response.ok) {
-            throw new Error(`${response.errorCode} ${response.errorMessage}`);
+            throw new Error(formatProtocolError(response));
         }
-
-        if (successMessage) {
-            setStatusNote(successMessage, "meta-pill-success");
-        }
-
-        await refreshAll();
+        await finishSuccessfulAction(successMessage, refreshAllSnapshot);
     } catch (error) {
         setStatusNote(error.message, "meta-pill-danger");
+    } finally {
+        setBusy(false);
+    }
+}
+
+async function runCommandBatch(commands, {
+    successMessage,
+    syncAfterSuccess,
+    partialFailureMessage,
+}) {
+    setBusy(true);
+
+    let appliedCount = 0;
+
+    try {
+        for (const command of commands) {
+            const response = await sendCommand(command);
+            setLastResponse(response);
+
+            if (!response.ok) {
+                throw new Error(formatProtocolError(response));
+            }
+
+            appliedCount += 1;
+        }
+
+        await finishSuccessfulAction(successMessage, syncAfterSuccess);
+    } catch (error) {
+        if (appliedCount > 0) {
+            await finishPartiallySuccessfulAction(
+                partialFailureMessage,
+                syncAfterSuccess,
+                error,
+            );
+        } else {
+            setStatusNote(error.message, "meta-pill-danger");
+        }
     } finally {
         setBusy(false);
     }
@@ -1043,25 +1212,11 @@ async function handleSaveRingSettings(mac) {
         return;
     }
 
-    setBusy(true);
-
-    try {
-        for (const command of commands) {
-            const response = await sendCommand(command);
-            setLastResponse(response);
-
-            if (!response.ok) {
-                throw new Error(`${response.errorCode} ${response.errorMessage}`);
-            }
-        }
-
-        await loadRingSettings(mac, false);
-        setStatusNote(`Saved live tuning for ${mac}.`, "meta-pill-success");
-    } catch (error) {
-        setStatusNote(error.message, "meta-pill-danger");
-    } finally {
-        setBusy(false);
-    }
+    await runCommandBatch(commands, {
+        successMessage: `Saved live tuning for ${mac}.`,
+        syncAfterSuccess: async () => loadRingSettings(mac, false),
+        partialFailureMessage: `One or more tuning writes landed before the error for ${mac}.`,
+    });
 }
 
 async function handleSaveHubSettings(event) {
@@ -1079,25 +1234,11 @@ async function handleSaveHubSettings(event) {
         return;
     }
 
-    setBusy(true);
-
-    try {
-        for (const command of commands) {
-            const response = await sendCommand(command);
-            setLastResponse(response);
-
-            if (!response.ok) {
-                throw new Error(`${response.errorCode} ${response.errorMessage}`);
-            }
-        }
-
-        await refreshAll();
-        setStatusNote("Updated the hub settings.", "meta-pill-success");
-    } catch (error) {
-        setStatusNote(error.message, "meta-pill-danger");
-    } finally {
-        setBusy(false);
-    }
+    await runCommandBatch(commands, {
+        successMessage: "Updated the hub settings.",
+        syncAfterSuccess: refreshAllSnapshot,
+        partialFailureMessage: "Some hub settings may have been applied before the error.",
+    });
 }
 
 async function handleSwap(event) {
@@ -1133,25 +1274,11 @@ async function handleSaveGestures(event) {
         return;
     }
 
-    setBusy(true);
-
-    try {
-        for (const command of commands) {
-            const response = await sendCommand(command);
-            setLastResponse(response);
-
-            if (!response.ok) {
-                throw new Error(`${response.errorCode} ${response.errorMessage}`);
-            }
-        }
-
-        await refreshGestures();
-        setStatusNote("Updated the hub gesture mappings.", "meta-pill-success");
-    } catch (error) {
-        setStatusNote(error.message, "meta-pill-danger");
-    } finally {
-        setBusy(false);
-    }
+    await runCommandBatch(commands, {
+        successMessage: "Updated the hub gesture mappings.",
+        syncAfterSuccess: refreshGestures,
+        partialFailureMessage: "Some gesture mappings may have been applied before the error.",
+    });
 }
 
 async function handleManualCommand(event) {
@@ -1159,14 +1286,17 @@ async function handleManualCommand(event) {
 
     setBusy(true);
     try {
-        const response = await sendCommand(elements.commandInput.value);
+        const command = elements.commandInput.value;
+        const response = await sendCommand(command);
         setLastResponse(response);
 
         if (response.ok) {
-            setStatusNote("Command completed.", "meta-pill-success");
+            await finishSuccessfulAction("Command completed.", async () => {
+                await syncKnownCommandState(command, response);
+            });
         } else {
             setStatusNote(
-                `Hub returned ${response.errorCode} ${response.errorMessage}.`,
+                `Hub returned ${formatProtocolError(response)}.`,
                 "meta-pill-warning",
             );
         }
