@@ -4,4 +4,6 @@
 	(lib (name "Battery_Management") (type "KiCad") (uri "${KICAD10_SYMBOL_DIR}/Battery_Management.kicad_sym") (options "") (descr "Battery management ICs (TP4054 via MCP73831-2-OT shape)"))
 	(lib (name "Regulator_Linear") (type "KiCad") (uri "${KICAD10_SYMBOL_DIR}/Regulator_Linear.kicad_sym") (options "") (descr "Linear regulators (RT9080-33GJ5 via AP2112K-3.3 shape)"))
 	(lib (name "power") (type "KiCad") (uri "${KICAD10_SYMBOL_DIR}/power.kicad_sym") (options "") (descr "Power flags and ground references"))
+	(lib (name "Connector") (type "KiCad") (uri "${KICAD10_SYMBOL_DIR}/Connector.kicad_sym") (options "") (descr "Connector symbols (USB-C 16P receptacle)"))
+	(lib (name "Power_Protection") (type "KiCad") (uri "${KICAD10_SYMBOL_DIR}/Power_Protection.kicad_sym") (options "") (descr "ESD/surge protection (USBLC6 array)"))
 )
