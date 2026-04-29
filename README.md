@@ -201,6 +201,16 @@ scripts/serve-companion-local.sh
 Then open `http://127.0.0.1:4173` in Chrome or Edge and connect to the hub over
 Web Serial.
 
+For hardware CAD work on macOS, prefer the current OpenSCAD snapshot cask:
+
+```bash
+brew install --cask openscad@snapshot
+```
+
+The executable remains `openscad` on `PATH`. Avoid relying on the legacy
+`brew install openscad` cask path; Homebrew currently marks that older cask as
+deprecated while the snapshot cask tracks the current upstream builds.
+
 See [docs/ACTIVE-LANE-CHECKLIST.md](docs/ACTIVE-LANE-CHECKLIST.md) for the
 canonical active-lane checklist, [docs/FIRMWARE-VERIFY-LOCAL.md](docs/FIRMWARE-VERIFY-LOCAL.md)
 for the local verification flow, [docs/PROTOTYPE-SPEC.md](docs/PROTOTYPE-SPEC.md)

@@ -43,6 +43,16 @@ Active-lane packets may also include:
 - `kicad/` — schematic-capture and placement inputs for KiCad work
 - `cad/` — editable OpenSCAD source for first-pass mechanical envelopes
 
+## CAD Tooling Note
+
+- On macOS, prefer `brew install --cask openscad@snapshot` for local CAD sanity
+  checks and exports.
+- The installed CLI remains `openscad`, so packet notes and local scripts should
+  keep calling `openscad`.
+- Do not rely on the legacy `openscad` Homebrew cask staying healthy; Homebrew
+  currently treats that older cask as deprecated while the snapshot cask tracks
+  current upstream builds.
+
 ## Non-Negotiables
 
 - Every design drop must include assembly and disassembly instructions.
