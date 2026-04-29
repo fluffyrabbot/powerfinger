@@ -36,6 +36,15 @@ This checklist is the execution contract for the active hub hardware lane.
   `TP1`-`TP9` row and `SW1`
 - [x] Make adjacent-port and insertion/removal constraints explicit in CAD
   with host-face, shoulder, and neighboring-port reference gauges
+- [x] Add quick-print CAD export modes for the USB-A shoulder / adjacent-port
+  host-fit coupon, `MH1` / `MH2` clamp alignment gauge, and service-hatch reach
+  gauge
+- [ ] Print and check the `host_fit_coupon` against real host ports for USB-A
+  shoulder seating and wider-body adjacent-port clearance
+- [ ] Print and check the `clamp_alignment_gauge` against a board or board
+  blank before relying on `MH1` / `MH2` clamp hardware
+- [ ] Print and check the `service_hatch_reach_gauge` against probe/spudger
+  access to the service row and hatch notch
 - [ ] Confirm the printed enclosure retention does not block normal host
   insertion/removal
 - [ ] Confirm the wider body behind the narrow USB-A nose clears adjacent ports
@@ -47,4 +56,5 @@ This checklist is the execution contract for the active hub hardware lane.
 - [ ] Link assembled board / enclosure observations from `MANIFEST.md`
 - [x] Keep the packet honest that this is a board-source pass, not measured
   mechanical evidence
-- [x] Run a local OpenSCAD sanity render for the enclosure source
+- [x] Run local OpenSCAD sanity renders for the enclosure source and
+  quick-print validation modes

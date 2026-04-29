@@ -8,7 +8,8 @@
 - Lane: active validation-lane accessory
 - Publication state: BOM-backed hardware packet plus footprint-backed KiCad
   first-board pass and first mechanical enclosure packet for the direct-plug
-  native-USB hub
+  native-USB hub, now with quick-print host-fit and serviceability validation
+  coupons
 - BOM source: [hardware/bom/USB-HUB.csv](../../bom/USB-HUB.csv)
 - BOM target: `~$5-6` at prototype scale
 - Source skeletons:
@@ -59,11 +60,15 @@ dongle that composes multiple PowerFinger devices into one USB HID mouse.
   antenna keep-out represented
 - `cad/usb_hub_enclosure_blank.scad` — first reopenable enclosure packet with
   stepped outline, `MH1` / `MH2` clamp bosses, removable service hatch, rear
-  antenna reference volume, and host-clearance gauges
+  antenna reference volume, host-clearance gauges, and quick-print export modes
+  for the host-fit coupon, clamp alignment gauge, service-hatch reach gauge,
+  and combined validation set
 
 ## Missing Artifacts
 
-- Printed fit validation for the enclosure packet
+- Printed fit validation for the full enclosure packet
+- Printed quick-coupon observations for the USB-A shoulder, wider-body
+  adjacent-port envelope, `MH1` / `MH2` alignment, and service-hatch reach
 - Measured host-port clearance for the stepped USB-A direct-plug body
 - Measured connector strain and enclosure-retention observations
 
@@ -80,6 +85,8 @@ dongle that composes multiple PowerFinger devices into one USB HID mouse.
 - ESP32-S3 antenna zone remains clear of copper and metal enclosure features
 - Adjacent-port clearance is checked with the stepped USB-A nose and wider body,
   not assumed from the schematic
+- Quick-print coupon results are recorded before committing to a full enclosure
+  print
 - Record direct-plug mechanical evidence in
   [CONNECTOR-RETENTION-VERIFY.md](CONNECTOR-RETENTION-VERIFY.md) before
   starting secondary hardware work

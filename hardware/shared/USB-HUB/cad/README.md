@@ -1,36 +1,74 @@
 <!-- SPDX-License-Identifier: CERN-OHL-S-2.0 -->
-# USB-HUB CAD Skeleton
+# USB-HUB CAD Packet
 
 This directory contains the first editable enclosure source for the active hub
 accessory lane.
 
-`usb_hub_enclosure_blank.scad` is a serviceable enclosure blank. It creates a
-simple top/bottom shell pair around a board envelope and a USB opening. It does
-not claim the final fit, connector style, or strain-relief geometry is done.
+`usb_hub_enclosure_blank.scad` is now the first mechanical packet for the
+stepped direct-plug board in `../kicad/usb_hub.kicad_pcb`. It models a
+reopenable top/bottom shell pair, removable service hatch, shell-clamp bosses,
+host-fit reference gauges, and quick-print validation coupons. It still does
+not claim printed fit, connector strain, or adjacent-port clearance has been
+measured.
 
 ## Inputs Exposed Today
 
 - PCB envelope; the KiCad pass now uses a stepped `54 x 26 mm` board with a
   USB-A nose widened enough to carry the SOFNG USB-05 shell-tab pads
+- `MH1` / `MH2` shell-clamp hole locations copied from the board source
+- service window over the `TP1`-`TP9` row plus the `SW1` pad-actuated
+  `BOOT_N` service footprint
+- rear ESP32-S3 antenna keep-out shown as a plastic-only reference volume
+- host insertion shoulder and adjacent-port reference gauges
+- quick-print export modes for the USB-A shoulder / adjacent-port coupon,
+  `MH1` / `MH2` clamp alignment gauge, and service-hatch reach gauge
 - wall thickness and clearances
-- connector opening size
-- top/bottom shell split and exploded-view spacing
+- top/bottom shell split, removable hatch, and exploded-view spacing
 
 ## What The Model Intentionally Does
 
-- Establish an editable source file for the hub enclosure
-- Keep the enclosure reopenable instead of assuming heat-shrink or potting
-- Reserve explicit space for connector support and module height
+- Follows the stepped board outline instead of the older rectangular envelope
+- Keeps printed shell material from protruding in front of the USB-A host face
+- Uses two serviceable clamp points aligned to `MH1` / `MH2`; the intended
+  low-cost hardware path is removable small screws or an equivalent reversible
+  fastener, not adhesive, heat-shrink, potting, or brass inserts
+- Keeps `EN`, `BOOT_N`, UART, power, ground, and trace-inspection pads reachable
+  through a removable hatch
+- Makes adjacent-port and insertion/removal constraints visible with reference
+  gauges instead of treating them as implied pass conditions
+- Provides a `host_fit_coupon` mode for cheaply checking the USB-A nose shoulder
+  and wider-body adjacent-port envelope before printing the full shell
+- Provides a `clamp_alignment_gauge` mode for checking whether `MH1` / `MH2`
+  and the printed clamp path line up with the board or board blank
+- Provides a `service_hatch_reach_gauge` mode for checking probe/spudger access
+  to the service row and removable hatch outline
 
 ## What Still Needs Real Validation
 
-- Carry `MH1` / `MH2` shell-clamp holes from `../kicad/usb_hub.kicad_pcb` into
-  the printed shell so connector strain does not rely only on solder
+- Print fit against a real board or board blank before claiming the shell is
+  fabrication-ready
+- Confirm `MH1` / `MH2` clamp hardware carries insertion/removal load without
+  cracking the printed bosses or bowing the PCB
 - Keep the rear ESP32-S3 antenna zone plastic-only; do not add brass inserts,
   metal labels, screws, or copper-backed decoration near the antenna end
-- Preserve a service seam or removable hatch over the pad row for `EN`,
-  `BOOT_N`, UART0, USB, power, and ground access
-- Verify host-port interference with the narrow USB-A nose and wider body
+- Confirm the service hatch can be opened with a non-marring tool and that the
+  pads remain probeable without pulling on the USB connector
+- Verify host-port interference with real adjacent USB-A ports; the CAD gauges
+  make the constraint explicit but do not prove clearance
+- Print the quick coupons and record whether the USB-A shoulder, adjacent-port
+  body width, clamp holes, and service hatch reach pass on actual hardware
+
+## Local Sanity Check
+
+Render syntax/manifold checks from `hardware/shared/USB-HUB`:
+
+```sh
+openscad -o /tmp/powerfinger-usb-hub-enclosure.stl cad/usb_hub_enclosure_blank.scad
+openscad -D 'export_mode="validation_set"' -o /tmp/powerfinger-usb-hub-validation-set.stl cad/usb_hub_enclosure_blank.scad
+openscad -D 'export_mode="host_fit_coupon"' -o /tmp/powerfinger-usb-hub-host-fit-coupon.stl cad/usb_hub_enclosure_blank.scad
+openscad -D 'export_mode="clamp_alignment_gauge"' -o /tmp/powerfinger-usb-hub-clamp-gauge.stl cad/usb_hub_enclosure_blank.scad
+openscad -D 'export_mode="service_hatch_reach_gauge"' -o /tmp/powerfinger-usb-hub-service-gauge.stl cad/usb_hub_enclosure_blank.scad
+```
 
 Use [../FIRST-BOARD-CHECKLIST.md](../FIRST-BOARD-CHECKLIST.md) and
 [../CONNECTOR-RETENTION-VERIFY.md](../CONNECTOR-RETENTION-VERIFY.md) as the
