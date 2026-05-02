@@ -89,7 +89,7 @@
 			(outputdirectory "")
 		)
 	)
-	(footprint "Package_TO_SOT_SMD:SOT-23-5"
+	(footprint "PowerFinger_USB:SOT-23-5_FirstBoard"
 		(layer "F.Cu")
 		(uuid "149d4af0-b280-4ce6-a53e-93fee8d838ef")
 		(at 19 20)
@@ -198,7 +198,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "Capacitor_SMD:C_0402_1005Metric"
+	(footprint "PowerFinger_USB:C_0402_1005Metric_FirstBoard"
 		(layer "F.Cu")
 		(uuid "198d5491-9996-45aa-9130-77e45c3b81e1")
 		(at 22.5 17.4)
@@ -267,7 +267,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "TestPoint:TestPoint_Pad_D1.0mm"
+	(footprint "PowerFinger_USB:TestPoint_Pad_D1.0mm_FirstBoard"
 		(layer "F.Cu")
 		(uuid "31f0f086-6257-43c7-bf62-9588aad7c38d")
 		(at 33 24.2)
@@ -326,7 +326,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "TestPoint:TestPoint_Pad_D1.0mm"
+	(footprint "PowerFinger_USB:TestPoint_Pad_D1.0mm_FirstBoard"
 		(layer "F.Cu")
 		(uuid "3e127750-f02e-4c8f-a5f1-f0b9e6a748d9")
 		(at 24 24.2)
@@ -386,7 +386,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "Resistor_SMD:R_0402_1005Metric"
+	(footprint "PowerFinger_USB:R_0402_1005Metric_FirstBoard"
 		(layer "F.Cu")
 		(uuid "4ecf74d6-05d4-41ef-a07b-e536f098033e")
 		(at 24.4 13.85)
@@ -465,7 +465,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "MountingHole:MountingHole_1.4mm"
+	(footprint "PowerFinger_USB:MountingHole_1.4mm_Clamp"
 		(layer "F.Cu")
 		(uuid "5cc6b2e3-176c-413d-a30c-7319f48ce4ae")
 		(at 15.6 19.4)
@@ -524,7 +524,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "Capacitor_SMD:C_0603_1608Metric"
+	(footprint "PowerFinger_USB:C_0603_1608Metric_FirstBoard"
 		(layer "F.Cu")
 		(uuid "7c975f31-cc7f-485a-a1d6-329298fa0e80")
 		(at 18.2 22.6 180)
@@ -593,7 +593,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "Capacitor_SMD:C_0402_1005Metric"
+	(footprint "PowerFinger_USB:C_0402_1005Metric_FirstBoard"
 		(layer "F.Cu")
 		(uuid "8131f351-0159-4fe6-a363-1beca4853ea2")
 		(at 22 15.6)
@@ -659,7 +659,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "LED_SMD:LED_0402_1005Metric"
+	(footprint "PowerFinger_USB:LED_0402_1005Metric_FirstBoard"
 		(layer "F.Cu")
 		(uuid "9d1e12a8-d009-4e00-81f5-d4d2ae21a3aa")
 		(at 28.8 22.4)
@@ -727,7 +727,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "Capacitor_SMD:C_0402_1005Metric"
+	(footprint "PowerFinger_USB:C_0402_1005Metric_FirstBoard"
 		(layer "F.Cu")
 		(uuid "a1e84172-c0a6-472e-9279-32d80a32bb75")
 		(at 22 10.4)
@@ -793,7 +793,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "TestPoint:TestPoint_Pad_D1.0mm"
+	(footprint "PowerFinger_USB:TestPoint_Pad_D1.0mm_FirstBoard"
 		(layer "F.Cu")
 		(uuid "a2ace0b0-b108-4bd0-8e79-487f3a81d2e0")
 		(at 18 24.2)
@@ -1066,7 +1066,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "Package_TO_SOT_SMD:SOT-23-6"
+	(footprint "PowerFinger_USB:SOT-23-6_FirstBoard"
 		(layer "F.Cu")
 		(uuid "b0661fc0-7ec9-4266-ae14-f3399827cacf")
 		(at 16 13 180)
@@ -1183,7 +1183,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "Capacitor_SMD:C_0402_1005Metric"
+	(footprint "PowerFinger_USB:C_0402_1005Metric_FirstBoard"
 		(layer "F.Cu")
 		(uuid "b124cf4d-2f41-4d17-a70f-4d95d483166a")
 		(at 44 23.4)
@@ -1252,7 +1252,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "Resistor_SMD:R_0402_1005Metric"
+	(footprint "PowerFinger_USB:R_0402_1005Metric_FirstBoard"
 		(layer "F.Cu")
 		(uuid "b418480b-c127-4871-b5fb-42b9bb2e8b3a")
 		(at 30.8 22.4)
@@ -1320,7 +1320,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "TestPoint:TestPoint_Pad_D1.0mm"
+	(footprint "PowerFinger_USB:TestPoint_Pad_D1.0mm_FirstBoard"
 		(layer "F.Cu")
 		(uuid "b4e03f82-bbbd-4a26-92c8-008cbbb609e7")
 		(at 36 24.2)
@@ -1379,7 +1379,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "TestPoint:TestPoint_Pad_D1.0mm"
+	(footprint "PowerFinger_USB:TestPoint_Pad_D1.0mm_FirstBoard"
 		(layer "F.Cu")
 		(uuid "b50ae3cb-c879-4754-a43f-e5424eec2f4e")
 		(at 39 24.2)
@@ -1438,7 +1438,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "Capacitor_SMD:C_0402_1005Metric"
+	(footprint "PowerFinger_USB:C_0402_1005Metric_FirstBoard"
 		(layer "F.Cu")
 		(uuid "c3a3586d-9e73-4d9d-a7fa-8dcfb6dda44d")
 		(at 39.8 7.8)
@@ -1507,7 +1507,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "Resistor_SMD:R_0402_1005Metric"
+	(footprint "PowerFinger_USB:R_0402_1005Metric_FirstBoard"
 		(layer "F.Cu")
 		(uuid "d19ca882-863b-491b-baa5-8353e338f7ba")
 		(at 24.4 13)
@@ -1586,7 +1586,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "TestPoint:TestPoint_Pad_D1.0mm"
+	(footprint "PowerFinger_USB:TestPoint_Pad_D1.0mm_FirstBoard"
 		(layer "F.Cu")
 		(uuid "d5880ef6-b8de-4641-b0d6-344a489f1786")
 		(at 42 24.2)
@@ -1645,7 +1645,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "Capacitor_SMD:C_0603_1608Metric"
+	(footprint "PowerFinger_USB:C_0603_1608Metric_FirstBoard"
 		(layer "F.Cu")
 		(uuid "d8e21b15-c31c-4dec-83cb-0b4d1c8ea563")
 		(at 21.7 19 180)
@@ -1714,7 +1714,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "TestPoint:TestPoint_Pad_D1.0mm"
+	(footprint "PowerFinger_USB:TestPoint_Pad_D1.0mm_FirstBoard"
 		(layer "F.Cu")
 		(uuid "d9132df0-2168-4f9f-8116-86a58d873b06")
 		(at 30 24.2)
@@ -1772,7 +1772,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "TestPoint:TestPoint_Pad_D1.0mm"
+	(footprint "PowerFinger_USB:TestPoint_Pad_D1.0mm_FirstBoard"
 		(layer "F.Cu")
 		(uuid "da503d0f-a07c-4b18-b5e7-915d0c3301d2")
 		(at 21 24.2)
@@ -1831,7 +1831,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "TestPoint:TestPoint_Pad_D1.0mm"
+	(footprint "PowerFinger_USB:TestPoint_Pad_D1.0mm_FirstBoard"
 		(layer "F.Cu")
 		(uuid "dd45f34e-aa77-4c36-82d8-6a56c312bbb6")
 		(at 27 24.2)
@@ -1889,7 +1889,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "Resistor_SMD:R_0402_1005Metric"
+	(footprint "PowerFinger_USB:R_0402_1005Metric_FirstBoard"
 		(layer "F.Cu")
 		(uuid "e8524e46-7d20-46bc-b9c3-112d00df9ac2")
 		(at 44 22.2)
@@ -1957,7 +1957,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "MountingHole:MountingHole_1.4mm"
+	(footprint "PowerFinger_USB:MountingHole_1.4mm_Clamp"
 		(layer "F.Cu")
 		(uuid "e8f89b6e-908c-4aba-ba26-6bf7dedc7679")
 		(at 15.6 6.6)

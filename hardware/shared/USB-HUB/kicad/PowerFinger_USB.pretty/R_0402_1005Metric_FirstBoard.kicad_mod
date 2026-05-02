@@ -1,0 +1,30 @@
+(footprint "R_0402_1005Metric_FirstBoard" (version 20240108) (generator "powerfinger_provenance_cleanup")
+  (layer "F.Cu")
+  (descr "0402 resistor first-board local footprint")
+  (tags "Generic 0402 resistor land pattern; exact LCSC selected at fab review")
+  (property "Reference" "REF**"
+    (at 0 -1.4 0)
+    (layer "F.Fab")
+    (effects (font (size 0.8 0.8) (thickness 0.1)))
+  )
+  (property "Value" "R_0402_1005Metric_FirstBoard"
+    (at 0 1.4 0)
+    (layer "F.Fab")
+    (effects (font (size 0.8 0.8) (thickness 0.1)))
+  )
+  (attr smd)
+
+  (pad "1" smd roundrect
+  	(at -0.5 0)
+  	(size 0.55 0.6)
+  	(layers "F.Cu" "F.Mask" "F.Paste")
+  	(roundrect_rratio 0.2)
+  )
+
+  (pad "2" smd roundrect
+  	(at 0.5 0)
+  	(size 0.55 0.6)
+  	(layers "F.Cu" "F.Mask" "F.Paste")
+  	(roundrect_rratio 0.2)
+  )
+)

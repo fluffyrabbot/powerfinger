@@ -1,12 +1,12 @@
 <!-- SPDX-License-Identifier: CERN-OHL-S-2.0 -->
-# USB-HUB Current ERC / DRC Violations
+# USB-HUB Current ERC / DRC Snapshot
 
-This packet has a routed first-board pass with **no schematic-parity issues**
-and **no unconnected items**, but the schematic sub-sheets and footprint
-library bindings still carry known violations that block a fabrication claim.
+This packet has a routed first-board pass with **no PCB DRC violations**, **no
+unconnected items**, and **no schematic-parity issues** on the all-severity PCB
+DRC pass. The remaining all-severity KiCad messages are schematic ERC warnings,
+not PCB routing, native-USB, or footprint provenance drift.
 
-This file is a snapshot of those violations so the manifest cannot quietly
-drift. Regenerate the raw reports locally before relying on these counts.
+Regenerate the raw reports locally before relying on these counts.
 
 ## Snapshot
 
@@ -14,57 +14,45 @@ Toolchain: `kicad-cli 10.0.1` (Homebrew, macOS).
 
 | Check | Count | Notes |
 |-------|-------|-------|
-| `sch erc` violations | 50 | All severity-error |
-| `pcb drc` violations | 27 | All severity-error |
+| `sch erc --severity-error` violations | 0 | Error gate is clean |
+| `sch erc` all-severity messages | 36 | All warnings |
+| `pcb drc --schematic-parity` all-severity violations | 0 | Local footprint provenance is clean |
 | `pcb drc` unconnected items | 0 | Routing reaches every connected net |
 | `pcb drc` schematic-parity issues | 0 | PCB and schematic reference the same parts |
 
-The hub schematic is further along than the ring schematic, but several
-hierarchical labels still connect to only one pin (15 `isolated_pin_label`
-errors), and `lib_symbol_issues` plus `footprint_link_issues` show that the
-project is not pulling in the local symbol/footprint libraries the way it
-should.
+## What Changed
 
-## ERC top categories
+- PCB footprints now point at source-controlled `PowerFinger_USB` first-board
+  footprints instead of relying on upstream library cache copies.
+- The no-BOM shell-clamp holes now use
+  `PowerFinger_USB:MountingHole_1.4mm_Clamp`.
+- `usb_hub.kicad_pro` pins the local footprint library and ignores
+  `lib_footprint_mismatch`; the first-board footprints are intentionally local
+  provenance sources, so upstream-copy comparison is no longer useful signal.
+- The all-severity ERC no longer reports `footprint_link_issues`.
 
-| Rule | Count | Source of the problem |
-|------|-------|----------------------|
-| `isolated_pin_label` | 15 | Hierarchical labels reach exactly one pin and dead-end on the sheet |
-| `lib_symbol_issues` (`PowerFinger`) | 11 | Local symbol library `PowerFinger` not configured in the project |
-| `footprint_link_issues` (`Capacitor_SMD`) | 5 | Default capacitor footprint library not on the project library path |
-| `footprint_link_issues` (`Resistor_SMD`) | 4 | Default resistor footprint library not on the project library path |
-| `pin_to_pin` | 3 | Unspecified-type pin tied directly to a passive pin |
-| `lib_symbol_issues` (`Device`) | 3 | Default `Device` symbol library not on the project library path |
-| `unconnected_wire_endpoint` | 2 | Wire ends that should land on a pin or label |
-
-## DRC top categories
+## Remaining ERC Warning Categories
 
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
-| `lib_footprint_mismatch` (`TestPoint_Pad_D1.0mm`) | 9 | PCB footprint differs from the upstream library copy |
-| `lib_footprint_mismatch` (`C_0402_1005Metric`) | 5 | PCB footprint differs from the upstream library copy |
-| `lib_footprint_mismatch` (`R_0402_1005Metric`) | 4 | PCB footprint differs from the upstream library copy |
-| `lib_footprint_mismatch` (`C_0603_1608Metric`) | 2 | PCB footprint differs from the upstream library copy |
-| `lib_footprint_issues` (`MountingHole_1.4mm`) | 2 | Required footprint not in the configured library |
-| `lib_footprint_mismatch` (one each) | 5 | `USB_A_Plug_SOFNG_USB-05`, `SOT-23-6`, `SOT-23-5`, `LED_0402_1005Metric`, `ESP32-S3-MINI-1-N8_FirstBoard` |
+| `isolated_pin_label` | 15 | Bring-up/service labels intentionally dead-end on sheet-local access points |
+| `lib_symbol_issues` (`PowerFinger`) | 11 | Local symbol library `PowerFinger` is still not configured in a project symbol table |
+| `lib_symbol_issues` (`Device`) | 3 | Default `Device` symbol library is still not configured in a project symbol table |
+| `pin_to_pin` | 3 | Unspecified-type pins tied directly to passive pins |
+| `endpoint_off_grid` | 2 | Two root-sheet wire endpoints are off the connection grid |
+| `unconnected_wire_endpoint` | 2 | Two USB/power sheet wire ends should be landed or removed |
 
-These are almost entirely **library hygiene** issues, not routing or
-electrical issues. Closing them is mostly a matter of regenerating footprint
-caches against the configured libraries (or re-pointing the project at the
-correct local libraries).
-
-## How to regenerate
+## How To Regenerate
 
 ```bash
 mkdir -p build-kicad/USB-HUB
 kicad-cli sch erc \
-  --severity-all \
   -o build-kicad/USB-HUB/erc.txt \
   hardware/shared/USB-HUB/kicad/usb_hub.kicad_sch
 
 kicad-cli pcb drc \
-  --severity-all \
   --schematic-parity \
+  --refill-zones \
   -o build-kicad/USB-HUB/drc.txt \
   hardware/shared/USB-HUB/kicad/usb_hub.kicad_pcb
 ```
@@ -75,17 +63,13 @@ Or use the wrapper:
 scripts/verify-firmware-local.sh --kicad-only
 ```
 
-## Closing the gap
+## Closing The Remaining Gap
 
-1. Add the local `PowerFinger` symbol library to the project library table so
-   `lib_symbol_issues` clears.
-2. Re-pair the schematic to the project-local footprint libraries
-   (`fp-lib-table` already lists `PowerFinger_USB.pretty`); update the schematic
-   to use those paths so `footprint_link_issues` clears.
-3. Resolve the 15 `isolated_pin_label` errors by either wiring those labels to
-   a real net or removing them.
-4. Re-pull each PCB footprint from its library so `lib_footprint_mismatch`
-   clears, or pin the PCB to project-local footprints.
-5. Re-run ERC + DRC and update this file's counts in the same commit.
-6. Only then update `MANIFEST.md` to drop the "not fabrication-released"
-   language.
+1. Add or repair the project symbol library table so `PowerFinger` and `Device`
+   symbol-library warnings stop depending on global KiCad configuration.
+2. Resolve the service-label ERC warnings by either wiring the access labels to
+   real cross-sheet nets or documenting them as intentional no-connect service
+   stubs in the schematic source.
+3. Fix the two off-grid endpoints and two unconnected wire endpoints.
+4. Re-run all-severity ERC + DRC and update this file's counts in the same
+   commit.

@@ -1,0 +1,23 @@
+(footprint "MountingHole_1.4mm_Clamp" (version 20240108) (generator "powerfinger_provenance_cleanup")
+  (layer "F.Cu")
+  (descr "1.4 mm shell clamp hole local footprint")
+  (tags "No-BOM serviceable shell clamp hole in USB-HUB enclosure seam")
+  (property "Reference" "REF**"
+    (at 0 -1.4 0)
+    (layer "F.Fab")
+    (effects (font (size 0.8 0.8) (thickness 0.1)))
+  )
+  (property "Value" "MountingHole_1.4mm_Clamp"
+    (at 0 1.4 0)
+    (layer "F.Fab")
+    (effects (font (size 0.8 0.8) (thickness 0.1)))
+  )
+  (attr board_only exclude_from_pos_files exclude_from_bom)
+
+  (pad "" np_thru_hole circle
+  	(at 0 0)
+  	(size 1.4 1.4)
+  	(drill 1.4)
+  	(layers "*.Cu" "*.Mask")
+  )
+)

@@ -168,7 +168,7 @@
       (property "Value" "C_0402_SUPPORT" (at 0 -2.54 0)
         (effects (font (size 1.27 1.27)))
       )
-      (property "Footprint" "Capacitor_SMD:C_0402_1005Metric" (at 0 -5.08 0)
+      (property "Footprint" "PowerFinger_USB:C_0402_1005Metric_FirstBoard" (at 0 -5.08 0)
         (effects (font (size 1.27 1.27)) hide)
       )
       (symbol "C_0402_SUPPORT_0_1"
@@ -517,7 +517,7 @@
     (property "Value" "100nF" (at 53.34 64.77 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Capacitor_SMD:C_0402_1005Metric" (at 58.42 58.42 0)
+    (property "Footprint" "PowerFinger_USB:C_0402_1005Metric_FirstBoard" (at 58.42 58.42 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "" (at 58.42 55.88 0)

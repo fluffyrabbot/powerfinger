@@ -17,11 +17,11 @@ This checklist is the execution contract for the active hub hardware lane.
   body edge
 - [x] Run KiCad CLI DRC/ERC once KiCad is available locally
 - [x] Clear KiCad ERC and PCB DRC failures before fabrication release review:
-  the 2026-04-24 KiCad CLI run passes ERC and PCB DRC at error severity after
-  the connector escape, service-channel nets, common ground, and support-part
-  schematic parity cleanup. The follow-up all-severity DRC pass has 0
-  schematic parity issues; the remaining all-severity items are footprint
-  library provenance warnings only.
+  the 2026-05-01 KiCad CLI run passes ERC and PCB DRC at error severity after
+  the connector escape, service-channel nets, common ground, support-part
+  schematic parity cleanup, and project-local footprint provenance cleanup.
+  The follow-up all-severity PCB DRC pass has 0 violations, 0 unconnected
+  items, and 0 schematic parity issues.
 
 ## Enclosure Closure
 

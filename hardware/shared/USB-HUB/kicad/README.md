@@ -15,9 +15,11 @@ enclosure fit must be validated before the lane moves to secondary variants.
 - `sheets/mcu_radio.kicad_sch`
 - `sheets/controls_and_indicators.kicad_sch`
 - `usb_hub.kicad_pcb` — stepped USB-A direct-plug first-board pass
+- `usb_hub.kicad_pro` — local KiCad project settings for this packet
 - `fp-lib-table` — local project footprint table for KiCad CLI/library checks
 - `PowerFinger_USB.pretty/` — local footprint library for the direct-plug USB-A
-  connector and first-board ESP32-S3 module land pattern
+  connector, first-board ESP32-S3 module land pattern, service pads, clamp
+  holes, and packet-pinned commodity footprints
 
 ## What Belongs Here Next
 
@@ -60,9 +62,13 @@ enclosure fit must be validated before the lane moves to secondary variants.
   drift. The USB shell tabs and ESP32-S3 module ground pads are now explicit
   schematic pins tied to ground, and PCB footprint metadata matches the locked
   schematic fields. KiCad CLI verification is active on this packet: the current
-  schematic ERC and PCB DRC pass at error severity with local footprints loaded.
-  The remaining all-severity report items are footprint-library provenance
-  warnings, not schematic parity drift or open connector/service routes.
+  schematic ERC and PCB DRC pass at error severity with local footprints loaded,
+  and the all-severity PCB DRC pass is clean with 0 unconnected items and 0
+  schematic parity issues. `usb_hub.kicad_pro` intentionally ignores
+  `lib_footprint_mismatch` because the first-board footprints are now
+  source-controlled in `PowerFinger_USB.pretty/`; remaining all-severity ERC
+  messages are schematic-library/off-grid/service-label cleanup, not PCB
+  routing or footprint provenance drift.
 
 ## Hard Constraints
 

@@ -1,0 +1,46 @@
+(footprint "SOT-23-5_FirstBoard" (version 20240108) (generator "powerfinger_provenance_cleanup")
+  (layer "F.Cu")
+  (descr "RT9080 SOT-23-5 first-board local footprint")
+  (tags "Richtek RT9080-33GJ5 C882092 regulator local land pattern")
+  (property "Reference" "REF**"
+    (at 0 -1.4 0)
+    (layer "F.Fab")
+    (effects (font (size 0.8 0.8) (thickness 0.1)))
+  )
+  (property "Value" "SOT-23-5_FirstBoard"
+    (at 0 1.4 0)
+    (layer "F.Fab")
+    (effects (font (size 0.8 0.8) (thickness 0.1)))
+  )
+  (attr smd)
+
+  (pad "1" smd rect
+  	(at -1.1 -0.95)
+  	(size 0.65 0.45)
+  	(layers "F.Cu" "F.Mask" "F.Paste")
+  )
+
+  (pad "2" smd rect
+  	(at -1.1 0)
+  	(size 0.65 0.45)
+  	(layers "F.Cu" "F.Mask" "F.Paste")
+  )
+
+  (pad "3" smd rect
+  	(at -1.1 0.95)
+  	(size 0.65 0.45)
+  	(layers "F.Cu" "F.Mask" "F.Paste")
+  )
+
+  (pad "4" smd rect
+  	(at 1.1 0.5)
+  	(size 0.65 0.45)
+  	(layers "F.Cu" "F.Mask" "F.Paste")
+  )
+
+  (pad "5" smd rect
+  	(at 1.1 -0.5)
+  	(size 0.65 0.45)
+  	(layers "F.Cu" "F.Mask" "F.Paste")
+  )
+)
