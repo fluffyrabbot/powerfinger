@@ -17,6 +17,7 @@ This is the canonical checklist for the current PowerFinger program.
 
 - Ring packet: [hardware/ring/R30-OLED-NONE-NONE/MANIFEST.md](../hardware/ring/R30-OLED-NONE-NONE/MANIFEST.md)
 - Hub packet: [hardware/shared/USB-HUB/MANIFEST.md](../hardware/shared/USB-HUB/MANIFEST.md)
+- Driver/hardware contract: [DRIVER-HARDWARE-CONTRACT.md](DRIVER-HARDWARE-CONTRACT.md)
 - Local verification flow: [FIRMWARE-VERIFY-LOCAL.md](FIRMWARE-VERIFY-LOCAL.md)
 - Gate order and pass/fail rules: [GO-NO-GO-RUBRIC.md](GO-NO-GO-RUBRIC.md)
 
@@ -47,6 +48,9 @@ by default.
 ### Gate 1 — Single-Ring Human Control Loop
 
 - Prove browse, click, double-click, drag, and text-selection tasks with one ring
+- Check the PAW3204, lens/focal stack, and dome rows in
+  [DRIVER-HARDWARE-CONTRACT.md](DRIVER-HARDWARE-CONTRACT.md) before treating a
+  tracking failure as firmware-only
 - Run the surfaces and metrics defined in [SURFACE-TEST-PROTOCOL.md](SURFACE-TEST-PROTOCOL.md)
 - Publish measured outcomes back into the relevant test/rubric docs rather than
   separate ad hoc notes
@@ -57,11 +61,18 @@ by default.
   [hardware/ring/R30-OLED-NONE-NONE/FIRST-BOARD-CHECKLIST.md](../hardware/ring/R30-OLED-NONE-NONE/FIRST-BOARD-CHECKLIST.md)
   and
   [hardware/ring/R30-OLED-NONE-NONE/STACKUP-VERIFY.md](../hardware/ring/R30-OLED-NONE-NONE/STACKUP-VERIFY.md)
+- Keep the packet-level KiCad interface contract aligned with
+  [DRIVER-HARDWARE-CONTRACT.md](DRIVER-HARDWARE-CONTRACT.md) whenever GPIO,
+  supply, sensor, or service-connector assumptions change
 - Do not start secondary ring or puck hardware while ring package closure is red
 
 ### Gate 3 — Safety, Power, And RF Reality
 
 - Replace estimate-only claims with measured active / idle / deep-sleep numbers
+- Do not claim charge-safety behavior unless the `VBAT_SENSE`, NTC,
+  charge-enable, and VBUS-detect rows in
+  [DRIVER-HARDWARE-CONTRACT.md](DRIVER-HARDWARE-CONTRACT.md) are wired,
+  Kconfig-enabled, and observed on the actual board
 - Record enclosure charging, low-voltage cutoff, and BLE-link observations in
   the existing power / safety docs that already govern those claims
 
@@ -69,6 +80,9 @@ by default.
 
 - Prove cursor, left-click, right-click, scroll, and click-drag through the hub
 - Verify reconnect, bond-loss recovery, and no stuck-button failures
+- Check the hub contract rows in
+  [DRIVER-HARDWARE-CONTRACT.md](DRIVER-HARDWARE-CONTRACT.md) before treating USB,
+  BLE, or role-state failures as purely software defects
 - Close the hub packet using
   [hardware/shared/USB-HUB/FIRST-BOARD-CHECKLIST.md](../hardware/shared/USB-HUB/FIRST-BOARD-CHECKLIST.md)
   and

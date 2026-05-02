@@ -128,5 +128,6 @@ the active lane and host tests in one place.
 ## Related Docs
 
 - [ACTIVE-LANE-CHECKLIST.md](ACTIVE-LANE-CHECKLIST.md)
+- [DRIVER-HARDWARE-CONTRACT.md](DRIVER-HARDWARE-CONTRACT.md)
 - [GO-NO-GO-RUBRIC.md](GO-NO-GO-RUBRIC.md)
 - [PROTOTYPE-SPEC.md](PROTOTYPE-SPEC.md)
