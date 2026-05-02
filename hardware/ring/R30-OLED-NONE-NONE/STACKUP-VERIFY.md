@@ -64,7 +64,7 @@ measured rows above.
 | Check | Board-pass status | Notes |
 |-------|-------------------|-------|
 | ESP32-C3 antenna keep-out | Preserved in PCB | Copper/component keep-out zones are drawn before routing; shell plastics and closure hardware still need physical verification around the outward antenna edge |
-| Charge path | Electrically safer with add | The PCB uses `Q2`/`R6` to keep the 5 V `Q1` gate pull-up off ESP32-C3 `GPIO10`; accept this BOM delta or replace it with an equivalent logic-level load switch before fabrication |
+| Charge path | Electrically safer with add | Packet recommendation is `Q2` = 2N7002 SOT-23 plus `R6` = `100k` to keep the 5 V `Q1` gate pull-up off ESP32-C3 `GPIO10`; BSS138-class or load-switch substitutions need explicit BDFL acceptance before fabrication |
 | PAW3204 placement | Aperture-aligned in PCB | Sensor is bottom-side at the `6.2 mm` aperture datum; focal distance and lens clip fit remain unmeasured |
 | Shell electronics model | First-pass CAD updated | The shell now maps the `42 x 18 mm` board into a top pod instead of the older generic module pocket; this is still a CAD sanity pass, not fit evidence |
 | Battery service | Connector and lead path modeled, coupon available, fit unproven | `J_BAT` is JST-SH right-angle 1.0 mm and the CAD now adds a local lead channel, service-loop relief, top lift window, and `battery_lead_coupon`; print/fit evidence is still required |

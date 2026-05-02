@@ -3,8 +3,9 @@
 
 This directory is the PCB/schematic starting point for the active optical ring
 lane. It is intentionally honest about its state: the first routed PCB pass now
-exists, but the schematic sheets are still capture scaffolds and the board is
-not fabrication-released.
+exists, and the power/USB plus MCU/radio plus sensor/click sheets now include
+first-pass symbols, but the schematic is still not parity-clean and the board
+is not fabrication-released.
 
 ## Current Source Files
 
@@ -53,14 +54,21 @@ not fabrication-released.
   shell stakes
 - TP4054 path routed through a P-channel VBUS switch, `20 kohm` RPROG, RT9080
   regulation, and an NTC divider near the battery connector
+- MCU/radio and sensor/click sheets populated with first-pass symbol
+  counterparts for the routed `U1`, `U2`, `SW1`, decoupling, sense testpads,
+  and sensor bring-up pads
 
-The board also records three honest open items. `Q2`/`R6` are included because
-the P-channel gate needs a logic-safe driver; add them to the active BOM before
-fabrication or replace them with an equivalent load-switch solution. `VBAT_SENSE`,
-`VBUS_DETECT`, and `CHRG_STAT` are bring-up pads only until the missing
-divider/pull-up BOM lines are intentionally added. The `42 x 18 mm` rigid pass
-now drives the shell CAD fit pass, but it still does not prove the package is
-comfortable, printable, RF-clean, or serviceable with a populated board.
+This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
+charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
+the gate can see `VBUS_5V`. The PCB now also carries the recommended
+sense/status support parts: `R7`/`R8` = `100k`/`100k` for `VBAT_SENSE`,
+`R9`/`R10` = `220k`/`100k` for `VBUS_DETECT`, and `R11` = `100k` as the TP4054
+`CHRG_STAT` pull-up. `VBAT_SENSE` and `VBUS_DETECT` are routed to the ESP32-C3
+resources named in [INTERFACE-CONTRACT.md](INTERFACE-CONTRACT.md). `CHRG_STAT`
+is pulled up and locally testable, but no MCU GPIO or firmware consumer is
+claimed yet. The `42 x 18 mm` rigid pass now drives the shell CAD fit pass, but
+it still does not prove the package is comfortable, printable, RF-clean, or
+serviceable with a populated board.
 
 ## Mechanical Binding Into CAD
 
@@ -85,10 +93,13 @@ rather than drifting back to anonymous module pockets.
 - Do not substitute the LDO, charge resistor, or battery safety path without
   updating the variant manifest and BOM.
 - Do not let convenience routing eat the antenna keep-out.
-- Treat the current schematic files as hierarchy scaffolds, not proof that the
-  active components or footprints have already been validated in KiCad.
+- Treat the current schematic as partial capture, not proof that all active
+  components or footprints have already been validated in KiCad. The current
+  local KiCad CLI `10.0.1` snapshot is ERC=27, DRC=381, unconnected=41, and
+  schematic-parity=119; the remaining parity story is dominated by residual
+  first-two-sheet reference drift, project-local custom library bindings, and
+  root hierarchy/global-net cleanup.
 - Treat the first PCB as a routed board pass, not a green fabrication release.
-  Local KiCad CLI `10.0.1` DRC currently reports violations and unconnected
-  items; clear schematic backfill, net cleanup, and DRC/ERC before fabrication.
+  Clear schematic backfill, net cleanup, and DRC/ERC before fabrication.
 - Close `../FIRST-BOARD-CHECKLIST.md` and `../STACKUP-VERIFY.md` before treating
   this lane as hardware-ready.

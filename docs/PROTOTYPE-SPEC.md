@@ -247,11 +247,11 @@ increases from ~1 hour to ~2 hours — acceptable for a device charged overnight
 | Component | Purpose | BOM impact |
 |-----------|---------|-----------|
 | NTC 10k B3950 (0402) + divider resistor | Cell temperature monitoring via ADC | +$0.03 |
-| SI2301 P-ch MOSFET (SOT-23) + pull-up | Firmware charge enable/disable on VBUS | +$0.04 |
+| SI2301 P-ch MOSFET (SOT-23) + 2N7002-class gate driver/bias passives | Firmware charge enable/disable on VBUS without exposing the MCU to the 5 V gate pull-up | +$0.07 |
 | RPROG change: 10 kohm to 20 kohm | Reduce charge current from 100 mA to 50 mA | $0.00 |
 
 The TP4054 has **no NTC input and no temperature monitoring**. The firmware must
-fill this gap using the NTC thermistor and VBUS MOSFET.
+fill this gap using the NTC thermistor and a logic-safe VBUS MOSFET gate path.
 
 ### Firmware requirements
 

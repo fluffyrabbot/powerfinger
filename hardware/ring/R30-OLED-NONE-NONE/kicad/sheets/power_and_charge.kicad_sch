@@ -1797,6 +1797,312 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "Connector:Conn_01x02_Socket"
+			(pin_names
+				(offset 1.016)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "J"
+				(at 0 2.54 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "Conn_01x02_Socket"
+				(at 0 -5.08 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Generic connector, single row, 01x02, script generated"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_locked" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "connector"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "Connector*:*_1x??_*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "Conn_01x02_Socket_1_1"
+				(polyline
+					(pts
+						(xy -1.27 0) (xy -0.508 0)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.27 -2.54) (xy -0.508 -2.54)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start 0 -0.508)
+					(mid -0.5058 0)
+					(end 0 0.508)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start 0 -3.048)
+					(mid -0.5058 -2.54)
+					(end 0 -2.032)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(pin passive line
+					(at -5.08 0 0)
+					(length 3.81)
+					(name "Pin_1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 -2.54 0)
+					(length 3.81)
+					(name "Pin_2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "Connector:TestPoint"
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 0.762)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "TP"
+				(at 0 6.858 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "TestPoint"
+				(at 0 5.08 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 5.08 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 5.08 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "test point"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "test point tp"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "Pin* Test*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "TestPoint_0_1"
+				(circle
+					(center 0 3.302)
+					(radius 0.762)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "TestPoint_1_1"
+				(pin passive line
+					(at 0 0 90)
+					(length 2.54)
+					(name "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 	)
 	(symbol
 		(lib_id "Device:Q_PMOS")
@@ -2459,9 +2765,9 @@
 		(at 105.41 110.49 0)
 		(unit 1)
 		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
+		(in_bom no)
+		(on_board no)
+		(dnp yes)
 		(fields_autoplaced no)
 		(uuid "6a7da492-7b8d-47c5-a65c-ec880ae50f67")
 		(property "Reference" "C1"
@@ -2538,9 +2844,9 @@
 		(at 170.18 110.49 0)
 		(unit 1)
 		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
+		(in_bom no)
+		(on_board no)
+		(dnp yes)
 		(fields_autoplaced no)
 		(uuid "8ffa7e94-402a-4993-a96a-89d23a3b0f56")
 		(property "Reference" "C3"
@@ -3325,6 +3631,151 @@
 			)
 		)
 	)
+	(symbol
+		(lib_id "Connector:Conn_01x02_Socket")
+		(at 195.58 130.81 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "d9ccbeca-4ee8-42d2-b8e9-dc9d8a1bec8c")
+		(property "Reference" "J_BAT"
+			(at 195.58 133.35 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "SM02B-SRSS-TB class"
+			(at 195.58 125.73 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "PowerFinger_Ring:JST_SH_SM02B-SRSS-TB_RA_1x02_P1.00mm"
+			(at 195.58 130.81 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "mfg_part_num" "SM02B-SRSS-TB class"
+			(at 198.12 135.8899 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "manufacturer" "JST-compatible"
+			(at 198.12 135.8899 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "lcsc" ""
+			(at 198.12 135.8899 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "3fa52668-c386-450a-87ae-326899d1ef43")
+		)
+		(pin "2"
+			(uuid "cb0ef477-6860-40ca-a6c9-6757a3203036")
+		)
+		(instances
+			(project "simple_circuit"
+				(path "/3bb73a68-f2e3-4fdc-8035-844d8d9ecf61"
+					(reference "J_BAT")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector:TestPoint")
+		(at 190.5 144.78 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced no)
+		(uuid "27b3526a-48a4-4a31-9570-52cac65e3566")
+		(property "Reference" "TP_CHRG"
+			(at 190.5 151.638 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "CHRG_STAT pulled-up status pad"
+			(at 190.5 149.86 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "TestPoint:TestPoint_Pad_D1.0mm"
+			(at 195.58 144.78 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "mfg_part_num" ""
+			(at 193.04 149.8599 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "manufacturer" "PCB"
+			(at 193.04 149.8599 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "lcsc" ""
+			(at 193.04 149.8599 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "503cee70-43a1-4ddb-8d37-1db7cdef2281")
+		)
+		(instances
+			(project "simple_circuit"
+				(path "/3bb73a68-f2e3-4fdc-8035-844d8d9ecf61"
+					(reference "TP_CHRG")
+					(unit 1)
+				)
+			)
+		)
+	)
 	(wire
 		(pts
 			(xy 39.37 119.38) (xy 44.45 119.38)
@@ -3435,7 +3886,8 @@
 		)
 		(uuid "9bcc55f0-b6be-4d37-a1a2-05038a02143b")
 	)
-	(label "CHRG_STAT_INT"
+	(global_label "CHRG_STAT"
+		(shape input)
 		(at 120.65 92.71 0.0000)
 		(effects
 			(font
@@ -3455,7 +3907,8 @@
 		)
 		(uuid "7e68bf73-09ef-4ec8-8a30-94680053d928")
 	)
-	(label "VBAT_PROTECTED"
+	(global_label "VBAT_PROTECTED"
+		(shape input)
 		(at 120.65 87.63 0.0000)
 		(effects
 			(font
@@ -3515,7 +3968,8 @@
 		)
 		(uuid "3ed82532-bcbc-4830-bc72-3ee822533ef2")
 	)
-	(label "CHRG_STAT_INT"
+	(global_label "CHRG_STAT"
+		(shape input)
 		(at 129.54 83.82 0.0000)
 		(effects
 			(font
@@ -3525,7 +3979,8 @@
 		)
 		(uuid "cf4bd116-ea9c-463e-9175-6c26412a155b")
 	)
-	(label "VBAT_PROTECTED"
+	(global_label "VBAT_PROTECTED"
+		(shape input)
 		(at 152.4 87.63 0.0000)
 		(effects
 			(font
@@ -3545,7 +4000,8 @@
 		)
 		(uuid "6d30dcb6-94af-4e92-bd6f-1d2afafa1a34")
 	)
-	(label "VBAT_PROTECTED"
+	(global_label "VBAT_PROTECTED"
+		(shape input)
 		(at 152.4 90.17 0.0000)
 		(effects
 			(font
@@ -3585,7 +4041,8 @@
 		)
 		(uuid "8baa2818-6f48-4d7e-b8e5-f433b75c1717")
 	)
-	(label "VBAT_PROTECTED"
+	(global_label "VBAT_PROTECTED"
+		(shape input)
 		(at 149.86 106.68 0.0000)
 		(effects
 			(font
@@ -3625,7 +4082,8 @@
 		)
 		(uuid "f5c6b347-03a7-40a3-a512-d04c10cc746c")
 	)
-	(label "VBAT_PROTECTED"
+	(global_label "VBAT_PROTECTED"
+		(shape input)
 		(at 139.7 125.73 0.0000)
 		(effects
 			(font
@@ -3675,7 +4133,7 @@
 		)
 		(uuid "f28c564b-d1d4-49a9-889b-3b471e15b2bd")
 	)
-	(label "VBUS_DETECT_INT"
+	(label "VBUS_DETECT"
 		(at 59.69 133.35 0.0000)
 		(effects
 			(font
@@ -3685,7 +4143,7 @@
 		)
 		(uuid "013a7516-3c47-4308-a164-59e37fd2a41b")
 	)
-	(label "VBUS_DETECT_INT"
+	(label "VBUS_DETECT"
 		(at 59.69 140.97 0.0000)
 		(effects
 			(font
@@ -3775,8 +4233,40 @@
 		)
 		(uuid "0de2d773-7698-4914-9eb7-67f81f7af3f2")
 	)
-	(hierarchical_label "VREG_3V3"
+	(global_label "VBAT_PROTECTED"
 		(shape input)
+		(at 190.5 130.81 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "668e30b7-de8e-4480-9da4-0d83f810e4a4")
+	)
+	(label "GND"
+		(at 190.5 133.35 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "b14707f7-f9ec-4661-9a2b-3a3d43717375")
+	)
+	(global_label "CHRG_STAT"
+		(shape input)
+		(at 190.5 144.78 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "644db65e-d14b-458a-911d-8a70400c87af")
+	)
+	(hierarchical_label "VREG_3V3"
+		(shape output)
 		(at 187.96 38.1 180)
 		(effects
 			(font
@@ -3787,7 +4277,7 @@
 		(uuid "0dedd666-04e1-450f-b9d3-0c2acf90e269")
 	)
 	(hierarchical_label "VBAT_SENSE"
-		(shape input)
+		(shape output)
 		(at 187.96 45.72 180)
 		(effects
 			(font
@@ -3798,7 +4288,7 @@
 		(uuid "2248745d-0e9c-4bfc-a060-cd7c8c7a1da7")
 	)
 	(hierarchical_label "NTC_SENSE"
-		(shape input)
+		(shape output)
 		(at 187.96 53.34 180)
 		(effects
 			(font
@@ -3829,6 +4319,17 @@
 			(justify left)
 		)
 		(uuid "c3e04f21-4abc-4d12-9e34-5fa678bc9012")
+	)
+	(hierarchical_label "VBUS_DETECT"
+		(shape output)
+		(at 187.96 60.96 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "cf7b8a7f-5a0e-4bb6-a502-33f10b3c71c6")
 	)
 	(text "Power-path interface scaffold: regulator, sensing, and charge-gate nets are locked here before component symbols land."
 		(exclude_from_sim no)

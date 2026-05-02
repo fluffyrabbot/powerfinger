@@ -30,6 +30,7 @@ It exists to stop two kinds of drift:
 | VBAT sense | `ADC1_CH0` / `GPIO0` | `CONFIG_POWERFINGER_VBAT_ADC_CHANNEL` | Active default | Existing battery monitor path |
 | Cell NTC sense | `ADC1_CH1` / `GPIO1` | `CONFIG_POWERFINGER_NTC_ADC_CHANNEL` | Recommended first board | Matches the published battery-safety requirement without colliding with the optical lane |
 | USB VBUS detect | `GPIO3` | `CONFIG_POWERFINGER_VBUS_DETECT_PIN` | Recommended first board | Input only from a resistor-divided 5V-detect net |
+| Charger status | none allocated | none | Local hardware test only | `CHRG_STAT` is pulled up on the PCB, but this packet does not claim firmware consumption |
 | Sensor clock | `GPIO4` | `CONFIG_POWERFINGER_SENSOR_SCLK_PIN` | Active default | Shared PAW3204 / PMW3360 clock path |
 | Sensor data out | `GPIO5` | `CONFIG_POWERFINGER_SENSOR_SDIO_PIN` | Active default | PAW3204 bidirectional SDIO, PMW3360 MOSI |
 | Sensor chip select | `GPIO6` | `CONFIG_POWERFINGER_SENSOR_NCS_PIN` | Active default | PMW3360-only; leave unconnected on PAW3204 capture |
@@ -56,8 +57,12 @@ It exists to stop two kinds of drift:
 
 - Host-side power-manager tests now use the same first-pass safety path:
   `NTC = ADC1_CH1`, `VBUS detect = GPIO3`, `charge enable = GPIO10`.
-- Production ring firmware still treats these three nets as unpopulated by
-  default until the actual optical-ring hardware capture lands.
+- Production ring firmware still leaves NTC, charge-enable, and VBUS-detect
+  hardware disabled by default for pre-hardware dev boards; enable them only in
+  a real R30 board config that matches this capture.
+- No production firmware symbol currently consumes `CHRG_STAT`. Keep it as a
+  pulled-up local status/test point until a spare MCU GPIO and firmware config
+  are deliberately allocated.
 
 ## Current PCB Alignment
 
@@ -66,10 +71,10 @@ It exists to stop two kinds of drift:
   pull-up.
 - `NTC_SENSE` is routed as the active NTC divider sense net near the battery
   connector.
-- `VBAT_SENSE`, `VBUS detect`, and `CHRG_STAT` are represented as bring-up pads
-  in the first PCB pass, not production sense/status circuits. Add the missing
-  divider and pull-up BOM lines before enabling those firmware defaults on real
-  ring hardware.
+- `VBAT_SENSE` now routes through `R7`/`R8` to ESP32-C3 `GPIO0`.
+- `VBUS_DETECT` now routes through `R9`/`R10` to ESP32-C3 `GPIO3`.
+- `CHRG_STAT` now has `R11` as a `VREG_3V3` pull-up and a local status pad, but
+  it does not route to the MCU in this packet.
 - PAW3204 `RST/QB/PD` and `MOTSWK` are exposed on local pads in the PCB pass
   instead of consuming new MCU GPIOs. Keep this conservative until firmware
   decides whether reset or motion wake is required for the first optical board.

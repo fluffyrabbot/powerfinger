@@ -473,17 +473,20 @@ NTC via an ADC channel.
 charging via firmware:
 
 - Option A: Place a P-channel MOSFET (e.g., SI2301) on the USB VBUS line before
-  the TP4054 VCC pin. GPIO controls the MOSFET gate. This adds one component and
-  one GPIO but gives deterministic charge control.
+  the TP4054 VCC pin. A GPIO controls the MOSFET gate through a logic-safe
+  low-side N-channel gate driver (2N7002/BSS138 class) so the MCU never sees the
+  5 V gate pull-up. This adds commodity passives plus one GPIO and gives
+  deterministic charge control.
 - Option B: Place a load switch (e.g., TPS22918) on VBUS. Same function, cleaner
   but slightly larger.
 - Option C: Use the ESP32-C3 to pull the PROG pin high via a GPIO + resistor,
   reducing charge current to near zero. Less clean, may not fully stop charging.
 
-**Recommendation:** Option A (P-channel MOSFET on VBUS). This is the simplest
-and most reliable approach. If the firmware hangs or the MCU is in deep sleep,
-the MOSFET gate floats high (P-channel off), which **defaults to charge
-disabled** — a safe default.
+**Recommendation:** Option A (P-channel MOSFET on VBUS with a logic-safe gate
+driver). This is the simplest and most reliable approach. If the firmware hangs
+or the MCU is in deep sleep, the MOSFET gate floats high (P-channel off), which
+**defaults to charge disabled** — a safe default. Directly wiring an MCU GPIO to
+a P-channel gate pulled up to USB VBUS is rejected.
 
 ### 7.2 Required: Enhanced voltage monitoring
 
@@ -505,8 +508,9 @@ The firmware should track whether USB power is connected and the charge state:
   to a GPIO with appropriate resistor divider to bring 5V into ESP32-C3's 3.3V
   input range). This is also needed for the charge disable MOSFET control.
 - **Charge complete detection:** Monitor the TP4054's CHRG pin (open-drain
-  output: low = charging, high-Z = complete or no USB). Connect to a GPIO with
-  pull-up resistor.
+  output: low = charging, high-Z = complete or no USB). Production status
+  reporting requires a GPIO with a pull-up resistor; a validation board may keep
+  CHRG pulled up and locally testable until that GPIO is explicitly allocated.
 - **State machine integration:** Add CHARGING and CHARGE_COMPLETE states to the
   ring state machine. During charging, the device should remain awake (not enter
   deep sleep) to maintain temperature monitoring.
@@ -589,9 +593,11 @@ The battery safety requirements add the following to the BOM:
 | NTC thermistor, 10k, B3950 | 0402 | $0.02 | Cell temperature monitoring |
 | Resistor (NTC voltage divider) | 0402 | $0.01 | ADC scaling |
 | SI2301 P-ch MOSFET (or equiv) | SOT-23 | $0.03 | Charge enable/disable |
-| Resistor (MOSFET gate pull-up) | 0402 | $0.01 | Default-off gate bias |
+| Resistor (P-FET gate pull-up) | 0402 | $0.01 | Default-off gate bias |
+| 2N7002/BSS138-class N-FET gate driver | SOT-23 | $0.02 | Keeps 5 V gate pull-up off MCU GPIO |
+| Resistor (N-FET gate pulldown) | 0402 | $0.01 | Default-off driver bias |
 | Change RPROG from 10k to 20k | 0402 | $0.00 | Lower charge rate |
-| **Total added cost** | | **~$0.07** | |
+| **Total added cost** | | **~$0.10** | |
 
 The BOM impact is negligible. These components are small (0402 and SOT-23) and
 should fit on the existing PCB without layout changes beyond trace routing.
@@ -612,9 +618,11 @@ should fit on the existing PCB without layout changes beyond trace routing.
 
 1. RPROG = 20 kohm (50 mA charge current, 0.5-0.625C)
 2. NTC thermistor bonded to cell or adjacent on PCB
-3. P-channel MOSFET on VBUS line for firmware charge control
+3. P-channel MOSFET on VBUS line for firmware charge control, driven through a
+   logic-safe N-FET gate driver when the P-FET gate is pulled up to USB VBUS
 4. USB VBUS detection via voltage divider to GPIO
-5. TP4054 CHRG pin connected to GPIO with pull-up
+5. TP4054 CHRG pin pulled up and made available for status; production firmware
+   status reporting needs an explicit GPIO allocation
 
 ### Firmware requirements (FW)
 

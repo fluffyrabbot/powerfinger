@@ -1341,7 +1341,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "USB-C"
+		(property "Value" "USB4215-class 16P TH stakes"
 			(at 90.17 99.695 0.0000)
 			(effects
 				(font
@@ -1350,7 +1350,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Connector_USB:USB_C_Receptacle_GCT_USB4105-xx-A_16P_TopMnt_Horizontal"
+		(property "Footprint" "PowerFinger_Ring:USB_C_Receptacle_GCT_USB4215_Class_16P_TH_Stakes"
 			(at 93.98 80.01 0.0000)
 			(effects
 				(font
@@ -1359,7 +1359,7 @@
 				(hide yes)
 			)
 		)
-		(property "mfg_part_num" "USB4105-GF-A"
+		(property "mfg_part_num" "USB4215-class"
 			(at 92.71 85.0899 0)
 			(effects
 				(font
@@ -1456,7 +1456,7 @@
 		(dnp no)
 		(fields_autoplaced no)
 		(uuid "714a99a6-1739-4392-a464-24cc9dce2a5e")
-		(property "Reference" "R2"
+		(property "Reference" "R2A"
 			(at 141.732 90.17 90)
 			(effects
 				(font
@@ -1519,7 +1519,7 @@
 		(instances
 			(project "simple_circuit"
 				(path "/5cdf6bc0-1d6d-4761-b5b2-853e85c36594"
-					(reference "R2")
+					(reference "R2A")
 					(unit 1)
 				)
 			)
@@ -1535,7 +1535,7 @@
 		(dnp no)
 		(fields_autoplaced no)
 		(uuid "4b596df6-368d-444b-b796-c94c0c55872d")
-		(property "Reference" "R12"
+		(property "Reference" "R2B"
 			(at 156.972 90.17 90)
 			(effects
 				(font
@@ -1598,7 +1598,7 @@
 		(instances
 			(project "simple_circuit"
 				(path "/5cdf6bc0-1d6d-4761-b5b2-853e85c36594"
-					(reference "R12")
+					(reference "R2B")
 					(unit 1)
 				)
 			)
@@ -1623,7 +1623,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "USBLC6-2SC6"
+		(property "Value" "USBLC6-2SC6-class"
 			(at 130.175 63.5 0.0000)
 			(effects
 				(font

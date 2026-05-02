@@ -3,5 +3,7 @@
 	(lib (name "Package_TO_SOT_SMD") (type "KiCad") (uri "${KICAD10_FOOTPRINT_DIR}/Package_TO_SOT_SMD.pretty") (options "") (descr "TO/SOT/SMD packages (SOT-23, SOT-23-5)"))
 	(lib (name "Resistor_SMD") (type "KiCad") (uri "${KICAD10_FOOTPRINT_DIR}/Resistor_SMD.pretty") (options "") (descr "SMD resistor footprints (0402)"))
 	(lib (name "Capacitor_SMD") (type "KiCad") (uri "${KICAD10_FOOTPRINT_DIR}/Capacitor_SMD.pretty") (options "") (descr "SMD capacitor footprints (0402)"))
+	(lib (name "Device") (type "KiCad") (uri "${KICAD10_FOOTPRINT_DIR}/Device.pretty") (options "") (descr "Generic device footprints (NTC helpers)"))
+	(lib (name "TestPoint") (type "KiCad") (uri "${KICAD10_FOOTPRINT_DIR}/TestPoint.pretty") (options "") (descr "Test pad footprints used for bring-up pads"))
 	(lib (name "Connector_USB") (type "KiCad") (uri "${KICAD10_FOOTPRINT_DIR}/Connector_USB.pretty") (options "") (descr "USB connector footprints (USB-C TH-stake receptacle)"))
 )

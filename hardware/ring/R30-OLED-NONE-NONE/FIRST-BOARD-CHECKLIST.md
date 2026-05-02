@@ -16,15 +16,27 @@ This checklist is the execution contract for the active ring hardware lane.
 - [x] Validate the PAW3204-class sensor placement against the aperture datum in
   the PCB pass
 - [ ] Backfill schematic symbols to match the PCB pass and clear KiCad ERC/DRC
-  (current snapshot in `kicad/CURRENT-VIOLATIONS.md`: ERC=34, DRC=324,
-  unconnected=41, parity=27 — regenerate with
+  (current snapshot in `kicad/CURRENT-VIOLATIONS.md`: ERC=27, DRC=381,
+  unconnected=41, parity=119 — regenerate with
   `scripts/verify-firmware-local.sh --kicad-only`)
+- [x] Populate the MCU/radio and sensor/click sub-sheets with first-pass
+  symbol counterparts for `U1`, `U2`, `SW1`, `R5`, `C1A`, `C1B`, `TP_VBAT`,
+  `TP_VBUS`, `TP_RST`, `TP_MOT`, and `TP_LEDKIT`
+- [x] Reconcile the remaining first-two-sheet parity leftovers: `J_BAT`,
+  `TP_CHRG`, `R2A`/`R2B`, and stale schematic-only `C1`/`C3`/`R2`/`R12`
 - [x] Accept the `Q2`/`R6` charge-gate safety add into the active BOM CSV
-- [x] Add starter `VBAT_SENSE` (`R7`/`R8`), `VBUS_DETECT` (`R9`/`R10`), and
+- [x] Add `VBAT_SENSE` (`R7`/`R8`), `VBUS_DETECT` (`R9`/`R10`), and
   `CHRG_STAT` (`R11`) divider / pull-up lines to the active BOM CSV
-- [ ] Lock BDFL-approved values for `R7`–`R11` and the production part for
-  `Q2` (2N7002 vs BSS138 vs an equivalent logic-level load switch) before
-  schematic capture
+- [x] Add the `R7`-`R11` support parts to the local KiCad schematic and
+  PCB so `VBAT_SENSE`/`VBUS_DETECT` are no longer pad-only claims
+- [x] Record the packet recommendation for the first rigid P0: `Q2` = 2N7002
+  SOT-23, `R7`/`R8` = `100k`/`100k`, `R9`/`R10` = `220k`/`100k`, and `R11` =
+  `100k`
+- [x] BDFL accepted that packet recommendation for the first rigid P0:
+  BSS138-class alternates or a logic-level load switch remain explicit
+  substitutions, not silent equivalents
+- [ ] Decide whether `CHRG_STAT` stays a pulled-up local status pad or gets a
+  real MCU GPIO plus firmware config symbol in a later board/firmware pass
 - [ ] Prove the `42 x 18 mm` rigid board, USB-C opening, JST-SH service loop,
   and antenna keep-out fit the current shell CAD or revise the shell/board
 

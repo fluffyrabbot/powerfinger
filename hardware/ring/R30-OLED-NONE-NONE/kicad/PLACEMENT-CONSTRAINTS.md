@@ -37,8 +37,9 @@ placement classes for P0:
 - `U3`/`U4`: SOT-23-5 TP4054 and RT9080 footprints, with the TP4054 pinout kept
   distinct from MCP73831-style chargers
 - `Q1`: SOT-23 P-channel VBUS switch before TP4054 `VCC`
-- `Q2`/`R6`: logic-safe charge-gate driver and pulldown; these must stay unless
-  the charge switch becomes a real logic-level load-switch part
+- `Q2`/`R6`: BDFL-accepted 2N7002 logic-safe charge-gate driver and
+  pulldown; these must stay unless the BDFL explicitly replaces the charge
+  switch with a real logic-level load-switch part
 
 ## Mechanical / RF Placement Rules
 
@@ -75,7 +76,8 @@ placement classes for P0:
   the RF-sensitive region.
 - The P-channel charge MOSFET gate must not connect directly to ESP32-C3
   `GPIO10` while a pull-up can take the gate to `VBUS_5V`; use the `Q2`/`R6`
-  gate-driver path or an equivalent logic-level load switch.
+  gate-driver path. A logic-level load switch is a substitution that needs a BOM
+  and repairability decision, not a silent routing equivalent.
 - The USB-C connector cannot be the only structural retention point for the
   board inside the shell.
 - The first CAD retention path is molded side rails, side stop lugs, and lid

@@ -29,6 +29,10 @@
       (effects (font (size 1.27 1.27)) (justify right))
       (uuid "39a04830-0177-4d51-971a-76dfa5c1c192")
     )
+    (pin "VBUS_DETECT" output (at 101.6 40.64 0)
+      (effects (font (size 1.27 1.27)) (justify right))
+      (uuid "d649a0f6-67d9-4075-81d8-9f5b8433e2b43")
+    )
     (pin "CHARGE_EN" input (at 101.6 45.72 0)
       (effects (font (size 1.27 1.27)) (justify right))
       (uuid "e88e3ba3-bc8c-4438-b8b2-6f05b53b3681")
@@ -70,6 +74,10 @@
     (pin "NTC_SENSE" input (at 114.3 38.1 180)
       (effects (font (size 1.27 1.27)) (justify left))
       (uuid "ad8ebfa8-bbf8-4831-985c-a94223424db0")
+    )
+    (pin "VBUS_DETECT" input (at 114.3 40.64 180)
+      (effects (font (size 1.27 1.27)) (justify left))
+      (uuid "390f6c56-69b6-4b55-9789-1987ad7334c8")
     )
     (pin "CHARGE_EN" output (at 114.3 45.72 180)
       (effects (font (size 1.27 1.27)) (justify left))
@@ -207,6 +215,14 @@
   )
   (wire
     (pts
+      (xy 101.6 40.64)
+      (xy 114.3 40.64)
+    )
+    (stroke (width 0) (type default) (color 0 0 0 0))
+    (uuid "6ac48a9e-b86f-40ed-b8d0-6a4c9812d7e9")
+  )
+  (wire
+    (pts
       (xy 101.6 45.72)
       (xy 114.3 45.72)
     )
@@ -264,22 +280,22 @@
   (wire
     (pts
       (xy 53.34 69.85)
-      (xy 53.34 64.14)
+      (xy 53.34 62.23)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid "b2c3d4e5-4001-4001-8001-200000000007")
   )
   (wire
     (pts
-      (xy 53.34 64.14)
-      (xy 132.08 64.14)
+      (xy 53.34 62.23)
+      (xy 132.08 62.23)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid "b2c3d4e5-4001-4001-8001-200000000008")
   )
   (wire
     (pts
-      (xy 132.08 64.14)
+      (xy 132.08 62.23)
       (xy 132.08 55.88)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
@@ -312,22 +328,22 @@
   (wire
     (pts
       (xy 63.5 69.85)
-      (xy 63.5 65.41)
+      (xy 63.5 67.31)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid "b2c3d4e5-4001-4001-8001-20000000000d")
   )
   (wire
     (pts
-      (xy 63.5 65.41)
-      (xy 142.24 65.41)
+      (xy 63.5 67.31)
+      (xy 142.24 67.31)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid "b2c3d4e5-4001-4001-8001-20000000000e")
   )
   (wire
     (pts
-      (xy 142.24 65.41)
+      (xy 142.24 67.31)
       (xy 142.24 55.88)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
@@ -360,22 +376,22 @@
   (wire
     (pts
       (xy 180.34 69.85)
-      (xy 180.34 62.87)
+      (xy 180.34 58.42)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid "b2c3d4e5-4001-4001-8001-200000000013")
   )
   (wire
     (pts
-      (xy 180.34 62.87)
-      (xy 96.52 62.87)
+      (xy 180.34 58.42)
+      (xy 96.52 58.42)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid "b2c3d4e5-4001-4001-8001-200000000014")
   )
   (wire
     (pts
-      (xy 96.52 62.87)
+      (xy 96.52 58.42)
       (xy 96.52 55.88)
     )
     (stroke (width 0) (type default) (color 0 0 0 0))

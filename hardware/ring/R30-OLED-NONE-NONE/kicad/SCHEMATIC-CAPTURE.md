@@ -45,6 +45,7 @@ easier to branch.
   - `CHARGE_EN`
   - `CHARGE_GATE`
   - `VBUS_CHG_SW`
+  - `VBUS_DETECT`
   - `CHRG_STAT`
   - `NTC_SENSE`
 - USB / service:
@@ -76,6 +77,10 @@ easier to branch.
 - The first PCB pass routes `CHARGE_EN` through a small gate driver before the
   P-channel VBUS switch. Preserve that separation in schematic capture so a
   5 V gate pull-up cannot land on an ESP32-C3 GPIO.
+- The first PCB pass now includes the BDFL-accepted `R7`-`R11` values:
+  `VBAT_SENSE` and `VBUS_DETECT` are MCU-facing dividers, while `CHRG_STAT` is
+  only a pulled-up local charger-status pad until firmware deliberately
+  allocates a GPIO for it.
 - Leave the antenna keep-out consequence visible in the schematic notes so the
   later board layout does not quietly compromise it.
 
