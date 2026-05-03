@@ -17,7 +17,7 @@ This checklist is the execution contract for the active ring hardware lane.
   the PCB pass
 - [ ] Backfill schematic symbols to match the PCB pass and clear KiCad DRC
   (current snapshot in `kicad/CURRENT-VIOLATIONS.md`: ERC=0, DRC=349,
-  unconnected=41, parity=118 — regenerate with
+  unconnected=41, parity=92 — regenerate with
   `scripts/verify-firmware-local.sh --kicad-only`)
 - [x] Add project-local `PowerFinger` symbols and `PowerFinger_Ring`
   footprints, then wire the sheet-interface labels enough to clear schematic

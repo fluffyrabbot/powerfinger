@@ -2123,7 +2123,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "SI2301"
+		(property "Value" "SI2301 P-FET"
 			(at 85.09 88.9 0.0000)
 			(effects
 				(font
@@ -2284,7 +2284,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "2N7002"
+		(property "Value" "2N7002 gate driver"
 			(at 64.77 99.06 0.0000)
 			(effects
 				(font
@@ -2946,7 +2946,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 150.8252 106.68 0.0000)
 			(effects
 				(font
@@ -3332,7 +3332,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10k_B3950"
+		(property "Value" "10k B3950"
 			(at 173.355 144.78 90)
 			(effects
 				(font

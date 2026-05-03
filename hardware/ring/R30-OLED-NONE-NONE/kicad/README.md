@@ -96,9 +96,8 @@ rather than drifting back to anonymous module pockets.
 - Treat the current schematic as partial capture, not proof that all active
   components or footprints have already been validated in KiCad. The current
   local KiCad CLI `10.0.1` snapshot is ERC=0, DRC=349, unconnected=41, and
-  schematic-parity=118; the remaining parity story is dominated by PCB net
-  conflicts, footprint/symbol field drift, unconnected items, and hand-routed
-  clearance failures.
+  schematic-parity=92; the remaining parity story is dominated by PCB net
+  conflicts, unconnected items, and hand-routed clearance failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.
   Clear schematic backfill, net cleanup, and DRC/ERC before fabrication.
 - Close `../FIRST-BOARD-CHECKLIST.md` and `../STACKUP-VERIFY.md` before treating

@@ -20,16 +20,19 @@ Toolchain: `kicad-cli 10.0.1` (Homebrew, macOS).
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
 | `pcb drc` violations | 349 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 41 | Net endpoints with no track to them |
-| `pcb drc` schematic-parity issues | 118 | Mixed symbol/footprint/netlist parity issues, not fab-clean |
+| `pcb drc` schematic-parity issues | 92 | Sheet-local netlist parity issues, not fab-clean |
 
 The schematic capture now has real first-pass symbols in `power_and_charge`,
 `usb_and_service`, `mcu_radio`, and `sensor_and_click`, plus a project-local
 `PowerFinger` symbol library and `PowerFinger_Ring.pretty` footprint library.
 The root and sub-sheet interfaces are now wired enough for ERC to pass, and the
 PAW3204 reset/motion nets stay local to the sensor sheet/test pads instead of
-pretending to be MCU GPIOs. DRC `--schematic-parity` still stays red because the
-PCB remains a hand-routed validation pass rather than a board updated from the
-full schematic.
+pretending to be MCU GPIOs. The PCB footprint metadata now carries the matching
+schematic BOM fields for the populated power/USB parts, the C2 bulk capacitor
+footprint matches the routed 0603 part, and the populated value labels are
+aligned. DRC `--schematic-parity` still stays red because the PCB remains a
+hand-routed validation pass rather than a board updated from the full
+schematic.
 
 ## ERC top categories
 
@@ -49,19 +52,19 @@ and sheet-interface cleanup in this snapshot.
 | `track_width` | 35 | Tracks routed at 0.18 mm where the board setup minimum is 0.20 mm |
 | `text_height` | 31 | Silkscreen text below the rule minimum |
 | `clearance` | 27 | Copper-to-copper or pad-to-track clearance failures |
-| `footprint_symbol_field_mismatch` | 22 | Schematic and PCB fields differ |
 | `tracks_crossing` | 15 | Tracks of different nets physically crossing on the same layer |
 | `silk_over_copper` | 14 | Silkscreen text crossing exposed copper |
 | `via_diameter` | 6 | Vias below the current board setup diameter rule |
 | `drill_out_of_range` | 6 | Drill sizes outside the current board setup limits |
-| `footprint_symbol_mismatch` | 4 | Footprint and symbol values or assigned package strings do not agree |
 
 The shorting-class and crossing-class violations are the blocking ones for
 fabrication. Mask-bridge and edge-clearance violations are easier mechanical
 fixes but still block a clean release. `lib_footprint_mismatch` is intentionally
 ignored in the project because the first-board custom footprints are now
 source-controlled under `PowerFinger_Ring.pretty`; upstream-library comparison
-is not useful signal for this hand-routed packet.
+is not useful signal for this hand-routed packet. The previous
+`footprint_symbol_field_mismatch` and `footprint_symbol_mismatch` buckets are
+closed in this snapshot.
 
 ## What this means for downstream packets
 
@@ -112,9 +115,8 @@ checked in; only this summary file is.
 The first-board checklist in `../FIRST-BOARD-CHECKLIST.md` lists the active
 PCB items. The closure order this snapshot recommends:
 
-1. Resolve `net_conflict`, `footprint_symbol_mismatch`, and
-   `footprint_symbol_field_mismatch` by reconciling the PCB against the full
-   schematic instead of the standalone routed pass.
+1. Resolve `net_conflict` by reconciling the PCB net names and remaining pin
+   mappings against the full schematic instead of the standalone routed pass.
 2. Fix net shorts, crossing tracks, and clearance violations on a routing pass.
 3. Re-run ERC + DRC and update this file's counts in the same commit.
 4. Only then update `MANIFEST.md` to drop the "not fabrication-released"
