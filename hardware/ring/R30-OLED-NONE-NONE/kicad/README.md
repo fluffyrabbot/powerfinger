@@ -69,6 +69,8 @@ release.
   VBUS detector feed, and minimum routed trace width
 - charger-cluster cleanup that rotates `Q1` off the J1 `A7` row and moves
   `R4` with it instead of routing raw and switched VBUS through the A7/A8 lane
+- USB/D1 fanout cleanup that nudges `D1` upward, doglegs J1 `A6`/`A7` before
+  the drop, and separates the long `USB_D+`/`USB_D-` lanes into U1
 
 This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
 charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
@@ -107,7 +109,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.1` snapshot is
-  ERC=0, DRC=233, unconnected=32, and schematic-parity=0; the remaining board
+  ERC=0, DRC=218, unconnected=32, and schematic-parity=0; the remaining board
   story is dominated by unconnected items and hand-routed clearance/shorting
   failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.

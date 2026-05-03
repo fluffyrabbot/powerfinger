@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.1` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 233 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 218 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 32 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -61,6 +61,11 @@ same charger cluster, and reroutes raw `VBUS_5V`, `VBUS_CHG_SW`, and
 `CHARGE_GATE` into separate lanes. That removes Q1's source pad from J1 `A7`
 and cuts the local USB-edge shorting bucket, but leaves J1 `A9` and the D1
 VBUS branch disconnected until the broader USB/D1 fanout is ripped up.
+This pass moves `D1` slightly upward, doglegs the J1 `A6`/`A7` USB data
+escapes before they drop toward D1, and routes `USB_D+`/`USB_D-` to U1 on
+separate lanes. That removes the long `USB_D-` run from D1's `VBUS_5V` pad row
+and reduces the crossing/mask-bridge bucket without reconnecting the still-red
+J1 `A9`/B-side VBUS branch.
 
 ## ERC top categories
 
@@ -72,14 +77,14 @@ and sheet-interface cleanup in this snapshot.
 
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
-| `solder_mask_bridge` | 72 | Adjacent pads of different nets share an unbroken mask aperture |
+| `solder_mask_bridge` | 59 | Adjacent pads of different nets share an unbroken mask aperture |
 | `copper_edge_clearance` | 44 | Copper inside the 0.5 mm board-edge clearance band |
 | `unconnected_items` | 32 | Routed pads with no track or via reaching them |
 | `text_height` | 31 | Silkscreen text below the rule minimum |
-| `tracks_crossing` | 21 | Tracks of different nets physically crossing on the same layer |
-| `clearance` | 17 | Copper-to-copper or pad-to-track clearance failures |
+| `clearance` | 18 | Copper-to-copper or pad-to-track clearance failures |
+| `shorting_items` | 17 | Nets physically shorted or crossing through pads in the hand-routed pass |
 | `silk_over_copper` | 14 | Silkscreen text crossing exposed copper |
-| `shorting_items` | 13 | Nets physically shorted or crossing through pads in the hand-routed pass |
+| `tracks_crossing` | 14 | Tracks of different nets physically crossing on the same layer |
 | `drill_out_of_range` | 6 | Drill sizes outside the current board setup limits |
 | `via_diameter` | 6 | Vias below the current board setup diameter rule |
 
@@ -119,6 +124,9 @@ first-board routes from 0.18 mm to the board setup's 0.20 mm minimum.
 - `Q1` and `R4` now sit as a charger cluster above U3, with Q1's source pad
   off the J1 `A7` row. J1 `A9` remains disconnected rather than being routed
   back through the A7/A8 corridor.
+- `D1` moved slightly upward and the A-side USB data escapes now dogleg before
+  dropping, then run to U1 as separated D+/D- service lanes. The B-side USB-C
+  data pads and the VBUS branch still need a broader connector-side cleanup.
 - `SW1` moved left to relieve the MCU pad-column collision, and the shell CAD
   dome pocket moved with it. Its local footprint no longer models the grounded
   dome ring as a full copper disk overlapping the center click contact.
