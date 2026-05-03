@@ -427,7 +427,7 @@
   (footprint "PowerFinger_Ring:Snap_Dome_5mm_TwoPad_Serviceable"
     (layer "F.Cu")
     (uuid "5f3297a0-50f6-4951-a3e8-27fe7400010a")
-    (at 116.550 94.450 0)
+    (at 114.200 95.000 0)
     (descr "5 mm metal snap dome contacts; accessible click zone")
     (property "Reference" "SW1" (at 0 -3.05 0) (layer "F.SilkS") (effects (font (size 0.75 0.75) (thickness 0.11))))
     (property "Value" "5mm 200gf dome" (at 0 3.05 0) (layer "F.Fab") (effects (font (size 0.75 0.75) (thickness 0.11))))
@@ -725,7 +725,7 @@
   (segment (start 117.750 101.800) (end 119.300 100.635) (width 0.20) (layer "F.Cu") (net 12) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000216"))
   (segment (start 119.300 99.365) (end 122.050 97.900) (width 0.20) (layer "F.Cu") (net 13) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000218"))
   (segment (start 119.300 98.095) (end 122.050 96.000) (width 0.20) (layer "F.Cu") (net 14) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000219"))
-  (segment (start 117.750 103.000) (end 116.550 94.450) (width 0.20) (layer "F.Cu") (net 15) (uuid "6816bb59-e020-4f06-8c3c-9b3d8700021a"))
+  (segment (start 117.750 103.000) (end 114.200 95.000) (width 0.20) (layer "F.Cu") (net 15) (uuid "6816bb59-e020-4f06-8c3c-9b3d8700021a"))
   (segment (start 105.500 99.500) (end 108.350 105.050) (width 0.20) (layer "F.Cu") (net 16) (uuid "6816bb59-e020-4f06-8c3c-9b3d8700021b"))
   (segment (start 108.350 106.950) (end 120.800 106.350) (width 0.20) (layer "F.Cu") (net 16) (uuid "6816bb59-e020-4f06-8c3c-9b3d8700021c"))
   (segment (start 108.350 105.050) (end 108.350 106.950) (width 0.20) (layer "F.Cu") (net 16) (uuid "37882a69-3c24-4d09-ab9f-a9f04487591f"))

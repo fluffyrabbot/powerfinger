@@ -89,7 +89,7 @@ shell using these KiCad facts:
   center `(121, 100)`
 - USB-C opening: `J1` at `(102.650, 100.000)` on the left service edge
 - battery lead path: `J_BAT` at `(108.600, 94.250)`
-- dome pocket: `SW1` at `(116.550, 94.450)`
+- dome pocket: `SW1` at `(114.200, 95.000)`
 - optical datum: `U2`/board aperture at `(116.500, 100.000)`
 - antenna keep-out: external no-footprint zone from `x=134.150` to board edge
 
@@ -105,7 +105,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.1` snapshot is
-  ERC=0, DRC=256, unconnected=35, and schematic-parity=0; the remaining board
+  ERC=0, DRC=246, unconnected=34, and schematic-parity=0; the remaining board
   story is dominated by unconnected items and hand-routed clearance/shorting
   failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.

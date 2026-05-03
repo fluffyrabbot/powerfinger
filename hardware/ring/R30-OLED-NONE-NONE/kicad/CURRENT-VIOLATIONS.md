@@ -18,8 +18,8 @@ Toolchain: `kicad-cli 10.0.1` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 256 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
-| `pcb drc` unconnected items | 35 | Net endpoints with no track to them |
+| `pcb drc` violations | 246 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` unconnected items | 34 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
 The schematic capture now has real first-pass symbols in `power_and_charge`,
@@ -45,6 +45,9 @@ minimum, removes the erroneous `SENSOR_SDIO` tie into the `SENSOR_MOTION_N`
 via, doglegs the `SENSOR_SCLK` / `VBUS_DETECT` fanout away from the worst
 sensor-via shorts, and moves the long `VBUS_5V` detector feed to the board-top
 edge corridor instead of crossing the middle of the active lane.
+This pass moves `SW1` left of the MCU pad column and syncs the shell dome
+pocket to that new board coordinate, which clears one unconnected item and the
+worst `U1`/dome overlap without claiming a fab-clean board.
 
 ## ERC top categories
 
@@ -56,14 +59,14 @@ and sheet-interface cleanup in this snapshot.
 
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
-| `solder_mask_bridge` | 87 | Adjacent pads of different nets share an unbroken mask aperture |
+| `solder_mask_bridge` | 80 | Adjacent pads of different nets share an unbroken mask aperture |
 | `copper_edge_clearance` | 44 | Copper inside the 0.5 mm board-edge clearance band |
-| `unconnected_items` | 35 | Routed pads with no track or via reaching them |
+| `unconnected_items` | 34 | Routed pads with no track or via reaching them |
 | `text_height` | 31 | Silkscreen text below the rule minimum |
-| `shorting_items` | 25 | Nets physically shorted or crossing through pads in the hand-routed pass |
-| `clearance` | 20 | Copper-to-copper or pad-to-track clearance failures |
-| `tracks_crossing` | 15 | Tracks of different nets physically crossing on the same layer |
-| `silk_over_copper` | 13 | Silkscreen text crossing exposed copper |
+| `clearance` | 21 | Copper-to-copper or pad-to-track clearance failures |
+| `shorting_items` | 21 | Nets physically shorted or crossing through pads in the hand-routed pass |
+| `tracks_crossing` | 14 | Tracks of different nets physically crossing on the same layer |
+| `silk_over_copper` | 14 | Silkscreen text crossing exposed copper |
 | `via_diameter` | 6 | Vias below the current board setup diameter rule |
 | `drill_out_of_range` | 6 | Drill sizes outside the current board setup limits |
 
@@ -95,9 +98,9 @@ first-board routes from 0.18 mm to the board setup's 0.20 mm minimum.
 - `J1` retains its shell-bound placement for the CAD service opening, but its
   local SMT contact geometry is now narrower along the row pitch so adjacent
   USB-C contacts are not treated as intrinsic copper shorts.
-- `SW1` retains its shell-bound dome-pocket coordinate, but its local footprint
-  no longer models the grounded dome ring as a full copper disk overlapping the
-  center click contact.
+- `SW1` moved left to relieve the MCU pad-column collision, and the shell CAD
+  dome pocket moved with it. Its local footprint no longer models the grounded
+  dome ring as a full copper disk overlapping the center click contact.
 - The stale schematic-only `C1`/`C3` placeholders are retained as DNP/off-board
   notes for the next schematic-driven PCB update rather than missing board
   footprints.
@@ -136,7 +139,7 @@ PCB items. The closure order this snapshot recommends:
 
 1. Rip up or reroute the remaining power/sensor fanout clusters that still
    report `shorting_items` and `tracks_crossing`.
-2. Close the 35 unconnected items without changing the shell-bound footprints
+2. Close the 34 unconnected items without changing the shell-bound footprints
    unless the CAD packet moves with them.
 3. Re-run ERC + DRC and update this file's counts in the same commit.
 4. Only then update `MANIFEST.md` to drop the "not fabrication-released"

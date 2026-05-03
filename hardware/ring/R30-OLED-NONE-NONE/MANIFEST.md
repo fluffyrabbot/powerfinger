@@ -94,9 +94,9 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   `USB4215`-class receptacle body and shell-stake footprint
 - Adds a non-USB board retention path: molded side rails, two side stop lugs,
   and small lid compression pads in board-edge keep-out zones
-- Adds a first-pass pocket over the `SW1` 5 mm dome and a top relief for an
-  accessible actuator; click force, cap material, and dome replacement are still
-  unproven
+- Adds a first-pass pocket over the `SW1` 5 mm dome at the current relieved
+  board coordinate and a top relief for an accessible actuator; click force,
+  cap material, and dome replacement are still unproven
 - Adds a battery lead channel from the actual `J_BAT` area plus a service-loop
   relief and top lift window for a protected `80-100 mAh` cell
 - Models a removable top service lid with a nested locating skirt, pry notch,
@@ -137,8 +137,10 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   coordinates. The second routing cleanup removed the bad SDIO-to-motion tie,
   normalized routed traces to the board minimum width, doglegged the
   sensor/VBUS-detect fanout, and moved the long VBUS detector feed out of the
-  board middle. KiCad CLI `10.0.1` still reports DRC=256 and unconnected=35,
-  with schematic-parity=0, because the board is still hand-routed
+  board middle. This pass moved the `SW1` dome left of the MCU pad column and
+  moved the matching shell pocket with it. KiCad CLI `10.0.1` still reports
+  DRC=246 and unconnected=34, with schematic-parity=0, because the board is
+  still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
 - Cleared ERC/DRC against the routed PCB; current snapshot lives in
