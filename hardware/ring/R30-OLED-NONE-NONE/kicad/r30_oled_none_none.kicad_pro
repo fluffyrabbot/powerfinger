@@ -6,13 +6,20 @@
       "drc_exclusions": [],
       "rules": {},
       "track_widths": [],
-      "via_dimensions": []
+      "via_dimensions": [],
+      "rule_severities": {
+        "lib_footprint_mismatch": "ignore"
+      }
     }
   },
   "boards": [],
   "libraries": {
-    "pinned_footprint_libs": [],
-    "pinned_symbol_libs": []
+    "pinned_footprint_libs": [
+      "PowerFinger_Ring"
+    ],
+    "pinned_symbol_libs": [
+      "PowerFinger"
+    ]
   },
   "meta": {
     "filename": "r30_oled_none_none.kicad_pro",

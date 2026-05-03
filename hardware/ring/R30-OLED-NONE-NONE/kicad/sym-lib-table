@@ -1,5 +1,6 @@
 (sym_lib_table
 	(version 7)
+	(lib (name "PowerFinger") (type "KiCad") (uri "${KIPRJMOD}/PowerFinger.kicad_sym") (options "") (descr "PowerFinger R30 first-board local symbols"))
 	(lib (name "Device") (type "KiCad") (uri "${KICAD10_SYMBOL_DIR}/Device.kicad_sym") (options "") (descr "Generic devices (resistors, caps, diodes, NTC, MOSFETs)"))
 	(lib (name "Battery_Management") (type "KiCad") (uri "${KICAD10_SYMBOL_DIR}/Battery_Management.kicad_sym") (options "") (descr "Battery management ICs (TP4054 via MCP73831-2-OT shape)"))
 	(lib (name "Regulator_Linear") (type "KiCad") (uri "${KICAD10_SYMBOL_DIR}/Regulator_Linear.kicad_sym") (options "") (descr "Linear regulators (RT9080-33GJ5 via AP2112K-3.3 shape)"))

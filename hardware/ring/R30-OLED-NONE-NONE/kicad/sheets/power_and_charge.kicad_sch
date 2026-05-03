@@ -3341,7 +3341,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+		(property "Footprint" "PowerFinger_Ring:Thermistor_NTC_0402_1005Metric"
 			(at 170.18 146.05 0.0000)
 			(effects
 				(font
@@ -4330,6 +4330,102 @@
 			(justify left)
 		)
 		(uuid "cf7b8a7f-5a0e-4bb6-a502-33f10b3c71c6")
+	)
+	(wire
+		(pts
+			(xy 25.4 53.34) (xy 33.02 53.34)
+		)
+		(stroke (width 0) (type default) (color 0 0 0 0))
+		(uuid "4406df46-65f9-5cfc-9e53-1fd9cb349aeb")
+	)
+	(label "CHARGE_EN"
+		(at 33.02 53.34 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "6c8f873a-bf79-5bde-8cbd-5e250075d06e")
+	)
+	(wire
+		(pts
+			(xy 25.4 60.96) (xy 33.02 60.96)
+		)
+		(stroke (width 0) (type default) (color 0 0 0 0))
+		(uuid "7cdfbbcd-a7c3-568e-8aea-409aa9a95d3b")
+	)
+	(label "VBUS_5V"
+		(at 33.02 60.96 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "9e83cc4f-58a7-570c-9822-57677740fa83")
+	)
+	(wire
+		(pts
+			(xy 180.34 38.1) (xy 187.96 38.1)
+		)
+		(stroke (width 0) (type default) (color 0 0 0 0))
+		(uuid "940455e7-7fe7-5b4b-a997-71c07ffcb103")
+	)
+	(label "VREG_3V3"
+		(at 180.34 38.1 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "7a8d25bb-15a8-57e5-8c4a-74a3003d8cae")
+	)
+	(wire
+		(pts
+			(xy 180.34 45.72) (xy 187.96 45.72)
+		)
+		(stroke (width 0) (type default) (color 0 0 0 0))
+		(uuid "8fcdbb26-bdb4-5f91-8d06-597c2bd74bc3")
+	)
+	(label "VBAT_SENSE"
+		(at 180.34 45.72 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "4d816132-f7a6-5f0f-a9ec-266126cff056")
+	)
+	(wire
+		(pts
+			(xy 180.34 53.34) (xy 187.96 53.34)
+		)
+		(stroke (width 0) (type default) (color 0 0 0 0))
+		(uuid "ad7fc4bb-3842-51ff-9ef8-95fac09b4bb5")
+	)
+	(label "NTC_SENSE"
+		(at 180.34 53.34 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "bbf4d67c-5e25-592f-900e-df92b416aeae")
+	)
+	(wire
+		(pts
+			(xy 180.34 60.96) (xy 187.96 60.96)
+		)
+		(stroke (width 0) (type default) (color 0 0 0 0))
+		(uuid "5b64b5ee-0b4c-5e9a-821d-bc7981324117")
+	)
+	(label "VBUS_DETECT"
+		(at 180.34 60.96 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "269aec41-a7e8-5ec1-8f95-0a5ffe0081b7")
 	)
 	(text "Power-path interface scaffold: regulator, sensing, and charge-gate nets are locked here before component symbols land."
 		(exclude_from_sim no)

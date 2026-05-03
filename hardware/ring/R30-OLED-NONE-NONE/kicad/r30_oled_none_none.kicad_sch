@@ -91,15 +91,7 @@
       (effects (font (size 1.27 1.27)) (justify left))
       (uuid "b2c3d4e5-4001-4001-8001-100000000004")
     )
-    (pin "SENSOR_MOTION_N" input (at 137.16 55.88 270)
-      (effects (font (size 1.27 1.27)) (justify left))
-      (uuid "b2c3d4e5-4001-4001-8001-100000000005")
-    )
-    (pin "SENSOR_NRESET" output (at 142.24 55.88 270)
-      (effects (font (size 1.27 1.27)) (justify left))
-      (uuid "b2c3d4e5-4001-4001-8001-100000000006")
-    )
-    (pin "CLICK_PRIMARY_N" input (at 147.32 55.88 270)
+            (pin "CLICK_PRIMARY_N" input (at 147.32 55.88 270)
       (effects (font (size 1.27 1.27)) (justify left))
       (uuid "b2c3d4e5-4001-4001-8001-100000000007")
     )
@@ -141,15 +133,7 @@
       (effects (font (size 1.27 1.27)) (justify right))
       (uuid "b2c3d4e5-4001-4001-8001-10000000000c")
     )
-    (pin "SENSOR_MOTION_N" output (at 58.42 69.85 90)
-      (effects (font (size 1.27 1.27)) (justify right))
-      (uuid "b2c3d4e5-4001-4001-8001-10000000000d")
-    )
-    (pin "SENSOR_NRESET" input (at 63.5 69.85 90)
-      (effects (font (size 1.27 1.27)) (justify right))
-      (uuid "b2c3d4e5-4001-4001-8001-10000000000e")
-    )
-    (pin "CLICK_PRIMARY_N" output (at 68.58 69.85 90)
+            (pin "CLICK_PRIMARY_N" output (at 68.58 69.85 90)
       (effects (font (size 1.27 1.27)) (justify right))
       (uuid "b2c3d4e5-4001-4001-8001-10000000000f")
     )
@@ -301,55 +285,7 @@
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid "b2c3d4e5-4001-4001-8001-200000000009")
   )
-  (wire
-    (pts
-      (xy 58.42 69.85)
-      (xy 58.42 64.77)
-    )
-    (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "b2c3d4e5-4001-4001-8001-20000000000a")
-  )
-  (wire
-    (pts
-      (xy 58.42 64.77)
-      (xy 137.16 64.77)
-    )
-    (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "b2c3d4e5-4001-4001-8001-20000000000b")
-  )
-  (wire
-    (pts
-      (xy 137.16 64.77)
-      (xy 137.16 55.88)
-    )
-    (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "b2c3d4e5-4001-4001-8001-20000000000c")
-  )
-  (wire
-    (pts
-      (xy 63.5 69.85)
-      (xy 63.5 67.31)
-    )
-    (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "b2c3d4e5-4001-4001-8001-20000000000d")
-  )
-  (wire
-    (pts
-      (xy 63.5 67.31)
-      (xy 142.24 67.31)
-    )
-    (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "b2c3d4e5-4001-4001-8001-20000000000e")
-  )
-  (wire
-    (pts
-      (xy 142.24 67.31)
-      (xy 142.24 55.88)
-    )
-    (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "b2c3d4e5-4001-4001-8001-20000000000f")
-  )
-  (wire
+              (wire
     (pts
       (xy 68.58 69.85)
       (xy 68.58 66.04)

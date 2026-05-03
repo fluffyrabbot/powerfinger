@@ -131,10 +131,10 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   explicit substitutions, not silent equivalents
 - Full schematic/PCB parity for the recommended sense/status parts and routed
   active blocks; `R7`-`R11`, `U1`, `U2`, `SW1`, sensor support parts, and
-  bring-up pads now have first-pass schematic counterparts, but KiCad CLI
-  `10.0.1` still reports ERC=27, DRC=381, unconnected=41, and
-  schematic-parity=119 because the board is still hand-routed and the hierarchy
-  nets/reference splits remain red
+  bring-up pads now have first-pass schematic counterparts, and schematic ERC is
+  clean with project-local `PowerFinger` libraries loaded. KiCad CLI `10.0.1`
+  still reports DRC=349, unconnected=41, and schematic-parity=118 because the
+  board is still hand-routed and PCB net/field parity remains red
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
 - Cleared ERC/DRC against the routed PCB; current snapshot lives in

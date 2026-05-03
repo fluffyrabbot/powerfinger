@@ -1918,6 +1918,54 @@
 		)
 		(uuid "a5b7d2fb-4dc0-4ea1-a605-f3e4c178df1b")
 	)
+	(wire
+		(pts
+			(xy 180.34 38.1) (xy 187.96 38.1)
+		)
+		(stroke (width 0) (type default) (color 0 0 0 0))
+		(uuid "5bfa547e-997c-5c86-804d-9d1dffb4bc27")
+	)
+	(label "VBUS_5V"
+		(at 180.34 38.1 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "462b2790-2b96-5c12-a33e-951578393443")
+	)
+	(wire
+		(pts
+			(xy 180.34 45.72) (xy 187.96 45.72)
+		)
+		(stroke (width 0) (type default) (color 0 0 0 0))
+		(uuid "b853592d-8d4c-51d4-8516-eb4af791bc80")
+	)
+	(label "USB_D+"
+		(at 180.34 45.72 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "4bf21a36-ea5d-5ab8-aebd-4290cdaa0b0d")
+	)
+	(wire
+		(pts
+			(xy 180.34 53.34) (xy 187.96 53.34)
+		)
+		(stroke (width 0) (type default) (color 0 0 0 0))
+		(uuid "4f7e1dd7-be17-5475-b56b-fe1b5f78407c")
+	)
+	(label "USB_D-"
+		(at 180.34 53.34 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "bc8963f0-87b7-5572-9633-13f4f59b8cad")
+	)
 	(no_connect
 		(at 105.41 92.71)
 		(uuid "67d71e47-0d58-4807-a2a5-a852edb87aff")
