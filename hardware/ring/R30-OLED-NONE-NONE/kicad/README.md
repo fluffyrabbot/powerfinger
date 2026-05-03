@@ -63,6 +63,8 @@ release.
   mapped to `SH`
 - `J_BAT` backed by a project-local first-board symbol that models `MP1`/`MP2`
   as GND-tied mounting/shield pads, so schematic/PCB parity is clean
+- first routing cleanup of USB-C SMT contact pad length, snap-dome contact
+  geometry, and wrong first-pass power/USB endpoint coordinates
 
 This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
 charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
@@ -101,7 +103,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.1` snapshot is
-  ERC=0, DRC=349, unconnected=41, and schematic-parity=0; the remaining board
+  ERC=0, DRC=304, unconnected=35, and schematic-parity=0; the remaining board
   story is dominated by unconnected items and hand-routed clearance/shorting
   failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.

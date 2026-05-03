@@ -132,8 +132,10 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   USB ESD labels, charge-gate MOSFET pin mappings, USB-C shield stakes, and
   `J_BAT` `MP1`/`MP2` mounting pads now have first-pass schematic counterparts,
   and schematic ERC is clean with project-local `PowerFinger` libraries loaded.
-  KiCad CLI `10.0.1` still reports DRC=349 and unconnected=41, with
-  schematic-parity=0, because the board is still hand-routed
+  The first routing cleanup fixed the USB-C contact pad geometry, snap-dome
+  contact geometry, and the first batch of wrong power/USB endpoint
+  coordinates. KiCad CLI `10.0.1` still reports DRC=304 and unconnected=35,
+  with schematic-parity=0, because the board is still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
 - Cleared ERC/DRC against the routed PCB; current snapshot lives in

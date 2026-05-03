@@ -18,8 +18,8 @@ Toolchain: `kicad-cli 10.0.1` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 349 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
-| `pcb drc` unconnected items | 41 | Net endpoints with no track to them |
+| `pcb drc` violations | 302 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` unconnected items | 35 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
 The schematic capture now has real first-pass symbols in `power_and_charge`,
@@ -35,7 +35,11 @@ match the flat PCB net names, `Q1`/`Q2` use project-local SOT-23 pin-numbered
 symbols, the USB ESD labels match the routed D+/D- nets, and the USB-C shell
 stakes map to the schematic `SH` pin. `J_BAT` now uses a project-local
 first-board symbol whose `MP1`/`MP2` mounting pads are explicit GND-tied
-shield pins, so DRC `--schematic-parity` is clean.
+shield pins, so DRC `--schematic-parity` is clean. The first routing cleanup
+shrinks the local USB-C SMT contact pads to match the 1.0 mm row pitch, replaces
+the overlapping snap-dome copper disk with non-overlapping center/ring pads,
+and corrects the first batch of power, USB, charger-status, and ESD endpoint
+coordinates that were landing on adjacent pads.
 
 ## ERC top categories
 
@@ -47,15 +51,15 @@ and sheet-interface cleanup in this snapshot.
 
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
-| `solder_mask_bridge` | 122 | Adjacent pads of different nets share an unbroken mask aperture |
-| `copper_edge_clearance` | 45 | Copper inside the 0.5 mm board-edge clearance band |
-| `shorting_items` | 38 | Nets physically shorted or crossing through pads in the hand-routed pass |
-| `unconnected_items` | 41 | Routed pads with no track or via reaching them |
-| `track_width` | 35 | Tracks routed at 0.18 mm where the board setup minimum is 0.20 mm |
+| `solder_mask_bridge` | 92 | Adjacent pads of different nets share an unbroken mask aperture |
+| `copper_edge_clearance` | 46 | Copper inside the 0.5 mm board-edge clearance band |
+| `track_width` | 37 | Tracks routed at 0.18 mm where the board setup minimum is 0.20 mm |
+| `unconnected_items` | 35 | Routed pads with no track or via reaching them |
 | `text_height` | 31 | Silkscreen text below the rule minimum |
-| `clearance` | 27 | Copper-to-copper or pad-to-track clearance failures |
-| `tracks_crossing` | 15 | Tracks of different nets physically crossing on the same layer |
-| `silk_over_copper` | 14 | Silkscreen text crossing exposed copper |
+| `shorting_items` | 25 | Nets physically shorted or crossing through pads in the hand-routed pass |
+| `tracks_crossing` | 21 | Tracks of different nets physically crossing on the same layer |
+| `clearance` | 18 | Copper-to-copper or pad-to-track clearance failures |
+| `silk_over_copper` | 13 | Silkscreen text crossing exposed copper |
 | `via_diameter` | 6 | Vias below the current board setup diameter rule |
 | `drill_out_of_range` | 6 | Drill sizes outside the current board setup limits |
 
@@ -83,6 +87,12 @@ snapshot.
 - `J_BAT`, including its `MP1`/`MP2` mounting pads, `R2A`, `R2B`, and
   `TP_CHRG` now have schematic counterparts; `R2` and `R12` were renamed to the
   board's `R2A`/`R2B` split.
+- `J1` retains its shell-bound placement for the CAD service opening, but its
+  local SMT contact geometry is now narrower along the row pitch so adjacent
+  USB-C contacts are not treated as intrinsic copper shorts.
+- `SW1` retains its shell-bound dome-pocket coordinate, but its local footprint
+  no longer models the grounded dome ring as a full copper disk overlapping the
+  center click contact.
 - The stale schematic-only `C1`/`C3` placeholders are retained as DNP/off-board
   notes for the next schematic-driven PCB update rather than missing board
   footprints.
@@ -119,8 +129,9 @@ checked in; only this summary file is.
 The first-board checklist in `../FIRST-BOARD-CHECKLIST.md` lists the active
 PCB items. The closure order this snapshot recommends:
 
-1. Fix net shorts, crossing tracks, and clearance violations on a routing pass.
-2. Close the 41 unconnected items without changing the shell-bound footprints
+1. Rip up or reroute the remaining power/sensor fanout clusters that still
+   report `shorting_items` and `tracks_crossing`.
+2. Close the 35 unconnected items without changing the shell-bound footprints
    unless the CAD packet moves with them.
 3. Re-run ERC + DRC and update this file's counts in the same commit.
 4. Only then update `MANIFEST.md` to drop the "not fabrication-released"
