@@ -4,8 +4,8 @@
 This directory is the PCB/schematic starting point for the active optical ring
 lane. It is intentionally honest about its state: the first routed PCB pass now
 exists, and the power/USB plus MCU/radio plus sensor/click sheets now include
-first-pass symbols, but the `J_BAT` mounting-pad model and board DRC are still
-not clean enough for fabrication release.
+first-pass symbols, but the board DRC is still not clean enough for fabrication
+release.
 
 ## Current Source Files
 
@@ -61,6 +61,8 @@ not clean enough for fabrication release.
   match flat PCB net names, with project-local SOT-23 pin-numbered
   `Q1`/`Q2` symbols, aligned USB ESD D+/D- labels, and USB-C shield stakes
   mapped to `SH`
+- `J_BAT` backed by a project-local first-board symbol that models `MP1`/`MP2`
+  as GND-tied mounting/shield pads, so schematic/PCB parity is clean
 
 This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
 charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
@@ -99,8 +101,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.1` snapshot is
-  ERC=0, DRC=349, unconnected=41, and schematic-parity=2; the remaining parity
-  story is the `J_BAT` `MP1`/`MP2` mounting-pad model, while the remaining board
+  ERC=0, DRC=349, unconnected=41, and schematic-parity=0; the remaining board
   story is dominated by unconnected items and hand-routed clearance/shorting
   failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.

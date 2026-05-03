@@ -1797,9 +1797,9 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Connector:Conn_01x02_Socket"
+		(symbol "PowerFinger:JST_SH_SM02B_SRSS_TB_RA_FirstBoard"
 			(pin_names
-				(offset 1.016)
+				(offset 0.762)
 				(hide yes)
 			)
 			(exclude_from_sim no)
@@ -1817,8 +1817,8 @@
 					)
 				)
 			)
-			(property "Value" "Conn_01x02_Socket"
-				(at 0 -5.08 0)
+			(property "Value" "SM02B-SRSS-TB class"
+				(at 0 -10.16 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(effects
@@ -1827,7 +1827,7 @@
 					)
 				)
 			)
-			(property "Footprint" ""
+			(property "Footprint" "PowerFinger_Ring:JST_SH_SM02B-SRSS-TB_RA_1x02_P1.00mm"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1849,7 +1849,7 @@
 					)
 				)
 			)
-			(property "Description" "Generic connector, single row, 01x02, script generated"
+			(property "Description" "JST-SH right-angle 2-pin battery connector with grounded mounting pads"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1860,91 +1860,24 @@
 					)
 				)
 			)
-			(property "ki_locked" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
+			(symbol "JST_SH_SM02B_SRSS_TB_RA_FirstBoard_0_1"
+				(rectangle
+					(start -1.27 1.27)
+					(end 2.54 -8.89)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
 					)
 				)
 			)
-			(property "ki_keywords" "connector"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_fp_filters" "Connector*:*_1x??_*"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(symbol "Conn_01x02_Socket_1_1"
-				(polyline
-					(pts
-						(xy -1.27 0) (xy -0.508 0)
-					)
-					(stroke
-						(width 0.1524)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -1.27 -2.54) (xy -0.508 -2.54)
-					)
-					(stroke
-						(width 0.1524)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(arc
-					(start 0 -0.508)
-					(mid -0.5058 0)
-					(end 0 0.508)
-					(stroke
-						(width 0.1524)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(arc
-					(start 0 -3.048)
-					(mid -0.5058 -2.54)
-					(end 0 -2.032)
-					(stroke
-						(width 0.1524)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
+			(symbol "JST_SH_SM02B_SRSS_TB_RA_FirstBoard_1_1"
 				(pin passive line
 					(at -5.08 0 0)
 					(length 3.81)
-					(name "Pin_1"
+					(name "VBAT+"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1962,7 +1895,7 @@
 				(pin passive line
 					(at -5.08 -2.54 0)
 					(length 3.81)
-					(name "Pin_2"
+					(name "VBAT-"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1970,6 +1903,42 @@
 						)
 					)
 					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 -5.08 0)
+					(length 3.81)
+					(name "SHIELD"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "MP1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 -7.62 0)
+					(length 3.81)
+					(name "SHIELD"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "MP2"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -3632,7 +3601,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Connector:Conn_01x02_Socket")
+		(lib_id "PowerFinger:JST_SH_SM02B_SRSS_TB_RA_FirstBoard")
 		(at 195.58 130.81 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -3695,6 +3664,12 @@
 		)
 		(pin "2"
 			(uuid "cb0ef477-6860-40ca-a6c9-6757a3203036")
+		)
+		(pin "MP1"
+			(uuid "194a091e-5bb4-4d9c-a251-3924da1bcad2")
+		)
+		(pin "MP2"
+			(uuid "c1a7d8c3-ca2d-4464-94a8-5ac3df99a407")
 		)
 		(instances
 			(project "simple_circuit"
@@ -4291,6 +4266,28 @@
 			(justify left bottom)
 		)
 		(uuid "b14707f7-f9ec-4661-9a2b-3a3d43717375")
+	)
+	(global_label "GND"
+		(shape passive)
+		(at 190.5 135.89 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "b63c64a2-1e75-4659-8ed5-e230a597b38b")
+	)
+	(global_label "GND"
+		(shape passive)
+		(at 190.5 138.43 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "2d8ffdd6-dfef-411b-9b59-66141eb725e2")
 	)
 	(global_label "CHRG_STAT"
 		(shape input)

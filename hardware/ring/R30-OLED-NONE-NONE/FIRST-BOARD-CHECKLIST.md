@@ -17,7 +17,7 @@ This checklist is the execution contract for the active ring hardware lane.
   the PCB pass
 - [ ] Backfill schematic symbols to match the PCB pass and clear KiCad DRC
   (current snapshot in `kicad/CURRENT-VIOLATIONS.md`: ERC=0, DRC=349,
-  unconnected=41, parity=2 — regenerate with
+  unconnected=41, parity=0 — regenerate with
   `scripts/verify-firmware-local.sh --kicad-only`)
 - [x] Add project-local `PowerFinger` symbols and `PowerFinger_Ring`
   footprints, then wire the sheet-interface labels enough to clear schematic
@@ -27,7 +27,7 @@ This checklist is the execution contract for the active ring hardware lane.
   `TP_VBUS`, `TP_RST`, `TP_MOT`, and `TP_LEDKIT`
 - [x] Reconcile the first-two-sheet electrical parity leftovers: `J_BAT`,
   `TP_CHRG`, `R2A`/`R2B`, and stale schematic-only `C1`/`C3`/`R2`/`R12`
-- [ ] Model the `J_BAT` `MP1`/`MP2` mounting pads in the local schematic /
+- [x] Model the `J_BAT` `MP1`/`MP2` mounting pads in the local schematic /
   footprint contract so the final schematic-parity rows close cleanly
 - [x] Accept the `Q2`/`R6` charge-gate safety add into the active BOM CSV
 - [x] Add `VBAT_SENSE` (`R7`/`R8`), `VBUS_DETECT` (`R9`/`R10`), and

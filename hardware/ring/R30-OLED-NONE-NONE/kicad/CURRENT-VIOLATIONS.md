@@ -2,8 +2,8 @@
 # R30-OLED-NONE-NONE Current ERC / DRC Snapshot
 
 This packet is **not** fabrication-released. The first routed PCB pass still
-carries DRC violations, unconnected items, and two schematic/PCB parity rows
-that block fab and any release claim.
+carries DRC violations and unconnected items that block fab and any release
+claim.
 
 This file is a snapshot of those violations so the manifest cannot quietly
 drift. It is intentionally not a generated artifact: regenerate the raw reports
@@ -20,7 +20,7 @@ Toolchain: `kicad-cli 10.0.1` (Homebrew, macOS).
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
 | `pcb drc` violations | 349 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 41 | Net endpoints with no track to them |
-| `pcb drc` schematic-parity issues | 2 | `J_BAT` mounting pads still need explicit schematic modeling |
+| `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
 The schematic capture now has real first-pass symbols in `power_and_charge`,
 `usb_and_service`, `mcu_radio`, and `sensor_and_click`, plus a project-local
@@ -33,8 +33,9 @@ footprint matches the routed 0603 part, and the populated value labels are
 aligned. Routed sheet nets are now passive global labels where they intentionally
 match the flat PCB net names, `Q1`/`Q2` use project-local SOT-23 pin-numbered
 symbols, the USB ESD labels match the routed D+/D- nets, and the USB-C shell
-stakes map to the schematic `SH` pin. DRC `--schematic-parity` still stays red
-only for the `J_BAT` footprint mounting pads.
+stakes map to the schematic `SH` pin. `J_BAT` now uses a project-local
+first-board symbol whose `MP1`/`MP2` mounting pads are explicit GND-tied
+shield pins, so DRC `--schematic-parity` is clean.
 
 ## ERC top categories
 
@@ -47,7 +48,6 @@ and sheet-interface cleanup in this snapshot.
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
 | `solder_mask_bridge` | 122 | Adjacent pads of different nets share an unbroken mask aperture |
-| `net_conflict` | 2 | `J_BAT` `MP1`/`MP2` mounting pads have no corresponding schematic pins yet |
 | `copper_edge_clearance` | 45 | Copper inside the 0.5 mm board-edge clearance band |
 | `shorting_items` | 38 | Nets physically shorted or crossing through pads in the hand-routed pass |
 | `unconnected_items` | 41 | Routed pads with no track or via reaching them |
@@ -66,7 +66,8 @@ ignored in the project because the first-board custom footprints are now
 source-controlled under `PowerFinger_Ring.pretty`; upstream-library comparison
 is not useful signal for this hand-routed packet. The previous
 `footprint_symbol_field_mismatch`, `footprint_symbol_mismatch`, and broad
-sheet-local `net_conflict` buckets are closed in this snapshot.
+sheet-local plus `J_BAT` mounting-pad `net_conflict` buckets are closed in this
+snapshot.
 
 ## What this means for downstream packets
 
@@ -75,12 +76,13 @@ sheet-local `net_conflict` buckets are closed in this snapshot.
   `SW1`, `U2`, or the antenna keep-out, the shell CAD must move with it.
 - `VBAT_SENSE` and `VBUS_DETECT` now have BDFL-accepted first-board divider
   parts and MCU-side sense/testpad counterparts in the schematic and PCB, so the
-  remaining blocker is PCB DRC cleanup plus the `J_BAT` mounting-pad parity
-  model rather than a missing packet decision or an ERC setup problem.
+  remaining blocker is PCB DRC cleanup rather than a missing packet decision, a
+  schematic-parity gap, or an ERC setup problem.
 - `CHRG_STAT` now has the BDFL-accepted `R11` pull-up and a local status
   pad, but the packet still makes no firmware-consumed claim for that signal.
-- `J_BAT`, `R2A`, `R2B`, and `TP_CHRG` now have schematic counterparts; `R2`
-  and `R12` were renamed to the board's `R2A`/`R2B` split.
+- `J_BAT`, including its `MP1`/`MP2` mounting pads, `R2A`, `R2B`, and
+  `TP_CHRG` now have schematic counterparts; `R2` and `R12` were renamed to the
+  board's `R2A`/`R2B` split.
 - The stale schematic-only `C1`/`C3` placeholders are retained as DNP/off-board
   notes for the next schematic-driven PCB update rather than missing board
   footprints.
@@ -117,9 +119,9 @@ checked in; only this summary file is.
 The first-board checklist in `../FIRST-BOARD-CHECKLIST.md` lists the active
 PCB items. The closure order this snapshot recommends:
 
-1. Resolve the final `net_conflict` rows by modeling `J_BAT` `MP1`/`MP2` as
-   explicit mounting/shield pins in the local symbol/footprint contract.
-2. Fix net shorts, crossing tracks, and clearance violations on a routing pass.
+1. Fix net shorts, crossing tracks, and clearance violations on a routing pass.
+2. Close the 41 unconnected items without changing the shell-bound footprints
+   unless the CAD packet moves with them.
 3. Re-run ERC + DRC and update this file's counts in the same commit.
 4. Only then update `MANIFEST.md` to drop the "not fabrication-released"
    language.
