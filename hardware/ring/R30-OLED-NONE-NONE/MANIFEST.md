@@ -138,11 +138,13 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   normalized routed traces to the board minimum width, doglegged the
   sensor/VBUS-detect fanout, and moved the long VBUS detector feed out of the
   board middle. This pass moved the `SW1` dome left of the MCU pad column and
-  moved the matching shell pocket with it. This pass also corrected the
-  charge-service endpoints for `Q1`/`R4` `CHARGE_GATE` and `U3`/`R1` `PROG_R`,
+  moved the matching shell pocket with it. The next cleanup corrected the
+  charge-service endpoints for `Q1`/`R4` `CHARGE_GATE` and `U3`/`R1` `PROG_R`.
+  This pass moved `R4` away from J1's `A5`/CC1 crowding, added an explicit
+  `A4`-to-`R4` `VBUS_5V` feed, and corrected `VBUS_CHG_SW` onto U3's VCC pad,
   leaving the remaining USB-edge shorts as real routing/placement work rather
-  than wrong-pad connectivity. KiCad CLI `10.0.1` still reports DRC=245 and
-  unconnected=32, with schematic-parity=0, because the board is still
+  than wrong-pad connectivity. KiCad CLI `10.0.1` still reports DRC=244 and
+  unconnected=31, with schematic-parity=0, because the board is still
   hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
