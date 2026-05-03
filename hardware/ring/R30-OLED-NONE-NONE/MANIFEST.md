@@ -143,9 +143,11 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   This pass moved `R4` away from J1's `A5`/CC1 crowding, added an explicit
   `A4`-to-`R4` `VBUS_5V` feed, and corrected `VBUS_CHG_SW` onto U3's VCC pad,
   leaving the remaining USB-edge shorts as real routing/placement work rather
-  than wrong-pad connectivity. KiCad CLI `10.0.1` still reports DRC=244 and
-  unconnected=31, with schematic-parity=0, because the board is still
-  hand-routed
+  than wrong-pad connectivity. This pass rotates `Q1` off the J1 `A7` row,
+  moves `R4` into the same charger cluster, and keeps J1 `A9` disconnected
+  until the broader USB/D1 fanout can be rerouted cleanly. KiCad CLI `10.0.1`
+  still reports DRC=233 and unconnected=32, with schematic-parity=0, because
+  the board is still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
 - Cleared ERC/DRC against the routed PCB; current snapshot lives in

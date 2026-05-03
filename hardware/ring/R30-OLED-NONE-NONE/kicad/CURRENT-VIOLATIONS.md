@@ -18,8 +18,8 @@ Toolchain: `kicad-cli 10.0.1` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 244 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
-| `pcb drc` unconnected items | 31 | Net endpoints with no track to them |
+| `pcb drc` violations | 233 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` unconnected items | 32 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
 The schematic capture now has real first-pass symbols in `power_and_charge`,
@@ -54,8 +54,13 @@ pad. That reduces the unconnected count while leaving the dense USB-edge
 placement/routing cluster red.
 This pass moves `R4` inward from the J1 CC1 row, adds an explicit `VBUS_5V`
 feed from J1 `A4` to the relocated R4 pad, and moves `VBUS_CHG_SW` onto U3's
-VCC pad. Q1 itself remains too close to J1 `A7`, so the board is still not
-fabrication-clean.
+VCC pad. At that point Q1 itself still sat too close to J1 `A7`, so a wider
+charger-cluster move remained.
+This pass rotates `Q1` horizontally above the charger, moves `R4` into the
+same charger cluster, and reroutes raw `VBUS_5V`, `VBUS_CHG_SW`, and
+`CHARGE_GATE` into separate lanes. That removes Q1's source pad from J1 `A7`
+and cuts the local USB-edge shorting bucket, but leaves J1 `A9` and the D1
+VBUS branch disconnected until the broader USB/D1 fanout is ripped up.
 
 ## ERC top categories
 
@@ -67,16 +72,16 @@ and sheet-interface cleanup in this snapshot.
 
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
-| `solder_mask_bridge` | 78 | Adjacent pads of different nets share an unbroken mask aperture |
+| `solder_mask_bridge` | 72 | Adjacent pads of different nets share an unbroken mask aperture |
 | `copper_edge_clearance` | 44 | Copper inside the 0.5 mm board-edge clearance band |
+| `unconnected_items` | 32 | Routed pads with no track or via reaching them |
 | `text_height` | 31 | Silkscreen text below the rule minimum |
-| `unconnected_items` | 31 | Routed pads with no track or via reaching them |
-| `shorting_items` | 22 | Nets physically shorted or crossing through pads in the hand-routed pass |
-| `clearance` | 19 | Copper-to-copper or pad-to-track clearance failures |
-| `silk_over_copper` | 15 | Silkscreen text crossing exposed copper |
-| `tracks_crossing` | 14 | Tracks of different nets physically crossing on the same layer |
-| `via_diameter` | 6 | Vias below the current board setup diameter rule |
+| `tracks_crossing` | 21 | Tracks of different nets physically crossing on the same layer |
+| `clearance` | 17 | Copper-to-copper or pad-to-track clearance failures |
+| `silk_over_copper` | 14 | Silkscreen text crossing exposed copper |
+| `shorting_items` | 13 | Nets physically shorted or crossing through pads in the hand-routed pass |
 | `drill_out_of_range` | 6 | Drill sizes outside the current board setup limits |
+| `via_diameter` | 6 | Vias below the current board setup diameter rule |
 
 The shorting-class and crossing-class violations are the blocking ones for
 fabrication. Mask-bridge and edge-clearance violations are easier mechanical
@@ -110,8 +115,10 @@ first-board routes from 0.18 mm to the board setup's 0.20 mm minimum.
   pads, so the remaining service-edge DRC rows are routing/placement debt, not
   wrong endpoint names.
 - `R4` moved inward from the J1 `A5`/CC1 row and now has an explicit J1 `A4`
-  `VBUS_5V` feed; `VBUS_CHG_SW` now lands on U3's VCC pad. Q1's source pad
-  still crowds J1 `A7`, so a larger placement move remains.
+  `VBUS_5V` feed; `VBUS_CHG_SW` now lands on U3's VCC pad.
+- `Q1` and `R4` now sit as a charger cluster above U3, with Q1's source pad
+  off the J1 `A7` row. J1 `A9` remains disconnected rather than being routed
+  back through the A7/A8 corridor.
 - `SW1` moved left to relieve the MCU pad-column collision, and the shell CAD
   dome pocket moved with it. Its local footprint no longer models the grounded
   dome ring as a full copper disk overlapping the center click contact.
@@ -153,7 +160,7 @@ PCB items. The closure order this snapshot recommends:
 
 1. Rip up or reroute the remaining power/sensor fanout clusters that still
    report `shorting_items` and `tracks_crossing`.
-2. Close the 31 unconnected items without changing the shell-bound footprints
+2. Close the 32 unconnected items without changing the shell-bound footprints
    unless the CAD packet moves with them.
 3. Re-run ERC + DRC and update this file's counts in the same commit.
 4. Only then update `MANIFEST.md` to drop the "not fabrication-released"
