@@ -88,6 +88,12 @@ scripts/verify-firmware-local.sh hub
 scripts/verify-firmware-local.sh pen
 ```
 
+Build the active R30 optical ring board profile:
+
+```bash
+scripts/verify-firmware-local.sh --ring-profile r30-oled-none-none
+```
+
 Run only the host-side unit tests:
 
 ```bash
@@ -125,9 +131,27 @@ IDF_TARGET=esp32s3 idf.py -C firmware/hub -B build-idf/hub build
 The local verifier script is still the preferred shared path because it keeps
 the active lane and host tests in one place.
 
+## Board-Profile Ring Build
+
+The generic ring defaults keep the pre-hardware/dev-board path available. To
+build the active `R30-OLED-NONE-NONE` optical board profile, use the verifier's
+profile mode:
+
+```bash
+scripts/verify-firmware-local.sh --ring-profile r30-oled-none-none
+```
+
+This layers `firmware/ring/sdkconfig.defaults.r30_oled_none_none`, writes the
+generated SDK config under `build-idf/r30-oled-none-none/`, checks the resolved
+safety-critical pin values, and then builds. It proves the active-board Kconfig
+selection only. Human-loop, thermal, charge-safety, and RF claims still require
+the gate evidence in
+[ACTIVE-LANE-CHECKLIST.md](ACTIVE-LANE-CHECKLIST.md).
+
 ## Related Docs
 
 - [ACTIVE-LANE-CHECKLIST.md](ACTIVE-LANE-CHECKLIST.md)
 - [DRIVER-HARDWARE-CONTRACT.md](DRIVER-HARDWARE-CONTRACT.md)
 - [GO-NO-GO-RUBRIC.md](GO-NO-GO-RUBRIC.md)
 - [PROTOTYPE-SPEC.md](PROTOTYPE-SPEC.md)
+- [R30-OLED-FIRMWARE-CONFIG.md](R30-OLED-FIRMWARE-CONFIG.md)

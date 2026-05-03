@@ -18,6 +18,7 @@ This is the canonical checklist for the current PowerFinger program.
 - Ring packet: [hardware/ring/R30-OLED-NONE-NONE/MANIFEST.md](../hardware/ring/R30-OLED-NONE-NONE/MANIFEST.md)
 - Hub packet: [hardware/shared/USB-HUB/MANIFEST.md](../hardware/shared/USB-HUB/MANIFEST.md)
 - Driver/hardware contract: [DRIVER-HARDWARE-CONTRACT.md](DRIVER-HARDWARE-CONTRACT.md)
+- R30 board firmware config: [R30-OLED-FIRMWARE-CONFIG.md](R30-OLED-FIRMWARE-CONFIG.md)
 - Local verification flow: [FIRMWARE-VERIFY-LOCAL.md](FIRMWARE-VERIFY-LOCAL.md)
 - Gate order and pass/fail rules: [GO-NO-GO-RUBRIC.md](GO-NO-GO-RUBRIC.md)
 

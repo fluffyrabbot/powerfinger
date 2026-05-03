@@ -21,7 +21,9 @@ Electrical semantics, focal geometry, battery safety, and RF behavior cannot.
 This file does not replace packet-level hardware contracts. The ring packet's
 local net map remains
 [`hardware/ring/R30-OLED-NONE-NONE/kicad/INTERFACE-CONTRACT.md`](../hardware/ring/R30-OLED-NONE-NONE/kicad/INTERFACE-CONTRACT.md).
-This file maps those hardware facts back to firmware behavior and gate impact.
+The active board firmware binding is
+[`R30-OLED-FIRMWARE-CONFIG.md`](R30-OLED-FIRMWARE-CONFIG.md). This file maps
+those hardware facts back to firmware behavior and gate impact.
 
 ## Classification
 
@@ -82,7 +84,7 @@ This file maps those hardware facts back to firmware behavior and gate impact.
 4. Do not claim `CHRG_STAT` firmware behavior until a production firmware symbol
    consumes it and tests cover it.
 5. If a pin assignment changes, update the packet-level interface contract,
-   Kconfig defaults or board config, and host tests in the same patch.
+   Kconfig fragment or board config, and host tests in the same patch.
 6. If a component is replaced by an alternate, re-check the driver protocol,
    voltage domain, package, lens/mechanical interface, and BOM ceiling before
    calling it compatible.

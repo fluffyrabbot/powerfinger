@@ -19,6 +19,7 @@ run_firmware=true
 run_kicad_checks=false
 kicad_strict=false
 use_all_projects=false
+ring_profile=""
 
 declare -a requested_projects=()
 declare -a all_projects=(ring pen puck hub)
@@ -43,12 +44,15 @@ Options:
                       (default: report counts and continue, since the active
                       packets currently have a known-red baseline tracked in
                       kicad/CURRENT-VIOLATIONS.md)
+  --ring-profile NAME Build the ring with a board profile fragment.
+                      Supported: r30-oled-none-none
   -h, --help          Show this help text
 
 Defaults:
   - Host-side tests run first
   - Firmware verification builds the active lane: ring + hub
   - ESP-IDF build outputs go under build-idf/<project>/
+  - Ring profile builds write under build-idf/<profile>/
   - kicad-cli checks are off by default (opt in with --with-kicad)
   - kicad-cli reports go under build-kicad/<packet>/
   - If idf.py is not already in PATH, the script will try a repo-pinned
@@ -59,6 +63,7 @@ Examples:
   scripts/verify-firmware-local.sh hub
   scripts/verify-firmware-local.sh --all
   scripts/verify-firmware-local.sh --host-tests-only
+  scripts/verify-firmware-local.sh --ring-profile r30-oled-none-none
   scripts/verify-firmware-local.sh --with-kicad
   scripts/verify-firmware-local.sh --kicad-only
   scripts/verify-firmware-local.sh --kicad-only --kicad-strict
@@ -79,6 +84,16 @@ append_project() {
 parse_target() {
     local defaults_file="$1"
     sed -n 's/^CONFIG_IDF_TARGET="\([^"]*\)"$/\1/p' "$defaults_file" | head -n 1
+}
+
+project_was_requested() {
+    local needle="$1" project
+    for project in "${requested_projects[@]}"; do
+        if [[ "$project" == "$needle" ]]; then
+            return 0
+        fi
+    done
+    return 1
 }
 
 normalize_idf_version() {
@@ -275,6 +290,124 @@ run_kicad_checks_step() {
     fi
 }
 
+ring_profile_defaults_file() {
+    local profile="$1"
+    case "$profile" in
+        r30-oled-none-none)
+            printf '%s\n' "$repo_root/firmware/ring/sdkconfig.defaults.r30_oled_none_none"
+            ;;
+        *)
+            echo "error: unsupported ring profile '$profile'" >&2
+            echo "supported ring profiles: r30-oled-none-none" >&2
+            exit 1
+            ;;
+    esac
+}
+
+ring_profile_build_dir() {
+    local profile="$1"
+    case "$profile" in
+        r30-oled-none-none)
+            printf '%s\n' "$build_root/r30-oled-none-none"
+            ;;
+        *)
+            echo "error: unsupported ring profile '$profile'" >&2
+            exit 1
+            ;;
+    esac
+}
+
+require_sdkconfig_value() {
+    local sdkconfig_path="$1"
+    local key="$2"
+    local expected="$3"
+    local actual
+
+    actual="$(sed -n "s/^${key}=\(.*\)$/\1/p" "$sdkconfig_path" | head -n 1)"
+    if [[ "$actual" != "$expected" ]]; then
+        echo "error: $sdkconfig_path has $key=${actual:-<unset>}, expected $expected" >&2
+        exit 1
+    fi
+}
+
+verify_r30_oled_profile_sdkconfig() {
+    local sdkconfig_path="$1"
+
+    if [[ ! -f "$sdkconfig_path" ]]; then
+        echo "error: expected generated sdkconfig at $sdkconfig_path" >&2
+        exit 1
+    fi
+
+    echo "==> Checking R30-OLED resolved sdkconfig contract"
+    require_sdkconfig_value "$sdkconfig_path" CONFIG_SENSOR_PAW3204 y
+    require_sdkconfig_value "$sdkconfig_path" CONFIG_CLICK_SNAP_DOME y
+    require_sdkconfig_value "$sdkconfig_path" CONFIG_POWERFINGER_SENSOR_SCLK_PIN 4
+    require_sdkconfig_value "$sdkconfig_path" CONFIG_POWERFINGER_SENSOR_SDIO_PIN 5
+    require_sdkconfig_value "$sdkconfig_path" CONFIG_POWERFINGER_DOME_PIN 8
+    require_sdkconfig_value "$sdkconfig_path" CONFIG_POWERFINGER_WAKE_GPIO_MASK 256
+    require_sdkconfig_value "$sdkconfig_path" CONFIG_POWERFINGER_VBAT_ADC_CHANNEL 0
+    require_sdkconfig_value "$sdkconfig_path" CONFIG_POWERFINGER_NTC_ADC_CHANNEL 1
+    require_sdkconfig_value "$sdkconfig_path" CONFIG_POWERFINGER_VBUS_DETECT_PIN 3
+    require_sdkconfig_value "$sdkconfig_path" CONFIG_POWERFINGER_CHARGE_ENABLE_PIN 10
+    require_sdkconfig_value "$sdkconfig_path" CONFIG_POWERFINGER_HALL_POWER_PIN -1
+}
+
+verify_ring_profile_sdkconfig() {
+    local profile="$1"
+    local sdkconfig_path="$2"
+
+    case "$profile" in
+        r30-oled-none-none)
+            verify_r30_oled_profile_sdkconfig "$sdkconfig_path"
+            ;;
+        *)
+            echo "error: unsupported ring profile '$profile'" >&2
+            exit 1
+            ;;
+    esac
+}
+
+build_ring_profile_step() {
+    local profile="$1"
+    local project_dir="$repo_root/firmware/ring"
+    local defaults_file="$project_dir/sdkconfig.defaults"
+    local profile_defaults_file build_dir sdkconfig_path target
+
+    profile_defaults_file="$(ring_profile_defaults_file "$profile")"
+    build_dir="$(ring_profile_build_dir "$profile")"
+    sdkconfig_path="$build_dir/sdkconfig"
+
+    if [[ ! -f "$profile_defaults_file" ]]; then
+        echo "error: missing $profile_defaults_file" >&2
+        exit 1
+    fi
+
+    target="$(parse_target "$defaults_file")"
+    if [[ -z "$target" ]]; then
+        echo "error: could not determine CONFIG_IDF_TARGET from $defaults_file" >&2
+        exit 1
+    fi
+
+    mkdir -p "$build_dir"
+    echo "==> Configuring ring profile $profile (target: $target)"
+    IDF_TARGET="$target" idf.py \
+        -C "$project_dir" \
+        -B "$build_dir" \
+        -DSDKCONFIG="$sdkconfig_path" \
+        -DSDKCONFIG_DEFAULTS="$defaults_file;$profile_defaults_file" \
+        reconfigure
+
+    verify_ring_profile_sdkconfig "$profile" "$sdkconfig_path"
+
+    echo "==> Building ring profile $profile (target: $target)"
+    IDF_TARGET="$target" idf.py \
+        -C "$project_dir" \
+        -B "$build_dir" \
+        -DSDKCONFIG="$sdkconfig_path" \
+        -DSDKCONFIG_DEFAULTS="$defaults_file;$profile_defaults_file" \
+        build
+}
+
 build_project_step() {
     local project="$1"
     local project_dir="$repo_root/firmware/$project"
@@ -295,6 +428,11 @@ build_project_step() {
     if [[ -z "$target" ]]; then
         echo "error: could not determine CONFIG_IDF_TARGET from $defaults_file" >&2
         exit 1
+    fi
+
+    if [[ "$project" == "ring" && -n "$ring_profile" ]]; then
+        build_ring_profile_step "$ring_profile"
+        return
     fi
 
     mkdir -p "$build_root"
@@ -325,6 +463,18 @@ while (($# > 0)); do
             kicad_strict=true
             run_kicad_checks=true
             ;;
+        --ring-profile)
+            shift
+            if [[ $# -eq 0 || "$1" == -* ]]; then
+                echo "error: --ring-profile requires a profile name" >&2
+                usage >&2
+                exit 1
+            fi
+            ring_profile="$1"
+            ;;
+        --ring-profile=*)
+            ring_profile="${1#--ring-profile=}"
+            ;;
         -h|--help)
             usage
             exit 0
@@ -345,6 +495,12 @@ if [[ "$use_all_projects" == true ]]; then
     requested_projects=("${all_projects[@]}")
 elif ((${#requested_projects[@]} == 0)); then
     requested_projects=("${default_projects[@]}")
+fi
+
+if [[ -n "$ring_profile" && "$run_firmware" == true ]] && ! project_was_requested ring; then
+    echo "error: --ring-profile requires the ring firmware target" >&2
+    echo "       omit explicit targets or include 'ring'" >&2
+    exit 1
 fi
 
 if [[ "$run_host_tests" == true ]]; then
