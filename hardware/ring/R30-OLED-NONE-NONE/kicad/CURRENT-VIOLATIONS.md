@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.1` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 302 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 256 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 35 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -40,6 +40,11 @@ shrinks the local USB-C SMT contact pads to match the 1.0 mm row pitch, replaces
 the overlapping snap-dome copper disk with non-overlapping center/ring pads,
 and corrects the first batch of power, USB, charger-status, and ESD endpoint
 coordinates that were landing on adjacent pads.
+The second routing cleanup normalizes first-board traces to the 0.20 mm board
+minimum, removes the erroneous `SENSOR_SDIO` tie into the `SENSOR_MOTION_N`
+via, doglegs the `SENSOR_SCLK` / `VBUS_DETECT` fanout away from the worst
+sensor-via shorts, and moves the long `VBUS_5V` detector feed to the board-top
+edge corridor instead of crossing the middle of the active lane.
 
 ## ERC top categories
 
@@ -51,14 +56,13 @@ and sheet-interface cleanup in this snapshot.
 
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
-| `solder_mask_bridge` | 92 | Adjacent pads of different nets share an unbroken mask aperture |
-| `copper_edge_clearance` | 46 | Copper inside the 0.5 mm board-edge clearance band |
-| `track_width` | 37 | Tracks routed at 0.18 mm where the board setup minimum is 0.20 mm |
+| `solder_mask_bridge` | 87 | Adjacent pads of different nets share an unbroken mask aperture |
+| `copper_edge_clearance` | 44 | Copper inside the 0.5 mm board-edge clearance band |
 | `unconnected_items` | 35 | Routed pads with no track or via reaching them |
 | `text_height` | 31 | Silkscreen text below the rule minimum |
 | `shorting_items` | 25 | Nets physically shorted or crossing through pads in the hand-routed pass |
-| `tracks_crossing` | 21 | Tracks of different nets physically crossing on the same layer |
-| `clearance` | 18 | Copper-to-copper or pad-to-track clearance failures |
+| `clearance` | 20 | Copper-to-copper or pad-to-track clearance failures |
+| `tracks_crossing` | 15 | Tracks of different nets physically crossing on the same layer |
 | `silk_over_copper` | 13 | Silkscreen text crossing exposed copper |
 | `via_diameter` | 6 | Vias below the current board setup diameter rule |
 | `drill_out_of_range` | 6 | Drill sizes outside the current board setup limits |
@@ -71,7 +75,8 @@ source-controlled under `PowerFinger_Ring.pretty`; upstream-library comparison
 is not useful signal for this hand-routed packet. The previous
 `footprint_symbol_field_mismatch`, `footprint_symbol_mismatch`, and broad
 sheet-local plus `J_BAT` mounting-pad `net_conflict` buckets are closed in this
-snapshot.
+snapshot. The previous `track_width` bucket is also closed by normalizing
+first-board routes from 0.18 mm to the board setup's 0.20 mm minimum.
 
 ## What this means for downstream packets
 

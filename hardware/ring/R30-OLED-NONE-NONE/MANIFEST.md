@@ -134,7 +134,10 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   and schematic ERC is clean with project-local `PowerFinger` libraries loaded.
   The first routing cleanup fixed the USB-C contact pad geometry, snap-dome
   contact geometry, and the first batch of wrong power/USB endpoint
-  coordinates. KiCad CLI `10.0.1` still reports DRC=304 and unconnected=35,
+  coordinates. The second routing cleanup removed the bad SDIO-to-motion tie,
+  normalized routed traces to the board minimum width, doglegged the
+  sensor/VBUS-detect fanout, and moved the long VBUS detector feed out of the
+  board middle. KiCad CLI `10.0.1` still reports DRC=256 and unconnected=35,
   with schematic-parity=0, because the board is still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
