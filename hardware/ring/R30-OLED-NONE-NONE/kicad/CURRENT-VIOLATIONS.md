@@ -18,8 +18,8 @@ Toolchain: `kicad-cli 10.0.1` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 246 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
-| `pcb drc` unconnected items | 34 | Net endpoints with no track to them |
+| `pcb drc` violations | 245 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` unconnected items | 32 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
 The schematic capture now has real first-pass symbols in `power_and_charge`,
@@ -48,6 +48,10 @@ edge corridor instead of crossing the middle of the active lane.
 This pass moves `SW1` left of the MCU pad column and syncs the shell dome
 pocket to that new board coordinate, which clears one unconnected item and the
 worst `U1`/dome overlap without claiming a fab-clean board.
+This pass also moves the `CHARGE_GATE` route start from Q1's VBUS source pad to
+Q1's gate pad, and moves the `PROG_R` route onto U3's PROG pin and R1's PROG
+pad. That reduces the unconnected count while leaving the dense USB-edge
+placement/routing cluster red.
 
 ## ERC top categories
 
@@ -59,14 +63,14 @@ and sheet-interface cleanup in this snapshot.
 
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
-| `solder_mask_bridge` | 80 | Adjacent pads of different nets share an unbroken mask aperture |
+| `solder_mask_bridge` | 79 | Adjacent pads of different nets share an unbroken mask aperture |
 | `copper_edge_clearance` | 44 | Copper inside the 0.5 mm board-edge clearance band |
-| `unconnected_items` | 34 | Routed pads with no track or via reaching them |
+| `unconnected_items` | 32 | Routed pads with no track or via reaching them |
 | `text_height` | 31 | Silkscreen text below the rule minimum |
-| `clearance` | 21 | Copper-to-copper or pad-to-track clearance failures |
-| `shorting_items` | 21 | Nets physically shorted or crossing through pads in the hand-routed pass |
-| `tracks_crossing` | 14 | Tracks of different nets physically crossing on the same layer |
+| `shorting_items` | 24 | Nets physically shorted or crossing through pads in the hand-routed pass |
+| `clearance` | 19 | Copper-to-copper or pad-to-track clearance failures |
 | `silk_over_copper` | 14 | Silkscreen text crossing exposed copper |
+| `tracks_crossing` | 13 | Tracks of different nets physically crossing on the same layer |
 | `via_diameter` | 6 | Vias below the current board setup diameter rule |
 | `drill_out_of_range` | 6 | Drill sizes outside the current board setup limits |
 
@@ -98,6 +102,9 @@ first-board routes from 0.18 mm to the board setup's 0.20 mm minimum.
 - `J1` retains its shell-bound placement for the CAD service opening, but its
   local SMT contact geometry is now narrower along the row pitch so adjacent
   USB-C contacts are not treated as intrinsic copper shorts.
+- `Q1`/`R4` `CHARGE_GATE` and `U3`/`R1` `PROG_R` now land on their intended
+  pads, so the remaining service-edge DRC rows are routing/placement debt, not
+  wrong endpoint names.
 - `SW1` moved left to relieve the MCU pad-column collision, and the shell CAD
   dome pocket moved with it. Its local footprint no longer models the grounded
   dome ring as a full copper disk overlapping the center click contact.
@@ -139,7 +146,7 @@ PCB items. The closure order this snapshot recommends:
 
 1. Rip up or reroute the remaining power/sensor fanout clusters that still
    report `shorting_items` and `tracks_crossing`.
-2. Close the 34 unconnected items without changing the shell-bound footprints
+2. Close the 32 unconnected items without changing the shell-bound footprints
    unless the CAD packet moves with them.
 3. Re-run ERC + DRC and update this file's counts in the same commit.
 4. Only then update `MANIFEST.md` to drop the "not fabrication-released"

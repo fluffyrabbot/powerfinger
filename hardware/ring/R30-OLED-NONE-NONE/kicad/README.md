@@ -105,7 +105,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.1` snapshot is
-  ERC=0, DRC=246, unconnected=34, and schematic-parity=0; the remaining board
+  ERC=0, DRC=245, unconnected=32, and schematic-parity=0; the remaining board
   story is dominated by unconnected items and hand-routed clearance/shorting
   failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.
