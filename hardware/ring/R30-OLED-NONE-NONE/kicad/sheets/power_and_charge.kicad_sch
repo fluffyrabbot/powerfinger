@@ -5,7 +5,7 @@
 	(uuid "3bb73a68-f2e3-4fdc-8035-844d8d9ecf61")
 	(paper "A4")
 	(lib_symbols
-		(symbol "Device:Q_PMOS"
+		(symbol "PowerFinger:SI2301_SOT23_FirstBoard"
 			(pin_numbers
 				(hide yes)
 			)
@@ -84,7 +84,7 @@
 					)
 				)
 			)
-			(symbol "Q_PMOS_0_1"
+			(symbol "SI2301_SOT23_FirstBoard_0_1"
 				(polyline
 					(pts
 						(xy 0.254 1.905) (xy 0.254 -1.905)
@@ -251,7 +251,7 @@
 					)
 				)
 			)
-			(symbol "Q_PMOS_1_1"
+			(symbol "SI2301_SOT23_FirstBoard_1_1"
 				(pin passive line
 					(at 2.54 5.08 270)
 					(length 2.54)
@@ -262,7 +262,7 @@
 							)
 						)
 					)
-					(number "D"
+					(number "2"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -280,7 +280,7 @@
 							)
 						)
 					)
-					(number "G"
+					(number "1"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -298,7 +298,7 @@
 							)
 						)
 					)
-					(number "S"
+					(number "3"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -449,7 +449,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Device:Q_NMOS"
+		(symbol "PowerFinger:2N7002_SOT23_FirstBoard"
 			(pin_numbers
 				(hide yes)
 			)
@@ -528,7 +528,7 @@
 					)
 				)
 			)
-			(symbol "Q_NMOS_0_1"
+			(symbol "2N7002_SOT23_FirstBoard_0_1"
 				(polyline
 					(pts
 						(xy 0.254 1.905) (xy 0.254 -1.905)
@@ -695,7 +695,7 @@
 					)
 				)
 			)
-			(symbol "Q_NMOS_1_1"
+			(symbol "2N7002_SOT23_FirstBoard_1_1"
 				(pin passive line
 					(at 2.54 5.08 270)
 					(length 2.54)
@@ -706,7 +706,7 @@
 							)
 						)
 					)
-					(number "D"
+					(number "3"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -724,7 +724,7 @@
 							)
 						)
 					)
-					(number "G"
+					(number "1"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -742,7 +742,7 @@
 							)
 						)
 					)
-					(number "S"
+					(number "2"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -2105,7 +2105,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:Q_PMOS")
+		(lib_id "PowerFinger:SI2301_SOT23_FirstBoard")
 		(at 80.01 90.17 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -2168,13 +2168,13 @@
 				(justify left)
 			)
 		)
-		(pin "D"
+		(pin "2"
 			(uuid "2a60fa25-7ba0-4f4c-b4ad-c780e361b4fe")
 		)
-		(pin "G"
+		(pin "1"
 			(uuid "4ae94334-22eb-445a-b312-47931ec06197")
 		)
-		(pin "S"
+		(pin "3"
 			(uuid "e8cea96c-b351-44a2-a6eb-71c5b17dbbbd")
 		)
 		(instances
@@ -2266,7 +2266,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:Q_NMOS")
+		(lib_id "PowerFinger:2N7002_SOT23_FirstBoard")
 		(at 59.69 100.33 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -2329,13 +2329,13 @@
 				(justify left)
 			)
 		)
-		(pin "D"
+		(pin "3"
 			(uuid "9dbdfecd-d736-4cc0-b474-ff4161f0131e")
 		)
-		(pin "G"
+		(pin "1"
 			(uuid "a2673932-d127-4f5a-af57-01b0217cc7e0")
 		)
-		(pin "S"
+		(pin "2"
 			(uuid "f28f99ec-f1ba-42e5-a8b6-1f4feaa2a9df")
 		)
 		(instances
@@ -3786,7 +3786,8 @@
 		)
 		(uuid "2ff8472a-8056-44ad-a7cb-4acb8a89bd99")
 	)
-	(label "VBUS_5V"
+	(global_label "VBUS_5V"
+		(shape passive)
 		(at 82.55 95.25 0.0000)
 		(effects
 			(font
@@ -3796,7 +3797,8 @@
 		)
 		(uuid "bbd3c672-152a-4d6b-b90c-6c0e511ae65c")
 	)
-	(label "VBUS_CHG"
+	(global_label "VBUS_CHG_SW"
+		(shape passive)
 		(at 82.55 85.09 0.0000)
 		(effects
 			(font
@@ -3806,7 +3808,8 @@
 		)
 		(uuid "0add65fe-8d8f-449f-8fb6-8612d03eb472")
 	)
-	(label "Q1_GATE"
+	(global_label "CHARGE_GATE"
+		(shape passive)
 		(at 74.93 90.17 0.0000)
 		(effects
 			(font
@@ -3816,7 +3819,8 @@
 		)
 		(uuid "7e342649-193c-40ab-96a6-ad42a22e8b2c")
 	)
-	(label "Q1_GATE"
+	(global_label "CHARGE_GATE"
+		(shape passive)
 		(at 62.23 95.25 0.0000)
 		(effects
 			(font
@@ -3826,7 +3830,8 @@
 		)
 		(uuid "71f27dca-9468-4c0b-bc55-ecba64d38d0d")
 	)
-	(label "GND"
+	(global_label "GND"
+		(shape passive)
 		(at 62.23 105.41 0.0000)
 		(effects
 			(font
@@ -3836,7 +3841,8 @@
 		)
 		(uuid "95fe14d1-4cf2-459d-bfa3-8e2bd8c4a7cf")
 	)
-	(label "CHARGE_EN"
+	(global_label "CHARGE_EN"
+		(shape passive)
 		(at 54.61 100.33 0.0000)
 		(effects
 			(font
@@ -3846,7 +3852,8 @@
 		)
 		(uuid "d3c42742-bca8-41a9-bd77-0af332e717af")
 	)
-	(label "VBUS_5V"
+	(global_label "VBUS_5V"
+		(shape passive)
 		(at 69.85 76.2 0.0000)
 		(effects
 			(font
@@ -3856,7 +3863,8 @@
 		)
 		(uuid "93462abb-eacc-4ce5-b2ce-a6c019646ad6")
 	)
-	(label "Q1_GATE"
+	(global_label "CHARGE_GATE"
+		(shape passive)
 		(at 69.85 83.82 0.0000)
 		(effects
 			(font
@@ -3866,7 +3874,8 @@
 		)
 		(uuid "3f1e79cf-036e-446b-864b-7da31d450ee9")
 	)
-	(label "CHARGE_EN"
+	(global_label "CHARGE_EN"
+		(shape passive)
 		(at 49.53 106.68 0.0000)
 		(effects
 			(font
@@ -3876,7 +3885,8 @@
 		)
 		(uuid "5c9312ae-f8c2-40aa-958a-4a549176b0aa")
 	)
-	(label "GND"
+	(global_label "GND"
+		(shape passive)
 		(at 49.53 114.3 0.0000)
 		(effects
 			(font
@@ -3897,7 +3907,8 @@
 		)
 		(uuid "a11a2db0-ee18-406d-8b8f-e84949756215")
 	)
-	(label "GND"
+	(global_label "GND"
+		(shape passive)
 		(at 110.49 97.79 0.0000)
 		(effects
 			(font
@@ -3918,7 +3929,8 @@
 		)
 		(uuid "4d32ef2f-da13-4d1a-8597-1a5a196ca6ee")
 	)
-	(label "VBUS_CHG"
+	(global_label "VBUS_CHG_SW"
+		(shape passive)
 		(at 110.49 82.55 0.0000)
 		(effects
 			(font
@@ -3928,7 +3940,8 @@
 		)
 		(uuid "2cd3edf9-f7ba-4282-aa86-4dec615b9842")
 	)
-	(label "U3_PROG"
+	(global_label "PROG_R"
+		(shape passive)
 		(at 100.33 92.71 0.0000)
 		(effects
 			(font
@@ -3938,7 +3951,8 @@
 		)
 		(uuid "e72d4f81-0a63-4932-b827-2a75cc1e3620")
 	)
-	(label "U3_PROG"
+	(global_label "PROG_R"
+		(shape passive)
 		(at 124.46 101.6 0.0000)
 		(effects
 			(font
@@ -3948,7 +3962,8 @@
 		)
 		(uuid "df7e93c1-af4b-46b7-b3ef-b92790b72a54")
 	)
-	(label "GND"
+	(global_label "GND"
+		(shape passive)
 		(at 124.46 109.22 0.0000)
 		(effects
 			(font
@@ -3958,7 +3973,8 @@
 		)
 		(uuid "d5ce2fea-ab63-407b-8cea-4295b7791c0e")
 	)
-	(label "VREG_3V3"
+	(global_label "VREG_3V3"
+		(shape passive)
 		(at 129.54 76.2 0.0000)
 		(effects
 			(font
@@ -3990,7 +4006,8 @@
 		)
 		(uuid "c1de7f63-02fa-4c24-8fce-056ff0f78a8b")
 	)
-	(label "GND"
+	(global_label "GND"
+		(shape passive)
 		(at 160.02 97.79 0.0000)
 		(effects
 			(font
@@ -4011,7 +4028,8 @@
 		)
 		(uuid "b44c9078-dbce-468e-814e-705e94a9b2c0")
 	)
-	(label "VREG_3V3"
+	(global_label "VREG_3V3"
+		(shape passive)
 		(at 167.64 87.63 0.0000)
 		(effects
 			(font
@@ -4021,7 +4039,8 @@
 		)
 		(uuid "909e2f7b-409b-4c55-a891-416da815e947")
 	)
-	(label "VBUS_CHG"
+	(global_label "VBUS_CHG_SW"
+		(shape passive)
 		(at 105.41 106.68 0.0000)
 		(effects
 			(font
@@ -4031,7 +4050,8 @@
 		)
 		(uuid "387f7485-4963-42d2-9487-b05d7e26473a")
 	)
-	(label "GND"
+	(global_label "GND"
+		(shape passive)
 		(at 105.41 114.3 0.0000)
 		(effects
 			(font
@@ -4052,7 +4072,8 @@
 		)
 		(uuid "323b6ecf-842c-420f-96bc-b61cee93b8d4")
 	)
-	(label "GND"
+	(global_label "GND"
+		(shape passive)
 		(at 149.86 114.3 0.0000)
 		(effects
 			(font
@@ -4062,7 +4083,8 @@
 		)
 		(uuid "9a03a5b5-57f1-4bcf-ab5b-94b99b18b442")
 	)
-	(label "VREG_3V3"
+	(global_label "VREG_3V3"
+		(shape passive)
 		(at 170.18 106.68 0.0000)
 		(effects
 			(font
@@ -4072,7 +4094,8 @@
 		)
 		(uuid "e49056de-4d68-46b5-b70d-cec1846ac370")
 	)
-	(label "GND"
+	(global_label "GND"
+		(shape passive)
 		(at 170.18 114.3 0.0000)
 		(effects
 			(font
@@ -4093,7 +4116,8 @@
 		)
 		(uuid "c75c3ce3-ca47-422a-b329-23fd1133d608")
 	)
-	(label "VBAT_SENSE"
+	(global_label "VBAT_SENSE"
+		(shape passive)
 		(at 139.7 133.35 0.0000)
 		(effects
 			(font
@@ -4103,7 +4127,8 @@
 		)
 		(uuid "ee4309e1-5bff-45fc-9934-0d3de57820c6")
 	)
-	(label "VBAT_SENSE"
+	(global_label "VBAT_SENSE"
+		(shape passive)
 		(at 139.7 140.97 0.0000)
 		(effects
 			(font
@@ -4113,7 +4138,8 @@
 		)
 		(uuid "96fb6db8-8e72-41eb-89cc-c9e5d39c2014")
 	)
-	(label "GND"
+	(global_label "GND"
+		(shape passive)
 		(at 139.7 148.59 0.0000)
 		(effects
 			(font
@@ -4123,7 +4149,8 @@
 		)
 		(uuid "ee029c35-e7d9-481f-bd9e-9ca39d0c9701")
 	)
-	(label "VBUS_5V"
+	(global_label "VBUS_5V"
+		(shape passive)
 		(at 59.69 125.73 0.0000)
 		(effects
 			(font
@@ -4133,7 +4160,8 @@
 		)
 		(uuid "f28c564b-d1d4-49a9-889b-3b471e15b2bd")
 	)
-	(label "VBUS_DETECT"
+	(global_label "VBUS_DETECT"
+		(shape passive)
 		(at 59.69 133.35 0.0000)
 		(effects
 			(font
@@ -4143,7 +4171,8 @@
 		)
 		(uuid "013a7516-3c47-4308-a164-59e37fd2a41b")
 	)
-	(label "VBUS_DETECT"
+	(global_label "VBUS_DETECT"
+		(shape passive)
 		(at 59.69 140.97 0.0000)
 		(effects
 			(font
@@ -4153,7 +4182,8 @@
 		)
 		(uuid "b5b1e9e1-5d42-4869-af91-724856b04a56")
 	)
-	(label "GND"
+	(global_label "GND"
+		(shape passive)
 		(at 59.69 148.59 0.0000)
 		(effects
 			(font
@@ -4163,7 +4193,8 @@
 		)
 		(uuid "c9700ae7-dbc8-4182-b336-e244e99fef02")
 	)
-	(label "VREG_3V3"
+	(global_label "VREG_3V3"
+		(shape passive)
 		(at 170.18 156.21 0.0000)
 		(effects
 			(font
@@ -4173,7 +4204,8 @@
 		)
 		(uuid "555af899-f076-4a2d-8059-03167e9c2010")
 	)
-	(label "NTC_SENSE"
+	(global_label "NTC_SENSE"
+		(shape passive)
 		(at 170.18 163.83 0.0000)
 		(effects
 			(font
@@ -4183,7 +4215,8 @@
 		)
 		(uuid "0cdb854d-c4ee-402a-8ef2-6858b99b20a5")
 	)
-	(label "NTC_SENSE"
+	(global_label "NTC_SENSE"
+		(shape passive)
 		(at 170.18 140.97 0.0000)
 		(effects
 			(font
@@ -4193,7 +4226,8 @@
 		)
 		(uuid "341a7f1c-9022-4845-98f5-bf77dde8bb7e")
 	)
-	(label "GND"
+	(global_label "GND"
+		(shape passive)
 		(at 170.18 148.59 0.0000)
 		(effects
 			(font
@@ -4203,7 +4237,8 @@
 		)
 		(uuid "8d2a0dfa-ee9a-42a5-8f87-181f242222db")
 	)
-	(label "VBUS_5V"
+	(global_label "VBUS_5V"
+		(shape passive)
 		(at 39.37 80.01 0)
 		(effects
 			(font
@@ -4213,7 +4248,8 @@
 		)
 		(uuid "c802887c-ca1f-4edb-a458-46c85a13a29f")
 	)
-	(label "VBUS_CHG"
+	(global_label "VBUS_CHG_SW"
+		(shape passive)
 		(at 95.25 74.93 0)
 		(effects
 			(font
@@ -4223,7 +4259,8 @@
 		)
 		(uuid "8e72e247-54a2-48d8-be69-e55e9d4208b2")
 	)
-	(label "GND"
+	(global_label "GND"
+		(shape passive)
 		(at 44.45 119.38 0)
 		(effects
 			(font
@@ -4244,7 +4281,8 @@
 		)
 		(uuid "668e30b7-de8e-4480-9da4-0d83f810e4a4")
 	)
-	(label "GND"
+	(global_label "GND"
+		(shape passive)
 		(at 190.5 133.35 0)
 		(effects
 			(font
@@ -4338,7 +4376,8 @@
 		(stroke (width 0) (type default) (color 0 0 0 0))
 		(uuid "4406df46-65f9-5cfc-9e53-1fd9cb349aeb")
 	)
-	(label "CHARGE_EN"
+	(global_label "CHARGE_EN"
+		(shape passive)
 		(at 33.02 53.34 0)
 		(effects
 			(font
@@ -4354,7 +4393,8 @@
 		(stroke (width 0) (type default) (color 0 0 0 0))
 		(uuid "7cdfbbcd-a7c3-568e-8aea-409aa9a95d3b")
 	)
-	(label "VBUS_5V"
+	(global_label "VBUS_5V"
+		(shape passive)
 		(at 33.02 60.96 0)
 		(effects
 			(font
@@ -4370,7 +4410,8 @@
 		(stroke (width 0) (type default) (color 0 0 0 0))
 		(uuid "940455e7-7fe7-5b4b-a997-71c07ffcb103")
 	)
-	(label "VREG_3V3"
+	(global_label "VREG_3V3"
+		(shape passive)
 		(at 180.34 38.1 180)
 		(effects
 			(font
@@ -4386,7 +4427,8 @@
 		(stroke (width 0) (type default) (color 0 0 0 0))
 		(uuid "8fcdbb26-bdb4-5f91-8d06-597c2bd74bc3")
 	)
-	(label "VBAT_SENSE"
+	(global_label "VBAT_SENSE"
+		(shape passive)
 		(at 180.34 45.72 180)
 		(effects
 			(font
@@ -4402,7 +4444,8 @@
 		(stroke (width 0) (type default) (color 0 0 0 0))
 		(uuid "ad7fc4bb-3842-51ff-9ef8-95fac09b4bb5")
 	)
-	(label "NTC_SENSE"
+	(global_label "NTC_SENSE"
+		(shape passive)
 		(at 180.34 53.34 180)
 		(effects
 			(font
@@ -4418,7 +4461,8 @@
 		(stroke (width 0) (type default) (color 0 0 0 0))
 		(uuid "5b64b5ee-0b4c-5e9a-821d-bc7981324117")
 	)
-	(label "VBUS_DETECT"
+	(global_label "VBUS_DETECT"
+		(shape passive)
 		(at 180.34 60.96 180)
 		(effects
 			(font

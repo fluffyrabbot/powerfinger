@@ -114,8 +114,8 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
 ## Missing Artifacts
 
 - Full schematic symbol capture that matches the first PCB pass; MCU/radio and
-  sensor/click now have first-pass symbols, but parity still needs the
-  remaining hierarchy-net pass
+  sensor/click now have first-pass symbols, and the only current
+  schematic-parity gap is the `J_BAT` `MP1`/`MP2` mounting-pad model
 - Clean KiCad DRC/ERC; local KiCad CLI `10.0.1` DRC still reports violations
   and unconnected items, so the board is not fabrication-release
 - Printed/measured results from the new CAD coupons and full-shell export
@@ -129,12 +129,13 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   2N7002 SOT-23, `R7`/`R8` = `100k`/`100k`, `R9`/`R10` = `220k`/`100k`, and
   `R11` = `100k`. BSS138-class alternates or a logic-level load switch remain
   explicit substitutions, not silent equivalents
-- Full schematic/PCB parity for the recommended sense/status parts and routed
-  active blocks; `R7`-`R11`, `U1`, `U2`, `SW1`, sensor support parts, and
-  bring-up pads now have first-pass schematic counterparts, and schematic ERC is
-  clean with project-local `PowerFinger` libraries loaded. KiCad CLI `10.0.1`
-  still reports DRC=349, unconnected=41, and schematic-parity=92 because the
-  board is still hand-routed and PCB net parity remains red
+- Full schematic/PCB parity for the `J_BAT` mounting pads; `R7`-`R11`, `U1`,
+  `U2`, `SW1`, sensor support parts, bring-up pads, sheet-level routed nets,
+  USB ESD labels, charge-gate MOSFET pin mappings, and USB-C shield stakes now
+  have first-pass schematic counterparts, and schematic ERC is clean with
+  project-local `PowerFinger` libraries loaded. KiCad CLI `10.0.1` still
+  reports DRC=349, unconnected=41, and schematic-parity=2 because the board is
+  still hand-routed and `J_BAT` `MP1`/`MP2` have no schematic pins yet
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
 - Cleared ERC/DRC against the routed PCB; current snapshot lives in

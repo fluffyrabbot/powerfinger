@@ -4,8 +4,8 @@
 This directory is the PCB/schematic starting point for the active optical ring
 lane. It is intentionally honest about its state: the first routed PCB pass now
 exists, and the power/USB plus MCU/radio plus sensor/click sheets now include
-first-pass symbols, but the schematic is still not parity-clean and the board
-is not fabrication-released.
+first-pass symbols, but the `J_BAT` mounting-pad model and board DRC are still
+not clean enough for fabrication release.
 
 ## Current Source Files
 
@@ -57,6 +57,10 @@ is not fabrication-released.
 - MCU/radio and sensor/click sheets populated with first-pass symbol
   counterparts for the routed `U1`, `U2`, `SW1`, decoupling, sense testpads,
   and sensor bring-up pads
+- routed sheet nets promoted to passive global labels where they intentionally
+  match flat PCB net names, with project-local SOT-23 pin-numbered
+  `Q1`/`Q2` symbols, aligned USB ESD D+/D- labels, and USB-C shield stakes
+  mapped to `SH`
 
 This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
 charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
@@ -93,11 +97,12 @@ rather than drifting back to anonymous module pockets.
 - Do not substitute the LDO, charge resistor, or battery safety path without
   updating the variant manifest and BOM.
 - Do not let convenience routing eat the antenna keep-out.
-- Treat the current schematic as partial capture, not proof that all active
-  components or footprints have already been validated in KiCad. The current
-  local KiCad CLI `10.0.1` snapshot is ERC=0, DRC=349, unconnected=41, and
-  schematic-parity=92; the remaining parity story is dominated by PCB net
-  conflicts, unconnected items, and hand-routed clearance failures.
+- Treat the current schematic as first-pass capture, not proof that the board
+  is fabrication-clean. The current local KiCad CLI `10.0.1` snapshot is
+  ERC=0, DRC=349, unconnected=41, and schematic-parity=2; the remaining parity
+  story is the `J_BAT` `MP1`/`MP2` mounting-pad model, while the remaining board
+  story is dominated by unconnected items and hand-routed clearance/shorting
+  failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.
   Clear schematic backfill, net cleanup, and DRC/ERC before fabrication.
 - Close `../FIRST-BOARD-CHECKLIST.md` and `../STACKUP-VERIFY.md` before treating

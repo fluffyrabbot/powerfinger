@@ -1695,7 +1695,8 @@
 			)
 		)
 	)
-	(label "GND"
+	(global_label "GND"
+		(shape passive)
 		(at 90.17 102.87 0)
 		(effects
 			(font
@@ -1705,7 +1706,8 @@
 		)
 		(uuid "642ca341-fc5b-4e25-a59c-b260f81364b5")
 	)
-	(label "VBUS_5V"
+	(global_label "VBUS_5V"
+		(shape passive)
 		(at 105.41 64.77 0)
 		(effects
 			(font
@@ -1715,7 +1717,8 @@
 		)
 		(uuid "a0b16bb6-8b5c-44e2-aff6-490f00fc9c96")
 	)
-	(label "CC1"
+	(global_label "USB_CC1_RD"
+		(shape passive)
 		(at 105.41 69.85 0)
 		(effects
 			(font
@@ -1725,7 +1728,8 @@
 		)
 		(uuid "3ae3e82c-659b-4082-b292-f220905f277f")
 	)
-	(label "USB_D+"
+	(global_label "USB_D+"
+		(shape passive)
 		(at 105.41 82.55 0)
 		(effects
 			(font
@@ -1735,7 +1739,8 @@
 		)
 		(uuid "b5ea55c9-5dfd-425e-82a8-78f77ae16dd8")
 	)
-	(label "USB_D-"
+	(global_label "USB_D-"
+		(shape passive)
 		(at 105.41 77.47 0)
 		(effects
 			(font
@@ -1745,7 +1750,8 @@
 		)
 		(uuid "9fabe8bb-2cb3-49c9-bb11-c3408dc36163")
 	)
-	(label "CC2"
+	(global_label "USB_CC2_RD"
+		(shape passive)
 		(at 105.41 72.39 0)
 		(effects
 			(font
@@ -1755,7 +1761,8 @@
 		)
 		(uuid "57d72fe3-6a60-4060-a5dd-8aa0be41cdc9")
 	)
-	(label "USB_D+"
+	(global_label "USB_D+"
+		(shape passive)
 		(at 105.41 85.09 0)
 		(effects
 			(font
@@ -1765,7 +1772,8 @@
 		)
 		(uuid "ef28d6f8-7a68-476f-9331-c7920adfbb09")
 	)
-	(label "USB_D-"
+	(global_label "USB_D-"
+		(shape passive)
 		(at 105.41 80.01 0)
 		(effects
 			(font
@@ -1775,7 +1783,8 @@
 		)
 		(uuid "69972296-0db4-4170-b5f1-8a51b3bda1c3")
 	)
-	(label "GND"
+	(global_label "GND"
+		(shape passive)
 		(at 82.55 102.87 0)
 		(effects
 			(font
@@ -1785,7 +1794,8 @@
 		)
 		(uuid "c8b0e80a-872e-4c53-b329-168446b2d2db")
 	)
-	(label "CC1"
+	(global_label "USB_CC1_RD"
+		(shape passive)
 		(at 139.7 86.36 0)
 		(effects
 			(font
@@ -1795,7 +1805,8 @@
 		)
 		(uuid "b8cd2b7e-de1c-46a3-8338-68b44f49bfd3")
 	)
-	(label "GND"
+	(global_label "GND"
+		(shape passive)
 		(at 139.7 93.98 0)
 		(effects
 			(font
@@ -1805,7 +1816,8 @@
 		)
 		(uuid "986fa821-1853-46d4-b153-7d8f20230f07")
 	)
-	(label "CC2"
+	(global_label "USB_CC2_RD"
+		(shape passive)
 		(at 154.94 86.36 0)
 		(effects
 			(font
@@ -1815,7 +1827,8 @@
 		)
 		(uuid "50084606-af52-4f85-85dc-e31ec4d5050e")
 	)
-	(label "GND"
+	(global_label "GND"
+		(shape passive)
 		(at 154.94 93.98 0)
 		(effects
 			(font
@@ -1825,7 +1838,8 @@
 		)
 		(uuid "55571f5b-182f-44d0-a0a0-d0d8a0680bfe")
 	)
-	(label "USB_D-"
+	(global_label "USB_D+"
+		(shape passive)
 		(at 124.46 59.69 0)
 		(effects
 			(font
@@ -1835,7 +1849,8 @@
 		)
 		(uuid "6da91c8c-45fa-4715-9fd1-590ee9a1a455")
 	)
-	(label "GND"
+	(global_label "GND"
+		(shape passive)
 		(at 129.54 67.31 0)
 		(effects
 			(font
@@ -1845,7 +1860,8 @@
 		)
 		(uuid "490e4ee7-ab12-46d6-8953-5d77d2a316f1")
 	)
-	(label "USB_D+"
+	(global_label "USB_D-"
+		(shape passive)
 		(at 124.46 62.23 0)
 		(effects
 			(font
@@ -1855,7 +1871,8 @@
 		)
 		(uuid "e3f08446-d853-4a16-a3be-572b26c50072")
 	)
-	(label "USB_D+"
+	(global_label "USB_D-"
+		(shape passive)
 		(at 134.62 62.23 0)
 		(effects
 			(font
@@ -1865,7 +1882,8 @@
 		)
 		(uuid "4a6f2eff-259a-437b-aa67-844f0ce4674e")
 	)
-	(label "VBUS_5V"
+	(global_label "VBUS_5V"
+		(shape passive)
 		(at 129.54 54.61 0)
 		(effects
 			(font
@@ -1875,7 +1893,8 @@
 		)
 		(uuid "4d2d0194-c4fb-459b-860e-5eeb12b20106")
 	)
-	(label "USB_D-"
+	(global_label "USB_D+"
+		(shape passive)
 		(at 134.62 59.69 0)
 		(effects
 			(font
@@ -1925,7 +1944,8 @@
 		(stroke (width 0) (type default) (color 0 0 0 0))
 		(uuid "5bfa547e-997c-5c86-804d-9d1dffb4bc27")
 	)
-	(label "VBUS_5V"
+	(global_label "VBUS_5V"
+		(shape passive)
 		(at 180.34 38.1 180)
 		(effects
 			(font
@@ -1941,7 +1961,8 @@
 		(stroke (width 0) (type default) (color 0 0 0 0))
 		(uuid "b853592d-8d4c-51d4-8516-eb4af791bc80")
 	)
-	(label "USB_D+"
+	(global_label "USB_D+"
+		(shape passive)
 		(at 180.34 45.72 180)
 		(effects
 			(font
@@ -1957,7 +1978,8 @@
 		(stroke (width 0) (type default) (color 0 0 0 0))
 		(uuid "4f7e1dd7-be17-5475-b56b-fe1b5f78407c")
 	)
-	(label "USB_D-"
+	(global_label "USB_D-"
+		(shape passive)
 		(at 180.34 53.34 180)
 		(effects
 			(font

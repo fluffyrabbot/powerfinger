@@ -266,10 +266,10 @@
     (pad "B8" smd roundrect (at -1.50 2.85) (size 0.32 1.15) (layers "F.Cu" "F.Paste" "F.Mask") (roundrect_rratio 0.20) (net 0 "") (pinfunction "SBU2") (pintype "no_connect"))
     (pad "B9" smd roundrect (at -2.50 2.85) (size 0.32 1.15) (layers "F.Cu" "F.Paste" "F.Mask") (roundrect_rratio 0.20) (net 2 "VBUS_5V") (pinfunction "VBUS") (pintype "power_out"))
     (pad "B12" smd roundrect (at -3.50 2.85) (size 0.32 1.15) (layers "F.Cu" "F.Paste" "F.Mask") (roundrect_rratio 0.20) (net 1 "GND") (pinfunction "GND") (pintype "power_in"))
-    (pad "S1" thru_hole oval (at -4.10 -2.00) (size 1.20 2.00) (drill oval 0.70 1.45) (layers "*.Cu" "*.Mask") (net 1 "GND") (pinfunction "SHIELD") (pintype "passive"))
-    (pad "S2" thru_hole oval (at 4.10 -2.00) (size 1.20 2.00) (drill oval 0.70 1.45) (layers "*.Cu" "*.Mask") (net 1 "GND") (pinfunction "SHIELD") (pintype "passive"))
-    (pad "S3" thru_hole oval (at -4.10 2.00) (size 1.20 2.00) (drill oval 0.70 1.45) (layers "*.Cu" "*.Mask") (net 1 "GND") (pinfunction "SHIELD") (pintype "passive"))
-    (pad "S4" thru_hole oval (at 4.10 2.00) (size 1.20 2.00) (drill oval 0.70 1.45) (layers "*.Cu" "*.Mask") (net 1 "GND") (pinfunction "SHIELD") (pintype "passive"))
+    (pad "SH" thru_hole oval (at -4.10 -2.00) (size 1.20 2.00) (drill oval 0.70 1.45) (layers "*.Cu" "*.Mask") (net 1 "GND") (pinfunction "SHIELD") (pintype "passive"))
+    (pad "SH" thru_hole oval (at 4.10 -2.00) (size 1.20 2.00) (drill oval 0.70 1.45) (layers "*.Cu" "*.Mask") (net 1 "GND") (pinfunction "SHIELD") (pintype "passive"))
+    (pad "SH" thru_hole oval (at -4.10 2.00) (size 1.20 2.00) (drill oval 0.70 1.45) (layers "*.Cu" "*.Mask") (net 1 "GND") (pinfunction "SHIELD") (pintype "passive"))
+    (pad "SH" thru_hole oval (at 4.10 2.00) (size 1.20 2.00) (drill oval 0.70 1.45) (layers "*.Cu" "*.Mask") (net 1 "GND") (pinfunction "SHIELD") (pintype "passive"))
   )
 
   (footprint "PowerFinger_Ring:JST_SH_SM02B-SRSS-TB_RA_1x02_P1.00mm"
