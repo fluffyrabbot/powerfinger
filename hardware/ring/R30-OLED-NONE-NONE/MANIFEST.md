@@ -168,8 +168,12 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   This pass adds a service-edge GND/shield spine across the J1 ground contacts
   and shell stakes, ties nearby `R2B`, `R1`, and `J_BAT` `MP1` into that
   return, and drops D1/NTC ground through a B-side via without reintroducing
-  VBUS-clamped ESD protection. KiCad CLI `10.0.1` still reports DRC=190 and
-  unconnected=15, with schematic-parity=0, because the board is still
+  VBUS-clamped ESD protection. This pass reroutes the battery-side GND fanout:
+  `R8`/`J_BAT` `MP2` now dogleg away from `VBAT_SENSE`, `J_BAT` pad 2 joins
+  that local return, `J_BAT` `MP1` uses a B-side via return, and
+  `R2A`/left `SW1`/`Q2` source share one local ground chain. KiCad CLI
+  `10.0.1` still reports DRC=190 and unconnected=12, with schematic-parity=0,
+  because the board is still
   hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad

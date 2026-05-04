@@ -19,7 +19,7 @@ Toolchain: `kicad-cli 10.0.1` (Homebrew, macOS).
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
 | `pcb drc` violations | 190 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
-| `pcb drc` unconnected items | 15 | Net endpoints with no track to them |
+| `pcb drc` unconnected items | 12 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
 The schematic capture now has real first-pass symbols in `power_and_charge`,
@@ -111,6 +111,13 @@ return. That closes the J1 `A12` to D1 row without adding a VBUS clamp back to
 D1. It raises the DRC violation count by four route/crossing rows, but lowers
 unconnected items by ten and improves the combined R30 KiCad debt from `211`
 to `205`.
+This pass reroutes the battery-side ground fanout instead of adding a broad
+switch-ring stitch: `R8`/`J_BAT` `MP2` now leave on a short dogleg away from
+the `VBAT_SENSE` trace, `J_BAT` pad 2 joins that local return, `J_BAT` `MP1`
+uses a B-side return with a local via, and `R2A`/the left `SW1` ring pad/`Q2`
+source share a short local GND chain. The DRC violation count remains `190`,
+but unconnected items drop from `15` to `12`, improving the combined R30 KiCad
+debt from `205` to `202`.
 
 ## ERC top categories
 
@@ -122,14 +129,14 @@ and sheet-interface cleanup in this snapshot.
 
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
-| `solder_mask_bridge` | 45 | Adjacent pads of different nets share an unbroken mask aperture |
+| `solder_mask_bridge` | 44 | Adjacent pads of different nets share an unbroken mask aperture |
 | `copper_edge_clearance` | 33 | Copper inside the 0.5 mm board-edge clearance band |
 | `text_height` | 31 | Silkscreen text below the rule minimum |
-| `tracks_crossing` | 17 | Tracks of different nets physically crossing on the same layer |
-| `shorting_items` | 17 | Nets physically shorted or crossing through pads in the hand-routed pass |
-| `unconnected_items` | 15 | Routed pads with no track or via reaching them |
+| `shorting_items` | 20 | Nets physically shorted or crossing through pads in the hand-routed pass |
+| `clearance` | 17 | Copper-to-copper or pad-to-track clearance failures |
 | `silk_over_copper` | 14 | Silkscreen text crossing exposed copper |
-| `clearance` | 13 | Copper-to-copper or pad-to-track clearance failures |
+| `unconnected_items` | 12 | Routed pads with no track or via reaching them |
+| `tracks_crossing` | 11 | Tracks of different nets physically crossing on the same layer |
 | `drill_out_of_range` | 6 | Drill sizes outside the current board setup limits |
 | `via_diameter` | 6 | Vias below the current board setup diameter rule |
 
@@ -159,6 +166,9 @@ first-board routes from 0.18 mm to the board setup's 0.20 mm minimum.
   `TP_CHRG` now have schematic counterparts; `R2` and `R12` were renamed to the
   board's `R2A`/`R2B` split. `R2B` now sits beside the connector `B5` CC2 pad
   instead of dragging `USB_CC2_RD` diagonally through the VBUS and data lanes.
+  `R8`/`J_BAT` `MP2` and `J_BAT` pad 2 now share a doglegged local GND return,
+  while `R2A`, the left `SW1` ring pad, and `Q2` source share a short local GND
+  chain instead of remaining three separate islands.
 - `J1` retains its shell-bound placement for the CAD service opening, but its
   local SMT contact geometry is now narrower along the row pitch so adjacent
   USB-C contacts are not treated as intrinsic copper shorts. The PCB service
@@ -223,10 +233,11 @@ checked in; only this summary file is.
 The first-board checklist in `../FIRST-BOARD-CHECKLIST.md` lists the active
 PCB items. The closure order this snapshot recommends:
 
-1. Rip up or reroute the remaining power/sensor ground fanout clusters around
-   `U3`/`R6`/`Q2`/`R2A`/`SW1`/`U1`, which still report the dominant
-   `shorting_items`, `tracks_crossing`, and local GND unconnected rows.
-2. Close the 15 unconnected items without changing the shell-bound footprints
+1. Rip up or reroute the remaining charger/regulator and MCU-side ground
+   fanout clusters around `U3`/`R6`, `U4`/`C2`, and the right-side
+   `SW1`/`U1`/`C1A` GND chain; direct all-in ground stitches were tested and
+   reduced unconnected rows only by increasing total debt.
+2. Close the 12 unconnected items without changing the shell-bound footprints
    unless the CAD packet moves with them.
 3. Re-run ERC + DRC and update this file's counts in the same commit.
 4. Only then update `MANIFEST.md` to drop the "not fabrication-released"
