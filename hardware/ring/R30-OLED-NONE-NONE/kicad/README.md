@@ -107,6 +107,8 @@ release.
   `C1B` / GND pinch
 - U3 VBAT escape cleanup that routes TP4054 BAT around the GND/CHRG pad row
   through an outer dogleg before rejoining the U4 VIN trunk
+- C2 input-cap placement cleanup that moves the 10uF capacitor closer to U4 VIN
+  while leaving its GND pad as an honest unconnected blocker
 
 This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
 charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
@@ -145,7 +147,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.1` snapshot is
-  ERC=0, DRC=168, unconnected=11, and schematic-parity=0; the remaining board
+  ERC=0, DRC=166, unconnected=11, and schematic-parity=0; the remaining board
   story is dominated by unconnected items and hand-routed clearance/shorting
   failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.

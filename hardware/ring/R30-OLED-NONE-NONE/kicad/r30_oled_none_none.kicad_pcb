@@ -621,7 +621,7 @@
   (footprint "Capacitor_SMD:C_0603_1608Metric"
     (layer "F.Cu")
     (uuid "5f3297a0-50f6-4951-a3e8-27fe74000115")
-    (at 113.950 105.500 90)
+    (at 113.550 105.450 90)
     (property "Reference" "C2" (at 0 -1.20 90) (layer "F.SilkS") (effects (font (size 0.6 0.6) (thickness 0.09))))
     (property "Value" "10uF" (at 0 1.20 90) (layer "F.Fab") (effects (font (size 0.55 0.55) (thickness 0.08))))
     (property "mfg_part_num" "" (at 0 0 90) (layer "F.Fab") hide (effects (font (size 0.55 0.55))))
@@ -695,7 +695,7 @@
   (segment (start 110.800 99.650) (end 110.800 102.700) (width 0.20) (layer "F.Cu") (net 4) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000a06"))
   (segment (start 110.800 102.700) (end 113.350 103.650) (width 0.24) (layer "F.Cu") (net 4) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000a07"))
   (segment (start 113.350 103.650) (end 108.100 95.300) (width 0.32) (layer "F.Cu") (net 4) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000207"))
-  (segment (start 113.350 103.650) (end 113.950 106.250) (width 0.32) (layer "F.Cu") (net 4) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000208"))
+  (segment (start 113.350 103.650) (end 113.550 106.200) (width 0.32) (layer "F.Cu") (net 4) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000208"))
   (segment (start 113.350 103.650) (end 113.350 101.750) (width 0.24) (layer "F.Cu") (net 4) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000209"))
   (segment (start 111.450 103.650) (end 117.750 94.600) (width 0.28) (layer "F.Cu") (net 5) (uuid "6816bb59-e020-4f06-8c3c-9b3d8700020a"))
   (segment (start 117.750 94.600) (end 121.120 93.900) (width 0.24) (layer "F.Cu") (net 5) (uuid "6816bb59-e020-4f06-8c3c-9b3d8700020b"))

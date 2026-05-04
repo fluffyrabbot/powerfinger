@@ -178,8 +178,11 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   trunk with a short `C1B` branch. This pass also moves `R6` onto the existing
   local GND run, shifts `TP_LEDKIT` out of the `C1B` / GND pinch, and doglegs
   the U3 `VBAT_PROTECTED` escape around the TP4054 GND/CHRG pad row before it
-  rejoins U4 VIN. KiCad CLI `10.0.1` still reports DRC=168 and unconnected=11,
-  with schematic-parity=0, because the board is still hand-routed
+  rejoins U4 VIN. This pass then moves C2 closer to U4 VIN and retargets the
+  C2 `VBAT_PROTECTED` leg while keeping the C2 GND pad as an explicit blocker
+  rather than accepting a bad stitch. KiCad CLI `10.0.1` still reports DRC=166
+  and unconnected=11, with schematic-parity=0, because the board is still
+  hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
 - Cleared ERC/DRC against the routed PCB; current snapshot lives in
