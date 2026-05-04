@@ -153,7 +153,10 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   datum, and ties J1 `A4`/`A9`/`B4`/`B9` as a single VBUS contact group. This
   pass moves `R2B` next to J1 `B5`, shifts the local VBUS trunk inward, and
   moves the `NTC1`/`R3` pair down out of D1's immediate `USB_D+` corridor.
-  KiCad CLI `10.0.1` still reports DRC=192 and unconnected=29, with
+  This pass reroutes the J1 `A6`/`A7` to D1 data escape onto `B.Cu` under the
+  charger cluster, then re-enters beside D1 with the `USB_D-` entry via shifted
+  left for clearance. KiCad CLI `10.0.1` still reports DRC=185 and
+  unconnected=29, with
   schematic-parity=0, because the board is still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
