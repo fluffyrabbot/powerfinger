@@ -173,9 +173,10 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   that local return, `J_BAT` `MP1` uses a B-side via return, and
   `R2A`/left `SW1`/`Q2` source share one local ground chain. This pass also
   normalizes the six remaining sub-minimum first-board vias to the board-rule
-  minimum `0.50` mm diameter / `0.30` mm drill. KiCad CLI `10.0.1` still
-  reports DRC=179 and unconnected=12, with schematic-parity=0, because the
-  board is still
+  minimum `0.50` mm diameter / `0.30` mm drill, then moves the `VREG_3V3`
+  sensor feed off the PAW3204 LED/GND pad column through a right-side B-side
+  trunk with a short `C1B` branch. KiCad CLI `10.0.1` still reports DRC=176
+  and unconnected=12, with schematic-parity=0, because the board is still
   hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad

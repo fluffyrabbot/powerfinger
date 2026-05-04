@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.1` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 179 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 176 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 12 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -124,6 +124,16 @@ diameter / `0.30` mm drill. That clears the `via_diameter` and
 `drill_out_of_range` buckets without changing pad/net parity; one extra local
 clearance row remains, but total DRC drops from `190` to `179`, improving the
 combined R30 KiCad debt from `202` to `191`.
+A fresh KiCad rerun before this follow-on route cleanup reported the post-via
+baseline as `DRC=180`, `unconnected=12`, and schematic-parity `0`. This pass
+moves the `VREG_3V3` via from `(113.730, 102.900)` to `(114.900, 102.900)`,
+routes the PAW3204 `VDD`/`VDDA` feed down a right-side `B.Cu` trunk, and keeps
+a short `B.Cu` branch back to the sensor decoupler `C1B`. That pulls the sensor
+rail off the PAW3204 `SENSOR_LED_KIT`/GND pad column, clears the single
+`hole_clearance` row that had appeared in the fresh report, and drops the live
+R30 DRC count from `180` to `176` while keeping unconnected items at `12`.
+The combined R30 KiCad debt is now `188`; the full wrapper total is `224` once
+the unchanged USB-HUB warning count is included.
 
 ## ERC top categories
 
@@ -135,14 +145,14 @@ and sheet-interface cleanup in this snapshot.
 
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
-| `solder_mask_bridge` | 44 | Adjacent pads of different nets share an unbroken mask aperture |
-| `copper_edge_clearance` | 33 | Copper inside the 0.5 mm board-edge clearance band |
+| `solder_mask_bridge` | 38 | Adjacent pads of different nets share an unbroken mask aperture |
+| `copper_edge_clearance` | 38 | Copper inside the 0.5 mm board-edge clearance band |
 | `text_height` | 31 | Silkscreen text below the rule minimum |
-| `shorting_items` | 20 | Nets physically shorted or crossing through pads in the hand-routed pass |
-| `clearance` | 18 | Copper-to-copper or pad-to-track clearance failures |
+| `clearance` | 17 | Copper-to-copper or pad-to-track clearance failures |
+| `shorting_items` | 16 | Nets physically shorted or crossing through pads in the hand-routed pass |
+| `tracks_crossing` | 15 | Tracks of different nets physically crossing on the same layer |
 | `silk_over_copper` | 14 | Silkscreen text crossing exposed copper |
 | `unconnected_items` | 12 | Routed pads with no track or via reaching them |
-| `tracks_crossing` | 11 | Tracks of different nets physically crossing on the same layer |
 
 The shorting-class and crossing-class violations are the blocking ones for
 fabrication. Mask-bridge and edge-clearance violations are easier mechanical
@@ -156,7 +166,8 @@ snapshot. The previous `track_width` bucket is also closed by normalizing
 first-board routes from 0.18 mm to the board setup's 0.20 mm minimum, and the
 previous `via_diameter` / `drill_out_of_range` buckets are closed by
 normalizing the remaining sub-minimum vias to `0.50` mm diameter / `0.30` mm
-drill.
+drill. The sensor-rail reroute also closes the transient `hole_clearance` row
+without changing schematic/PCB parity.
 
 ## What this means for downstream packets
 
@@ -244,7 +255,9 @@ PCB items. The closure order this snapshot recommends:
    fanout clusters around `U3`/`R6`, `U4`/`C2`, and the right-side
    `SW1`/`U1`/`C1A` GND chain; direct all-in ground stitches were tested and
    reduced unconnected rows only by increasing total debt, and simple R1/R8
-   orientation shifts or click-trace doglegs also increased total debt.
+   orientation shifts, click-trace doglegs, direct pad-to-pad GND stitches,
+   pad vias, and the first C1A relocation candidates also increased total
+   debt. Keep the accepted `VREG_3V3` trunk off the PAW3204 LED/GND column.
 2. Close the 12 unconnected items without changing the shell-bound footprints
    unless the CAD packet moves with them.
 3. Re-run ERC + DRC and update this file's counts in the same commit.
