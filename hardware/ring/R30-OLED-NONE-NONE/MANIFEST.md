@@ -158,8 +158,11 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   left for clearance. This pass routes the mirrored J1 `B6`/`B7` USB data pads
   into that escape with a separated `B.Cu` fanout and front-layer `USB_D-`
   overpass, while leaving direct D1 VBUS out because it still regresses total
-  DRC. KiCad CLI `10.0.1` still reports DRC=185 and unconnected=27, with
-  schematic-parity=0, because the board is still hand-routed
+  DRC. Route-only D1 GND/VBUS service-island attempts were also tested and
+  rejected because they reduced unconnected rows only by increasing total DRC
+  debt, so no D1 stitch is retained. KiCad CLI `10.0.1` still reports DRC=185
+  and unconnected=27, with schematic-parity=0, because the board is still
+  hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
 - Cleared ERC/DRC against the routed PCB; current snapshot lives in

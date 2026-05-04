@@ -82,7 +82,9 @@ release.
 - mirrored USB-C data cleanup that routes J1 `B6`/`B7` into the same escape
   through separated `B.Cu` lanes and a short front-layer `USB_D-` overpass,
   while leaving D1 VBUS disconnected because the direct branch still regresses
-  total DRC
+  total DRC; route-only D1 GND/VBUS service-island attempts also regress, so the
+  next D1 cleanup needs footprint/placement movement rather than another local
+  stitch
 
 This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
 charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
