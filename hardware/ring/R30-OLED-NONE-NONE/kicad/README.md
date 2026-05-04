@@ -96,6 +96,9 @@ release.
   the `VBAT_SENSE` trace, ties `J_BAT` pad 2 into that local return, moves
   `J_BAT` `MP1` onto a B-side return via, and joins `R2A`/left `SW1`/`Q2`
   source into one local ground chain
+- via-rule cleanup that brings the six remaining sub-minimum first-board vias
+  from `0.46` mm diameter / `0.20` mm drill to the board-rule minimum
+  `0.50` mm diameter / `0.30` mm drill
 
 This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
 charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
@@ -134,7 +137,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.1` snapshot is
-  ERC=0, DRC=190, unconnected=12, and schematic-parity=0; the remaining board
+  ERC=0, DRC=179, unconnected=12, and schematic-parity=0; the remaining board
   story is dominated by unconnected items and hand-routed clearance/shorting
   failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.

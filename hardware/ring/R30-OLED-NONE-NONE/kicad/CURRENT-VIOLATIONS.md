@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.1` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 190 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 179 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 12 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -118,6 +118,12 @@ uses a B-side return with a local via, and `R2A`/the left `SW1` ring pad/`Q2`
 source share a short local GND chain. The DRC violation count remains `190`,
 but unconnected items drop from `15` to `12`, improving the combined R30 KiCad
 debt from `205` to `202`.
+This pass normalizes the six remaining undersized first-board vias from
+`0.46` mm diameter / `0.20` mm drill to the board-rule minimum `0.50` mm
+diameter / `0.30` mm drill. That clears the `via_diameter` and
+`drill_out_of_range` buckets without changing pad/net parity; one extra local
+clearance row remains, but total DRC drops from `190` to `179`, improving the
+combined R30 KiCad debt from `202` to `191`.
 
 ## ERC top categories
 
@@ -133,12 +139,10 @@ and sheet-interface cleanup in this snapshot.
 | `copper_edge_clearance` | 33 | Copper inside the 0.5 mm board-edge clearance band |
 | `text_height` | 31 | Silkscreen text below the rule minimum |
 | `shorting_items` | 20 | Nets physically shorted or crossing through pads in the hand-routed pass |
-| `clearance` | 17 | Copper-to-copper or pad-to-track clearance failures |
+| `clearance` | 18 | Copper-to-copper or pad-to-track clearance failures |
 | `silk_over_copper` | 14 | Silkscreen text crossing exposed copper |
 | `unconnected_items` | 12 | Routed pads with no track or via reaching them |
 | `tracks_crossing` | 11 | Tracks of different nets physically crossing on the same layer |
-| `drill_out_of_range` | 6 | Drill sizes outside the current board setup limits |
-| `via_diameter` | 6 | Vias below the current board setup diameter rule |
 
 The shorting-class and crossing-class violations are the blocking ones for
 fabrication. Mask-bridge and edge-clearance violations are easier mechanical
@@ -149,7 +153,10 @@ is not useful signal for this hand-routed packet. The previous
 `footprint_symbol_field_mismatch`, `footprint_symbol_mismatch`, and broad
 sheet-local plus `J_BAT` mounting-pad `net_conflict` buckets are closed in this
 snapshot. The previous `track_width` bucket is also closed by normalizing
-first-board routes from 0.18 mm to the board setup's 0.20 mm minimum.
+first-board routes from 0.18 mm to the board setup's 0.20 mm minimum, and the
+previous `via_diameter` / `drill_out_of_range` buckets are closed by
+normalizing the remaining sub-minimum vias to `0.50` mm diameter / `0.30` mm
+drill.
 
 ## What this means for downstream packets
 
@@ -236,7 +243,8 @@ PCB items. The closure order this snapshot recommends:
 1. Rip up or reroute the remaining charger/regulator and MCU-side ground
    fanout clusters around `U3`/`R6`, `U4`/`C2`, and the right-side
    `SW1`/`U1`/`C1A` GND chain; direct all-in ground stitches were tested and
-   reduced unconnected rows only by increasing total debt.
+   reduced unconnected rows only by increasing total debt, and simple R1/R8
+   orientation shifts or click-trace doglegs also increased total debt.
 2. Close the 12 unconnected items without changing the shell-bound footprints
    unless the CAD packet moves with them.
 3. Re-run ERC + DRC and update this file's counts in the same commit.

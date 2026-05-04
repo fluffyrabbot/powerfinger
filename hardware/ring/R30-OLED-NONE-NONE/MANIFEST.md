@@ -171,9 +171,11 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   VBUS-clamped ESD protection. This pass reroutes the battery-side GND fanout:
   `R8`/`J_BAT` `MP2` now dogleg away from `VBAT_SENSE`, `J_BAT` pad 2 joins
   that local return, `J_BAT` `MP1` uses a B-side via return, and
-  `R2A`/left `SW1`/`Q2` source share one local ground chain. KiCad CLI
-  `10.0.1` still reports DRC=190 and unconnected=12, with schematic-parity=0,
-  because the board is still
+  `R2A`/left `SW1`/`Q2` source share one local ground chain. This pass also
+  normalizes the six remaining sub-minimum first-board vias to the board-rule
+  minimum `0.50` mm diameter / `0.30` mm drill. KiCad CLI `10.0.1` still
+  reports DRC=179 and unconnected=12, with schematic-parity=0, because the
+  board is still
   hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
