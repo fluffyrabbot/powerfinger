@@ -23,8 +23,8 @@ seam_clearance_mm = 0.25;
 service_pry_slot_mm = [4.8, 2.0, 1.4];
 
 // First routed PCB facts, mapped from kicad/r30_oled_none_none.kicad_pcb.
-// Board center is KiCad (121.000, 100.000); +X points toward the ESP32 antenna.
-pcb_size_mm = [42.0, 18.0, 1.0];
+// Board center is KiCad (120.500, 100.000); +X points toward the ESP32 antenna.
+pcb_size_mm = [43.0, 18.0, 1.0];
 pcb_clearance_mm = 0.35;
 pcb_center_z_mm = 3.6;
 pcb_top_z_mm = pcb_center_z_mm + pcb_size_mm[2] / 2;
@@ -39,14 +39,14 @@ pcb_pod_size_mm = [pcb_size_mm[0] + (2 * pcb_pod_margin_mm[0]),
                    shell_height_mm];
 pcb_pod_corner_radius_mm = 2.2;
 
-usb_c_center_mm = [-18.35, 0.0, pcb_top_z_mm + 1.55];
+usb_c_center_mm = [-17.85, 0.0, pcb_top_z_mm + 1.55];
 usb_c_opening_mm = [4.8, 10.6, 3.8];
 usb_c_body_keepout_mm = [8.0, 8.2, 3.8];
 
-sensor_pcb_center_mm = [-4.50, 0.0, 1.7];
-dome_switch_center_mm = [-6.80, -5.00, pcb_top_z_mm + 0.45];
-battery_connector_center_mm = [-12.40, -5.75, pcb_top_z_mm + 0.55];
-antenna_keepout_center_mm = [17.075, 0.0, pcb_top_z_mm + 1.2];
+sensor_pcb_center_mm = [-4.00, 0.0, 1.7];
+dome_switch_center_mm = [-6.30, -5.00, pcb_top_z_mm + 0.45];
+battery_connector_center_mm = [-11.90, -5.75, pcb_top_z_mm + 0.55];
+antenna_keepout_center_mm = [17.575, 0.0, pcb_top_z_mm + 1.2];
 antenna_keepout_mm = [7.85, 16.7, 2.4];
 
 board_rail_length_mm = 34.0;
@@ -65,11 +65,11 @@ dome_actuator_relief_diameter_mm = 3.2;
 dome_pocket_depth_mm = 1.5;
 
 battery_lead_channel_mm = [13.0, 3.2, 2.0];
-battery_lead_channel_center_mm = [-7.2, -3.9, pcb_top_z_mm + 0.45];
+battery_lead_channel_center_mm = [-6.7, -3.9, pcb_top_z_mm + 0.45];
 battery_lift_window_mm = [22.0, 16.5, shell_height_mm - service_seam_height_mm - lid_top_skin_mm + 0.1];
 battery_lift_window_center_mm = [-4.6, 0.8, service_seam_height_mm + 0.85];
 battery_service_loop_relief_mm = [12.0, 6.0, 1.6];
-battery_service_loop_center_mm = [-1.8, 4.6, pcb_top_z_mm + 0.20];
+battery_service_loop_center_mm = [-1.3, 4.6, pcb_top_z_mm + 0.20];
 
 service_screw_centers_mm = [[-15.0, 6.9], [6.8, 6.9]];
 
@@ -78,9 +78,9 @@ battery_keepout_mm = [20, 15, 4.2];
 sensor_cavity_mm = [11.5, 8.0, 2.6];
 module_keepout_mm = [14, 12, 3.2];
 
-battery_center_mm = [-4.6, 0.8, 4.7];
+battery_center_mm = [-4.1, 0.8, 4.7];
 sensor_cavity_center_mm = [sensor_pcb_center_mm[0], sensor_pcb_center_mm[1], 2.6];
-module_center_mm = [4.8, 0.0, 3.2];
+module_center_mm = [5.3, 0.0, 3.2];
 
 screw_boss_outer_diameter_mm = 3.8;
 screw_pilot_diameter_mm = 1.25;

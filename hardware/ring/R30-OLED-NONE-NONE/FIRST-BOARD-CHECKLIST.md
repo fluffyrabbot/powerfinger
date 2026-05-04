@@ -16,8 +16,8 @@ This checklist is the execution contract for the active ring hardware lane.
 - [x] Validate the PAW3204-class sensor placement against the aperture datum in
   the PCB pass
 - [ ] Backfill schematic symbols to match the PCB pass and clear KiCad DRC
-  (current snapshot in `kicad/CURRENT-VIOLATIONS.md`: ERC=0, DRC=218,
-  unconnected=32, parity=0 — regenerate with
+  (current snapshot in `kicad/CURRENT-VIOLATIONS.md`: ERC=0, DRC=209,
+  unconnected=29, parity=0 — regenerate with
   `scripts/verify-firmware-local.sh --kicad-only`)
 - [x] Add project-local `PowerFinger` symbols and `PowerFinger_Ring`
   footprints, then wire the sheet-interface labels enough to clear schematic
@@ -42,14 +42,14 @@ This checklist is the execution contract for the active ring hardware lane.
   substitutions, not silent equivalents
 - [ ] Decide whether `CHRG_STAT` stays a pulled-up local status pad or gets a
   real MCU GPIO plus firmware config symbol in a later board/firmware pass
-- [ ] Prove the `42 x 18 mm` rigid board, USB-C opening, JST-SH service loop,
+- [ ] Prove the `43 x 18 mm` rigid board, USB-C opening, JST-SH service loop,
   and antenna keep-out fit the current shell CAD or revise the shell/board
 
 ## Mechanical Closure
 
 - [x] Keep `cad/r30_oled_none_none_shell_blank.scad` as a printable lower-shell
   plus service-lid packet, not a monolithic shell
-- [x] Replace the generic electronics placeholders with the actual `42 x 18 mm`
+- [x] Replace the generic electronics placeholders with the actual `43 x 18 mm`
   routed PCB datum and a board-sized top pod
 - [x] Add a first-pass USB-C service opening for the left-edge `USB4215`-class
   receptacle; do not use the connector as the board-retention feature

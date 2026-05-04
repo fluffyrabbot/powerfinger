@@ -57,7 +57,7 @@ placement classes for P0:
   metal around the aperture.
 - The battery envelope from the BOM (`<= 20 x 15 x 4 mm`) must fit without
   violating the reopenable service seam.
-- The first routed board pass is `42 x 18 mm`; that width matches the current
+- The first routed board pass is `43 x 18 mm`; that width matches the current
   band-width placeholder, but it does not prove the shell closes. Treat this as
   a red stackup item until the board outline, USB opening, battery bay, and
   ESP32 antenna keep-out are checked against physical CAD or a print.

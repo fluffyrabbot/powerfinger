@@ -63,7 +63,7 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
 
 ## Current PCB Packet Scope
 
-- Locks the P0 rigid board as a `42 x 18 mm` validation pass split into
+- Locks the P0 rigid board as a `43 x 18 mm` validation pass split into
   power/service, sensor/click, and MCU/radio zones
 - Preserves an ESP32-C3 antenna copper/component keep-out at the outward edge
   before any routing convenience
@@ -88,8 +88,8 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
 
 - Models a lower shell that retains the structural rim, angled sensor tunnel,
   and four discrete glide-pad pockets
-- Models the routed board as a `42 x 18 mm` PCB in a shallow top pod instead of
-  a generic module pocket; the PCB datum is KiCad board center `(121, 100)`
+- Models the routed board as a `43 x 18 mm` PCB in a shallow top pod instead of
+  a generic module pocket; the PCB datum is KiCad board center `(120.5, 100)`
 - Adds a first-pass USB-C service opening at the left board edge for the
   `USB4215`-class receptacle body and shell-stake footprint
 - Adds a non-USB board retention path: molded side rails, two side stop lugs,
@@ -148,8 +148,11 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   until the broader USB/D1 fanout can be rerouted cleanly. This pass moves
   `D1` slightly upward, doglegs the J1 `A6`/`A7` data escapes, and separates
   the long `USB_D+`/`USB_D-` lanes into U1 without reconnecting the still-red
-  VBUS branch. KiCad CLI `10.0.1` still reports DRC=218 and unconnected=32,
-  with schematic-parity=0, because the board is still hand-routed
+  VBUS branch. This pass extends the left service edge to contain the fixed
+  USB-C B-row contacts, updates the shell CAD to the new `43 x 18 mm` board
+  datum, and ties J1 `A4`/`A9`/`B4`/`B9` as a single VBUS contact group. KiCad
+  CLI `10.0.1` still reports DRC=209 and unconnected=29, with
+  schematic-parity=0, because the board is still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
 - Cleared ERC/DRC against the routed PCB; current snapshot lives in

@@ -33,7 +33,7 @@ focal-distance stack are already validated.
 - Gives the ring lane a real editable CAD source file in the repo
 - Encodes the 30-degree optical-lane posture as a default, not a hard-coded
   forever truth
-- Maps the current routed `42 x 18 mm` PCB into a top pod so the mechanical
+- Maps the current routed `43 x 18 mm` PCB into a top pod so the mechanical
   story no longer depends on a generic electronics box
 - Cuts a first-pass left-edge USB-C opening and local body clearance for the
   routed service connector
@@ -93,7 +93,7 @@ The OpenSCAD file supports these `export_mode` values:
 |------|----------|----------------------|
 | `shell` | Full lower shell plus service lid | Whole-packet geometry sanity |
 | `usb_c_coupon` | USB-C wall and board-edge pocket | Plug insertion and shell/board loading |
-| `board_retention_coupon` | Board rails plus stop lugs | `42 x 18 mm` board slide, lift, and tolerance |
+| `board_retention_coupon` | Board rails plus stop lugs | `43 x 18 mm` board slide, lift, and tolerance |
 | `lid_pad_coupon` | Board-edge compression-pad channel | Lid pad path without crushing components |
 | `battery_lead_coupon` | Lead channel, connector pocket, and service-loop relief | JST-SH lead bend and lift clearance |
 | `service_lid_coupon` | Skirt/socket/pry-removal coupon | Reopenable lid handling around service hardware |

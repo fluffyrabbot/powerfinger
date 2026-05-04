@@ -18,8 +18,8 @@ Toolchain: `kicad-cli 10.0.1` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 218 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
-| `pcb drc` unconnected items | 32 | Net endpoints with no track to them |
+| `pcb drc` violations | 209 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` unconnected items | 29 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
 The schematic capture now has real first-pass symbols in `power_and_charge`,
@@ -66,6 +66,12 @@ escapes before they drop toward D1, and routes `USB_D+`/`USB_D-` to U1 on
 separate lanes. That removes the long `USB_D-` run from D1's `VBUS_5V` pad row
 and reduces the crossing/mask-bridge bucket without reconnecting the still-red
 J1 `A9`/B-side VBUS branch.
+This pass extends the left service-edge outline from `x=100.000` to `x=99.000`
+so the fixed `J1` B-row contacts are no longer hanging outside the PCB
+clearance band, then ties the J1 `A4`/`A9`/`B4`/`B9` VBUS contacts together
+with a connector-side fanout. `D1`'s VBUS pad and the B-side USB data pads
+remain disconnected because verified direct ties either shorted `USB_D-` or
+increased total DRC debt.
 
 ## ERC top categories
 
@@ -78,13 +84,13 @@ and sheet-interface cleanup in this snapshot.
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
 | `solder_mask_bridge` | 59 | Adjacent pads of different nets share an unbroken mask aperture |
-| `copper_edge_clearance` | 44 | Copper inside the 0.5 mm board-edge clearance band |
-| `unconnected_items` | 32 | Routed pads with no track or via reaching them |
+| `copper_edge_clearance` | 33 | Copper inside the 0.5 mm board-edge clearance band |
 | `text_height` | 31 | Silkscreen text below the rule minimum |
-| `clearance` | 18 | Copper-to-copper or pad-to-track clearance failures |
+| `unconnected_items` | 29 | Routed pads with no track or via reaching them |
+| `tracks_crossing` | 19 | Tracks of different nets physically crossing on the same layer |
 | `shorting_items` | 17 | Nets physically shorted or crossing through pads in the hand-routed pass |
+| `clearance` | 15 | Copper-to-copper or pad-to-track clearance failures |
 | `silk_over_copper` | 14 | Silkscreen text crossing exposed copper |
-| `tracks_crossing` | 14 | Tracks of different nets physically crossing on the same layer |
 | `drill_out_of_range` | 6 | Drill sizes outside the current board setup limits |
 | `via_diameter` | 6 | Vias below the current board setup diameter rule |
 
@@ -115,18 +121,19 @@ first-board routes from 0.18 mm to the board setup's 0.20 mm minimum.
   board's `R2A`/`R2B` split.
 - `J1` retains its shell-bound placement for the CAD service opening, but its
   local SMT contact geometry is now narrower along the row pitch so adjacent
-  USB-C contacts are not treated as intrinsic copper shorts.
+  USB-C contacts are not treated as intrinsic copper shorts. The PCB service
+  edge now extends left of the fixed B-row pads, and J1 `A4`/`A9`/`B4`/`B9`
+  are tied as one VBUS contact group.
 - `Q1`/`R4` `CHARGE_GATE` and `U3`/`R1` `PROG_R` now land on their intended
   pads, so the remaining service-edge DRC rows are routing/placement debt, not
   wrong endpoint names.
 - `R4` moved inward from the J1 `A5`/CC1 row and now has an explicit J1 `A4`
   `VBUS_5V` feed; `VBUS_CHG_SW` now lands on U3's VCC pad.
 - `Q1` and `R4` now sit as a charger cluster above U3, with Q1's source pad
-  off the J1 `A7` row. J1 `A9` remains disconnected rather than being routed
-  back through the A7/A8 corridor.
+  off the J1 `A7` row.
 - `D1` moved slightly upward and the A-side USB data escapes now dogleg before
   dropping, then run to U1 as separated D+/D- service lanes. The B-side USB-C
-  data pads and the VBUS branch still need a broader connector-side cleanup.
+  data pads and D1's VBUS pad still need a broader connector-side cleanup.
 - `SW1` moved left to relieve the MCU pad-column collision, and the shell CAD
   dome pocket moved with it. Its local footprint no longer models the grounded
   dome ring as a full copper disk overlapping the center click contact.
@@ -168,7 +175,7 @@ PCB items. The closure order this snapshot recommends:
 
 1. Rip up or reroute the remaining power/sensor fanout clusters that still
    report `shorting_items` and `tracks_crossing`.
-2. Close the 32 unconnected items without changing the shell-bound footprints
+2. Close the 29 unconnected items without changing the shell-bound footprints
    unless the CAD packet moves with them.
 3. Re-run ERC + DRC and update this file's counts in the same commit.
 4. Only then update `MANIFEST.md` to drop the "not fabrication-released"

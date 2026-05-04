@@ -71,6 +71,8 @@ release.
   `R4` with it instead of routing raw and switched VBUS through the A7/A8 lane
 - USB/D1 fanout cleanup that nudges `D1` upward, doglegs J1 `A6`/`A7` before
   the drop, and separates the long `USB_D+`/`USB_D-` lanes into U1
+- connector-edge cleanup that extends the fixed J1 service lip leftward and
+  ties J1 `A4`/`A9`/`B4`/`B9` as one VBUS contact group
 
 This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
 charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
@@ -80,7 +82,7 @@ sense/status support parts: `R7`/`R8` = `100k`/`100k` for `VBAT_SENSE`,
 `CHRG_STAT` pull-up. `VBAT_SENSE` and `VBUS_DETECT` are routed to the ESP32-C3
 resources named in [INTERFACE-CONTRACT.md](INTERFACE-CONTRACT.md). `CHRG_STAT`
 is pulled up and locally testable, but no MCU GPIO or firmware consumer is
-claimed yet. The `42 x 18 mm` rigid pass now drives the shell CAD fit pass, but
+claimed yet. The `43 x 18 mm` rigid pass now drives the shell CAD fit pass, but
 it still does not prove the package is comfortable, printable, RF-clean, or
 serviceable with a populated board.
 
@@ -89,8 +91,8 @@ serviceable with a populated board.
 `../cad/r30_oled_none_none_shell_blank.scad` now maps the routed board into the
 shell using these KiCad facts:
 
-- board outline: `100..142 x 91..109 mm`, treated as a `42 x 18 mm` PCB around
-  center `(121, 100)`
+- board outline: `99..142 x 91..109 mm`, treated as a `43 x 18 mm` PCB around
+  center `(120.5, 100)`
 - USB-C opening: `J1` at `(102.650, 100.000)` on the left service edge
 - battery lead path: `J_BAT` at `(108.600, 94.250)`
 - dome pocket: `SW1` at `(114.200, 95.000)`
@@ -109,7 +111,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.1` snapshot is
-  ERC=0, DRC=218, unconnected=32, and schematic-parity=0; the remaining board
+  ERC=0, DRC=209, unconnected=29, and schematic-parity=0; the remaining board
   story is dominated by unconnected items and hand-routed clearance/shorting
   failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.

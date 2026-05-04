@@ -108,7 +108,7 @@
   (net 23 "SENSOR_LED_KIT")
 
   (gr_rect
-    (start 100.000 91.000)
+    (start 99.000 91.000)
     (end 142.000 109.000)
     (stroke (width 0.12) (type solid))
     (fill none)
@@ -170,7 +170,7 @@
     (effects (font (size 0.75 0.75) (thickness 0.11)))
   )
   (gr_text "P0 is routed as a rigid validation board; shell fit remains red until measured."
-    (at 121.000 111.000 0)
+    (at 120.500 111.000 0)
     (layer "Cmts.User")
     (uuid "013a4a21-8cfd-45e2-8878-61301562000a")
     (effects (font (size 0.85 0.85) (thickness 0.12)))
@@ -685,6 +685,10 @@
   )
 
   (segment (start 105.500 97.500) (end 107.120 97.000) (width 0.20) (layer "F.Cu") (net 2) (uuid "98f6d76e-110d-4c9c-a63a-b8880a6d2760"))
+  (segment (start 99.800 97.500) (end 105.500 97.500) (width 0.20) (layer "F.Cu") (net 2) (uuid "98f6d76e-110d-4c9c-a63a-b8880a6d2761"))
+  (segment (start 99.800 102.500) (end 100.600 102.500) (width 0.20) (layer "F.Cu") (net 2) (uuid "98f6d76e-110d-4c9c-a63a-b8880a6d2762"))
+  (segment (start 100.600 102.500) (end 100.600 97.500) (width 0.20) (layer "F.Cu") (net 2) (uuid "98f6d76e-110d-4c9c-a63a-b8880a6d2763"))
+  (segment (start 100.600 102.500) (end 105.500 102.500) (width 0.20) (layer "F.Cu") (net 2) (uuid "98f6d76e-110d-4c9c-a63a-b8880a6d2764"))
   (segment (start 107.120 97.000) (end 107.800 96.700) (width 0.20) (layer "F.Cu") (net 2) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000203"))
   (segment (start 107.800 96.700) (end 110.000 97.280) (width 0.20) (layer "F.Cu") (net 2) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000201"))
   (segment (start 108.750 98.300) (end 107.050 99.650) (width 0.32) (layer "F.Cu") (net 3) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000204"))
