@@ -150,8 +150,10 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   the long `USB_D+`/`USB_D-` lanes into U1 without reconnecting the still-red
   VBUS branch. This pass extends the left service edge to contain the fixed
   USB-C B-row contacts, updates the shell CAD to the new `43 x 18 mm` board
-  datum, and ties J1 `A4`/`A9`/`B4`/`B9` as a single VBUS contact group. KiCad
-  CLI `10.0.1` still reports DRC=209 and unconnected=29, with
+  datum, and ties J1 `A4`/`A9`/`B4`/`B9` as a single VBUS contact group. This
+  pass moves `R2B` next to J1 `B5`, shifts the local VBUS trunk inward, and
+  moves the `NTC1`/`R3` pair down out of D1's immediate `USB_D+` corridor.
+  KiCad CLI `10.0.1` still reports DRC=192 and unconnected=29, with
   schematic-parity=0, because the board is still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad

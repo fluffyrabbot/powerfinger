@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.1` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 209 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 192 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 29 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -72,6 +72,11 @@ clearance band, then ties the J1 `A4`/`A9`/`B4`/`B9` VBUS contacts together
 with a connector-side fanout. `D1`'s VBUS pad and the B-side USB data pads
 remain disconnected because verified direct ties either shorted `USB_D-` or
 increased total DRC debt.
+This pass moves `R2B` next to J1 `B5`, shifts the local VBUS trunk inward to
+avoid the former CC2 diagonal, and moves/flips the `NTC1`/`R3` pair downward
+out of D1's immediate `USB_D+` corridor. Direct D1 VBUS and B-side data
+fanouts were re-tested after this cleanup and still increased total DRC debt,
+so those endpoints remain honest blockers.
 
 ## ERC top categories
 
@@ -83,14 +88,14 @@ and sheet-interface cleanup in this snapshot.
 
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
-| `solder_mask_bridge` | 59 | Adjacent pads of different nets share an unbroken mask aperture |
+| `solder_mask_bridge` | 48 | Adjacent pads of different nets share an unbroken mask aperture |
 | `copper_edge_clearance` | 33 | Copper inside the 0.5 mm board-edge clearance band |
 | `text_height` | 31 | Silkscreen text below the rule minimum |
 | `unconnected_items` | 29 | Routed pads with no track or via reaching them |
-| `tracks_crossing` | 19 | Tracks of different nets physically crossing on the same layer |
-| `shorting_items` | 17 | Nets physically shorted or crossing through pads in the hand-routed pass |
-| `clearance` | 15 | Copper-to-copper or pad-to-track clearance failures |
-| `silk_over_copper` | 14 | Silkscreen text crossing exposed copper |
+| `shorting_items` | 19 | Nets physically shorted or crossing through pads in the hand-routed pass |
+| `silk_over_copper` | 15 | Silkscreen text crossing exposed copper |
+| `clearance` | 14 | Copper-to-copper or pad-to-track clearance failures |
+| `tracks_crossing` | 12 | Tracks of different nets physically crossing on the same layer |
 | `drill_out_of_range` | 6 | Drill sizes outside the current board setup limits |
 | `via_diameter` | 6 | Vias below the current board setup diameter rule |
 
@@ -118,7 +123,8 @@ first-board routes from 0.18 mm to the board setup's 0.20 mm minimum.
   pad, but the packet still makes no firmware-consumed claim for that signal.
 - `J_BAT`, including its `MP1`/`MP2` mounting pads, `R2A`, `R2B`, and
   `TP_CHRG` now have schematic counterparts; `R2` and `R12` were renamed to the
-  board's `R2A`/`R2B` split.
+  board's `R2A`/`R2B` split. `R2B` now sits beside the connector `B5` CC2 pad
+  instead of dragging `USB_CC2_RD` diagonally through the VBUS and data lanes.
 - `J1` retains its shell-bound placement for the CAD service opening, but its
   local SMT contact geometry is now narrower along the row pitch so adjacent
   USB-C contacts are not treated as intrinsic copper shorts. The PCB service
@@ -134,6 +140,8 @@ first-board routes from 0.18 mm to the board setup's 0.20 mm minimum.
 - `D1` moved slightly upward and the A-side USB data escapes now dogleg before
   dropping, then run to U1 as separated D+/D- service lanes. The B-side USB-C
   data pads and D1's VBUS pad still need a broader connector-side cleanup.
+- `NTC1`/`R3` moved down inside the battery-side cluster so the thermistor
+  divider is no longer sitting directly on D1's `USB_D+` pad/track corridor.
 - `SW1` moved left to relieve the MCU pad-column collision, and the shell CAD
   dome pocket moved with it. Its local footprint no longer models the grounded
   dome ring as a full copper disk overlapping the center click contact.
