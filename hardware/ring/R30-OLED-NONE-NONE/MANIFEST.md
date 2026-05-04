@@ -155,8 +155,10 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   moves the `NTC1`/`R3` pair down out of D1's immediate `USB_D+` corridor.
   This pass reroutes the J1 `A6`/`A7` to D1 data escape onto `B.Cu` under the
   charger cluster, then re-enters beside D1 with the `USB_D-` entry via shifted
-  left for clearance. KiCad CLI `10.0.1` still reports DRC=185 and
-  unconnected=29, with
+  left for clearance. This pass routes the mirrored J1 `B6`/`B7` USB data pads
+  into that escape with a separated `B.Cu` fanout and front-layer `USB_D-`
+  overpass, while leaving direct D1 VBUS out because it still regresses total
+  DRC. KiCad CLI `10.0.1` still reports DRC=185 and unconnected=27, with
   schematic-parity=0, because the board is still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad

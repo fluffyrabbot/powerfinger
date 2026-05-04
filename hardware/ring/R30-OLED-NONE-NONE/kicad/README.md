@@ -79,6 +79,10 @@ release.
 - A-side USB data cleanup that moves the J1 `A6`/`A7` to D1 escape onto `B.Cu`
   under the charger cluster and re-enters beside D1 with the `USB_D-` entry via
   shifted left for clearance
+- mirrored USB-C data cleanup that routes J1 `B6`/`B7` into the same escape
+  through separated `B.Cu` lanes and a short front-layer `USB_D-` overpass,
+  while leaving D1 VBUS disconnected because the direct branch still regresses
+  total DRC
 
 This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
 charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
@@ -117,7 +121,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.1` snapshot is
-  ERC=0, DRC=185, unconnected=29, and schematic-parity=0; the remaining board
+  ERC=0, DRC=185, unconnected=27, and schematic-parity=0; the remaining board
   story is dominated by unconnected items and hand-routed clearance/shorting
   failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.

@@ -19,7 +19,7 @@ Toolchain: `kicad-cli 10.0.1` (Homebrew, macOS).
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
 | `pcb drc` violations | 185 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
-| `pcb drc` unconnected items | 29 | Net endpoints with no track to them |
+| `pcb drc` unconnected items | 27 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
 The schematic capture now has real first-pass symbols in `power_and_charge`,
@@ -76,12 +76,17 @@ This pass moves `R2B` next to J1 `B5`, shifts the local VBUS trunk inward to
 avoid the former CC2 diagonal, and moves/flips the `NTC1`/`R3` pair downward
 out of D1's immediate `USB_D+` corridor. Direct D1 VBUS and B-side data
 fanouts were re-tested after this cleanup and still increased total DRC debt,
-so those endpoints remain honest blockers.
+so those endpoints remained honest blockers at that snapshot.
 This pass moves the J1 `A6`/`A7` to D1 data escape onto `B.Cu` immediately
 after the A-side contacts, re-enters beside D1, and shifts the `USB_D-` entry
 via left so the A-side data pair no longer cuts through the U3/R1 charger
 service lane. A further `USB_D+` entry nudge toward U3 and a horizontal `R1`
 orientation were tested and rejected because both increased total DRC debt.
+This pass routes the mirrored J1 `B6`/`B7` USB data pads into the same data
+escape with a separated `B.Cu` fanout and a short `USB_D-` front-layer overpass,
+closing both B-side data unconnected items without moving the shell-bound USB-C
+connector. Direct D1 VBUS was re-tested after the data fanout and still
+increased total DRC debt, so D1 VBUS remains an honest blocker.
 
 ## ERC top categories
 
@@ -96,11 +101,11 @@ and sheet-interface cleanup in this snapshot.
 | `solder_mask_bridge` | 45 | Adjacent pads of different nets share an unbroken mask aperture |
 | `copper_edge_clearance` | 33 | Copper inside the 0.5 mm board-edge clearance band |
 | `text_height` | 31 | Silkscreen text below the rule minimum |
-| `unconnected_items` | 29 | Routed pads with no track or via reaching them |
+| `unconnected_items` | 27 | Routed pads with no track or via reaching them |
+| `shorting_items` | 16 | Nets physically shorted or crossing through pads in the hand-routed pass |
 | `tracks_crossing` | 15 | Tracks of different nets physically crossing on the same layer |
 | `silk_over_copper` | 15 | Silkscreen text crossing exposed copper |
-| `clearance` | 14 | Copper-to-copper or pad-to-track clearance failures |
-| `shorting_items` | 12 | Nets physically shorted or crossing through pads in the hand-routed pass |
+| `clearance` | 10 | Copper-to-copper or pad-to-track clearance failures |
 | `drill_out_of_range` | 6 | Drill sizes outside the current board setup limits |
 | `via_diameter` | 6 | Vias below the current board setup diameter rule |
 
@@ -144,9 +149,10 @@ first-board routes from 0.18 mm to the board setup's 0.20 mm minimum.
   off the J1 `A7` row.
 - `D1` moved slightly upward and the A-side USB data escapes now leave J1 on
   short front-layer stubs, run under the charger cluster on `B.Cu`, re-enter
-  beside D1, and then run to U1 as separated D+/D- service lanes. The B-side
-  USB-C data pads and D1's VBUS pad still need a broader connector-side
-  cleanup.
+  beside D1, and then run to U1 as separated D+/D- service lanes. The mirrored
+  B-side USB-C data pads now join that escape through a separated B-side fanout
+  and a short `USB_D-` front-layer overpass. D1's VBUS pad still needs a
+  broader connector-side cleanup.
 - `NTC1`/`R3` moved down inside the battery-side cluster so the thermistor
   divider is no longer sitting directly on D1's `USB_D+` pad/track corridor.
 - `SW1` moved left to relieve the MCU pad-column collision, and the shell CAD
