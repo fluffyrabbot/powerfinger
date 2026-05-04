@@ -102,6 +102,9 @@ release.
 - sensor-rail cleanup that moves the `VREG_3V3` via off the PAW3204
   `SENSOR_LED_KIT`/GND pad column, routes the sensor `VDD`/`VDDA` feed down a
   right-side `B.Cu` trunk, and keeps `C1B` tied in with a short local branch
+- `R6` / `TP_LEDKIT` placement cleanup that lands the charge-enable pulldown on
+  the existing local GND run and moves the PAW3204 LED test pad out of the
+  `C1B` / GND pinch
 
 This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
 charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
@@ -140,7 +143,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.1` snapshot is
-  ERC=0, DRC=176, unconnected=12, and schematic-parity=0; the remaining board
+  ERC=0, DRC=170, unconnected=11, and schematic-parity=0; the remaining board
   story is dominated by unconnected items and hand-routed clearance/shorting
   failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.
