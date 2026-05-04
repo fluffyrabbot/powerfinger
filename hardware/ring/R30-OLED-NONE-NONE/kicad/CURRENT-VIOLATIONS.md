@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.1` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 170 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 168 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 11 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -143,6 +143,15 @@ PAW3204 LED test stub no longer sits in the `C1B` / GND pinch. That drops R30
 DRC from `176` to `170`, unconnected items from `12` to `11`, combined R30
 KiCad debt from `188` to `181`, and the full wrapper total from `224` to
 `217`.
+A fresh KiCad rerun before this follow-on route cleanup reported the previous
+board as `DRC=171`, `unconnected=11`, and schematic-parity `0`. This pass
+reroutes the `U3`/TP4054 `VBAT_PROTECTED` escape out of the BAT/GND/CHRG pad
+row: the trace now leaves U3 BAT through an outer dogleg at
+`(110.800, 99.650)` / `(110.800, 102.700)` and rejoins the `U4` VIN trunk at
+`(113.350, 103.650)` instead of running vertically through U3's GND pad. That
+drops the live R30 DRC count from `171` to `168` while keeping unconnected
+items at `11`; the combined R30 KiCad debt is now `179`, and the full wrapper
+total is `215`.
 
 ## ERC top categories
 
@@ -155,12 +164,12 @@ and sheet-interface cleanup in this snapshot.
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
 | `copper_edge_clearance` | 38 | Copper inside the 0.5 mm board-edge clearance band |
-| `solder_mask_bridge` | 36 | Adjacent pads of different nets share an unbroken mask aperture |
+| `solder_mask_bridge` | 33 | Adjacent pads of different nets share an unbroken mask aperture |
 | `text_height` | 31 | Silkscreen text below the rule minimum |
-| `tracks_crossing` | 17 | Tracks of different nets physically crossing on the same layer |
-| `clearance` | 15 | Copper-to-copper or pad-to-track clearance failures |
+| `tracks_crossing` | 18 | Tracks of different nets physically crossing on the same layer |
+| `clearance` | 14 | Copper-to-copper or pad-to-track clearance failures |
+| `shorting_items` | 14 | Nets physically shorted or crossing through pads in the hand-routed pass |
 | `silk_over_copper` | 13 | Silkscreen text crossing exposed copper |
-| `shorting_items` | 13 | Nets physically shorted or crossing through pads in the hand-routed pass |
 | `unconnected_items` | 11 | Routed pads with no track or via reaching them |
 
 The shorting-class and crossing-class violations are the blocking ones for
@@ -178,7 +187,9 @@ normalizing the remaining sub-minimum vias to `0.50` mm diameter / `0.30` mm
 drill. The sensor-rail reroute also closes the transient `hole_clearance` row
 without changing schematic/PCB parity. The `R6` relocation closes the pulldown
 ground island, and the `TP_LEDKIT` move reduces the sensor LED/test-pad pinch
-without moving the shell-bound PAW3204 aperture.
+without moving the shell-bound PAW3204 aperture. The accepted U3 VBAT escape
+pulls the battery trace off the TP4054 GND/CHRG pad row; U3 GND still remains
+one of the 11 explicit unconnected items rather than being hidden by a short.
 
 ## What this means for downstream packets
 
@@ -262,15 +273,16 @@ checked in; only this summary file is.
 The first-board checklist in `../FIRST-BOARD-CHECKLIST.md` lists the active
 PCB items. The closure order this snapshot recommends:
 
-1. Rip up or reroute the remaining charger/regulator and MCU-side ground
-   fanout clusters around `U3`, `U4`/`C2`, and the right-side
+1. Rip up or reroute the remaining regulator and MCU-side ground
+   fanout clusters around `U4`/`C2` and the right-side
    `SW1`/`U1`/`C1A` GND chain; direct all-in ground stitches were tested and
    reduced unconnected rows only by increasing total debt, and simple R1/R8
    orientation shifts, click-trace doglegs, direct pad-to-pad GND stitches,
    pad vias, the first C1A relocation candidates, direct `U3`-to-`R6`/left-GND
    stitches, `U3` pad vias, `U4`/`C2` direct/bus stitches, `C2` pad vias, and a
    right-side `C1B` relocation also increased total debt. Keep the accepted
-   `VREG_3V3` trunk off the PAW3204 LED/GND column.
+   `VREG_3V3` trunk off the PAW3204 LED/GND column and keep the accepted U3
+   VBAT dogleg out of the TP4054 pad row.
 2. Close the 11 unconnected items without changing the shell-bound footprints
    unless the CAD packet moves with them.
 3. Re-run ERC + DRC and update this file's counts in the same commit.
