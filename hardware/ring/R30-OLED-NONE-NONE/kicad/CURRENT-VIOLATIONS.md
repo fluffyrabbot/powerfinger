@@ -18,8 +18,8 @@ Toolchain: `kicad-cli 10.0.1` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 186 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
-| `pcb drc` unconnected items | 25 | Net endpoints with no track to them |
+| `pcb drc` violations | 190 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` unconnected items | 15 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
 The schematic capture now has real first-pass symbols in `power_and_charge`,
@@ -100,9 +100,17 @@ rail-less TPD2E2U06DCK-class SC-70/SOT-323 dual data-line shunt. `USB_D+` and
 `USB_D-` now reach D1 through short shunt stubs, D1 has no `VBUS_5V` pad or
 branch, and D1 ground ties into the nearby NTC-side return. That removes the
 two D1 VBUS unconnected rows while keeping schematic ERC and schematic/PCB
-parity clean. The remaining D1-adjacent unconnected row is part of the broader
+parity clean. The remaining D1-adjacent unconnected row was part of the broader
 service-edge ground/shield return, not a reason to reintroduce a VBUS-clamped
 ESD footprint.
+This pass adds a deliberate service-edge GND/shield spine: top and bottom
+connector-side rails tie J1 `A1`/`B12`/upper `SH` and J1 `A12`/`B1`/lower
+`SH`, the upper rail reaches `J_BAT` `MP1`, the lower rail pulls in `R2B` and
+`R1`, and D1/NTC ground now drops through a local via to the B-side ground
+return. That closes the J1 `A12` to D1 row without adding a VBUS clamp back to
+D1. It raises the DRC violation count by four route/crossing rows, but lowers
+unconnected items by ten and improves the combined R30 KiCad debt from `211`
+to `205`.
 
 ## ERC top categories
 
@@ -117,11 +125,11 @@ and sheet-interface cleanup in this snapshot.
 | `solder_mask_bridge` | 45 | Adjacent pads of different nets share an unbroken mask aperture |
 | `copper_edge_clearance` | 33 | Copper inside the 0.5 mm board-edge clearance band |
 | `text_height` | 31 | Silkscreen text below the rule minimum |
-| `unconnected_items` | 25 | Routed pads with no track or via reaching them |
-| `shorting_items` | 22 | Nets physically shorted or crossing through pads in the hand-routed pass |
+| `tracks_crossing` | 17 | Tracks of different nets physically crossing on the same layer |
+| `shorting_items` | 17 | Nets physically shorted or crossing through pads in the hand-routed pass |
+| `unconnected_items` | 15 | Routed pads with no track or via reaching them |
 | `silk_over_copper` | 14 | Silkscreen text crossing exposed copper |
-| `clearance` | 11 | Copper-to-copper or pad-to-track clearance failures |
-| `tracks_crossing` | 10 | Tracks of different nets physically crossing on the same layer |
+| `clearance` | 13 | Copper-to-copper or pad-to-track clearance failures |
 | `drill_out_of_range` | 6 | Drill sizes outside the current board setup limits |
 | `via_diameter` | 6 | Vias below the current board setup diameter rule |
 
@@ -170,8 +178,10 @@ first-board routes from 0.18 mm to the board setup's 0.20 mm minimum.
   and a short `USB_D-` front-layer overpass. Route-only D1 GND/VBUS service
   islands were tested and rejected because they worsened total DRC. D1 is now a
   rail-less TPD2E2U06DCK-class SC-70/SOT-323 data-line shunt, which removes the
-  D1 VBUS blocker; the remaining nearby cleanup is the service-edge
-  ground/shield return.
+  D1 VBUS blocker. The follow-on service-edge ground spine now ties the J1
+  ground contacts/shield stakes, `R2B`, `R1`, `J_BAT` `MP1`, and D1/NTC return
+  into the board's GND return without changing the USB-C connector placement or
+  reintroducing a VBUS-clamped protection island.
 - `NTC1`/`R3` moved down inside the battery-side cluster so the thermistor
   divider is no longer sitting directly on D1's `USB_D+` pad/track corridor.
 - `SW1` moved left to relieve the MCU pad-column collision, and the shell CAD
@@ -213,9 +223,10 @@ checked in; only this summary file is.
 The first-board checklist in `../FIRST-BOARD-CHECKLIST.md` lists the active
 PCB items. The closure order this snapshot recommends:
 
-1. Rip up or reroute the remaining power/sensor fanout clusters that still
-   report `shorting_items` and `tracks_crossing`.
-2. Close the 25 unconnected items without changing the shell-bound footprints
+1. Rip up or reroute the remaining power/sensor ground fanout clusters around
+   `U3`/`R6`/`Q2`/`R2A`/`SW1`/`U1`, which still report the dominant
+   `shorting_items`, `tracks_crossing`, and local GND unconnected rows.
+2. Close the 15 unconnected items without changing the shell-bound footprints
    unless the CAD packet moves with them.
 3. Re-run ERC + DRC and update this file's counts in the same commit.
 4. Only then update `MANIFEST.md` to drop the "not fabrication-released"

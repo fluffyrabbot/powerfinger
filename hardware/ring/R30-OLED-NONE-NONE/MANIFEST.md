@@ -165,8 +165,11 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   debt, so no D1 stitch is retained. This pass replaces the rail-clamped USBLC6
   D1 island with a rail-less TPD2E2U06DCK-class SC-70/SOT-323 data shunt,
   removing the D1 VBUS branch while keeping ERC and schematic-parity clean.
-  KiCad CLI `10.0.1` still reports DRC=186 and unconnected=25, with
-  schematic-parity=0, because the board is still
+  This pass adds a service-edge GND/shield spine across the J1 ground contacts
+  and shell stakes, ties nearby `R2B`, `R1`, and `J_BAT` `MP1` into that
+  return, and drops D1/NTC ground through a B-side via without reintroducing
+  VBUS-clamped ESD protection. KiCad CLI `10.0.1` still reports DRC=190 and
+  unconnected=15, with schematic-parity=0, because the board is still
   hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad

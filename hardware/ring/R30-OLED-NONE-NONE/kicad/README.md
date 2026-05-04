@@ -88,6 +88,10 @@ release.
 - D1 footprint cleanup that replaces the rail-clamped USBLC6 SOT-23-6 island
   with a rail-less TPD2E2U06DCK-class SC-70/SOT-323 data-line shunt, removing
   the D1 VBUS branch from the constrained service-edge pocket
+- service-edge GND/shield spine that ties the J1 ground contacts and shell
+  stakes, pulls `R2B` and `R1` into the lower return, reaches `J_BAT` `MP1`
+  from the upper return, and drops D1/NTC ground through a local B-side via
+  without reintroducing VBUS-clamped ESD protection
 
 This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
 charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
@@ -126,7 +130,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.1` snapshot is
-  ERC=0, DRC=186, unconnected=25, and schematic-parity=0; the remaining board
+  ERC=0, DRC=190, unconnected=15, and schematic-parity=0; the remaining board
   story is dominated by unconnected items and hand-routed clearance/shorting
   failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.
