@@ -73,6 +73,8 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   instead of direct cell solder
 - Locks service USB-C to a 16-pin USB 2.0 receptacle class with through-hole
   shell stakes; SMD-only and power-only USB-C are rejected for P0
+- Locks D1 to a rail-less TPD2E2U06DCK-class SC-70/SOT-323 USB data ESD shunt
+  so the constrained service-edge pocket no longer needs a VBUS clamp branch
 - Routes the charge path with TP4054, `20 kohm` RPROG, RT9080, NTC divider, and
   a BDFL-accepted 2N7002 `Q2` logic-safe charge-gate driver so ESP32-C3
   `GPIO10` is not tied to a 5 V pull-up
@@ -160,8 +162,11 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   overpass, while leaving direct D1 VBUS out because it still regresses total
   DRC. Route-only D1 GND/VBUS service-island attempts were also tested and
   rejected because they reduced unconnected rows only by increasing total DRC
-  debt, so no D1 stitch is retained. KiCad CLI `10.0.1` still reports DRC=185
-  and unconnected=27, with schematic-parity=0, because the board is still
+  debt, so no D1 stitch is retained. This pass replaces the rail-clamped USBLC6
+  D1 island with a rail-less TPD2E2U06DCK-class SC-70/SOT-323 data shunt,
+  removing the D1 VBUS branch while keeping ERC and schematic-parity clean.
+  KiCad CLI `10.0.1` still reports DRC=186 and unconnected=25, with
+  schematic-parity=0, because the board is still
   hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad

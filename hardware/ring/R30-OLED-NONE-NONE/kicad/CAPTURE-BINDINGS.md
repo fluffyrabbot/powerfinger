@@ -44,7 +44,7 @@ land pattern.
 | `R7`, `R8` | Stock package | 0402 `VBAT_SENSE` divider, packet value `100k` / `100k` | Present in the schematic and PCB as the production sense path to ESP32-C3 `GPIO0`; always-on draw is accepted for first-board ADC reliability |
 | `R9`, `R10` | Stock package | 0402 `VBUS_DETECT` divider, packet value `220k` / `100k` | Present in the schematic and PCB as the production detect path to ESP32-C3 `GPIO3`; draw is only from USB VBUS while plugged in |
 | `R11` | Stock package | 0402 TP4054 `CHRG_STAT` pull-up, packet value `100k` | Present in the schematic and PCB so the charger status pad is pulled up and testable; no MCU GPIO or firmware consumer is claimed yet |
-| `D1` | Stock package | 2-channel USB ESD array in SOT-23-6 or equivalent footprint | Lock the exact footprint when the device MPN is chosen |
+| `D1` | Stock package | TPD2E2U06DCK-class rail-less 2-channel USB ESD array in SC-70/SOT-323 | Use the committed data-line shunt layout; do not reintroduce a VBUS clamp branch in the constrained service-edge pocket |
 | `PCB1`, `SHELL1`, `RIM1`, `PAD1`, `ANT1` | Custom / mechanical | Notes, keep-outs, and fabrication constraints rather than electrical symbols | These drive the board shape, service seam, glide system, and antenna clearance |
 
 ## Blocking Locks Before First Routed Board

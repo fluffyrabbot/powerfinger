@@ -1318,12 +1318,148 @@
 						)
 					)
 				)
+				)
+				(embedded_fonts no)
 			)
-			(embedded_fonts no)
+			(symbol "PowerFinger:TPD2E2U06DCK_FirstBoard"
+				(property "Reference" "D"
+					(at 0.635 5.715 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+						(justify left)
+					)
+				)
+				(property "Value" "TPD2E2U06DCK"
+					(at 0.635 3.81 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+						(justify left)
+					)
+				)
+				(property "Footprint" "Package_TO_SOT_SMD:SOT-323_SC-70"
+					(at 1.27 -6.35 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+							(italic yes)
+						)
+						(justify left)
+					)
+				)
+				(property "Datasheet" "https://www.ti.com/lit/ds/symlink/tpd2e2u06.pdf"
+					(at 1.27 -8.255 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+						(justify left)
+					)
+				)
+				(property "Description" "Dual-channel high-speed rail-less ESD protection, SC-70"
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(pin_names
+					(hide yes)
+				)
+				(exclude_from_sim no)
+				(in_bom yes)
+				(on_board yes)
+				(in_pos_files yes)
+				(duplicate_pin_numbers_are_jumpers no)
+				(symbol "TPD2E2U06DCK_FirstBoard_1_1"
+					(rectangle
+						(start -2.54 2.794)
+						(end 2.54 -5.334)
+						(stroke
+							(width 0.254)
+							(type default)
+						)
+						(fill
+							(type background)
+						)
+					)
+					(pin passive line
+						(at -5.08 0 0)
+						(length 2.54)
+						(name "IO1"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+						(number "1"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+					)
+					(pin passive line
+						(at -5.08 -2.54 0)
+						(length 2.54)
+						(name "IO2"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+						(number "2"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+					)
+					(pin power_in line
+						(at 0 -7.62 90)
+						(length 2.54)
+						(name "GND"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+						(number "3"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+					)
+				)
+				(embedded_fonts no)
+			)
 		)
-	)
-	(symbol
-		(lib_id "Connector:USB_C_Receptacle_USB2.0_16P")
+		(symbol
+			(lib_id "Connector:USB_C_Receptacle_USB2.0_16P")
 		(at 90.17 80.01 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -1604,9 +1740,9 @@
 			)
 		)
 	)
-	(symbol
-		(lib_id "Power_Protection:USBLC6-2SC6")
-		(at 129.54 59.69 0)
+		(symbol
+			(lib_id "PowerFinger:TPD2E2U06DCK_FirstBoard")
+			(at 129.54 59.69 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -1623,8 +1759,8 @@
 				(justify left)
 			)
 		)
-		(property "Value" "USBLC6-2SC6-class"
-			(at 130.175 63.5 0.0000)
+			(property "Value" "TPD2E2U06DCK-class"
+				(at 130.175 63.5 0.0000)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1632,8 +1768,8 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_TO_SOT_SMD:SOT-23-6"
-			(at 130.81 53.34 0.0000)
+			(property "Footprint" "Package_TO_SOT_SMD:SOT-323_SC-70"
+				(at 130.81 53.34 0.0000)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1641,8 +1777,8 @@
 				(hide yes)
 			)
 		)
-		(property "mfg_part_num" "USBLC6-2SC6"
-			(at 132.08 64.7699 0)
+			(property "mfg_part_num" "TPD2E2U06DCK"
+				(at 132.08 64.7699 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1650,8 +1786,8 @@
 				(justify left)
 			)
 		)
-		(property "manufacturer" "STMicroelectronics"
-			(at 132.08 64.7699 0)
+			(property "manufacturer" "Texas Instruments"
+				(at 132.08 64.7699 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1677,16 +1813,7 @@
 		(pin "3"
 			(uuid "63ee8ebd-e038-4e5e-bdb6-97f8ceceeadb")
 		)
-		(pin "4"
-			(uuid "3848f3a6-30fe-4a66-8e08-69ede4f7ff92")
-		)
-		(pin "5"
-			(uuid "32245674-b049-4e68-8e0f-6ae762c7eb0b")
-		)
-		(pin "6"
-			(uuid "d2fd7d5d-e122-49fd-b866-5420815ca411")
-		)
-		(instances
+			(instances
 			(project "simple_circuit"
 				(path "/5cdf6bc0-1d6d-4761-b5b2-853e85c36594"
 					(reference "D1")
@@ -1838,9 +1965,9 @@
 		)
 		(uuid "55571f5b-182f-44d0-a0a0-d0d8a0680bfe")
 	)
-	(global_label "USB_D+"
-		(shape passive)
-		(at 124.46 59.69 0)
+		(global_label "USB_D+"
+			(shape passive)
+			(at 124.46 59.69 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1849,9 +1976,9 @@
 		)
 		(uuid "6da91c8c-45fa-4715-9fd1-590ee9a1a455")
 	)
-	(global_label "GND"
-		(shape passive)
-		(at 129.54 67.31 0)
+		(global_label "GND"
+			(shape passive)
+			(at 129.54 67.31 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1860,9 +1987,9 @@
 		)
 		(uuid "490e4ee7-ab12-46d6-8953-5d77d2a316f1")
 	)
-	(global_label "USB_D-"
-		(shape passive)
-		(at 124.46 62.23 0)
+		(global_label "USB_D-"
+			(shape passive)
+			(at 124.46 62.23 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1870,39 +1997,6 @@
 			(justify left bottom)
 		)
 		(uuid "e3f08446-d853-4a16-a3be-572b26c50072")
-	)
-	(global_label "USB_D-"
-		(shape passive)
-		(at 134.62 62.23 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "4a6f2eff-259a-437b-aa67-844f0ce4674e")
-	)
-	(global_label "VBUS_5V"
-		(shape passive)
-		(at 129.54 54.61 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "4d2d0194-c4fb-459b-860e-5eeb12b20106")
-	)
-	(global_label "USB_D+"
-		(shape passive)
-		(at 134.62 59.69 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "508dbd0c-3fd5-4424-9f1f-476d3620169f")
 	)
 	(hierarchical_label "VBUS_5V"
 		(shape input)

@@ -16,7 +16,7 @@ map and the actual symbol/footprint choices do not drift apart.
 | Thermal safety | `NTC1`, `R3` | NTC divider and sensing path | Place to reflect cell temperature, not convenient routing |
 | Battery / USB sense | `R7`, `R8`, `R9`, `R10` | BDFL-accepted first-board VBAT and VBUS resistor dividers to the MCU resources in the interface contract | `R7`/`R8` = `100k`/`100k`; `R9`/`R10` = `220k`/`100k`. BSS138-class alternates or a logic-level load switch remain explicit substitutions |
 | Charge status | `R11` | TP4054 `CHRG_STAT` `100k` pull-up to `VREG_3V3` plus a local status pad | This is hardware-testable status, not a firmware-consumed claim yet |
-| USB / service entry | `J1`, `R2`, `D1` | USB-C receptacle, CC pull-downs, USB ESD protection, and service pads | The service/debug USB path is a first-pass P0 assumption, not a hidden dev-only hack |
+| USB / service entry | `J1`, `R2`, `D1` | USB-C receptacle, CC pull-downs, rail-less USB data ESD protection, and service pads | The service/debug USB path is a first-pass P0 assumption, not a hidden dev-only hack; keep D1 as a D+/D- shunt rather than a VBUS-clamped protection island |
 | Shell / glide interface | `SHELL1`, `RIM1`, `PAD1` | Mechanical notes and keep-out references, not electrical symbols | These should still be called out in the project notes so layout respects them |
 
 ## Capture Boundary

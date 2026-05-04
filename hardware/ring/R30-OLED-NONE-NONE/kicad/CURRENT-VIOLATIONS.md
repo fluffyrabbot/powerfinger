@@ -18,8 +18,8 @@ Toolchain: `kicad-cli 10.0.1` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 185 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
-| `pcb drc` unconnected items | 27 | Net endpoints with no track to them |
+| `pcb drc` violations | 186 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` unconnected items | 25 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
 The schematic capture now has real first-pass symbols in `power_and_charge`,
@@ -86,14 +86,23 @@ This pass routes the mirrored J1 `B6`/`B7` USB data pads into the same data
 escape with a separated `B.Cu` fanout and a short `USB_D-` front-layer overpass,
 closing both B-side data unconnected items without moving the shell-bound USB-C
 connector. Direct D1 VBUS was re-tested after the data fanout and still
-increased total DRC debt, so D1 VBUS remains an honest blocker.
+increased total DRC debt, so D1 VBUS remained an honest blocker at that
+snapshot.
 This pass re-tested the D1 protection pocket as a route-only service island:
 direct D1 ground to A12, via-assisted D1 ground to the existing GND via,
 via-assisted D1 ground to the NTC-side ground pad, via-assisted D1 VBUS from the
 inward trunk, and the combined GND/VBUS island. Each variant reduced one or two
 unconnected rows but increased total DRC debt into the `249` to `251` range, so
-no route-only D1 stitch is retained. The remaining D1 blocker needs
+no route-only D1 stitch is retained. That left a D1 blocker needing
 footprint/placement-level cleanup, not another missing-wire patch.
+This pass replaces the rail-clamped USBLC6 SOT-23-6 protection island with a
+rail-less TPD2E2U06DCK-class SC-70/SOT-323 dual data-line shunt. `USB_D+` and
+`USB_D-` now reach D1 through short shunt stubs, D1 has no `VBUS_5V` pad or
+branch, and D1 ground ties into the nearby NTC-side return. That removes the
+two D1 VBUS unconnected rows while keeping schematic ERC and schematic/PCB
+parity clean. The remaining D1-adjacent unconnected row is part of the broader
+service-edge ground/shield return, not a reason to reintroduce a VBUS-clamped
+ESD footprint.
 
 ## ERC top categories
 
@@ -108,11 +117,11 @@ and sheet-interface cleanup in this snapshot.
 | `solder_mask_bridge` | 45 | Adjacent pads of different nets share an unbroken mask aperture |
 | `copper_edge_clearance` | 33 | Copper inside the 0.5 mm board-edge clearance band |
 | `text_height` | 31 | Silkscreen text below the rule minimum |
-| `unconnected_items` | 27 | Routed pads with no track or via reaching them |
-| `shorting_items` | 16 | Nets physically shorted or crossing through pads in the hand-routed pass |
-| `tracks_crossing` | 15 | Tracks of different nets physically crossing on the same layer |
-| `silk_over_copper` | 15 | Silkscreen text crossing exposed copper |
-| `clearance` | 10 | Copper-to-copper or pad-to-track clearance failures |
+| `unconnected_items` | 25 | Routed pads with no track or via reaching them |
+| `shorting_items` | 22 | Nets physically shorted or crossing through pads in the hand-routed pass |
+| `silk_over_copper` | 14 | Silkscreen text crossing exposed copper |
+| `clearance` | 11 | Copper-to-copper or pad-to-track clearance failures |
+| `tracks_crossing` | 10 | Tracks of different nets physically crossing on the same layer |
 | `drill_out_of_range` | 6 | Drill sizes outside the current board setup limits |
 | `via_diameter` | 6 | Vias below the current board setup diameter rule |
 
@@ -159,9 +168,10 @@ first-board routes from 0.18 mm to the board setup's 0.20 mm minimum.
   beside D1, and then run to U1 as separated D+/D- service lanes. The mirrored
   B-side USB-C data pads now join that escape through a separated B-side fanout
   and a short `USB_D-` front-layer overpass. Route-only D1 GND/VBUS service
-  islands were tested and rejected because they worsened total DRC; D1's center
-  protection pads need footprint/placement cleanup rather than another local
-  stitch.
+  islands were tested and rejected because they worsened total DRC. D1 is now a
+  rail-less TPD2E2U06DCK-class SC-70/SOT-323 data-line shunt, which removes the
+  D1 VBUS blocker; the remaining nearby cleanup is the service-edge
+  ground/shield return.
 - `NTC1`/`R3` moved down inside the battery-side cluster so the thermistor
   divider is no longer sitting directly on D1's `USB_D+` pad/track corridor.
 - `SW1` moved left to relieve the MCU pad-column collision, and the shell CAD
@@ -205,7 +215,7 @@ PCB items. The closure order this snapshot recommends:
 
 1. Rip up or reroute the remaining power/sensor fanout clusters that still
    report `shorting_items` and `tracks_crossing`.
-2. Close the 29 unconnected items without changing the shell-bound footprints
+2. Close the 25 unconnected items without changing the shell-bound footprints
    unless the CAD packet moves with them.
 3. Re-run ERC + DRC and update this file's counts in the same commit.
 4. Only then update `MANIFEST.md` to drop the "not fabrication-released"
