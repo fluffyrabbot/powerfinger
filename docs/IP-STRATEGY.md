@@ -77,6 +77,18 @@ against the criteria are reserved for future activation when a third-party
 productizer is ready to attest. Premature scaffolding of a registry is
 explicitly avoided.
 
+### Reference Manufacturer Graph
+
+To remove the "which factory do I even talk to" footgun for downstream
+entrants, [`docs/REFERENCE-MANUFACTURERS.md`](REFERENCE-MANUFACTURERS.md)
+documents factories and services that have actually run the design at
+various volumes (DIY → 25–500 → 500–10k → 10k+). It is a record of public
+knowledge with realized COGS, MOQs, lead times, and yield, **not** an
+endorsement and **not** evidence of a vendor relationship. The doc has
+strict timestamping discipline so stale entries are visually obvious. As
+of this writing the doc is a skeleton with a Seeed Studio Fusion+Propagate
+placeholder; entries are added as batches actually run.
+
 ### Conveyance vs. Internal Modification (CERN-OHL-S 2.0)
 
 A common question from print farms, care facilities, and other internal
