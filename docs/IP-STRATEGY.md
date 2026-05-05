@@ -44,6 +44,40 @@ is deliberately more permissive than the hardware license because:
 - MIT maximizes adoption and contribution from the developer community
 - The hardware reciprocity requirement is the load-bearing protection
 
+### Documentation: CC-BY-SA 4.0
+
+All Markdown documentation (`docs/*.md`, READMEs, assembly guides, this file)
+is licensed under Creative Commons Attribution-ShareAlike 4.0 International
+(CC-BY-SA 4.0). The share-alike posture matches the share-alike posture of
+the hardware license. CC-BY-SA is on the OSHWA-approved list of documentation
+licenses; CC-BY-NC and CC-BY-ND are not, so we do not use them. See
+[`LICENSE-DOCS`](../LICENSE-DOCS) for the full text.
+
+### The Naming Posture
+
+"PowerFinger" — and the variant names "PowerPen" and "PowerPuck" — are used
+descriptively. **No trademark is asserted by the maintainers.** This is a
+deliberate choice. The reciprocal hardware license, the patent retaliation
+clause, OSHWA Certified status (when achieved), and the accessibility-shield
+narrative below do the load-bearing protection work. The maintainers have no
+plans to file a trademark or operate a custom certification mark. See
+[`docs/NAMING-AND-COMPATIBILITY.md`](NAMING-AND-COMPATIBILITY.md) for the
+full posture, including the project's response framework if a bad-faith actor
+ships a dangerous product under the project name.
+
+### Conveyance vs. Internal Modification (CERN-OHL-S 2.0)
+
+A common question from print farms, care facilities, and other internal
+production users: do they have to publish their modifications if the
+modifications stay inside the organization? **No.** CERN-OHL-S 2.0's
+source-disclosure obligation triggers on **conveyance** — distribution
+outside the organization (§3.1). A care facility 3D-printing a custom shell
+variant for one of its residents and using it internally has not conveyed
+anything and has no disclosure obligation. The disclosure obligation
+activates only on third-party distribution. This is a built-in feature of
+the license. See `docs/NAMING-AND-COMPATIBILITY.md` §6 for the same point in
+plain language.
+
 ---
 
 ## Patent Landscape
@@ -220,9 +254,12 @@ value is high.
 
 | Action | When | Cost | Status |
 |--------|------|------|--------|
-| Publish repo under CERN-OHL-S 2.0 + MIT | Now | $0 | Pending |
-| Commit detailed design files for P0 variant | Phase 1 | $0 | Pending |
-| Publish Hackaday.io project page | Phase 1 | $0 | Pending |
+| Publish repo under CERN-OHL-S 2.0 + MIT | Now | $0 | Done |
+| Declare documentation license (CC-BY-SA 4.0, `LICENSE-DOCS`) | Now | $0 | Done — see scope at `docs/scoping/LICENSE-REVISION-SCOPE.md` |
+| Publish naming-and-compatibility posture (`docs/NAMING-AND-COMPATIBILITY.md`) | Now | $0 | Done |
+| Commit detailed design files for P0 variant | Phase 1 | $0 | Pending — schematics + routed PCB outstanding |
+| Publish Hackaday.io project page | Phase 1 | $0 | Pending — content ready, see `docs/DEFENSIVE-PUBLICATION.md` §1 |
 | FTO opinion from patent attorney | Phase 1.5 | $2–5K | Blocked by funding |
-| OSHWA certification | Phase 2 | $0 (self-cert) | Pending |
+| OSHWA certification (per variant: ring → hub → pen → puck) | Phase 2 | $0 (self-cert) | Blocked on routed PCB + complete BOM. Working hardware NOT required (FAQ explicit). |
+| OSHWA Open Healthware Certification (announced 2026-01-09) | Parking lot | $0 | Revisit after standard cert lands and program matures past wireframe |
 | Evaluate OIN/Unified Patents membership | Phase 2+ | $0 | Pending |

@@ -234,16 +234,30 @@ firmware build order that runs on dev boards before prototype hardware arrives.
 
 ## License
 
-Hardware designs: [CERN-OHL-S 2.0](https://opensource.org/license/cern-ohl-s)
-(strongly reciprocal)
+Three artifacts, three licenses:
 
-Firmware and software: MIT
+- **Hardware designs** (schematics, PCB layouts, 3D models, BOMs, assembly
+  docs): [CERN-OHL-S 2.0](https://opensource.org/license/cern-ohl-s)
+  (strongly reciprocal). See [LICENSE-HARDWARE](LICENSE-HARDWARE).
+- **Firmware and software** (ESP-IDF code, companion app): MIT.
+  See [LICENSE-SOFTWARE](LICENSE-SOFTWARE).
+- **Documentation** (`docs/*.md`, READMEs, assembly guides):
+  [CC-BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+  See [LICENSE-DOCS](LICENSE-DOCS).
 
 The CERN-OHL-S patent retaliation clause means anyone using these designs who
 sues anyone else over them automatically loses their license. The reciprocal
 requirement means anyone manufacturing products from these designs must publish
 their complete source. See [docs/IP-STRATEGY.md](docs/IP-STRATEGY.md) for full
 rationale.
+
+**"PowerFinger" is used descriptively. No trademark is asserted by the
+maintainers.** Anyone may build, sell, and modify the design under the
+licenses above. Derivative makers are encouraged to use their own product
+name and pursue [OSHWA Certified](https://certification.oshwa.org/) status as
+a third-party quality signal. See
+[docs/NAMING-AND-COMPATIBILITY.md](docs/NAMING-AND-COMPATIBILITY.md) for the
+full naming-and-compatibility posture.
 
 ## Why "PowerFinger"?
 

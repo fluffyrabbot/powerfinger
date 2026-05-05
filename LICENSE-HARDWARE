@@ -2,6 +2,16 @@ CERN Open Hardware Licence Version 2 - Strongly Reciprocal (CERN-OHL-S v2)
 
 Copyright 2026 PowerFinger Contributors
 
+Note on the project name: "PowerFinger" is used descriptively. No trademark
+is asserted by the maintainers. Anyone may build, sell, and modify hardware
+based on these designs under the terms below. Derivative makers are
+encouraged to use their own product name. See
+docs/NAMING-AND-COMPATIBILITY.md for the project's full posture on names and
+compatibility claims.
+
+---
+
+
 This source describes Open Hardware and is licensed under the
 CERN-OHL-S v2 or any later version.
 

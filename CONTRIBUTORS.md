@@ -16,5 +16,10 @@ for the current build spec.
 ## License
 
 By contributing, you agree that your hardware contributions are licensed under
-[CERN-OHL-S 2.0](LICENSE-HARDWARE) and your software contributions under
-[MIT](LICENSE-SOFTWARE).
+[CERN-OHL-S 2.0](LICENSE-HARDWARE), your software contributions under
+[MIT](LICENSE-SOFTWARE), and your documentation contributions (Markdown files,
+READMEs, assembly guides) under [CC-BY-SA 4.0](LICENSE-DOCS).
+
+"PowerFinger" is used descriptively in this project. No trademark is asserted
+by the maintainers. See [docs/NAMING-AND-COMPATIBILITY.md](docs/NAMING-AND-COMPATIBILITY.md)
+for the project's posture on names and compatibility claims.

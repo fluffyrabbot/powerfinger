@@ -665,68 +665,112 @@ calibration) is defined but not yet implemented.
 
 The Open Source Hardware Association (OSHWA) maintains a self-certification
 program for open-source hardware. Certified projects receive an OSHWA UID
-(e.g., US000123) and are listed in the OSHWA certification directory, which is
-searchable by patent examiners and the public. Certification is free and
-self-administered.
+(format `[ISO-3166-1 alpha-2][6-digit serial]`, e.g., `US000237`) and are
+listed in the OSHWA certification directory at
+https://certification.oshwa.org/list.html, which is searchable by patent
+examiners and the public. Certification is **free and self-administered, with
+post-submission staff review of the linked design files and licenses**.
+Renewal is annual via reaffirmation email.
 
-### Required Documentation Checklist
+**Working prototype is NOT required.** OSHWA's FAQ is explicit: "You will
+need to provide links to the final documentation that you will make
+available at launch." Schematic-only certification is allowed (though it may
+draw a clarification request from reviewers).
+
+**Each variant gets its own UID.** No umbrella certification exists. The
+application form has a "Does your project build upon or incorporate hardware
+already registered with OSHWA?" dropdown that lets follow-on variants cite
+prior UIDs, creating a de facto family chain in the directory.
+
+### Required Documentation Checklist (Corrected May 2026)
 
 | Requirement | Description | Status | Repo File(s) |
 |-------------|-------------|--------|-------------|
-| **Hardware source files** | Schematic, PCB layout, 3D model in editable format (KiCad, FreeCAD, etc.) | Not yet created | `hardware/` — directory exists but contains only BOMs. Schematics, PCB layouts, and CAD models needed. |
-| **Bill of materials** | Complete BOM with part numbers, quantities, and sources | Done (3 variants + hub) | `hardware/bom/R30-OLED-NONE-NONE.csv`, `hardware/bom/R30-BALL-NONE-NONE.csv`, `hardware/bom/WSTD-BALL-NONE-NONE.csv`, `hardware/bom/USB-HUB.csv` |
-| **Assembly instructions** | Sufficient for someone skilled in the art to build the device | Not yet created | Needed as `hardware/ASSEMBLY.md` or similar |
-| **Firmware source code** | Complete, buildable source | In progress | `firmware/ring/`, `firmware/hub/` — hub firmware has BLE central, event composer, role engine. Ring firmware in progress. |
-| **Open-source hardware license** | Applied to hardware files | Done | `LICENSE-HARDWARE` (CERN-OHL-S 2.0) |
-| **Open-source software license** | Applied to firmware/software | Done | `LICENSE-SOFTWARE` (MIT) |
-| **README or project description** | Clear description of what the project is and does | Done | `README.md` |
+| **Open-source hardware license** | CERN-OHL-S 2.0 is on the approved list | Done | `LICENSE-HARDWARE` |
+| **Open-source software license** | MIT is on the approved list | Done | `LICENSE-SOFTWARE` |
+| **Open-copyright documentation license** | CC-BY or CC-BY-SA accepted; CC-BY-NC and CC-BY-ND **prohibited** | Done | `LICENSE-DOCS` (CC-BY-SA 4.0) |
+| **Hardware source files** | Schematic, PCB layout, 3D model in editable format (KiCad, FreeCAD source, not just exported PDF) | Outstanding | `hardware/` — schematics in progress, no routed PCB committed for any variant |
+| **Bill of materials with manufacturer part numbers and source links** | Specific enough to source every component | Partial | `hardware/bom/*.csv` — BOMs exist but specificity needs audit per variant |
+| **Assembly instructions** | Sufficient for someone skilled in the art to build the device. Photos recommended, not strictly required if working prototype doesn't exist yet | Partial | Per-variant assembly baselines exist in publication packets; step-by-step build docs need expansion |
+| **Firmware source code** | Buildable, with a version tag pinned to the certified hardware version | In progress | `firmware/ring/`, `firmware/hub/` — version tag for cert pinning needed |
+| **README / project description** | Clear description of what the project is and does | Done | `README.md` |
 | **Design rationale** | Explanation of design choices | Done (extensive) | `docs/COMBINATORICS.md`, `docs/CLICK-MECHANISMS.md`, `docs/GLIDE-SYSTEM.md`, `docs/CONSUMER-TIERS.md`, `docs/POWER-BUDGET.md`, `docs/BALL-DIAMETER.md`, `docs/PIEZO-HAPTIC-ANALYSIS.md` |
+| **Naming-and-compatibility posture** | Explicit declaration of trademark / no-trademark stance for clarity to reviewers and downstream makers | Done | `docs/NAMING-AND-COMPATIBILITY.md` |
 
 ### OSHWA Self-Certification Form Fields
 
 | Field | Value |
 |-------|-------|
-| Project name | PowerFinger |
-| Project version | 0.1 (prototype) |
+| Type | Individual (BDFL) — legal entity not required |
+| Project name | PowerFinger (with variant suffix per UID, e.g., "PowerFinger Ring R30-OLED") |
+| Project version | Tagged firmware/hardware version at time of submission |
 | Project URL | https://github.com/fluffyrabbot/powerfinger |
 | Hardware license | CERN-OHL-S 2.0 |
 | Software license | MIT |
-| Documentation license | CERN-OHL-S 2.0 (hardware docs), MIT (firmware docs) |
-| Country | (to be filled) |
+| Documentation license | CC-BY-SA 4.0 |
+| Country | (auto-assigned by responsible-party address) |
 | Categories | Input devices, Assistive technology, Wearables |
-| Description | Open-source assistive fingertip ring mouse and pen wand family. BLE HID, surface-agnostic variants, multi-ring composition. |
+| Keywords | `assistive-technology`, `accessibility`, `disability`, `digital accessibility`, `mobility`, `BLE`, `HID`, `ESP32`, `open-hardware`, `ring-mouse`, `pen-mouse`, `surface-agnostic` |
+| Builds upon | First variant: none. Subsequent variants: cite the first variant's UID. |
+| Description | Open-source assistive fingertip ring mouse and pen wand family. BLE HID, surface-agnostic variants, multi-ring composition via USB hub. |
 
-### Gaps to Fill Before Certification
+### Gaps to Fill Before Certification (Corrected)
 
-1. **Hardware source files (KiCad schematics + PCB layouts).** The BOMs exist
-   but no schematic or PCB layout files have been committed. OSHWA requires
-   editable hardware source files, not just BOMs. This is the primary blocker.
+The previous edition of this section overstated the hardware-completeness
+blocker (working prototype is not required) and understated the
+documentation-license blocker (it was missing entirely). The corrected list:
 
-2. **3D model files (STEP/STL).** The parametric ring shell and wand body CAD
-   models are specified (in `docs/PROTOTYPE-SPEC.md`) but not yet created as
-   CAD files in the repo.
+1. **Routed PCB layout for the variant being certified.** Schematic-only is
+   technically allowed but unusual. The first cert (`R30-OLED-NONE-NONE`)
+   should wait for the routed PCB and the active-lane first-board work to
+   complete (see `docs/ACTIVE-LANE-CHECKLIST.md`).
+2. **Editable CAD source for the parametric ring shell.** OpenSCAD or
+   FreeCAD source, not exported STL. Specified in `docs/PROTOTYPE-SPEC.md`
+   but not yet committed as source files.
+3. **BOM source-link audit.** Each part needs a manufacturer part number
+   and at least one source URL. The current BOM CSVs need a verification
+   pass.
+4. **Firmware version tag matched to the certified hardware version.** A
+   git tag pinning the certified hardware revision to a specific firmware
+   commit.
+5. **Step-by-step assembly instructions.** Per-variant assembly baselines
+   exist in publication packets; OSHWA expects the same level of detail
+   inline or as a top-level `hardware/<variant>/ASSEMBLY.md`.
 
-3. **Assembly instructions.** Build instructions for each prototype variant.
-   Can reference the existing design docs for rationale but must include
-   step-by-step assembly.
+**No longer blockers** (corrected from prior edition):
 
-4. **Firmware completeness.** The hub firmware has core components (BLE central,
-   event composer, role engine). The ring firmware needs sensor drivers and power
-   management implemented as buildable code.
+- Working prototype hardware photos (FAQ explicit: not required)
+- A single-cert covering all variants (each gets its own UID; this is normal)
 
 ### Certification Strategy
 
-OSHWA certification should be pursued per-variant, not for the entire 576-variant
-matrix. Certify:
+OSHWA certification is pursued per variant. Recommended submission order:
 
-1. **R30-OLED-NONE-NONE** (P0 optical ring) — first, as soon as schematics and
-   CAD exist.
-2. **USB Hub Dongle** — companion to the P0 ring.
-3. **R30-BALL-NONE-NONE** (P1 ball ring) — second ring variant.
-4. **WSTD-BALL-NONE-NONE** (P1 wand) — first wand.
+1. **`R30-OLED-NONE-NONE`** (P0 optical ring) — first, when active-lane
+   first-board work clears.
+2. **`USB-HUB`** — second, citing the ring's UID via the "builds upon"
+   dropdown.
+3. **`WSTD-BALL-NONE-NONE`** (PowerPen) — third, citing the ring + hub.
+4. **`P-OLED-NONE-NONE`** (PowerPuck) — fourth, citing the ring (shared
+   electronics).
 
-Each certification is independent and creates an additional OSHWA registry entry
-searchable by patent examiners.
+The citation chain creates a visible family relationship in the directory
+despite the absence of umbrella certification.
+
+### OSHWA Open Healthware Certification
+
+Announced 2026-01-09 as a layered certification on top of standard OSHWA cert,
+targeting medical hardware "from band-aids to implantable devices." Adds
+mandatory fields for intended use, risk assessments, and conditional
+QMS/sterilization/regulatory items. Assistive devices are not explicitly
+named as in-scope and the announcement focuses on medical-device framing.
+
+**Project posture: parking lot.** Pursue standard OSHWA cert first. Revisit
+Healthware after standard cert lands and the Healthware program matures past
+its current wireframe / community-feedback stage. Pursuing Healthware too
+early carries unwanted regulatory implications (FDA in the US, EU MDR in
+Europe) for an assistive HID device that is not intended as a medical
+device.
 
 ---
 
@@ -734,21 +778,25 @@ searchable by patent examiners.
 
 ### Action: "Publish repo under CERN-OHL-S 2.0 + MIT"
 
-**Status: Done.**
+**Status: Done. Now expanded to a three-license stack.**
 
-Both license files exist in the repository root:
+Three license files exist in the repository root:
 - `LICENSE-HARDWARE` — CERN-OHL-S 2.0
 - `LICENSE-SOFTWARE` — MIT
+- `LICENSE-DOCS` — CC-BY-SA 4.0 (added per
+  `docs/scoping/LICENSE-REVISION-SCOPE.md` Layer A)
 
 The `CLAUDE.md` project instructions and `docs/IP-STRATEGY.md` document the
-dual-license structure. The `docs/PROTOTYPE-SPEC.md` explicitly states "MIT
-firmware, CERN-OHL-S 2.0 hardware" in the Fixed Across All Devices section.
+license structure. `docs/NAMING-AND-COMPATIBILITY.md` documents the
+descriptive-name posture (no trademark asserted by maintainers).
 
-**Remaining concern:** Individual source files should carry license headers (a
-short SPDX identifier line). The firmware `.c` and `.h` files in `firmware/`
-should include `// SPDX-License-Identifier: MIT` at the top. Hardware files
-(when created) should include `# SPDX-License-Identifier: CERN-OHL-S-2.0`.
-This is not blocking but is best practice for license clarity.
+**Remaining concern:** Individual source files should carry license headers
+(a short SPDX identifier line). The firmware `.c` and `.h` files in
+`firmware/` should include `// SPDX-License-Identifier: MIT` at the top.
+Hardware files (when created) should include `# SPDX-License-Identifier:
+CERN-OHL-S-2.0`. Markdown documentation files should include
+`<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->`. This is not blocking but is
+best practice for license clarity.
 
 ### Action: "Commit detailed design files for P0 variant"
 
@@ -820,10 +868,18 @@ potentially reduce billable hours.
 
 ### Action: "OSHWA certification"
 
-**Status: Blocked by missing hardware source files.** Section 3 of this document
-identifies the gaps. The certification form can be submitted as soon as KiCad
-schematics and CAD models exist for the P0 variant. The BOMs, license files,
-firmware, and documentation are already sufficient.
+**Status: Blocked on routed PCB + BOM audit + firmware version tag for the
+first variant (`R30-OLED-NONE-NONE`).** Section 3 of this document
+identifies the corrected gaps. The certification form can be submitted as
+soon as the active-lane first-board work clears (see
+`docs/ACTIVE-LANE-CHECKLIST.md`). The licenses (CERN-OHL-S 2.0 + MIT +
+CC-BY-SA 4.0) and the naming-and-compatibility posture
+(`docs/NAMING-AND-COMPATIBILITY.md`) are already sufficient.
+
+**Working prototype is not required.** OSHWA's FAQ explicitly allows
+schematic-only certification — but a routed PCB plus the project's own
+first-board checklist makes for a stronger reproduction package and is the
+recommended path.
 
 ### Action: "Evaluate OIN/Unified Patents membership"
 
