@@ -65,6 +65,18 @@ plans to file a trademark or operate a custom certification mark. See
 full posture, including the project's response framework if a bad-faith actor
 ships a dangerous product under the project name.
 
+### The Conformance Posture
+
+Derivative makers may claim "PowerFinger-compatible" honestly. Published
+conformance criteria live in [`docs/CONFORMANCE.md`](CONFORMANCE.md), with
+self-attestation as the entire mechanism. There is no certifying body — not
+the maintainers, not OSHWA, not anyone else. The conformance categories
+(BLE HID profile, hub composition protocol, companion app handshake,
+accessibility validation) are defined; the test scripts that vendors run
+against the criteria are reserved for future activation when a third-party
+productizer is ready to attest. Premature scaffolding of a registry is
+explicitly avoided.
+
 ### Conveyance vs. Internal Modification (CERN-OHL-S 2.0)
 
 A common question from print farms, care facilities, and other internal
