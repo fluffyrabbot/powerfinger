@@ -1,0 +1,6 @@
+(sym_lib_table
+	(version 7)
+	(lib (name "PowerFinger") (type "KiCad") (uri "${KIPRJMOD}/PowerFinger.kicad_sym") (options "") (descr "PowerFinger USB-HUB first-board local symbols"))
+	(lib (name "Device") (type "KiCad") (uri "${KICAD10_SYMBOL_DIR}/Device.kicad_sym") (options "") (descr "Generic device symbols"))
+	(lib (name "power") (type "KiCad") (uri "${KICAD10_SYMBOL_DIR}/power.kicad_sym") (options "") (descr "Power symbols and power flags"))
+)

@@ -16,6 +16,8 @@ enclosure fit must be validated before the lane moves to secondary variants.
 - `sheets/controls_and_indicators.kicad_sch`
 - `usb_hub.kicad_pcb` — stepped USB-A direct-plug first-board pass
 - `usb_hub.kicad_pro` — local KiCad project settings for this packet
+- `sym-lib-table` — local project symbol table for KiCad CLI/library checks
+- `PowerFinger.kicad_sym` — local hub-specific first-board symbols
 - `fp-lib-table` — local project footprint table for KiCad CLI/library checks
 - `PowerFinger_USB.pretty/` — local footprint library for the direct-plug USB-A
   connector, first-board ESP32-S3 module land pattern, service pads, clamp
@@ -56,19 +58,21 @@ enclosure fit must be validated before the lane moves to secondary variants.
 - `SW1` is a pad-actuated `BOOT_N` service path for this pass; `EN`, `BOOT_N`,
   UART0, power, and ground pads remain probeable along the reopenable seam.
   USB data continuity is inspected at trace/connector access points rather than
-  dedicated connected USB data service pads in this pass.
+  dedicated connected USB data service pads in this pass. `TP6`-`TP9` are now
+  explicit no-BOM schematic service pads matching the routed board footprints.
 - The schematic now carries the routed board's common ground, EN RC support,
   status LED path, and local decoupling instead of leaving those as PCB-only
   drift. The USB shell tabs and ESP32-S3 module ground pads are now explicit
   schematic pins tied to ground, and PCB footprint metadata matches the locked
   schematic fields. KiCad CLI verification is active on this packet: the current
-  schematic ERC and PCB DRC pass at error severity with local footprints loaded,
-  and the all-severity PCB DRC pass is clean with 0 unconnected items and 0
-  schematic parity issues. `usb_hub.kicad_pro` intentionally ignores
-  `lib_footprint_mismatch` because the first-board footprints are now
-  source-controlled in `PowerFinger_USB.pretty/`; remaining all-severity ERC
-  messages are schematic-library/off-grid/service-label cleanup, not PCB
-  routing or footprint provenance drift.
+  schematic ERC and PCB DRC pass at error severity with local symbol and
+  footprint libraries loaded, the all-severity schematic ERC reports 0
+  messages, and the all-severity PCB DRC pass is clean with 0 unconnected items
+  and 0 schematic parity issues.
+  `usb_hub.kicad_pro` intentionally ignores `lib_footprint_mismatch` because
+  the first-board footprints are now source-controlled in
+  `PowerFinger_USB.pretty/`; the remaining blockers are measured hardware
+  evidence, not KiCad ERC/DRC drift.
 
 ## Hard Constraints
 

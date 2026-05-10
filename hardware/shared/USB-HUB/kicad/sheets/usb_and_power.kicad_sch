@@ -363,14 +363,6 @@
   )
   (wire
     (pts
-      (xy 60.96 40.64)
-      (xy 68.58 40.64)
-    )
-    (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "D5E89C29-751E-4D9B-9788-0060764377E4")
-  )
-  (wire
-    (pts
       (xy 48.26 45.72)
       (xy 60.96 45.72)
     )
@@ -392,14 +384,6 @@
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid "72A7E378-D7CD-48F6-A9A5-CEDDC4D12232")
-  )
-  (wire
-    (pts
-      (xy 60.96 55.88)
-      (xy 68.58 55.88)
-    )
-    (stroke (width 0) (type default) (color 0 0 0 0))
-    (uuid "4762A772-43C4-4CC2-AC24-4A35426766AB")
   )
   (wire
     (pts
@@ -572,42 +556,6 @@
     )
     (stroke (width 0) (type default) (color 0 0 0 0))
     (uuid "D39F76D3-17D0-4C69-95F5-2B49909F24A7")
-  )
-  (symbol (lib_id "power:PWR_FLAG") (at 68.58 40.64 0) (unit 1)
-    (in_bom no) (on_board no) (dnp no)
-    (uuid "E68AB02B-A165-4D57-A691-3B31D9D04D8C")
-    (property "Reference" "#FLG0101" (at 68.58 38.735 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Value" "PWR_FLAG" (at 68.58 36.83 0)
-      (effects (font (size 1.27 1.27)))
-    )
-    (pin "1" (uuid "6168F97A-F308-4D52-B2AA-A2A7D5C2E201"))
-    (instances
-      (project "usb_hub"
-        (path "/"
-          (reference "#FLG0101") (unit 1)
-        )
-      )
-    )
-  )
-  (symbol (lib_id "power:PWR_FLAG") (at 68.58 55.88 0) (unit 1)
-    (in_bom no) (on_board no) (dnp no)
-    (uuid "82E6C783-8DF2-43D0-8212-74F75111241C")
-    (property "Reference" "#FLG0102" (at 68.58 53.975 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Value" "PWR_FLAG" (at 68.58 52.07 0)
-      (effects (font (size 1.27 1.27)))
-    )
-    (pin "1" (uuid "F6A62E4E-1868-43A3-9D78-6349020B70E9"))
-    (instances
-      (project "usb_hub"
-        (path "/"
-          (reference "#FLG0102") (unit 1)
-        )
-      )
-    )
   )
   (symbol (lib_id "PowerFinger:USB_A_Plug_Male") (at 40.64 48.26 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)

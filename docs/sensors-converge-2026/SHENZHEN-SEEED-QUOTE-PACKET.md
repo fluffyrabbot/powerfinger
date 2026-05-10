@@ -12,7 +12,7 @@ Quote the active validation-lane pair:
 
 | Item | Packet | Request | Current status |
 |---|---|---|---|
-| Optical ring | `hardware/ring/R30-OLED-NONE-NONE/` | DFM/pre-fab review, BOM costability review, assembly/serviceability feedback, and quote once PCB DRC is closed | BOM-backed packet and first routed rigid P0 source exist; KiCad snapshot is still red: ERC=0, PCB DRC=113, unconnected=9, parity=0 |
+| Optical ring | `hardware/ring/R30-OLED-NONE-NONE/` | DFM/pre-fab review, BOM costability review, assembly/serviceability feedback, and quote once PCB DRC is closed | BOM-backed packet and first routed rigid P0 source exist; KiCad snapshot is still red: ERC=0, PCB DRC=112, unconnected=9, parity=0 |
 | USB hub dongle | `hardware/shared/USB-HUB/` | PCB fab/assembly quote, enclosure/connector-retention DFM review, and serviceability feedback | BOM-backed packet and routed first-board source exist; schematic ERC=0, PCB DRC=0, unconnected=0, parity=0 |
 
 Do not quote secondary ring, wand, puck, OCR, cloud, or companion-app product

@@ -21,7 +21,11 @@
     "pinned_footprint_libs": [
       "PowerFinger_USB"
     ],
-    "pinned_symbol_libs": []
+    "pinned_symbol_libs": [
+      "Device",
+      "PowerFinger",
+      "power"
+    ]
   },
   "meta": {
     "filename": "usb_hub.kicad_pro",
