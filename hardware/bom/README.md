@@ -31,7 +31,9 @@ Standard CSV. Columns follow OSHWA/KiCad convention:
 - **Unit Cost** is at prototype quantities (1–10 units), not volume pricing.
 - **Notes** column lists acceptable alternatives and constraints.
 - Supplier part numbers are provided where known; `—` means "search by MPN."
-- All components must be sourceable from multiple vendors (project hard rule).
+- Prefer multi-source components. Any single-source prototype part must be
+  explicitly flagged with its accepted risk and evaluated fallback path; do not
+  call the BOM multi-source until that is true.
 - Battery line items must meet [BATTERY-SAFETY.md](../../docs/BATTERY-SAFETY.md):
   integrated PCM, UN 38.3 documentation, and no harvested cells.
 

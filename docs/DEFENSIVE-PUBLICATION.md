@@ -690,7 +690,7 @@ prior UIDs, creating a de facto family chain in the directory.
 | **Open-source software license** | MIT is on the approved list | Done | `LICENSE-SOFTWARE` |
 | **Open-copyright documentation license** | CC-BY or CC-BY-SA accepted; CC-BY-NC and CC-BY-ND **prohibited** | Done | `LICENSE-DOCS` (CC-BY-SA 4.0) |
 | **Hardware source files** | Schematic, PCB layout, 3D model in editable format (KiCad, FreeCAD source, not just exported PDF) | Outstanding | `hardware/` — schematics in progress, no routed PCB committed for any variant |
-| **Bill of materials with manufacturer part numbers and source links** | Specific enough to source every component | Partial | `hardware/bom/*.csv` — BOMs exist but specificity needs audit per variant |
+| **Bill of materials with manufacturer part numbers and source links** | Specific enough to source every component | Partial | `hardware/bom/*.csv` — BOMs exist but specificity needs audit per variant; the active optical ring intentionally flags PAW3204 sourcing risk instead of claiming multi-source coverage |
 | **Assembly instructions** | Sufficient for someone skilled in the art to build the device. Photos recommended, not strictly required if working prototype doesn't exist yet | Partial | Per-variant assembly baselines exist in publication packets; step-by-step build docs need expansion |
 | **Firmware source code** | Buildable, with a version tag pinned to the certified hardware version | In progress | `firmware/ring/`, `firmware/hub/` — version tag for cert pinning needed |
 | **README / project description** | Clear description of what the project is and does | Done | `README.md` |
@@ -803,7 +803,8 @@ best practice for license clarity.
 **Status: Partially complete.**
 
 What exists:
-- `hardware/bom/R30-OLED-NONE-NONE.csv` — complete BOM for P0 ring
+- `hardware/bom/R30-OLED-NONE-NONE.csv` — P0 ring BOM with PAW3204 sourcing
+  risk called out
 - `hardware/bom/R30-BALL-NONE-NONE.csv` — complete BOM for P1 ring
 - `hardware/bom/WSTD-BALL-NONE-NONE.csv` — complete BOM for P1 wand
 - `hardware/bom/USB-HUB.csv` — complete BOM for hub dongle

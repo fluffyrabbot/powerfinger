@@ -286,8 +286,8 @@ parts?
 
 **Must prove**
 
-- Every P0 line item is either multi-source or has an explicit footprint-safe
-  fallback.
+- Every P0 line item is either multi-source or has an explicit accepted-risk
+  note plus an evaluated fallback path.
 - Known BOM caveats are corrected before schematic freeze.
 - The assembly path matches the realities of low-volume builds.
 

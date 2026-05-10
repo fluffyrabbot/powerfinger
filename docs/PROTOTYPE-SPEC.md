@@ -29,7 +29,7 @@ later research, not for current execution.
 | Component | Spec |
 |-----------|------|
 | MCU | ESP32-C3 SuperMini |
-| Sensor | Optical mouse sensor (PAW3204 / ADNS-2080 class) |
+| Sensor | PAW3204DB-TJ3L optical sensor/lens/emitter kit; ADNS-2080 class only as evaluated fallback |
 | Click | Metal snap dome (Snaptron SQ-series or equivalent, 5-10M cycles) |
 | Battery | LiPo 80-100mAh |
 | Charging | USB-C |
@@ -74,7 +74,7 @@ It is not active implementation scope while the optical ring + hub lane is red.
 | Component | Spec |
 |-----------|------|
 | MCU | ESP32-C3 SuperMini |
-| Sensor | Optical mouse sensor (PAW3204 / ADNS-2080 class) |
+| Sensor | PAW3204DB-TJ3L optical kit; ADNS-2080 class only after evaluated board-profile changes |
 | Click | Metal snap dome (whole-puck press-down, 100–170gf) |
 | Battery | LiPo 150–200mAh |
 | Charging | USB-C |
@@ -205,8 +205,9 @@ These are non-negotiable — see CLAUDE.md and the design docs for full rational
   hard-coded.
 - **Ring geometry must be parametric** for finger size — never assume a specific
   hand.
-- **All parts must be sourceable from multiple vendors.** No single-source
-  components.
+- **Sourcing honesty:** Prefer multi-source components. Any single-source
+  prototype part must be called out with its accepted risk and evaluated
+  fallback path before outreach or fabrication quoting.
 
 ---
 

@@ -184,8 +184,13 @@ requiring the nRF52840 migration for the prototype phase.
 
 | Component | Part | Qty | Purpose |
 |-----------|------|-----|---------|
-| Optical sensor | PAW3204 / ADNS-2080 class | 1 | Surface tracking, 800–2000 CPI |
+| Optical sensor | PAW3204DB-TJ3L sensor/lens/emitter kit; ADNS-2080 class only after evaluated board-profile changes | 1 | Surface tracking, 800–2000 CPI |
 | LED | Integrated in sensor package | 1 | Surface illumination |
+
+The puck keeps the same sourcing honesty as the active ring: PAW3204 is the
+baseline optical path, ADNS-2080 is a standalone-sensor fallback class that
+needs footprint, optics, aperture, and firmware-profile evaluation, and
+integrated USB mouse controller ICs are not substitutes.
 
 **Sensor position:** Bottom-center of the PCB, facing down through an aperture
 in the shell floor. The shell floor sets the focal distance (2.4–3.2mm) — same
@@ -585,7 +590,7 @@ The PowerPuck serves a different accessibility population than the ring.
 | Component | Part | Cost |
 |-----------|------|------|
 | MCU | ESP32-C3-MINI-1-N4 | $2.01 |
-| Sensor | PAW3204 / ADNS-2080 class optical | $0.60–1.80 |
+| Sensor | PAW3204DB-TJ3L optical kit; ADNS-2080 class evaluated fallback | $0.60–1.80 |
 | Click | Metal snap dome (Snaptron SQ, 8–10mm) | $0.05–0.15 |
 | Battery | LiPo 150–200mAh | $1.00–2.00 |
 | Charging | TP4054 + USB-C connector | $0.15–0.35 |

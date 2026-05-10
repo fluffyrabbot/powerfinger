@@ -60,7 +60,7 @@ The two tiers should:
 | Component | Spec | BOM |
 |-----------|------|-----|
 | MCU | ESP32-C3-MINI-1-N4 | $2.01 |
-| Sensor | PAW3204 / ADNS-2080 class optical | $0.60–1.80 |
+| Sensor | PAW3204DB-TJ3L optical kit; ADNS-2080 class evaluated fallback | $0.60–1.80 |
 | Click | Metal snap dome (Snaptron SQ-series) | $0.05–0.15 |
 | Battery | LiPo 80–100mAh | $0.80–1.50 |
 | Charging | TP4054 + USB-C | $0.15–0.35 |
@@ -69,6 +69,11 @@ The two tiers should:
 | Shell | 3D-printed parametric ring, 30° angle | $0.50–1.00 |
 | PCB | Flex or rigid-flex | $2.00–5.00 |
 | **Total** | | **$6.50–12.00 (~$9 target)** |
+
+Standard sourcing note: the active first-board packet uses a PAW3204DB-TJ3L
+sensor/lens/emitter kit. ADNS-2080 is the verified Western-source fallback
+class, not a silent drop-in for the current board. YS8205-style integrated USB
+mouse controllers are excluded from this tier.
 
 **Surface compatibility:**
 

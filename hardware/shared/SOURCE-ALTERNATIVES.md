@@ -24,7 +24,7 @@ re-checking fit, current draw, thermal safety, or accessibility impact.
 |-----------|----------------|-------------------------|----------------------------|----------------|
 | Ring / wand MCU module | `ESP32-C3-MINI-1-N4` | `ESP32-C3-MINI-1-N4X`, `ESP32-C3-MINI-1-H4` | Modules with different keep-out, flash floor, or antenna geometry | Firmware lane is already built around ESP32-C3 timing and power behavior |
 | Hub MCU module | `ESP32-S3-MINI-1-N8` | `ESP32-S3-MINI-1-N4R2` | S3 parts without native USB OTG exposure | The hub must remain a USB HID + BLE central without external USB silicon |
-| Ring optical sensor | `PAW3204DB-TJ3L` | `ADNS-2080` class sensors | USB mouse controller chips marketed as “optical sensors” | Surface behavior and lens stack depend on a real standalone tracking sensor |
+| Ring optical sensor | `PAW3204DB-TJ3L` sensor/lens/emitter kit | `ADNS-2080` class sensors after footprint, optics, and firmware-profile evaluation | USB mouse controller chips marketed as “optical sensors” | Surface behavior and lens stack depend on a real standalone tracking sensor; the PAW3204 first-board path is an explicit prototype sourcing risk, not a multi-source claim |
 | Ring / wand Hall sensor | `DRV5053VAQDBZR` | `SS49E` with explicit power-budget re-check | Pin-incompatible Hall parts dropped in by footprint hope | Hall current dominates the ball+Hall power lane |
 | Charge controller | `TP4054` | `LTC4054ES5-4.2` | `TP4056` or `MCP73831` without board re-layout | Pinout and thermal behavior matter in tiny enclosures |
 | LDO | `RT9080-33GJ5` | `XC6220B331MR` with documented sleep penalty | `AP2112K`-class high-Iq regulators | Deep-sleep current is load-bearing for accessibility and battery life |
