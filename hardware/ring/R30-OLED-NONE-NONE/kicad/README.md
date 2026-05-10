@@ -46,8 +46,12 @@ release.
 - rigid validation board with separate power/service, sensor/click, and
   MCU/radio zones
 - ESP32-C3-MINI-1 antenna end facing the shell exterior, with copper and
-  component keep-outs marked before any convenience routing
+  antenna keep-outs marked before any convenience routing; the external
+  keep-out forbids tracks, vias, pads, and copper pour while allowing the owning
+  module footprint whose antenna courtyard reaches the board edge
 - bottom-side PAW3204 placement centered on the `6.2 mm` optical aperture datum
+  recorded as a `Cmts.User` alignment circle, not an internal `Edge.Cuts`
+  fabrication cutout through the populated PCB
 - JST-SH right-angle battery receptacle for a harnessed, replaceable protected
   cell
 - USB-C service connector class locked to 16-pin USB 2.0 with through-hole
@@ -107,8 +111,28 @@ release.
   `C1B` / GND pinch
 - U3 VBAT escape cleanup that routes TP4054 BAT around the GND/CHRG pad row
   through an outer dogleg before rejoining the U4 VIN trunk
-- C2 input-cap placement cleanup that moves the 10uF capacitor closer to U4 VIN
-  while leaving its GND pad as an honest unconnected blocker
+- C2 input-cap placement cleanup that moves and micro-retargets the 10uF
+  capacitor closer to U4 VIN while leaving its GND pad as an honest unconnected
+  blocker
+- B-side sensor-pocket cleanup that reroutes the `C1B` ground return and
+  `SENSOR_LED_KIT` test-pad stub without moving the shell-bound PAW3204 aperture
+- C1A MCU-side decoupler cleanup that moves the non-shell-bound capacitor into
+  the U1 `3V3` / `GND1` pocket while leaving the shell-bound `SW1` and U1
+  placements fixed
+- `TP_VBAT` / right-SW1 cleanup that reroutes `VBAT_SENSE` below the top dome
+  ground pad and ties the right `SW1` ring pad into the local U1/C1A ground leg
+- SW1 click cleanup that reroutes `CLICK_PRIMARY_N` through a B-side via pair
+  instead of through the lower dome ground pad
+- C1B/U2 B-side GND cleanup that doglegs around the PAW3204 LED pad column
+  without moving the shell-bound sensor aperture
+- R1 charger-programming cleanup that moves non-shell-bound `R1` into a
+  horizontal pocket and returns its GND pad through the accepted B-side trunk
+- U4 regulator-pocket cleanup that nudges non-shell-bound U4 while preserving
+  the accepted C2 placement and U3 `VBAT_PROTECTED` dogleg
+- D1/NTC ground-return cleanup that moves the local GND leg through a B-side
+  dogleg so it no longer shorts the `NTC_SENSE` divider trace
+- `TP_VBAT` micro-retarget that moves the sense test pad upward and removes the
+  upper `SW1`/`VBAT_SENSE` short
 
 This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
 charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
@@ -118,8 +142,10 @@ sense/status support parts: `R7`/`R8` = `100k`/`100k` for `VBAT_SENSE`,
 `CHRG_STAT` pull-up. `VBAT_SENSE` and `VBUS_DETECT` are routed to the ESP32-C3
 resources named in [INTERFACE-CONTRACT.md](INTERFACE-CONTRACT.md). `CHRG_STAT`
 is pulled up and locally testable, but no MCU GPIO or firmware consumer is
-claimed yet. The `43 x 18 mm` rigid pass now drives the shell CAD fit pass, but
-it still does not prove the package is comfortable, printable, RF-clean, or
+claimed yet. PAW3204 `SENSOR_NRESET` and `SENSOR_MOTION_N` are likewise local
+bring-up pads only for the first optical board, not firmware reset or wake
+signals. The `43 x 18 mm` rigid pass now drives the shell CAD fit pass, but it
+still does not prove the package is comfortable, printable, RF-clean, or
 serviceable with a populated board.
 
 ## Mechanical Binding Into CAD
@@ -146,8 +172,8 @@ rather than drifting back to anonymous module pockets.
   updating the variant manifest and BOM.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
-  is fabrication-clean. The current local KiCad CLI `10.0.1` snapshot is
-  ERC=0, DRC=166, unconnected=11, and schematic-parity=0; the remaining board
+  is fabrication-clean. The current local KiCad CLI `10.0.2` snapshot is
+  ERC=0, DRC=112, unconnected=9, and schematic-parity=0; the remaining board
   story is dominated by unconnected items and hand-routed clearance/shorting
   failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.

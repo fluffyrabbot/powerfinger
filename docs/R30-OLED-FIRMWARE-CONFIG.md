@@ -35,6 +35,8 @@ resolved values below, and only then builds the ring profile.
 | Charge gate | `CONFIG_POWERFINGER_CHARGE_ENABLE_PIN` | `10` | Binds `CHARGE_EN` to GPIO10 through the logic-safe gate driver. |
 | Hall rail | `CONFIG_POWERFINGER_HALL_POWER_PIN` | `-1` | R30-OLED has no Hall rail; firmware must not drive GPIO9. |
 | Charger status | none | none | `CHRG_STAT` is a pulled-up local status/test pad only, not firmware-consumed behavior. |
+| PAW3204 reset / power-down | none | none | `SENSOR_NRESET` is a local bring-up pad only; firmware does not drive sensor reset on the first optical board. |
+| PAW3204 motion wake | none | none | `SENSOR_MOTION_N` is a local bring-up pad only; the board profile intentionally keeps the wake mask at dome-only `1 << 8`. |
 | BLE name | `CONFIG_POWERFINGER_DEVICE_NAME` | `PowerFinger R30` | Identifies the active board profile during pairing. |
 
 ## Rules
@@ -45,8 +47,8 @@ resolved values below, and only then builds the ring profile.
 2. Any change to GPIOs, ADC channels, sensor family, click family, or charge
    safety nets must update this file, the fragment, and the R30 KiCad interface
    contract together.
-3. Do not claim `CHRG_STAT` firmware behavior until a real Kconfig symbol and
-   production consumer exist.
+3. Do not claim `CHRG_STAT`, `SENSOR_NRESET`, or `SENSOR_MOTION_N` firmware
+   behavior until real Kconfig symbols and production consumers exist.
 4. If an ADNS-2080-class fallback replaces PAW3204, treat it as a new board
    profile unless it preserves the exact protocol, voltage, pin, and lens
    assumptions.

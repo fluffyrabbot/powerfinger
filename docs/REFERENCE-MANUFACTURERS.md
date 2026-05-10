@@ -85,7 +85,10 @@ research labs, and prosumer makers who want to ship to a small population.
 
 | Vendor | Last verified | What was run | MOQ | Realized COGS | Lead time | Yield | Notes |
 |---|---|---|---|---|---|---|---|
-| Seeed Studio Fusion + Propagate | *not yet run* | TODO: `R30-OLED-NONE-NONE` ring + `USB-HUB` candidate | TBD | TBD | TBD | TBD | **Placeholder. No batch has been run yet.** Seeed Fusion handles PCB fab + assembly; Propagate is their small-batch productization service. Documented here because the project is likely to use Seeed for first small-batch production. Quote and realized COGS will be added after the first batch runs. |
+| Seeed Studio Fusion + Propagate | *not yet run* | Candidate for `R30-OLED-NONE-NONE` DFM/pre-fab review and `USB-HUB` first PCB/assembly quote | TBD | TBD | TBD | TBD | **Placeholder. No quote or batch has been run yet.** Current starter packet: [`docs/sensors-converge-2026/SHENZHEN-SEEED-QUOTE-PACKET.md`](sensors-converge-2026/SHENZHEN-SEEED-QUOTE-PACKET.md). Treat ring work as DFM/pre-fab review until its PCB DRC is closed; hub packet is the cleaner first quote candidate. |
+| JLCPCB / EasyEDA ecosystem | *not yet run* | Candidate fallback for active packet PCB fab/assembly only; enclosure/serviceability still needs separate handling | TBD | TBD | TBD | TBD | **Placeholder. No quote or batch has been run yet.** Listed because `PCB1` BOM notes already name JLCPCB/PCBWay-style prototype rigid PCB sourcing. Do not record as PowerFinger-proven until an actual quote or run exists. |
+| PCBWay | *not yet run* | Candidate fallback for active packet PCB fab/assembly and prototype mechanical review | TBD | TBD | TBD | TBD | **Placeholder. No quote or batch has been run yet.** Listed for Shenzhen scoping only. Any row update must separate quoted PCB/assembly cost from realized landed COGS and defects. |
+| Local Bao'an / Longgang prototype house | *not yet identified* | In-person DFM/prototype-house fallback for ring shell/board serviceability questions | TBD | TBD | TBD | TBD | **Placeholder class, not a vendor.** Fill with a named shop only after contact details, quote scope, communication channel, payment terms, and license/source-return posture are known. |
 
 ### Notes
 

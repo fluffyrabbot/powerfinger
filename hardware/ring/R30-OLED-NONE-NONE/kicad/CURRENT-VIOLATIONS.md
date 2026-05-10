@@ -13,13 +13,13 @@ stays honest.
 
 ## Snapshot
 
-Toolchain: `kicad-cli 10.0.1` (Homebrew, macOS).
+Toolchain: `kicad-cli 10.0.2` (Homebrew, macOS).
 
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 166 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
-| `pcb drc` unconnected items | 11 | Net endpoints with no track to them |
+| `pcb drc` violations | 112 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` unconnected items | 9 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
 The schematic capture now has real first-pass symbols in `power_and_charge`,
@@ -161,6 +161,121 @@ pad remains an explicit unconnected item instead of being hidden by a bad
 stitch. The accepted placement relieves the regulator input-cap pinch, drops
 R30 DRC from `168` to `166`, keeps unconnected items at `11`, lowers combined
 R30 KiCad debt to `177`, and drops the full wrapper total to `213`.
+A fresh KiCad rerun before this regulator-pocket follow-on reported the board
+as `DRC=167`, `unconnected=11`, and schematic-parity `0`. This pass keeps the
+accepted U3 `VBAT_PROTECTED` dogleg and shell-bound footprints intact, then
+micro-retargets C2 from `(113.550, 105.450)` to `(113.400, 105.850)` and moves
+the `VBAT_PROTECTED` landing to C2 pad 1 at `(113.400, 106.600)`. Direct
+`SW1`/`U1`/`C1A` stitches and close C1A relocation candidates were rechecked and
+still increased total DRC, so they are not retained. The live R30 DRC count is
+now `166`, unconnected items remain `11`, and schematic-parity remains `0`.
+This pass keeps the reset/motion local-pad decision intact and reroutes only
+the B-side `C1B` ground return plus the non-contract `SENSOR_LED_KIT` test-pad
+stub. The PAW3204 LED pad now escapes around the decoupler instead of straight
+through it, and the C1B ground return approaches from the left side of the
+sensor pocket. KiCad CLI `10.0.1` now reports R30 `DRC=165`, `unconnected=11`,
+and schematic-parity `0`.
+This pass moves non-shell-bound `C1A` from `(121.600, 93.900)` to
+`(118.450, 94.950)`, retargets its `VREG_3V3` leg directly from U1 `3V3`, and
+adds a short local GND leg from C1A pad 2 to U1 `GND1`. The shell-bound `SW1`
+and `U1` footprints stay fixed. Direct `SW1`-to-`U1` / `SW1`-to-`C1A` GND ties
+were rechecked after the C1A move; they lower unconnected count further only by
+raising total DRC, so they are not retained. Repeated KiCad CLI `10.0.1` reruns
+reported R30 `DRC=164..165`, `unconnected=10`, and schematic-parity `0`; this
+snapshot records the conservative `165` count.
+This pass moves non-shell-bound `TP_VBAT` from `(116.100, 92.600)` to
+`(116.800, 93.600)` and reroutes `VBAT_SENSE` below the top `SW1` GND pad before
+it enters U1 `GPIO0`. With that sense route out of the immediate GND pinch, the
+right `SW1` ring pad now ties into the local U1/C1A ground leg without increasing
+the conservative total DRC count. KiCad CLI `10.0.1` now reports R30 `DRC=164`,
+`unconnected=9`, and schematic-parity `0`.
+This pass reroutes `CLICK_PRIMARY_N` through a B-side via pair from the `SW1`
+center pad to U1 `GPIO6` instead of dragging the front-layer click trace through
+the lower `SW1` GND pad. Direct top/bottom `SW1` GND stitches were re-tested and
+still increased total DRC, so they remain explicit unconnected items. KiCad CLI
+`10.0.1` now reports R30 `DRC=163`, `unconnected=9`, and schematic-parity `0`.
+This follow-up re-tested the remaining shared `C2`/`U4` and lower-`SW1` ground
+closure as one topology problem. The lower-left `SW1` GND stitch reduced
+unconnected rows only by increasing shorting rows; direct C2 pad-to-stub,
+via-assisted C2, C2-to-right-ground, and small C2 retarget variants all
+increased total DRC into the high 160s or 170s. No new copper is retained from
+those variants, and the verified snapshot remains R30 `DRC=163`,
+`unconnected=9`, and schematic-parity `0`.
+This pass reroutes the B-side C1B/U2 ground leg around the PAW3204 LED pad
+column, replacing the direct `(112.770, 102.900)` to `(113.700, 100.635)` run
+with a left dogleg through `(112.200, 100.300)`. That preserves the shell-bound
+PAW3204 aperture and the accepted C1B placement while clearing one sensor-pocket
+short/mask pinch. KiCad CLI `10.0.1` now reports R30 `DRC=161`,
+`unconnected=9`, and schematic-parity `0`.
+This follow-up re-tested the recommended U3/R1-to-B-side-GND continuity path.
+Direct U3-to-R1, U3-to-service-GND, pad-via, offset-via, and paired U3/R1
+B-side return variants reduced one unconnected row only by increasing shorting,
+mask-bridge, or total DRC debt. The U3 pad-via to `(111.900, 104.000)` was the
+least bad candidate, but it still raised the conservative DRC count on repeat
+runs and expanded the shorting bucket, so no U3/R1 copper is retained. The
+verified snapshot remains R30 `DRC=161`, `unconnected=9`, and
+schematic-parity `0`.
+This pass then moves non-shell-bound `R1` from `(106.500, 102.800)` rotated 90
+degrees to `(108.400, 102.400)` rotated horizontal, retargets the `PROG_R` leg
+from U3 `PROG` to R1 pad 1, and drops R1 pad 2 into the accepted B-side GND
+return through a local via. The front-layer service-GND sweep was tested and
+rejected because it shorted through R1 pad 1; the retained version keeps R1 GND
+on the B-side return instead. KiCad CLI `10.0.1` now reports R30 `DRC=158`,
+`unconnected=9`, and schematic-parity `0`.
+This pass then nudges non-shell-bound U4 from `(112.400, 102.700)` to
+`(112.400, 103.000)` and retargets the local VIN/EN/VOUT segments to the new
+pad coordinates while preserving the accepted C2 placement and the U3
+`VBAT_PROTECTED` dogleg. Moving C2 with U4 was re-tested and rejected because it
+either held no net gain or increased shorting/unconnected rows. KiCad CLI
+`10.0.1` now reports R30 `DRC=156`, `unconnected=9`, and schematic-parity `0`.
+This follow-up re-tested C2 GND as a route-only micro-slice with the accepted U4
+nudge in place. Direct front-layer C2-to-return stubs held `unconnected=9` while
+raising total DRC, and via-assisted C2 returns reduced unconnected rows only by
+raising total DRC to `158..162` plus shorting or hole-clearance debt. No C2 GND
+route is retained; the verified snapshot remains R30 `DRC=156`,
+`unconnected=9`, and schematic-parity `0`.
+This follow-up re-tested the `J_BAT` / left-service GND cluster named by the
+remaining unconnected and shorting rows. Direct `J_BAT` pad-2-to-left-return
+routes reduced unconnected rows only by expanding the shorting bucket; `J_BAT`
+`MP1` B-side doglegs, simple `R8` relocation candidates, `VBUS_5V` doglegs
+around `MP1`, and `VBAT_PROTECTED` trunk retargets either held `unconnected=9`
+or raised shorting despite occasional raw DRC-count reductions. The adjacent
+`Q1`/`R2A` `CHARGE_GATE` and `USB_CC1_RD` service-lane doglegs were also
+rejected: the best candidate still reported `DRC=157`, `unconnected=9`, and
+`shorting_items=5`, worse than the accepted snapshot's `shorting_items=4`.
+No copper is retained from this slice; the verified snapshot remains R30
+`DRC=156`, `unconnected=9`, and schematic-parity `0`.
+This pass then moves the local D1/NTC ground return off the front-layer
+`NTC_SENSE` crossing by adding one offset GND via at `(107.400, 105.750)` and
+reusing the existing NTC ground via at `(109.080, 107.400)` for a short B-side
+dogleg. That removes the `GND`/`NTC_SENSE` short without touching shell-bound
+footprints, the accepted U3 `VBAT_PROTECTED` dogleg, or the accepted C2
+placement. KiCad CLI `10.0.1` then reported R30 `DRC=154`, `unconnected=9`,
+and schematic-parity `0`.
+This pass also micro-retargets non-shell-bound `TP_VBAT` from
+`(116.800, 93.600)` to `(116.500, 92.900)` and reroutes the local
+`VBAT_SENSE` leg so the sense pad no longer shorts the upper `SW1` GND pad.
+KiCad CLI `10.0.1` now reports R30 `DRC=153`, `unconnected=9`, and
+schematic-parity `0`; the shorting bucket is down to three rows.
+This follow-up re-tested the recommended `R7`/`R8` divider closure after the
+`TP_VBAT` micro-retarget. Full `R7`/`R8` pair moves, `R8`-only moves, direct
+`R7` sense doglegs, and via-assisted `R7` escapes all failed the gate: the best
+raw-count candidates held `DRC=153` only by expanding the shorting bucket, while
+the via candidates rose to `DRC=156` and added hole-clearance or unconnected
+debt. No divider copper or placement is retained from this slice; the verified
+snapshot remains R30 `DRC=153`, `unconnected=9`, and schematic-parity `0`.
+This pass moves the PAW3204 optical aperture datum circle from `Edge.Cuts` to
+`Cmts.User`. The circle is a package/shell alignment datum for the bottom-side
+sensor and CAD tunnel, not a fabrication cutout through the populated PCB. That
+removes the false internal-board-edge clearance bucket without changing the
+board outline, U2 placement, or CAD aperture binding. The same pass detours the
+long `VBUS_5V` feed to the `R9`/`R10` detect divider farther right of the
+bring-up pads. This pass also keeps the ESP32-C3 external antenna keep-out
+strict for tracks, vias, pads, and copper pour while allowing the owning module
+footprint; the module footprint's antenna courtyard intentionally extends to
+the board edge, so forbidding footprints in that keep-out only flags U1 itself.
+KiCad CLI `10.0.2` now reports R30 `DRC=112`, `unconnected=9`, and
+schematic-parity `0`.
 
 ## ERC top categories
 
@@ -172,18 +287,21 @@ and sheet-interface cleanup in this snapshot.
 
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
-| `copper_edge_clearance` | 38 | Copper inside the 0.5 mm board-edge clearance band |
-| `solder_mask_bridge` | 32 | Adjacent pads of different nets share an unbroken mask aperture |
 | `text_height` | 31 | Silkscreen text below the rule minimum |
-| `tracks_crossing` | 18 | Tracks of different nets physically crossing on the same layer |
-| `shorting_items` | 14 | Nets physically shorted or crossing through pads in the hand-routed pass |
+| `tracks_crossing` | 23 | Tracks of different nets physically crossing on the same layer |
+| `solder_mask_bridge` | 25 | Adjacent pads of different nets share an unbroken mask aperture |
+| `clearance` | 11 | Copper-to-copper or pad-to-track clearance failures |
 | `silk_over_copper` | 13 | Silkscreen text crossing exposed copper |
-| `clearance` | 13 | Copper-to-copper or pad-to-track clearance failures |
-| `unconnected_items` | 11 | Routed pads with no track or via reaching them |
+| `unconnected_items` | 9 | Routed pads with no track or via reaching them |
+| `shorting_items` | 3 | Nets physically shorted or crossing through pads in the hand-routed pass |
+| `courtyards_overlap` | 3 | Footprint courtyard overlaps in the dense service/MCU pockets |
+| `silk_overlap` | 2 | Silkscreen items overlap each other |
+| `silk_edge_clearance` | 1 | Silkscreen too close to the board edge |
 
 The shorting-class and crossing-class violations are the blocking ones for
-fabrication. Mask-bridge and edge-clearance violations are easier mechanical
-fixes but still block a clean release. `lib_footprint_mismatch` is intentionally
+fabrication. Mask-bridge, courtyard, and silkscreen violations are
+easier mechanical fixes but still block a clean release.
+`lib_footprint_mismatch` is intentionally
 ignored in the project because the first-board custom footprints are now
 source-controlled under `PowerFinger_Ring.pretty`; upstream-library comparison
 is not useful signal for this hand-routed packet. The previous
@@ -198,9 +316,30 @@ without changing schematic/PCB parity. The `R6` relocation closes the pulldown
 ground island, and the `TP_LEDKIT` move reduces the sensor LED/test-pad pinch
 without moving the shell-bound PAW3204 aperture. The accepted U3 VBAT escape
 pulls the battery trace off the TP4054 GND/CHRG pad row; U3 GND still remains
-one of the 11 explicit unconnected items rather than being hidden by a short.
-The accepted C2 move keeps the regulator input capacitor nearer U4 VIN while
-avoiding the rejected C2 ground stitches and pad vias.
+one of the explicit unconnected items rather than being hidden by a short.
+The accepted C2 move, plus this follow-on C2 micro-retarget, keeps the regulator
+input capacitor nearer U4 VIN while avoiding the rejected C2 ground stitches and
+pad vias. The latest B-side sensor-pocket cleanup reduces the shorting bucket
+while preserving the local-pad reset/motion choice and keeping the shell-bound
+sensor footprint fixed. The SW1 click reroute then removes the front-layer
+`CLICK_PRIMARY_N`/GND pass through the lower dome pad without changing the
+shell-bound click footprint. The latest C2/SW1 ground-topology probes showed
+that simple local stitches are now the wrong closure mechanism: they either
+raise shorting rows or move the regulator pocket into a worse clearance state.
+The accepted sensor-pocket GND dogleg then removes the remaining direct
+GND/`SENSOR_LED_KIT` pinch through U2's LED pad column without moving U2 or C1B.
+The accepted R1 retarget opens the charger-programming resistor pocket by
+moving R1 onto the B-side return and removing the rejected front-layer GND sweep
+through the R1 `PROG_R` pad.
+The accepted U4 nudge relieves the regulator VIN/VOUT/EN pad pinch while
+leaving the accepted C2 placement and U3 dogleg in place.
+The accepted D1/NTC B-side GND dogleg removes the local `GND`/`NTC_SENSE`
+short while preserving the existing battery, regulator, and shell-bound
+placement decisions. The follow-on `TP_VBAT` micro-retarget removes the upper
+`SW1`/`VBAT_SENSE` short and lowers the remaining shorting bucket to three rows.
+The aperture-datum layer fix removes the previous `copper_edge_clearance`
+bucket by keeping the sensor/cad datum visible without representing it as a
+routed internal cutout.
 
 ## What this means for downstream packets
 
@@ -284,18 +423,38 @@ checked in; only this summary file is.
 The first-board checklist in `../FIRST-BOARD-CHECKLIST.md` lists the active
 PCB items. The closure order this snapshot recommends:
 
-1. Rip up or reroute the remaining regulator and MCU-side ground
-   fanout clusters around `U4`/`C2` and the right-side
-   `SW1`/`U1`/`C1A` GND chain; direct all-in ground stitches were tested and
+1. Move to placement-level cleanup for the left-service and power-ground
+   pockets before adding more route-only stitches: the remaining blocker rows
+   cluster around `J_BAT`/`R8`/`Q1`/`R2A`, `U4`/`C2`, and the remaining `SW1`
+   ground pads. Direct all-in ground stitches were tested and
    reduced unconnected rows only by increasing total debt, and simple R1/R8
    orientation shifts, click-trace doglegs, direct pad-to-pad GND stitches,
    pad vias, the first C1A relocation candidates, direct `U3`-to-`R6`/left-GND
-   stitches, `U3` pad vias, `U4`/`C2` direct/bus stitches, `C2` pad vias, and a
-   right-side `C1B` relocation also increased total debt. Keep the accepted
-   `VREG_3V3` trunk off the PAW3204 LED/GND column, keep the accepted U3
-   VBAT dogleg out of the TP4054 pad row, and preserve the accepted C2
-   input-cap placement unless a real GND closure lowers total debt further.
-2. Close the 11 unconnected items without changing the shell-bound footprints
+   stitches, `U3` pad vias, `U4`/`C2` direct/bus stitches, `C2` pad vias, direct
+   `SW1`/`U1`/`C1A` stitches, the rejected close C1A relocation candidates, and
+   a right-side `C1B` relocation, lower-left `SW1` GND stitch, direct C2
+   pad-to-stub routes, via-assisted C2 routes, C2-to-right-ground route, and
+   small C2 retarget candidates also increased total debt. Direct U3-to-R1,
+   U3-to-service-GND, U3 pad-via, offset-via, and paired U3/R1 B-side return
+   candidates also increased shorting or conservative total DRC. C2 moves paired
+   with the accepted U4 nudge were also re-tested and rejected because they held
+   no net gain or increased shorting/unconnected rows. Route-only C2 GND stubs
+   after the accepted U4 nudge also increased total DRC or introduced
+   shorting/hole-clearance debt. The `J_BAT` pad-2-to-left-return, `J_BAT`
+   `MP1` dogleg, simple `R8` relocation, `VBUS_5V` dogleg, `VBAT_PROTECTED`
+   trunk retarget, and `Q1`/`R2A` service-lane dogleg probes also failed the
+   gate by expanding shorting or raising total DRC. The accepted R1 horizontal
+   retarget with B-side-only GND return and accepted U4 nudge are retained. The
+   accepted C1A local-MCU relocation, accepted TP_VBAT / right-SW1 ground
+   cleanup, and accepted B-side SW1 click reroute are now retained. The accepted
+   C1B/U2 B-side GND dogleg and accepted D1/NTC B-side GND dogleg are also
+   retained. The post-`TP_VBAT` `R7`/`R8` divider pair move, `R8`-only move,
+   direct `R7` sense dogleg, and via-assisted `R7` escape probes also failed
+   because they expanded shorting, total DRC, or unconnected debt. Keep the
+   accepted `VREG_3V3` trunk off the PAW3204 LED/GND column, keep the accepted
+   U3 VBAT dogleg out of the TP4054 pad row, and preserve the micro-retargeted
+   C2 input-cap placement unless a real GND closure lowers total debt further.
+2. Close the 9 unconnected items without changing the shell-bound footprints
    unless the CAD packet moves with them.
 3. Re-run ERC + DRC and update this file's counts in the same commit.
 4. Only then update `MANIFEST.md` to drop the "not fabrication-released"

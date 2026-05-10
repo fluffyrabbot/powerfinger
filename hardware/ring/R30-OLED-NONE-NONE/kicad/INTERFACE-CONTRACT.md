@@ -35,6 +35,8 @@ It exists to stop two kinds of drift:
 | Sensor data out | `GPIO5` | `CONFIG_POWERFINGER_SENSOR_SDIO_PIN` | Active default | PAW3204 bidirectional SDIO, PMW3360 MOSI |
 | Sensor chip select | `GPIO6` | `CONFIG_POWERFINGER_SENSOR_NCS_PIN` | Active default | PMW3360-only; leave unconnected on PAW3204 capture |
 | Sensor data in | `GPIO7` | `CONFIG_POWERFINGER_SENSOR_MISO_PIN` | Active default | PMW3360-only; leave unconnected on PAW3204 capture |
+| PAW3204 reset / power-down | none allocated | none | Local hardware test only | `SENSOR_NRESET` stays on a pad for bring-up; the first optical board does not spend an MCU GPIO on reset |
+| PAW3204 motion wake | none allocated | none | Local hardware test only | `SENSOR_MOTION_N` stays on a pad for scope/logic-analyzer checks; the first optical board wakes from the dome only |
 | Primary click | `GPIO8` | `CONFIG_POWERFINGER_DOME_PIN` | Active default | Existing wake-capable dome path |
 | Ball-variant Hall gate | `GPIO9` | `CONFIG_POWERFINGER_HALL_POWER_PIN` | Cross-variant reserve | Not used on the optical capture, retained for ring-family consistency |
 | Charge enable gate | `GPIO10` | `CONFIG_POWERFINGER_CHARGE_ENABLE_PIN` | Recommended first board | Non-strapping output for the default-off P-channel MOSFET gate |
@@ -47,6 +49,12 @@ It exists to stop two kinds of drift:
   collides with the current PAW3204/PMW3360 shared clock path.
 - `GPIO10` is intentionally reserved for the charge-enable gate so the safe-
   default pull-up on the MOSFET does not become a new boot-strap dependency.
+- The first optical board intentionally does not allocate MCU GPIOs for PAW3204
+  `RST/QB/PD` or `MOTSWK`. Reset control is not needed for the polling-based
+  PAW3204 bring-up path, and motion wake would add firmware sleep semantics
+  before the optical stack, click stability, and charge-safety path are proven.
+  Keep both nets as local pads so bring-up can still force reset/power-down and
+  observe motion without making either signal part of the production contract.
 - If a later board revision moves the dome off `GPIO8`, update both this file
   and the firmware Kconfig defaults in the same commit.
 - The first real board should either keep the native USB pair (`GPIO18`/`GPIO19`)
@@ -76,5 +84,6 @@ It exists to stop two kinds of drift:
 - `CHRG_STAT` now has `R11` as a `VREG_3V3` pull-up and a local status pad, but
   it does not route to the MCU in this packet.
 - PAW3204 `RST/QB/PD` and `MOTSWK` are exposed on local pads in the PCB pass
-  instead of consuming new MCU GPIOs. Keep this conservative until firmware
-  decides whether reset or motion wake is required for the first optical board.
+  instead of consuming new MCU GPIOs. This is the explicit first-board decision:
+  local bench access only, no firmware consumer, no wake-mask bit, and no reset
+  GPIO until hardware evidence shows the active optical board needs one.

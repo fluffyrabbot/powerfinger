@@ -43,7 +43,7 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
 ## Replaceable Subassemblies
 
 - PCB or module assembly
-- Optical sensor plus matched lens stack
+- PAW3204 optical sensor plus matched lens/emitter stack
 - LiPo cell
 - Service lid and closure screws
 - USB-C charging connector
@@ -69,6 +69,8 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   before any routing convenience
 - Places the PAW3204 on the bottom side at the optical aperture datum and keeps
   the sensor lane P0-specific rather than adding PMW3360 copper
+- Treats ADNS-2080 as a sourcing fallback that needs a future evaluated board
+  profile, not a drop-in substitution for this PAW3204 first-board packet
 - Locks `J_BAT` to a JST-SH right-angle 2-pin 1.0 mm battery harness receptacle
   instead of direct cell solder
 - Locks service USB-C to a 16-pin USB 2.0 receptacle class with through-hole
@@ -85,6 +87,10 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
 - Recommends `R11` = `100k` as the TP4054 `CHRG_STAT` pull-up and keeps that
   signal as a local status/test pad only; no firmware consumer or MCU GPIO is
   claimed for it yet
+- Keeps PAW3204 `SENSOR_NRESET` and `SENSOR_MOTION_N` as local bring-up pads
+  only. The first optical board spends no MCU GPIOs on sensor reset or optical
+  motion wake; firmware polls the PAW3204 and uses dome-only wake until real
+  hardware evidence justifies a board-contract change.
 
 ## Current CAD Packet Scope
 
@@ -180,11 +186,45 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   the U3 `VBAT_PROTECTED` escape around the TP4054 GND/CHRG pad row before it
   rejoins U4 VIN. This pass then moves C2 closer to U4 VIN and retargets the
   C2 `VBAT_PROTECTED` leg while keeping the C2 GND pad as an explicit blocker
-  rather than accepting a bad stitch. KiCad CLI `10.0.1` still reports DRC=166
-  and unconnected=11, with schematic-parity=0, because the board is still
-  hand-routed
+  rather than accepting a bad stitch. This follow-on micro-retargets C2 again
+  inside the U4 input-cap pocket, preserves the U3 dogleg and shell-bound
+  footprints, and leaves the rejected direct `SW1`/`U1`/`C1A` stitches out
+  because they still increase total debt. This follow-on also reroutes the
+  `C1B` ground return and `SENSOR_LED_KIT` test-pad stub inside the B-side
+  sensor pocket without moving the shell-bound PAW3204 aperture. This follow-on
+  moves non-shell-bound `C1A` into the MCU-side decoupling pocket and ties it to
+  U1 `3V3` / `GND1`. This follow-on then moves non-shell-bound `TP_VBAT`,
+  reroutes `VBAT_SENSE` below the top `SW1` GND pad, and ties the right `SW1`
+  ring pad into the local U1/C1A ground leg. This follow-on then reroutes
+  `CLICK_PRIMARY_N` through a B-side via pair so the click trace no longer runs
+  through the lower `SW1` GND pad. This follow-on also reroutes the C1B/U2
+  B-side GND leg around the PAW3204 LED pad column. KiCad CLI `10.0.1` still
+  reports DRC=161 and unconnected=9, with schematic-parity=0. This follow-on
+  then moves non-shell-bound `R1` into a horizontal charger-programming pocket
+  and returns its GND pad through the accepted B-side GND trunk; KiCad CLI
+  `10.0.1` then reported DRC=158 and unconnected=9, with schematic-parity=0.
+  This follow-on nudges non-shell-bound U4 inside the regulator pocket while
+  preserving the accepted C2 placement and U3 dogleg; KiCad CLI `10.0.1` now
+  reports DRC=156 and unconnected=9, with schematic-parity=0. This follow-on
+  then moves the local D1/NTC ground return to a short B-side dogleg, removing
+  the `GND`/`NTC_SENSE` short while preserving shell-bound footprints, the
+  accepted C2 placement, and the accepted U3 dogleg. This follow-on also
+  micro-retargets non-shell-bound `TP_VBAT` upward to clear the upper
+  `SW1`/`VBAT_SENSE` short; KiCad CLI `10.0.1` then reported DRC=153 and
+  unconnected=9, with schematic-parity=0. This pass moves the PAW3204 optical
+  aperture datum circle from `Edge.Cuts` to `Cmts.User` so it remains a
+  package/shell alignment datum instead of a false fabrication cutout, and
+  detours the long `VBUS_5V` feed to the `R9`/`R10` detect divider farther
+  right of the bring-up pads. This pass also keeps the ESP32-C3 external antenna
+  keep-out strict for tracks, vias, pads, and copper pour while allowing the
+  owning module footprint whose antenna courtyard extends to the board edge.
+  KiCad CLI `10.0.2` now reports DRC=112 and unconnected=9, with
+  schematic-parity=0, because the board is still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
+- Later-board allocation decision for PAW3204 `SENSOR_NRESET` or
+  `SENSOR_MOTION_N` if bench evidence shows the first optical board needs
+  firmware reset control or optical motion wake
 - Cleared ERC/DRC against the routed PCB; current snapshot lives in
   [kicad/CURRENT-VIOLATIONS.md](kicad/CURRENT-VIOLATIONS.md) and is
   regenerated by `scripts/verify-firmware-local.sh --kicad-only`

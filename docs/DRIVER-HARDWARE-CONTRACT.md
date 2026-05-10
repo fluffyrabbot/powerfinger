@@ -40,6 +40,7 @@ those hardware facts back to firmware behavior and gate impact.
 | --- | --- | --- | --- | --- |
 | ESP32-C3 ring MCU, flash, NVS, BLE radio | `firmware/ring/main`, `pf_hal`, `ble_hid` | ESP32-C3-compatible module with enough flash for the ring app, working NVS, BLE HID support, stable reset/boot, and antenna keep-out preserved. | No meaningful fallback. A dev board can prove firmware, but a custom ring with broken boot, NVS, or RF is not a ring proof. | Blocks Gate 1 and Gate 3. |
 | PAW3204-class optical sensor IC | `CONFIG_SENSOR_PAW3204`, `sensor_paw3204.c` | `SENSOR_SCLK` and `SENSOR_SDIO` must match Kconfig, run at the sensor's logic level, and reach a real PAW3204-compatible sensor that returns the expected product ID, deltas, motion, and SQUAL-like confidence. | Runtime disables motion and can remain click-only. That is useful diagnostics, not a successful ring mouse. | Blocks Gate 1. |
+| PAW3204 `SENSOR_NRESET` / `SENSOR_MOTION_N` pads | No production consumer in the active packet | First optical board keeps both nets as local bench pads. Firmware polls the sensor over `SENSOR_SCLK`/`SENSOR_SDIO` and uses the dome as the only configured deep-sleep GPIO wake source. | No sensor-reset GPIO and no optical motion wake on P0. If bench evidence shows polling cannot recover or dome-only wake is unacceptable, allocating either line is a board-contract change. | Not a current gate blocker. |
 | PAW3204 lens, emitter, aperture, glide/focal stack | Same PAW3204 driver, plus `SURFACE-TEST-PROTOCOL.md` evidence | Matched lens/emitter kit, matte cavity, aperture alignment, and 2.4-3.2 mm working focal distance under realistic pressure and click force. | Driver may return plausible bytes while the human loop fails through dropout, jitter, or click displacement. | Blocks Gate 1 and Gate 2. |
 | Primary snap dome | `CONFIG_CLICK_SNAP_DOME`, `click_dome.c`, dead-zone logic | Dome shorts the configured GPIO to ground when pressed, supports internal pull-up, raises both edges, and is mechanically placed so pressing does not rotate the ring off target. | Firmware can disable buttons if init fails. If it works electrically but shifts the ring, software filtering cannot rescue the click loop. | Blocks Gate 1. |
 | VBAT sense divider | `CONFIG_POWERFINGER_VBAT_ADC_CHANNEL`, `power_manager.c`, diagnostics | Divider must scale protected cell voltage into ADC range, stay tied to the Kconfig ADC channel, and be present on any board claiming low-voltage cutoff or battery diagnostics. | ADC init/read failure drives safety fallback toward shutdown. A board with no configured divider must not claim battery safety behavior. | Blocks Gate 3. |
@@ -81,8 +82,8 @@ those hardware facts back to firmware behavior and gate impact.
    human control loop on the surface protocol.
 3. Do not claim Gate 3 charge safety unless `VBAT_SENSE`, NTC, charge enable,
    and VBUS detect are wired, Kconfig-enabled, and observed on the actual board.
-4. Do not claim `CHRG_STAT` firmware behavior until a production firmware symbol
-   consumes it and tests cover it.
+4. Do not claim `CHRG_STAT`, PAW3204 reset, or PAW3204 motion-wake firmware
+   behavior until production firmware symbols consume them and tests cover them.
 5. If a pin assignment changes, update the packet-level interface contract,
    Kconfig fragment or board config, and host tests in the same patch.
 6. If a component is replaced by an alternate, re-check the driver protocol,

@@ -41,6 +41,24 @@ alternatives are actually viable, and flags single-source risks.
    SOT-23 variants exist but are harder to source. Pin ordering differs. This is
    not a drop-in alternative without footprint changes.
 
+### Factory Quote Readiness
+
+The component sourcing data above is not a manufacturer quote and does not
+prove build readiness. The current Shenzhen / Seeed starter packet is
+[`docs/sensors-converge-2026/SHENZHEN-SEEED-QUOTE-PACKET.md`](sensors-converge-2026/SHENZHEN-SEEED-QUOTE-PACKET.md).
+
+Use that packet with these constraints:
+
+- `USB-HUB` is the cleaner first quote candidate: the packet records
+  all-severity ERC=0, PCB DRC=0, unconnected=0, and schematic parity=0.
+- `R30-OLED-NONE-NONE` is not fabrication-release: the packet records ERC=0,
+  PCB DRC=112, unconnected=9, schematic parity=0. Ask for DFM/pre-fab review
+  and costability feedback until that blocker is cleared.
+- Do not turn distributor availability into vendor commitments. MOQ, lead time,
+  yield, defects, realized COGS, payment terms, and license/source-return
+  behavior belong in [`docs/REFERENCE-MANUFACTURERS.md`](REFERENCE-MANUFACTURERS.md)
+  only after a real quote, run, or direct verification.
+
 ---
 
 ## Detailed Results
@@ -435,8 +453,10 @@ Based on this verification, the following BOM changes are recommended:
 
 ### Additions to Make
 
-7. **Add ADNS-2080 to optical ring BOM** as the primary verified alternative
-   with DigiKey/Mouser sourcing.
+7. **Add ADNS-2080 to optical ring BOM** as the verified Western-source
+   fallback class. Treat it as a board-profile change until its footprint,
+   optics, aperture, and firmware behavior are evaluated against the active
+   ring packet.
 
 8. **Add LTC4054ES5-4.2 to all BOMs** as the true pin-compatible charger IC
    alternative (Analog Devices, DigiKey PN: 960438).
@@ -452,7 +472,7 @@ Based on this verification, the following BOM changes are recommended:
 
 | Component | Risk | Mitigation |
 |-----------|------|------------|
-| PAW3204DB-TJ3L | HIGH | AliExpress only. Stock ADNS-2080 as backup |
+| PAW3204DB-TJ3L | HIGH | AliExpress/sensor-kit lane only. Evaluate ADNS-2080 as the Western-source fallback before relying on it for the active board |
 | Snaptron SQ-05400N | LOW | Any 5mm dome works. Commodity category |
 | LiPo pouch cell | LOW | Commodity on AliExpress. Multiple vendors |
 | All other parts | NONE | Multi-source verified |
