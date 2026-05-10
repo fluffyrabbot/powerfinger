@@ -26,43 +26,17 @@ class ContractCheck
     check_required_entrypoints
 
     variant = load_yaml(VARIANT_REL)
-    board = load_yaml(BOARD_REL)
     sdkconfig_values = read_sdkconfig(full(SDKCONFIG_REL))
+    schema = ContractSchemaValidator.new(self)
 
-    fail!("variant_id must be #{EXPECTED_VARIANT_ID}") unless variant["variant_id"] == EXPECTED_VARIANT_ID
-    fail!("board variant must be #{EXPECTED_VARIANT_ID}") unless board["variant"] == EXPECTED_VARIANT_ID
-    fail!("variant id must be variant.r30-oled-none-none") unless variant["id"] == "variant.r30-oled-none-none"
-    fail!("variant status must stay active_validation_lane") unless variant["status"] == "active_validation_lane"
-    fail!("variant form_factor must be ring") unless variant["form_factor"] == "ring"
-
-    contract_paths = fetch(variant, %w[contracts], VARIANT_REL)
-    %w[board sensor battery enclosure].each do |key|
-      path = contract_paths[key]
-      fail!("variant contracts.#{key} is missing") if path.nil? || path.empty?
-      expect_file(path, "variant contracts.#{key}")
-    end
-
-    fetch(variant, %w[firmware sdkconfig_fragments], VARIANT_REL).each do |path|
-      expect_file(path, "variant firmware sdkconfig fragment")
-    end
-
-    selected = fetch(variant, %w[firmware selected_drivers], VARIANT_REL)
-    fail!("variant selected motion sensor must be SENSOR_PAW3204") unless selected["motion_sensor"] == "SENSOR_PAW3204"
-    fail!("variant selected click input must be CLICK_SNAP_DOME") unless selected["click_input"] == "CLICK_SNAP_DOME"
-    expect_dir(fetch(variant, %w[firmware target], VARIANT_REL), "variant firmware target")
-    expect_file(fetch(variant, %w[bom source], VARIANT_REL), "variant BOM source")
-    expect_file(fetch(variant, %w[bom component_contract], VARIANT_REL), "variant BOM component contract")
-    fail!("variant BOM anchors must live in component_contract, not inline") if fetch(variant, %w[bom], VARIANT_REL).key?("active_component_anchors")
-    require_number(fetch(variant, %w[bom], VARIANT_REL), "target_usd_prototype", VARIANT_REL)
-    require_array(variant, "known_limits", VARIANT_REL)
-    variant.fetch("evidence_sources", []).each { |path| expect_file(path, "variant evidence source") }
+    contract_paths = schema.validate_variant(variant)
 
     board = load_contract(contract_paths["board"])
     sensor = load_contract(contract_paths["sensor"])
     battery = load_contract(contract_paths["battery"])
     enclosure = load_contract(contract_paths["enclosure"])
 
-    validate_contract_shape(board, sensor, battery, enclosure)
+    schema.validate_contracts(board, sensor, battery, enclosure)
     validate_cross_contracts(variant, board, sensor, battery, enclosure, contract_paths)
     validate_sdkconfig(variant, board, sdkconfig_values)
     validate_packet_text(variant)
@@ -92,29 +66,6 @@ class ContractCheck
     [VARIANT_REL, BOARD_REL, SDKCONFIG_REL, INTERFACE_REL].each do |path|
       expect_file(path, "required file")
     end
-  end
-
-  def validate_contract_shape(board, sensor, battery, enclosure)
-    {
-      "board" => board,
-      "sensor" => sensor,
-      "battery" => battery,
-      "enclosure" => enclosure,
-    }.each do |label, contract|
-      require_string(contract, "id", "#{label} contract")
-      require_string(contract, "status", "#{label} contract")
-      require_string(contract, "class", "#{label} contract")
-    end
-
-    require_array(fetch(board, %w[verification], "board contract"), "release_blockers", "board verification")
-    require_array(sensor, "known_limits", "sensor contract")
-    require_array(battery, "known_limits", "battery contract")
-    require_array(enclosure, "known_limits", "enclosure contract")
-
-    fail!("board id/path mismatch") unless board["id"] == "board.r30-rigid-p0"
-    fail!("sensor id/path mismatch") unless sensor["id"] == "sensor.paw3204"
-    fail!("battery id/path mismatch") unless battery["id"] == "battery.lipo-protected-ring-100mah"
-    fail!("enclosure id/path mismatch") unless enclosure["id"] == "enclosure.r30-serviceable-shell-v1"
   end
 
   def validate_cross_contracts(variant, board, sensor, battery, enclosure, contract_paths)
@@ -213,6 +164,7 @@ class ContractCheck
 end
 
 require_relative "contract_check/base_validator"
+require_relative "contract_check/contract_schema_validator"
 require_relative "contract_check/sdkconfig_profile_generator"
 require_relative "contract_check/cross_contract_validator"
 require_relative "contract_check/board_interface_validator"

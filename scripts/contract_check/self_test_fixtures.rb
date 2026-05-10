@@ -82,6 +82,16 @@ class SelfTestFixtures
         end,
       ],
       [
+        "contract identity drift",
+        "board id/path mismatch",
+        lambda do |root|
+          path = File.join(root, ContractCheck::BOARD_REL)
+          data = YAML.load_file(path)
+          data["id"] = "board.r30-rigid-p1"
+          File.write(path, data.to_yaml)
+        end,
+      ],
+      [
         "BOM target drift",
         "BOM target row must include ~$9",
         lambda do |root|

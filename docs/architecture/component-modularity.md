@@ -95,17 +95,18 @@ ruby scripts/contract_check.rb --print-sdkconfig-profile
 The checker implementation now has dedicated classes for cross-contract
 validation, packet-text validation, generated sdkconfig validation, and
 component/BOM validation, plus a shared validator base for common checker
-delegation, a board-interface validator for hard pin/interface expectations, a
-dedicated self-test fixture runner, and a focused sdkconfig profile generator.
-The generator owns sdkconfig value derivation for selected firmware symbols,
-GPIO pin values, ADC channel values, wake masks, and the disabled Hall rail.
-The board-interface validator owns the active R30 pin expectation table and
+delegation, a schema/identity validator for variant and contract shape, a
+board-interface validator for hard pin/interface expectations, a dedicated
+self-test fixture runner, and a focused sdkconfig profile generator. The
+generator owns sdkconfig value derivation for selected firmware symbols, GPIO
+pin values, ADC channel values, wake masks, and the disabled Hall rail. The
+board-interface validator owns the active R30 pin expectation table and
 non-production behavior claims, so `scripts/contract_check.rb` stays a CLI
 wrapper and shared contract helper instead of owning board-profile semantics.
 
-The next narrow implementation step is to split the remaining contract-shape
-checks out of `scripts/contract_check.rb` into a focused schema/identity
-validator. Keep `--print-sdkconfig-profile` byte-for-byte stable, preserve
+The next narrow implementation step is to make the fixture self-test harness
+less repetitive by moving fixture mutation/copy helpers behind named fixture
+objects. Keep `--print-sdkconfig-profile` byte-for-byte stable, preserve
 hard-drift failure semantics, and leave KiCad geometry parsing out of scope.
 Keep fixture coverage around:
 
