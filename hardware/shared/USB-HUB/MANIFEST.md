@@ -67,8 +67,10 @@ dongle that composes multiple PowerFinger devices into one USB HID mouse.
 ## Missing Artifacts
 
 - Printed fit validation for the full enclosure packet
-- Printed quick-coupon observations for the USB-A shoulder, wider-body
+- Physical quick-coupon observations for the USB-A shoulder, wider-body
   adjacent-port envelope, `MH1` / `MH2` alignment, and service-hatch reach
+  (STLs are generated and manifold-checked locally; no physical fit evidence
+  is recorded yet)
 - Measured host-port clearance for the stepped USB-A direct-plug body
 - Measured connector strain and enclosure-retention observations
 - Current KiCad snapshot lives in
