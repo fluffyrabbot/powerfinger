@@ -1,0 +1,71 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+id: sensor.paw3204
+status: active_p0_sensor_contract
+class: optical_delta_sensor
+primary_variant: R30-OLED-NONE-NONE
+firmware:
+  driver: firmware/ring/components/sensors/paw3204.c
+  public_api: firmware/ring/components/sensors/include/sensor_interface.h
+  kconfig_symbol: CONFIG_SENSOR_PAW3204
+  output:
+    dx: int16
+    dy: int16
+    surface_confidence: uint8
+    motion_detected: bool
+electrical:
+  protocol: proprietary_2_wire_gpio
+  spi_compatible: false
+  signals:
+    sclk:
+      direction: mcu_to_sensor
+      board_pin_symbol: CONFIG_POWERFINGER_SENSOR_SCLK_PIN
+    sdio:
+      direction: bidirectional
+      board_pin_symbol: CONFIG_POWERFINGER_SENSOR_SDIO_PIN
+    nreset:
+      status_in_r30_p0: local_pad_only
+    motion_wake:
+      status_in_r30_p0: local_pad_only
+  supply:
+    vdd_v: { min: 2.1, max: 3.6 }
+    active_board_rail: VREG_3V3
+mechanical:
+  matched_lens_required: true
+  emitter_kit_required: true
+  aperture_alignment_required: true
+  optical_gap_mm: { min: 2.4, max: 3.2 }
+  package_fit_status: unmeasured_until_stackup_verification
+surface_scope:
+  claimed:
+    - wood desk
+    - matte plastic
+    - paper
+    - glossy magazine
+  not_claimed:
+    - glass
+    - mirror
+  marginal_or_unproven:
+    - fabric
+    - skin
+acceptance:
+  must_return_product_identity: true
+  must_report_nonzero_motion_on_opaque_surface: true
+  must_pass_surface_protocol_before_gate_1: docs/SURFACE-TEST-PROTOCOL.md
+  click_displacement_px_max: 2
+  dropout_rate_percent_max: 2
+substitution:
+  acceptable_class: standalone optical mouse sensor with firmware-visible deltas
+  explicit_alternates:
+    - ADNS-2080
+  rejected_class:
+    - integrated_usb_mouse_controller_without_standalone_sensor_protocol
+  substitution_requires:
+    - driver_protocol_review
+    - lens_and_aperture_review
+    - footprint_review
+    - surface_protocol_rerun
+    - BOM_ceiling_check
+known_limits:
+  - not an IMU or gesture sensor
+  - current common sensor API only exposes pointer deltas and confidence
+  - motion wake is not part of the active R30 production firmware contract

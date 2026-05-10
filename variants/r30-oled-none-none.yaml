@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+id: variant.r30-oled-none-none
+variant_id: R30-OLED-NONE-NONE
+status: active_validation_lane
+form_factor: ring
+intended_use:
+  primary: two-ring cursor and scroll workflow through the USB hub
+  accessibility_claim: limited-wrist-mobility pointing on common opaque surfaces
+  surface_claim: opaque rigid surfaces only; glass is not claimed
+bom:
+  source: hardware/bom/R30-OLED-NONE-NONE.csv
+  target_usd_prototype: 9
+  component_contract: hardware/contracts/components.r30-oled-active.yaml
+contracts:
+  board: hardware/contracts/board.r30-rigid-p0.yaml
+  sensor: hardware/contracts/sensor.paw3204.yaml
+  battery: hardware/contracts/battery.lipo-protected-ring-100mah.yaml
+  enclosure: hardware/contracts/enclosure.r30-serviceable-shell-v1.yaml
+firmware:
+  target: firmware/ring
+  mcu_family: esp32-c3
+  sdkconfig_fragments:
+    - firmware/ring/sdkconfig.defaults
+    - firmware/ring/sdkconfig.defaults.r30_oled_none_none
+  selected_drivers:
+    motion_sensor: SENSOR_PAW3204
+    click_input: CLICK_SNAP_DOME
+  board_profile_verifier:
+    command: scripts/verify-firmware-local.sh --ring-profile r30-oled-none-none
+    scope: host tests plus the R30 board-profile build when ESP-IDF is available
+interfaces:
+  motion:
+    driver_api: firmware/ring/components/sensors/include/sensor_interface.h
+    output_shape: dx_dy_surface_confidence_motion_detected
+  click:
+    driver_api: firmware/ring/components/click/include/click_interface.h
+    primary_source: snap_dome_gpio
+  hid:
+    current_mapping: ring runtime sends mouse deltas and button state directly
+    desired_boundary: physical input should map to gesture intent before HID
+physical:
+  sensor_angle_deg: 30
+  finger_circumference_mm_default: 60
+  pcb_size_mm: [43.0, 18.0, 1.0]
+  finger_to_surface_height_mm_target_max: 10
+  optical_gap_mm: { min: 2.4, max: 3.2 }
+serviceability:
+  battery_replaceable_without_solder: true
+  shell_reopenable: true
+  glue_seal_allowed: false
+  charging_and_service_connector: usb_c_receptacle_with_shell_stakes
+non_claims:
+  glass_surface_support: false
+  chrg_stat_firmware_consumer: false
+  paw3204_reset_firmware_consumer: false
+  paw3204_motion_wake_firmware_consumer: false
+  imu_haptic_or_premium_gesture_silicon_present: false
+known_limits:
+  - board is still not fabrication-release until KiCad DRC is clean
+  - CAD fit coupons and stackup rows are unmeasured
+  - CHRG_STAT is local hardware status only, not firmware-consumed behavior
+  - PAW3204 reset and motion wake are local bring-up pads only
+  - no IMU, haptic actuator, or premium gesture silicon is part of this variant
+evidence_sources:
+  - hardware/ring/R30-OLED-NONE-NONE/MANIFEST.md
+  - hardware/ring/R30-OLED-NONE-NONE/kicad/INTERFACE-CONTRACT.md
+  - hardware/ring/R30-OLED-NONE-NONE/kicad/BOM-BLOCK-MAP.md
+  - hardware/ring/R30-OLED-NONE-NONE/STACKUP-VERIFY.md
+  - docs/R30-OLED-FIRMWARE-CONFIG.md
+  - docs/DRIVER-HARDWARE-CONTRACT.md

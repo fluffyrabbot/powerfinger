@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+id: enclosure.r30-serviceable-shell-v1
+status: active_p0_cad_contract
+class: serviceable_ring_shell
+source: hardware/ring/R30-OLED-NONE-NONE/cad/r30_oled_none_none_shell_blank.scad
+variant: R30-OLED-NONE-NONE
+parameters:
+  finger_circumference_mm:
+    default: 60
+    variable: true
+  sensor_angle_deg:
+    default: 30
+    variable: true
+    allowed_current_model_range: { min: 1, max: 59 }
+  band_width_mm:
+    default: 18
+  shell_height_mm:
+    default: 8.0
+  rim_height_mm:
+    default: 2.8
+  glide_pad_thickness_mm:
+    default: 0.5
+interfaces:
+  board:
+    contract: hardware/contracts/board.r30-rigid-p0.yaml
+    envelope_mm: [43.0, 18.0, 1.0]
+    retention: molded_rails_side_stops_lid_compression_pads
+  battery:
+    contract: hardware/contracts/battery.lipo-protected-ring-100mah.yaml
+    envelope_mm: [20.0, 15.0, 4.2]
+    service_path: top_lift_window_plus_lead_channel
+  sensor:
+    contract: hardware/contracts/sensor.paw3204.yaml
+    aperture_diameter_mm: 6.2
+    gap_control: raised_rim_plus_uhmwpe_glide_pads
+  service_connector:
+    type: USB-C 2.0 receptacle with through-hole shell stakes
+    opening_modeled: true
+serviceability:
+  top_service_lid: true
+  pry_relief: true
+  loose_service_screws_currently_assumed: true
+  captured_hardware_status: open_question
+  battery_replacement_without_disturbing_glide_features: intended
+fit_coupons:
+  export_modes:
+    - usb_c_coupon
+    - board_retention_coupon
+    - lid_pad_coupon
+    - battery_lead_coupon
+    - service_lid_coupon
+    - fit_coupons
+  evidence_target: hardware/ring/R30-OLED-NONE-NONE/STACKUP-VERIFY.md
+acceptance:
+  finger_to_surface_height_mm_max: 10
+  optical_gap_mm: { min: 2.4, max: 3.2 }
+  shell_reopenable_after_full_assembly: required
+  usb_c_insertion_without_board_levering: required
+  board_lifts_out_without_prying_on_usb_c_or_antenna: required
+  no_metal_intrusion_in_antenna_keepout: required
+known_limits:
+  - comfort is unmeasured
+  - RF behavior is unmeasured
+  - printable tolerance stack is unmeasured
+  - dome actuation force and click displacement are unmeasured
+  - battery fit and service lead bend radius are unmeasured

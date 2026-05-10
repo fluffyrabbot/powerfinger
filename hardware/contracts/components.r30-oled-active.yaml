@@ -1,0 +1,96 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+id: components.r30-oled-active
+status: active_p0_component_contract
+variant: R30-OLED-NONE-NONE
+source_bom: hardware/bom/R30-OLED-NONE-NONE.csv
+active_component_anchors:
+  U2:
+    function: motion_sensor
+    value: PAW3204DB-TJ3L
+    package: 8-pin optical
+    substitutions:
+      viable:
+        - id: ADNS-2080
+          acceptance:
+            - driver_protocol_review
+            - lens_and_aperture_review
+            - footprint_review
+            - surface_protocol_rerun
+            - BOM_ceiling_check
+      rejected:
+        - id: YS8205
+          required_note: YS8205 is NOT a standalone sensor
+          reason: integrated USB mouse controller, not a standalone sensor protocol
+  SW1:
+    function: primary_click
+    description: Metal snap dome switch
+    value: 5mm 200gf
+    package: 5mm round
+  BT1:
+    function: protected_cell
+    value: 80–100mAh 3.7V
+    package: pouch cell with integrated PCM and JST-SH 2-pin 1.0mm harness
+    required_notes:
+      - integrated PCM
+      - UN 38.3
+      - No harvested cells
+  J_BAT:
+    function: battery_harness_receptacle
+    value: JST-SH 2-pin 1.0mm
+    package: SMD right-angle
+    substitutions:
+      viable:
+        - id: JST-SH 2-pin 1.0mm right-angle SMD receptacle
+          acceptance:
+            - pitch_1_0mm
+            - two_pin_harness_mating_check
+            - footprint_review
+            - service_clearance_review
+  U3:
+    function: charge_controller
+    description: LiPo charge controller
+    value: TP4054
+    package: SOT-23-5
+    substitutions:
+      viable:
+        - id: LTC4054ES5-4.2
+          acceptance:
+            - pin_compatibility_review
+            - charge_current_resistor_review
+            - thermal_safety_review
+      rejected:
+        - id: TP4056
+          required_note: TP4056 requires SOP-8 footprint (NOT drop-in)
+          reason: SOP-8 package, not SOT-23-5 drop-in
+        - id: MCP73831
+          required_note: MCP73831 SOT-23-5 has different pinout
+          reason: SOT-23-5 package exists but pinout differs
+  Q1:
+    function: charge_path_pmos
+    description: P-ch MOSFET (charge enable/disable)
+    value: SI2301 or equiv
+    package: SOT-23
+    required_notes:
+      - Gate floats high (off) = charge disabled
+      - NOT directly from MCU GPIO
+  Q2:
+    function: logic_safe_charge_gate_driver
+    description: N-ch MOSFET (logic-safe charge-gate driver)
+    value: 2N7002
+    package: SOT-23
+    substitutions:
+      viable:
+        - id: BSS138
+          acceptance:
+            - pinout_review
+            - footprint_review
+            - gate_threshold_review
+        - id: BSS123
+          acceptance:
+            - pinout_review
+            - footprint_review
+            - gate_threshold_review
+      rejected:
+        - id: AP22815/TPS22918
+          required_note: Do not replace Q1/Q2/R6 with a logic-level load switch
+          reason: integrated load switch tradeoff requires explicit BDFL acceptance

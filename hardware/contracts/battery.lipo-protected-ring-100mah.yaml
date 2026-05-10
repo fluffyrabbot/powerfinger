@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+id: battery.lipo-protected-ring-100mah
+status: active_p0_envelope_contract
+class: protected_lipo_pouch
+use: body_worn_ring
+electrical:
+  chemistry: single_cell_lipo
+  nominal_v: 3.7
+  capacity_mah:
+    min: 80
+    target: 100
+  integrated_pcm_required: true
+  charge_current_ma_max: 50
+  low_voltage_cutoff_mv_firmware: 3200
+connector:
+  required: true
+  type: JST-SH
+  pitch_mm: 1.0
+  pins: 2
+  soldered_cell_directly_to_board_allowed: false
+mechanical:
+  envelope_mm: [20.0, 15.0, 4.2]
+  swelling_allowance_required: true
+  lead_service_loop_required: true
+  removable_through_top_service_opening: true
+  destructive_shell_entry_allowed: false
+safety:
+  un38_3_documentation_required: true
+  harvested_cells_allowed: false
+  charging_inside_enclosure_requires:
+    - cell_ntc_sense
+    - vbus_detect
+    - firmware_charge_enable_gate
+    - protected_cell_pcm
+  skin_contact_shell_temp_c_max: 48
+acceptance:
+  fit_evidence_required: hardware/ring/R30-OLED-NONE-NONE/STACKUP-VERIFY.md
+  procurement_evidence_required:
+    - datasheet_or_vendor_dimension_record
+    - pcm_confirmation
+    - UN_38_3_summary
+  service_evidence_required:
+    - battery_lead_coupon_pass
+    - service_lid_coupon_pass
+variant_bindings:
+  r30_oled_none_none:
+    board_connector: J_BAT
+    cad_keepout_source: hardware/ring/R30-OLED-NONE-NONE/cad/r30_oled_none_none_shell_blank.scad
+    bom_source: hardware/bom/R30-OLED-NONE-NONE.csv
+known_limits:
+  - current CAD battery envelope is still a fit proxy
+  - real protected cell vendor and measured lead bend evidence are not yet locked

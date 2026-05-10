@@ -1,0 +1,101 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+id: board.r30-rigid-p0
+status: active_p0_contract
+class: ring_mainboard
+variant: R30-OLED-NONE-NONE
+source_packet: hardware/ring/R30-OLED-NONE-NONE
+schematic_source: hardware/ring/R30-OLED-NONE-NONE/kicad/r30_oled_none_none.kicad_sch
+pcb_source: hardware/ring/R30-OLED-NONE-NONE/kicad/r30_oled_none_none.kicad_pcb
+mcu:
+  module: ESP32-C3-MINI-1-N4
+  firmware_target: firmware/ring
+  antenna_keepout:
+    required: true
+    packet_reference: hardware/ring/R30-OLED-NONE-NONE/kicad/PLACEMENT-CONSTRAINTS.md
+physical:
+  board_size_mm: [43.0, 18.0, 1.0]
+  board_center_kicad_mm: [120.5, 100.0]
+interfaces:
+  optical_sensor_shared_path:
+    notes: PAW3204 uses SCLK plus bidirectional SDIO; PMW3360 reserves extra SPI pins.
+    pins:
+      sclk:
+        mcu_resource: GPIO4
+        firmware_symbol: CONFIG_POWERFINGER_SENSOR_SCLK_PIN
+      sdio_mosi:
+        mcu_resource: GPIO5
+        firmware_symbol: CONFIG_POWERFINGER_SENSOR_SDIO_PIN
+      ncs_reserved_for_pmw3360:
+        mcu_resource: GPIO6
+        firmware_symbol: CONFIG_POWERFINGER_SENSOR_NCS_PIN
+        r30_paw3204_status: unconnected
+      miso_reserved_for_pmw3360:
+        mcu_resource: GPIO7
+        firmware_symbol: CONFIG_POWERFINGER_SENSOR_MISO_PIN
+        r30_paw3204_status: unconnected
+  local_sensor_bringup_pads:
+    sensor_nreset:
+      firmware_symbol: none
+      production_behavior_claimed: false
+    sensor_motion_n:
+      firmware_symbol: none
+      production_behavior_claimed: false
+  click:
+    primary_snap_dome:
+      mcu_resource: GPIO8
+      firmware_symbol: CONFIG_POWERFINGER_DOME_PIN
+      wake_capable: true
+  battery_and_charge_safety:
+    vbat_sense:
+      mcu_resource: ADC1_CH0/GPIO0
+      firmware_symbol: CONFIG_POWERFINGER_VBAT_ADC_CHANNEL
+      divider: 100k_over_100k
+    cell_ntc:
+      mcu_resource: ADC1_CH1/GPIO1
+      firmware_symbol: CONFIG_POWERFINGER_NTC_ADC_CHANNEL
+      ntc: 10k_B3950
+    vbus_detect:
+      mcu_resource: GPIO3
+      firmware_symbol: CONFIG_POWERFINGER_VBUS_DETECT_PIN
+      divider: 220k_over_100k
+    charge_enable:
+      mcu_resource: GPIO10
+      firmware_symbol: CONFIG_POWERFINGER_CHARGE_ENABLE_PIN
+      gate_driver: 2N7002 low-side driver for high-side P-channel MOSFET gate
+      safe_default: charge_disabled
+    chrg_stat:
+      mcu_resource: none
+      firmware_symbol: none
+      status: pulled-up local test pad only
+      production_behavior_claimed: false
+      local_test_only: true
+  service_usb:
+    usb_d_minus:
+      mcu_resource: GPIO18
+      status: reserved_service_path
+    usb_d_plus:
+      mcu_resource: GPIO19
+      status: reserved_service_path
+constraints:
+  avoid_new_charge_safety_dependencies_on_strapping_pins:
+    - GPIO2
+    - GPIO8
+    - GPIO9
+  no_5v_gate_pullup_directly_on_mcu_gpio: true
+  usb_c_shell_stakes_required: true
+  battery_connector_required: JST-SH 2-pin 1.0mm harness receptacle
+compatible_contracts:
+  sensors:
+    - hardware/contracts/sensor.paw3204.yaml
+  batteries:
+    - hardware/contracts/battery.lipo-protected-ring-100mah.yaml
+verification:
+  firmware_profile_command: scripts/verify-firmware-local.sh --ring-profile r30-oled-none-none
+  kicad_status_source: hardware/ring/R30-OLED-NONE-NONE/kicad/CURRENT-VIOLATIONS.md
+  release_blockers:
+    - clean fabrication DRC is not yet claimed
+    - physical stackup and fit coupon evidence is not yet filled
+non_claims:
+  chrg_stat_firmware_consumer: false
+  paw3204_reset_firmware_consumer: false
+  paw3204_motion_wake_firmware_consumer: false
