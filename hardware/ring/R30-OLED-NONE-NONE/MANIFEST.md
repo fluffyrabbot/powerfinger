@@ -218,7 +218,10 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   right of the bring-up pads. This pass also keeps the ESP32-C3 external antenna
   keep-out strict for tracks, vias, pads, and copper pour while allowing the
   owning module footprint whose antenna courtyard extends to the board edge.
-  KiCad CLI `10.0.2` now reports DRC=112 and unconnected=9, with
+  This follow-on moves the dense left-service reference fields for `J_BAT`,
+  `Q1`, `R8`, and `R2A` from `F.SilkS` to `F.Fab`, keeping the bring-up labels
+  in the source file without printing clipped silkscreen in the service pocket.
+  KiCad CLI `10.0.2` now reports DRC=105 and unconnected=9, with
   schematic-parity=0, because the board is still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad

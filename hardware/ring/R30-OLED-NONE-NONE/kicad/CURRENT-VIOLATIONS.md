@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.2` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 112 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 105 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 9 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -274,8 +274,11 @@ bring-up pads. This pass also keeps the ESP32-C3 external antenna keep-out
 strict for tracks, vias, pads, and copper pour while allowing the owning module
 footprint; the module footprint's antenna courtyard intentionally extends to
 the board edge, so forbidding footprints in that keep-out only flags U1 itself.
-KiCad CLI `10.0.2` now reports R30 `DRC=112`, `unconnected=9`, and
-schematic-parity `0`.
+This pass moves the dense left-service reference fields for `J_BAT`, `Q1`,
+`R8`, and `R2A` from `F.SilkS` to `F.Fab`; those marks were clipped by nearby
+pads/copper in the bring-up pocket and are not useful as printed silkscreen at
+this density. KiCad CLI `10.0.2` now reports R30 `DRC=105`, `unconnected=9`,
+and schematic-parity `0`.
 
 ## ERC top categories
 
@@ -287,11 +290,11 @@ and sheet-interface cleanup in this snapshot.
 
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
-| `text_height` | 31 | Silkscreen text below the rule minimum |
+| `text_height` | 27 | Silkscreen text below the rule minimum |
 | `tracks_crossing` | 23 | Tracks of different nets physically crossing on the same layer |
 | `solder_mask_bridge` | 25 | Adjacent pads of different nets share an unbroken mask aperture |
 | `clearance` | 11 | Copper-to-copper or pad-to-track clearance failures |
-| `silk_over_copper` | 13 | Silkscreen text crossing exposed copper |
+| `silk_over_copper` | 10 | Silkscreen text crossing exposed copper |
 | `unconnected_items` | 9 | Routed pads with no track or via reaching them |
 | `shorting_items` | 3 | Nets physically shorted or crossing through pads in the hand-routed pass |
 | `courtyards_overlap` | 3 | Footprint courtyard overlaps in the dense service/MCU pockets |
