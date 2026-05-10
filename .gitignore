@@ -24,6 +24,7 @@ cmake_install.cmake
 
 # IDE
 .vscode/
+.claude/
 
 # KiCad per-user state (ProjectLocal)
 *.kicad_prl
