@@ -171,6 +171,9 @@ release.
 - pad-mask expansion cleanup that keeps `solder_mask_min_width=0.05` but
   changes first-board pad mask expansion from `0.05` to `0`, reducing
   mask-bridge rows without relaxing the minimum mask-web rule
+- regulator/C2 spoke-width cleanup that keeps U4 and C2 placement fixed after
+  scratch placement variants reintroduced shorts or held total DRC, and narrows
+  the two `VBAT_PROTECTED` spokes from `0.32` to `0.24`
 
 This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
 charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
@@ -211,7 +214,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.2` snapshot is
-  ERC=0, DRC=57, unconnected=9, and schematic-parity=0; the remaining board
+  ERC=0, DRC=56, unconnected=9, and schematic-parity=0; the remaining board
   story is dominated by unconnected items plus hand-routed crossing, clearance,
   mask-bridge, and courtyard failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.

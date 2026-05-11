@@ -265,7 +265,11 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   and unconnected=9, with schematic-parity=0. This follow-on keeps
   `solder_mask_min_width=0.05` but changes the first-board pad mask expansion
   from `0.05` to `0`, reducing mask-bridge rows without relaxing the minimum
-  mask-web rule. KiCad CLI `10.0.2` now reports DRC=57 and unconnected=9, with
+  mask-web rule. KiCad CLI `10.0.2` then reported DRC=57 and unconnected=9, with
+  schematic-parity=0. This follow-on keeps U4 and C2 placement fixed after
+  scratch placement variants either held total DRC or reintroduced shorts, and
+  instead narrows the two `VBAT_PROTECTED` regulator/C2 spokes from `0.32` to
+  `0.24`. KiCad CLI `10.0.2` now reports DRC=56 and unconnected=9, with
   schematic-parity=0,
   because the board is still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
