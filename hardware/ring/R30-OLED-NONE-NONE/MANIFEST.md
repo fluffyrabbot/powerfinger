@@ -248,7 +248,12 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   accepted top-edge `VBUS_5V` and `VBAT_SENSE` copper after scratch retargets
   introduced shorting, copper-edge, or unconnected debt, and instead moves the
   source-only `R7`, `TP_VBAT`, and `SW1` reference fields to `F.Fab`. KiCad CLI
-  `10.0.2` now reports DRC=90 and unconnected=9, with schematic-parity=0,
+  `10.0.2` then reported DRC=90 and unconnected=9, with schematic-parity=0.
+  This follow-on keeps the accepted `CHARGE_EN`, `VREG_3V3`, and
+  `VBAT_PROTECTED` copper after scratch `CHARGE_EN` route and `R6` placement
+  variants reintroduced shorting or unconnected debt, and instead moves the
+  source-only `Q2`, `U4`, and `R6` reference fields to `F.Fab`. KiCad CLI
+  `10.0.2` now reports DRC=86 and unconnected=9, with schematic-parity=0,
   because the board is still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
