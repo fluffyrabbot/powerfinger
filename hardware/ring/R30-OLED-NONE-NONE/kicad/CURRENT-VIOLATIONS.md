@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.2` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 53 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 51 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 9 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -368,7 +368,14 @@ target row for shorts, unconnected, mask, clearance, or crossing debt. It
 instead nudges non-shell-bound `TP_VBAT` right by `0.10` mm and retargets the
 two local `VBAT_SENSE` endpoints, removing one top power-pocket mask bridge
 without moving shell-bound `SW1`, `U1`, or the battery connector. KiCad CLI
-`10.0.2` now reports R30 `DRC=53`, `unconnected=9`, and schematic-parity `0`.
+`10.0.2` reported R30 `DRC=53`, `unconnected=9`, and schematic-parity `0`.
+This follow-on rejects direct SCLK, top-dogleg SCLK, `VBUS_DETECT`, and
+`SENSOR_MOTION_N` route variants because they introduced shorts or traded the
+target row for new clearance debt. It instead raises the local
+`SENSOR_SCLK` jog from `y=99.900` to `y=99.980`, clearing two MCU-column
+clearance rows while keeping `unconnected=9`, no shorts, and schematic-parity
+`0`. KiCad CLI `10.0.2` now reports R30 `DRC=51`, `unconnected=9`, and
+schematic-parity `0`.
 
 ## ERC top categories
 
@@ -382,7 +389,7 @@ and sheet-interface cleanup in this snapshot.
 |------|-------|----------------------|
 | `tracks_crossing` | 22 | Tracks of different nets physically crossing on the same layer |
 | `solder_mask_bridge` | 14 | Adjacent pads of different nets share an unbroken mask aperture |
-| `clearance` | 14 | Copper-to-copper or pad-to-track clearance failures |
+| `clearance` | 12 | Copper-to-copper or pad-to-track clearance failures |
 | `unconnected_items` | 9 | Routed pads with no track or via reaching them |
 | `courtyards_overlap` | 3 | Footprint courtyard overlaps in the dense service/MCU pockets |
 

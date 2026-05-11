@@ -282,8 +282,12 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   regulator/power-pocket width, R11/TP_CHRG, U4, R6, C2 GND, C1A, and layer-hop
   probes that held total DRC or traded the target row for new debt, and instead
   nudges non-shell-bound `TP_VBAT` right by `0.10` mm while retargeting its two
-  local `VBAT_SENSE` endpoints. KiCad CLI `10.0.2` now reports DRC=53 and
-  unconnected=9, with schematic-parity=0,
+  local `VBAT_SENSE` endpoints. KiCad CLI `10.0.2` then reported DRC=53 and
+  unconnected=9, with schematic-parity=0. This follow-on rejects direct SCLK,
+  top-dogleg SCLK, `VBUS_DETECT`, and `SENSOR_MOTION_N` route variants that
+  introduced shorts or clearance debt, and instead raises the local
+  `SENSOR_SCLK` jog from `y=99.900` to `y=99.980`. KiCad CLI `10.0.2` now
+  reports DRC=51 and unconnected=9, with schematic-parity=0,
   because the board is still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
