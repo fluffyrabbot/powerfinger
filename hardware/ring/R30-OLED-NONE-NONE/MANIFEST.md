@@ -273,8 +273,12 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   schematic-parity=0. This follow-on rejects R4 orientation and CC1 dogleg
   variants that added unconnected drift or shorting risk, and instead nudges
   non-shell-bound Q1 upward by `0.20` mm while retargeting its three local
-  service endpoints. KiCad CLI `10.0.2` now reports DRC=55 and unconnected=9,
-  with schematic-parity=0,
+  service endpoints. KiCad CLI `10.0.2` then reported DRC=55 and unconnected=9,
+  with schematic-parity=0. This follow-on rejects top-edge
+  `VBUS_5V`/`VBAT_SENSE` variants that introduced shorting or copper-edge debt,
+  and instead nudges Q1 upward by another `0.10` mm while retargeting its three
+  local service endpoints. KiCad CLI `10.0.2` now reports DRC=54 and
+  unconnected=9, with schematic-parity=0,
   because the board is still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
