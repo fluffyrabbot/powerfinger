@@ -277,7 +277,12 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   with schematic-parity=0. This follow-on rejects top-edge
   `VBUS_5V`/`VBAT_SENSE` variants that introduced shorting or copper-edge debt,
   and instead nudges Q1 upward by another `0.10` mm while retargeting its three
-  local service endpoints. KiCad CLI `10.0.2` now reports DRC=54 and
+  local service endpoints. KiCad CLI `10.0.2` then reported DRC=54 and
+  unconnected=9, with schematic-parity=0. This follow-on rejects
+  regulator/power-pocket width, R11/TP_CHRG, U4, R6, C2 GND, C1A, and layer-hop
+  probes that held total DRC or traded the target row for new debt, and instead
+  nudges non-shell-bound `TP_VBAT` right by `0.10` mm while retargeting its two
+  local `VBAT_SENSE` endpoints. KiCad CLI `10.0.2` now reports DRC=53 and
   unconnected=9, with schematic-parity=0,
   because the board is still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be

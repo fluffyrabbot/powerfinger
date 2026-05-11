@@ -178,6 +178,10 @@ release.
   top-edge `VBUS_5V`/`VBAT_SENSE` variants with unconnected, shorting, or
   copper-edge debt, then nudges Q1 upward by a retained total `0.30` mm and
   retargets its three local service endpoints
+- TP_VBAT top power-pocket cleanup that rejects regulator width, R11/TP_CHRG,
+  U4, R6, C2 GND, C1A, and layer-hop probes that held total DRC or added debt,
+  then nudges `TP_VBAT` right by `0.10` mm and retargets its two local
+  `VBAT_SENSE` endpoints
 
 This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
 charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
@@ -218,7 +222,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.2` snapshot is
-  ERC=0, DRC=54, unconnected=9, and schematic-parity=0; the remaining board
+  ERC=0, DRC=53, unconnected=9, and schematic-parity=0; the remaining board
   story is dominated by unconnected items plus hand-routed crossing, clearance,
   mask-bridge, and courtyard failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.

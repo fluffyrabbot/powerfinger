@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.2` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 54 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 53 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 9 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -360,8 +360,15 @@ This follow-on rejects the top-edge `VBUS_5V`/`VBAT_SENSE` variants because
 they traded clearance for shorting or copper-edge debt, then nudges Q1 upward
 by another `0.10` mm and retargets its three local service endpoints. That
 removes one Q1/CC1 mask bridge while keeping shorts closed and preserving
-`unconnected=9` plus schematic-parity `0`. KiCad CLI `10.0.2` now reports R30
+`unconnected=9` plus schematic-parity `0`. KiCad CLI `10.0.2` reported R30
 `DRC=54`, `unconnected=9`, and schematic-parity `0`.
+This follow-on rejects the regulator/power-pocket width, R11/TP_CHRG, U4, R6,
+C2 GND, C1A, and layer-hop probes because they held total DRC or traded the
+target row for shorts, unconnected, mask, clearance, or crossing debt. It
+instead nudges non-shell-bound `TP_VBAT` right by `0.10` mm and retargets the
+two local `VBAT_SENSE` endpoints, removing one top power-pocket mask bridge
+without moving shell-bound `SW1`, `U1`, or the battery connector. KiCad CLI
+`10.0.2` now reports R30 `DRC=53`, `unconnected=9`, and schematic-parity `0`.
 
 ## ERC top categories
 
@@ -374,7 +381,7 @@ and sheet-interface cleanup in this snapshot.
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
 | `tracks_crossing` | 22 | Tracks of different nets physically crossing on the same layer |
-| `solder_mask_bridge` | 15 | Adjacent pads of different nets share an unbroken mask aperture |
+| `solder_mask_bridge` | 14 | Adjacent pads of different nets share an unbroken mask aperture |
 | `clearance` | 14 | Copper-to-copper or pad-to-track clearance failures |
 | `unconnected_items` | 9 | Routed pads with no track or via reaching them |
 | `courtyards_overlap` | 3 | Footprint courtyard overlaps in the dense service/MCU pockets |
