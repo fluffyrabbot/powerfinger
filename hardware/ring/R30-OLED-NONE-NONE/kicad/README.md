@@ -140,6 +140,9 @@ release.
   and retargets its `USB_CC1_RD` plus GND endpoints, clearing the
   `USB_CC1_RD` / `CHARGE_GATE` short without changing ERC, unconnected count,
   or schematic/PCB parity
+- `VBAT_SENSE` divider-junction cleanup that retargets the `R7`/`R8`/`TP_VBAT`
+  sense trunk through `(113.000, 91.900)`, clearing the upper `SW1` dome-ring
+  short without moving shell-bound `SW1` or the CAD dome pocket
 
 This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
 charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
@@ -180,7 +183,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.2` snapshot is
-  ERC=0, DRC=104, unconnected=9, and schematic-parity=0; the remaining board
+  ERC=0, DRC=102, unconnected=9, and schematic-parity=0; the remaining board
   story is dominated by unconnected items and hand-routed clearance/shorting
   failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.

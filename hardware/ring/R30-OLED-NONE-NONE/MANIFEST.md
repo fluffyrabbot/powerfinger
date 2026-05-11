@@ -226,7 +226,11 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   `(111.650, 95.000)` and retargets its `USB_CC1_RD` plus local GND endpoints,
   clearing the `USB_CC1_RD` / `CHARGE_GATE` short while keeping ERC,
   unconnected count, and schematic/PCB parity unchanged. KiCad CLI `10.0.2`
-  now reports DRC=104 and unconnected=9, with schematic-parity=0, because the
+  then reported DRC=104 and unconnected=9, with schematic-parity=0. This
+  follow-on retargets the `VBAT_SENSE` divider junction to `(113.000, 91.900)`,
+  pulling the `R7`/`R8`/`TP_VBAT` sense trunk above the upper `SW1` ground ring
+  without moving shell-bound `SW1` or its CAD dome pocket. KiCad CLI `10.0.2`
+  now reports DRC=102 and unconnected=9, with schematic-parity=0, because the
   board is still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
