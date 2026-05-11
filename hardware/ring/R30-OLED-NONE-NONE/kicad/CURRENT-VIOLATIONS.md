@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.2` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 44 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 43 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 9 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -407,6 +407,13 @@ only `R2B` from `(100.500, 101.500)` to `(100.400, 101.500)` and retargets the
 short local `USB_CC2_RD` and GND endpoints, clearing the local R2B/VBUS
 clearance row while preserving the USB-C connector placement. KiCad CLI
 `10.0.2` now reports R30 `DRC=44`, `unconnected=9`, and schematic-parity `0`.
+This follow-on rejects the `VBUS_5V`/`CHARGE_GATE`/`J_BAT` pocket doglegs and
+Q1/R2A micro-nudges because they held total DRC or introduced shorting,
+clearance, mask, or courtyard debt. It instead moves shell-bound `SW1` from
+`(114.200, 95.300)` to `(114.350, 95.780)`, retargets the click via
+and right ring-pad GND leg, and moves the shell CAD dome pocket with it. KiCad
+CLI `10.0.2` now reports R30 `DRC=43`, `unconnected=9`, and schematic-parity
+`0`, with no current `shorting_items` bucket.
 
 ## ERC top categories
 
@@ -418,9 +425,9 @@ and sheet-interface cleanup in this snapshot.
 
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
-| `tracks_crossing` | 18 | Tracks of different nets physically crossing on the same layer |
-| `solder_mask_bridge` | 12 | Adjacent pads of different nets share an unbroken mask aperture |
-| `clearance` | 11 | Copper-to-copper or pad-to-track clearance failures |
+| `tracks_crossing` | 19 | Tracks of different nets physically crossing on the same layer |
+| `solder_mask_bridge` | 13 | Adjacent pads of different nets share an unbroken mask aperture |
+| `clearance` | 8 | Copper-to-copper or pad-to-track clearance failures |
 | `unconnected_items` | 9 | Routed pads with no track or via reaching them |
 | `courtyards_overlap` | 3 | Footprint courtyard overlaps in the dense service/MCU pockets |
 

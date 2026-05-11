@@ -44,7 +44,7 @@ usb_c_opening_mm = [4.8, 10.6, 3.8];
 usb_c_body_keepout_mm = [8.0, 8.2, 3.8];
 
 sensor_pcb_center_mm = [-4.00, 0.0, 1.7];
-dome_switch_center_mm = [-6.30, -4.70, pcb_top_z_mm + 0.45];
+dome_switch_center_mm = [-6.15, -4.22, pcb_top_z_mm + 0.45];
 battery_connector_center_mm = [-11.90, -5.75, pcb_top_z_mm + 0.55];
 antenna_keepout_center_mm = [17.575, 0.0, pcb_top_z_mm + 1.2];
 antenna_keepout_mm = [7.85, 16.7, 2.4];

@@ -153,6 +153,9 @@ release.
   VBUS pad and `VBUS_DETECT` exits the opposite pad into the existing top node,
   plus moving `R9`'s source reference field to `F.Fab` in the copper-dense
   divider pocket
+- `SW1` dome-pocket relief that moves the shell-bound click center down to
+  `(114.350, 95.780)` and moves the CAD dome pocket with it, clearing one more
+  DRC row while keeping the current shorting bucket closed
 - non-shell-bound `R11` / `TP_CHRG` relocation down into the charger-status
   pocket at `y=105.000`, shortening the `CHRG_STAT` run and moving their source
   reference fields to `F.Fab` in the dense regulator pocket
@@ -224,7 +227,7 @@ shell using these KiCad facts:
   center `(120.5, 100)`
 - USB-C opening: `J1` at `(102.650, 100.000)` on the left service edge
 - battery lead path: `J_BAT` at `(108.600, 94.250)`
-- dome pocket: `SW1` at `(114.200, 95.300)`
+- dome pocket: `SW1` at `(114.350, 95.780)`
 - optical datum: `U2`/board aperture at `(116.500, 100.000)`
 - antenna keep-out: external no-footprint zone from `x=134.150` to board edge
 
@@ -240,7 +243,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.2` snapshot is
-  ERC=0, DRC=44, unconnected=9, and schematic-parity=0; the remaining board
+  ERC=0, DRC=43, unconnected=9, and schematic-parity=0; the remaining board
   story is dominated by unconnected items plus hand-routed crossing, clearance,
   mask-bridge, and courtyard failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.
