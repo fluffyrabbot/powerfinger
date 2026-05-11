@@ -230,8 +230,12 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   follow-on retargets the `VBAT_SENSE` divider junction to `(113.000, 91.900)`,
   pulling the `R7`/`R8`/`TP_VBAT` sense trunk above the upper `SW1` ground ring
   without moving shell-bound `SW1` or its CAD dome pocket. KiCad CLI `10.0.2`
-  now reports DRC=102 and unconnected=9, with schematic-parity=0, because the
-  board is still hand-routed
+  then reported DRC=102 and unconnected=9, with schematic-parity=0. This
+  follow-on retargets the top-edge `VBUS_5V` trunk start to
+  `(105.600, 91.600)`, clearing the `J_BAT` `MP1` short without moving the
+  shell-bound battery connector or adding a via. KiCad CLI `10.0.2` now reports
+  DRC=101 and unconnected=9, with schematic-parity=0, because the board is
+  still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
 - Later-board allocation decision for PAW3204 `SENSOR_NRESET` or

@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.2` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 102 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 101 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 9 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -288,7 +288,12 @@ R30 `DRC=104`, `unconnected=9`, and schematic-parity `0`.
 This pass retargets the `VBAT_SENSE` divider junction from `(113.000, 93.600)`
 to `(113.000, 91.900)`, moving the `R7`/`R8`/`TP_VBAT` sense trunk above the
 `SW1` upper dome-ring ground pad without moving shell-bound `SW1` or the CAD
-dome pocket. KiCad CLI `10.0.2` now reports R30 `DRC=102`, `unconnected=9`,
+dome pocket. KiCad CLI `10.0.2` then reported R30 `DRC=102`, `unconnected=9`,
+and schematic-parity `0`.
+This pass retargets the top-edge `VBUS_5V` trunk start from `(105.820, 91.600)`
+to `(105.600, 91.600)`, pulling the diagonal VBUS feed off `J_BAT` `MP1`
+without moving the shell-bound battery connector or adding a new via. KiCad CLI
+`10.0.2` now reports R30 `DRC=101`, `unconnected=9`,
 and schematic-parity `0`.
 
 ## ERC top categories
@@ -303,18 +308,17 @@ and sheet-interface cleanup in this snapshot.
 |------|-------|----------------------|
 | `text_height` | 27 | Silkscreen text below the rule minimum |
 | `solder_mask_bridge` | 23 | Adjacent pads of different nets share an unbroken mask aperture |
-| `tracks_crossing` | 21 | Tracks of different nets physically crossing on the same layer |
-| `clearance` | 15 | Copper-to-copper or pad-to-track clearance failures |
+| `tracks_crossing` | 22 | Tracks of different nets physically crossing on the same layer |
+| `clearance` | 14 | Copper-to-copper or pad-to-track clearance failures |
 | `unconnected_items` | 9 | Routed pads with no track or via reaching them |
 | `silk_over_copper` | 9 | Silkscreen text crossing exposed copper |
 | `courtyards_overlap` | 3 | Footprint courtyard overlaps in the dense service/MCU pockets |
 | `silk_overlap` | 2 | Silkscreen items overlap each other |
 | `silk_edge_clearance` | 1 | Silkscreen too close to the board edge |
-| `shorting_items` | 1 | Nets physically shorted or crossing through pads in the hand-routed pass |
 
-The shorting-class and crossing-class violations are the blocking ones for
-fabrication. Mask-bridge, courtyard, and silkscreen violations are
-easier mechanical fixes but still block a clean release.
+The explicit shorting bucket is now closed in the current report, but
+crossing-class, clearance, mask-bridge, courtyard, silkscreen, and unconnected
+violations still block fabrication release.
 `lib_footprint_mismatch` is intentionally
 ignored in the project because the first-board custom footprints are now
 source-controlled under `PowerFinger_Ring.pretty`; upstream-library comparison
@@ -356,8 +360,9 @@ bucket by keeping the sensor/cad datum visible without representing it as a
 routed internal cutout. The `R2A` placement cleanup removes the `USB_CC1_RD` /
 `CHARGE_GATE` short, and the latest `VBAT_SENSE` divider-junction retarget
 removes the `SW1` upper-ring short without moving the shell-bound click
-footprint. One explicit shorting row remains: `VBUS_5V` still clips `J_BAT`
-`MP1`.
+footprint. The latest top-edge `VBUS_5V` retarget removes the remaining
+`J_BAT` `MP1` short; the current report has no `shorting_items` rows, though
+the board still has DRC debt and remains not fab-clean.
 
 ## What this means for downstream packets
 
@@ -443,8 +448,9 @@ PCB items. The closure order this snapshot recommends:
 
 1. Move to placement-level cleanup for the left-service and power-ground
    pockets before adding more route-only stitches: the remaining blocker rows
-   cluster around `J_BAT`/`R8` and `U4`/`C2`. Direct all-in ground stitches were
-   tested and
+   are now dominated by unconnected items, crossings, mask bridges, and dense
+   `U4`/`C2` plus left-service clearance/text debt rather than explicit
+   shorting rows. Direct all-in ground stitches were tested and
    reduced unconnected rows only by increasing total debt, and simple R1/R8
    orientation shifts, click-trace doglegs, direct pad-to-pad GND stitches,
    pad vias, the first C1A relocation candidates, direct `U3`-to-`R6`/left-GND
@@ -466,6 +472,8 @@ PCB items. The closure order this snapshot recommends:
    shorting rows without changing ERC, unconnected count, or parity. The
    accepted `VBAT_SENSE` junction retarget is retained because it removes the
    `SW1` upper-ring short while preserving the shell/CAD click coordinate. The
+   accepted `VBUS_5V` trunk retarget is retained because it clears the final
+   `J_BAT` `MP1` short without moving the shell-bound battery connector. The
    accepted R1 horizontal
    retarget with B-side-only GND return and accepted U4 nudge are retained. The
    accepted C1A local-MCU relocation, accepted TP_VBAT / right-SW1 ground
