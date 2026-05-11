@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.2` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 83 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 60 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 9 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -327,7 +327,16 @@ This pass keeps the accepted `USB_CC1_RD`, `VBUS_5V`, and `CHARGE_GATE` copper
 because scratch CC1 and gate route variants reintroduced shorting or
 unconnected drift. It instead moves the source-only `R4` and `R1` reference
 fields to `F.Fab`, clearing local silkscreen DRC rows without changing
-electrical geometry. KiCad CLI `10.0.2` now reports R30 `DRC=83`,
+electrical geometry. KiCad CLI `10.0.2` reported R30 `DRC=83`,
+`unconnected=9`,
+and schematic-parity `0`.
+This pass keeps the accepted `NTC_SENSE`, `VREG_3V3`, and `CHRG_STAT` copper
+because scratch variants for that crossing cluster reintroduced shorting or
+raised total DRC. It instead moves the remaining source-only silkscreen marks
+for `J1`, `ANT`, `U2`, `U3`, `D1`, `R10`, `R3`, `NTC1`, `R2B`, `R5`,
+`C1A`/`C1B`, `C2`, `TP_RST`, `TP_MOT`, `TP_VBUS`, and `TP_LEDKIT` to
+`F.Fab`/`B.Fab`, clearing all remaining silkscreen text buckets without
+changing electrical geometry. KiCad CLI `10.0.2` now reports R30 `DRC=60`,
 `unconnected=9`,
 and schematic-parity `0`.
 
@@ -343,15 +352,12 @@ and sheet-interface cleanup in this snapshot.
 |------|-------|----------------------|
 | `tracks_crossing` | 20 | Tracks of different nets physically crossing on the same layer |
 | `solder_mask_bridge` | 20 | Adjacent pads of different nets share an unbroken mask aperture |
-| `text_height` | 16 | Silkscreen text below the rule minimum |
 | `clearance` | 17 | Copper-to-copper or pad-to-track clearance failures |
 | `unconnected_items` | 9 | Routed pads with no track or via reaching them |
-| `silk_over_copper` | 6 | Silkscreen text crossing exposed copper |
 | `courtyards_overlap` | 3 | Footprint courtyard overlaps in the dense service/MCU pockets |
-| `silk_overlap` | 1 | Silkscreen items overlap each other |
 
 The explicit shorting bucket is now closed in the current report, but
-crossing-class, clearance, mask-bridge, courtyard, silkscreen, and unconnected
+crossing-class, clearance, mask-bridge, courtyard, and unconnected
 violations still block fabrication release.
 `lib_footprint_mismatch` is intentionally
 ignored in the project because the first-board custom footprints are now
@@ -399,7 +405,10 @@ footprint. The latest top-edge `VBUS_5V` retarget removes the remaining
 the board still has DRC debt and remains not fab-clean. The latest left-service
 source-label cleanup is retained because it removes `R4` and `R1` printed-label
 rows after CC1 and gate copper variants reintroduced shorting or unconnected
-drift.
+drift. The latest remaining-label cleanup is retained because the
+`NTC_SENSE`/`VREG_3V3`/`CHRG_STAT` copper probes were worse, while moving
+source-only marks to fabrication layers clears the last silkscreen DRC buckets
+without touching copper.
 
 ## What this means for downstream packets
 

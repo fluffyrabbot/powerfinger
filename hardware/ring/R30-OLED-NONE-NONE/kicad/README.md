@@ -164,6 +164,10 @@ release.
   `VBUS_5V`, and `CHARGE_GATE` copper after scratch CC1/gate reroutes
   reintroduced shorting or unconnected drift, and moves the `R4` and `R1`
   reference fields to `F.Fab`
+- remaining source-label cleanup that keeps the accepted `NTC_SENSE`,
+  `VREG_3V3`, and `CHRG_STAT` copper after scratch reroutes raised total DRC or
+  reintroduced shorting, and moves the remaining source-only silkscreen marks
+  to `F.Fab`/`B.Fab`
 
 This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
 charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
@@ -204,9 +208,9 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.2` snapshot is
-  ERC=0, DRC=83, unconnected=9, and schematic-parity=0; the remaining board
+  ERC=0, DRC=60, unconnected=9, and schematic-parity=0; the remaining board
   story is dominated by unconnected items plus hand-routed crossing, clearance,
-  mask-bridge, courtyard, and silkscreen failures.
+  mask-bridge, and courtyard failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.
   Clear schematic backfill, net cleanup, and DRC/ERC before fabrication.
 - Close `../FIRST-BOARD-CHECKLIST.md` and `../STACKUP-VERIFY.md` before treating
