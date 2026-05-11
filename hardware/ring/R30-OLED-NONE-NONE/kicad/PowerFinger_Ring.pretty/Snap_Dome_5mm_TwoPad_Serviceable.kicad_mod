@@ -1,7 +1,7 @@
 (footprint "Snap_Dome_5mm_TwoPad_Serviceable"
     (layer "F.Cu")
     (uuid "5f3297a0-50f6-4951-a3e8-27fe7400010a")
-    (at 114.200 95.000 0)
+    (at 114.200 95.300 0)
     (descr "5 mm metal snap dome contacts; accessible click zone")
     (property "Reference" "SW1" (at 0 -3.05 0) (layer "F.SilkS") (effects (font (size 0.75 0.75) (thickness 0.11))))
     (property "Value" "5mm 200gf dome" (at 0 3.05 0) (layer "F.Fab") (effects (font (size 0.75 0.75) (thickness 0.11))))

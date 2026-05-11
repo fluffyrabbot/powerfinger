@@ -384,6 +384,14 @@ local `SENSOR_MOTION_N` endpoint, clearing the `VBUS_DETECT` crossing while
 keeping `unconnected=9`, no shorts, and schematic-parity `0`. KiCad CLI
 `10.0.2` now reports R30 `DRC=48`, `unconnected=9`, and
 schematic-parity `0`.
+This follow-on rejects left-service Q1/R2A/R4/CC1 micro-nudges, CC1/gate
+layer-hop probes, and direct `VBAT_PROTECTED`/`NTC_SENSE` trunk moves because
+they held total DRC or traded crossings for shorts, dangling vias, clearance,
+mask, or unconnected debt. It instead lowers the `VBAT_SENSE` divider junction
+to `(113.000, 92.100)`, moves the serviceable `SW1` dome from
+`(114.200, 95.000)` to `(114.200, 95.300)`, and moves the shell dome pocket with
+it. KiCad CLI `10.0.2` now reports R30 `DRC=46`, `unconnected=9`, and
+schematic-parity `0`.
 
 ## ERC top categories
 
@@ -395,9 +403,9 @@ and sheet-interface cleanup in this snapshot.
 
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
-| `tracks_crossing` | 21 | Tracks of different nets physically crossing on the same layer |
-| `solder_mask_bridge` | 14 | Adjacent pads of different nets share an unbroken mask aperture |
-| `clearance` | 10 | Copper-to-copper or pad-to-track clearance failures |
+| `tracks_crossing` | 18 | Tracks of different nets physically crossing on the same layer |
+| `solder_mask_bridge` | 13 | Adjacent pads of different nets share an unbroken mask aperture |
+| `clearance` | 12 | Copper-to-copper or pad-to-track clearance failures |
 | `unconnected_items` | 9 | Routed pads with no track or via reaching them |
 | `courtyards_overlap` | 3 | Footprint courtyard overlaps in the dense service/MCU pockets |
 
@@ -462,6 +470,9 @@ even though one crossing-class row remains newly visible in that bucket mix.
 The latest Q1 nudge is retained because it removes one left-service mask bridge
 without accepting the R4 orientation, CC1 dogleg, or top-edge VBUS/VBAT variants
 that added unconnected, shorting, or copper-edge debt.
+The latest `SW1`/`VBAT_SENSE` topology cleanup is retained because it lowers
+total DRC while keeping the shorting bucket closed, retaining `unconnected=9`,
+and moving the shell CAD dome pocket with the PCB click footprint.
 
 ## What this means for downstream packets
 
@@ -506,9 +517,11 @@ that added unconnected, shorting, or copper-edge debt.
   reintroducing a VBUS-clamped protection island.
 - `NTC1`/`R3` moved down inside the battery-side cluster so the thermistor
   divider is no longer sitting directly on D1's `USB_D+` pad/track corridor.
-- `SW1` moved left to relieve the MCU pad-column collision, and the shell CAD
-  dome pocket moved with it. Its local footprint no longer models the grounded
-  dome ring as a full copper disk overlapping the center click contact.
+- `SW1` moved left to relieve the MCU pad-column collision and later down by
+  `0.30` mm to relieve the top-edge sense/switch crossing cluster; the shell CAD
+  dome pocket moved with both board-coordinate changes. Its local footprint no
+  longer models the grounded dome ring as a full copper disk overlapping the
+  center click contact.
 - The stale schematic-only `C1`/`C3` placeholders are retained as DNP/off-board
   notes for the next schematic-driven PCB update rather than missing board
   footprints.
@@ -598,6 +611,11 @@ PCB items. The closure order this snapshot recommends:
    accepted `VREG_3V3` trunk off the PAW3204 LED/GND column, keep the accepted
    U3 VBAT dogleg out of the TP4054 pad row, and preserve the micro-retargeted
    C2 input-cap placement unless a real GND closure lowers total debt further.
+   The latest accepted `SW1`/`VBAT_SENSE` topology cleanup keeps the shorting
+   bucket closed by moving the shell-bound dome coordinate and its CAD pocket
+   together; the rejected Q1/R2A/R4/CC1 and via/layer-hop probes either held
+   total DRC or introduced shorts, dangling vias, clearance, mask, or
+   unconnected debt.
 2. Close the 9 unconnected items without changing the shell-bound footprints
    unless the CAD packet moves with them.
 3. Re-run ERC + DRC and update this file's counts in the same commit.

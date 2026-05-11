@@ -143,6 +143,9 @@ release.
 - `VBAT_SENSE` divider-junction cleanup that retargets the `R7`/`R8`/`TP_VBAT`
   sense trunk through `(113.000, 91.900)`, clearing the upper `SW1` dome-ring
   short without moving shell-bound `SW1` or the CAD dome pocket
+- `SW1` / `VBAT_SENSE` topology cleanup that lowers the divider junction to
+  `(113.000, 92.100)` and moves the serviceable dome plus shell pocket to
+  `(114.200, 95.300)`, reducing total DRC while keeping shorts closed
 - top-edge `VBUS_5V` trunk cleanup that retargets the VBUS feed from
   `(105.820, 91.600)` to `(105.600, 91.600)`, clearing the `J_BAT` `MP1`
   short without moving the shell-bound battery connector
@@ -213,7 +216,7 @@ shell using these KiCad facts:
   center `(120.5, 100)`
 - USB-C opening: `J1` at `(102.650, 100.000)` on the left service edge
 - battery lead path: `J_BAT` at `(108.600, 94.250)`
-- dome pocket: `SW1` at `(114.200, 95.000)`
+- dome pocket: `SW1` at `(114.200, 95.300)`
 - optical datum: `U2`/board aperture at `(116.500, 100.000)`
 - antenna keep-out: external no-footprint zone from `x=134.150` to board edge
 
@@ -229,7 +232,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.2` snapshot is
-  ERC=0, DRC=48, unconnected=9, and schematic-parity=0; the remaining board
+  ERC=0, DRC=46, unconnected=9, and schematic-parity=0; the remaining board
   story is dominated by unconnected items plus hand-routed crossing, clearance,
   mask-bridge, and courtyard failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.
