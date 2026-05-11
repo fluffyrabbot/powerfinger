@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.2` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 95 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 90 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 9 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -307,7 +307,14 @@ pocket at `y=105.000`, shortening the `CHRG_STAT` run and keeping the TP4054
 status pull-up local while avoiding the prior U4/C2 mask-bridge crossings.
 Their source reference fields move to `F.Fab` so the labels remain in the board
 source without printing in the dense regulator pocket. KiCad CLI `10.0.2` now
-reports R30 `DRC=95`, `unconnected=9`,
+reported R30 `DRC=95`, `unconnected=9`,
+and schematic-parity `0`.
+This pass keeps the accepted `VBUS_5V` and `VBAT_SENSE` copper because scratch
+top-trunk, divider-junction, and `R7`/`R8` placement variants all introduced
+shorting, copper-edge, or unconnected debt. It instead moves the top-edge
+source-only `R7`, `TP_VBAT`, and `SW1` reference fields to `F.Fab`, clearing
+their silkscreen DRC rows without changing electrical geometry. KiCad CLI
+`10.0.2` now reports R30 `DRC=90`, `unconnected=9`,
 and schematic-parity `0`.
 
 ## ERC top categories
@@ -320,15 +327,14 @@ and sheet-interface cleanup in this snapshot.
 
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
-| `text_height` | 24 | Silkscreen text below the rule minimum |
+| `text_height` | 21 | Silkscreen text below the rule minimum |
 | `solder_mask_bridge` | 20 | Adjacent pads of different nets share an unbroken mask aperture |
 | `tracks_crossing` | 20 | Tracks of different nets physically crossing on the same layer |
 | `clearance` | 17 | Copper-to-copper or pad-to-track clearance failures |
 | `unconnected_items` | 9 | Routed pads with no track or via reaching them |
 | `silk_over_copper` | 8 | Silkscreen text crossing exposed copper |
 | `courtyards_overlap` | 3 | Footprint courtyard overlaps in the dense service/MCU pockets |
-| `silk_overlap` | 2 | Silkscreen items overlap each other |
-| `silk_edge_clearance` | 1 | Silkscreen too close to the board edge |
+| `silk_overlap` | 1 | Silkscreen items overlap each other |
 
 The explicit shorting bucket is now closed in the current report, but
 crossing-class, clearance, mask-bridge, courtyard, silkscreen, and unconnected
@@ -494,6 +500,10 @@ PCB items. The closure order this snapshot recommends:
    accepted `R11` / `TP_CHRG` relocation is retained because it reduces the
    charger-status mask-bridge cluster and total DRC while preserving ERC,
    unconnected count, parity, and the closed shorting bucket. The
+   accepted top-edge reference-field cleanup is retained because it removes
+   source-only `R7`, `TP_VBAT`, and `SW1` silkscreen DRC without moving
+   electrical copper; the rejected VBUS/VBAT copper variants expanded
+   shorting, copper-edge, or unconnected debt. The
    accepted R1 horizontal
    retarget with B-side-only GND return and accepted U4 nudge are retained. The
    accepted C1A local-MCU relocation, accepted TP_VBAT / right-SW1 ground

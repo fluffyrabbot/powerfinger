@@ -243,9 +243,13 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   moves non-shell-bound `R11` and `TP_CHRG` down into the charger-status pocket
   at `y=105.000`, retargets their `CHRG_STAT` and `VREG_3V3` local segments,
   and moves their source reference fields to `F.Fab` so the dense regulator
-  pocket is not burdened with printed labels. KiCad CLI `10.0.2` now reports
-  DRC=95 and unconnected=9, with schematic-parity=0, because the board is still
-  hand-routed
+  pocket is not burdened with printed labels. KiCad CLI `10.0.2` then reported
+  DRC=95 and unconnected=9, with schematic-parity=0. This follow-on keeps the
+  accepted top-edge `VBUS_5V` and `VBAT_SENSE` copper after scratch retargets
+  introduced shorting, copper-edge, or unconnected debt, and instead moves the
+  source-only `R7`, `TP_VBAT`, and `SW1` reference fields to `F.Fab`. KiCad CLI
+  `10.0.2` now reports DRC=90 and unconnected=9, with schematic-parity=0,
+  because the board is still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
 - Later-board allocation decision for PAW3204 `SENSOR_NRESET` or
