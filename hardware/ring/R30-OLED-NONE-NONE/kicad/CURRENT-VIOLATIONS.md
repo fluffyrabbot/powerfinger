@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.2` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 105 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 104 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 9 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -277,8 +277,14 @@ the board edge, so forbidding footprints in that keep-out only flags U1 itself.
 This pass moves the dense left-service reference fields for `J_BAT`, `Q1`,
 `R8`, and `R2A` from `F.SilkS` to `F.Fab`; those marks were clipped by nearby
 pads/copper in the bring-up pocket and are not useful as printed silkscreen at
-this density. KiCad CLI `10.0.2` now reports R30 `DRC=105`, `unconnected=9`,
+this density. KiCad CLI `10.0.2` then reported R30 `DRC=105`, `unconnected=9`,
 and schematic-parity `0`.
+This pass moves non-shell-bound `R2A` from `(111.650, 96.200)` to
+`(111.650, 95.000)` and retargets the attached `USB_CC1_RD` pull-down plus
+local GND return endpoints. That pulls the CC1 run out of the `R4`
+`CHARGE_GATE` pull-up pad and reduces the shorting bucket without changing ERC,
+unconnected count, or schematic/PCB parity. KiCad CLI `10.0.2` now reports R30
+`DRC=104`, `unconnected=9`, and schematic-parity `0`.
 
 ## ERC top categories
 
@@ -291,14 +297,14 @@ and sheet-interface cleanup in this snapshot.
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
 | `text_height` | 27 | Silkscreen text below the rule minimum |
-| `tracks_crossing` | 23 | Tracks of different nets physically crossing on the same layer |
 | `solder_mask_bridge` | 25 | Adjacent pads of different nets share an unbroken mask aperture |
-| `clearance` | 11 | Copper-to-copper or pad-to-track clearance failures |
-| `silk_over_copper` | 10 | Silkscreen text crossing exposed copper |
+| `tracks_crossing` | 22 | Tracks of different nets physically crossing on the same layer |
+| `clearance` | 13 | Copper-to-copper or pad-to-track clearance failures |
 | `unconnected_items` | 9 | Routed pads with no track or via reaching them |
-| `shorting_items` | 3 | Nets physically shorted or crossing through pads in the hand-routed pass |
+| `silk_over_copper` | 9 | Silkscreen text crossing exposed copper |
 | `courtyards_overlap` | 3 | Footprint courtyard overlaps in the dense service/MCU pockets |
 | `silk_overlap` | 2 | Silkscreen items overlap each other |
+| `shorting_items` | 2 | Nets physically shorted or crossing through pads in the hand-routed pass |
 | `silk_edge_clearance` | 1 | Silkscreen too close to the board edge |
 
 The shorting-class and crossing-class violations are the blocking ones for
@@ -342,7 +348,10 @@ placement decisions. The follow-on `TP_VBAT` micro-retarget removes the upper
 `SW1`/`VBAT_SENSE` short and lowers the remaining shorting bucket to three rows.
 The aperture-datum layer fix removes the previous `copper_edge_clearance`
 bucket by keeping the sensor/cad datum visible without representing it as a
-routed internal cutout.
+routed internal cutout. The latest `R2A` placement cleanup removes the
+`USB_CC1_RD` / `CHARGE_GATE` short and leaves two explicit shorting rows:
+`VBAT_SENSE` still runs through the `SW1` ground ring, and `VBUS_5V` still
+clips `J_BAT` `MP1`.
 
 ## What this means for downstream packets
 
@@ -428,7 +437,7 @@ PCB items. The closure order this snapshot recommends:
 
 1. Move to placement-level cleanup for the left-service and power-ground
    pockets before adding more route-only stitches: the remaining blocker rows
-   cluster around `J_BAT`/`R8`/`Q1`/`R2A`, `U4`/`C2`, and the remaining `SW1`
+   cluster around `J_BAT`/`R8`, `U4`/`C2`, and the remaining `SW1`
    ground pads. Direct all-in ground stitches were tested and
    reduced unconnected rows only by increasing total debt, and simple R1/R8
    orientation shifts, click-trace doglegs, direct pad-to-pad GND stitches,
@@ -445,8 +454,11 @@ PCB items. The closure order this snapshot recommends:
    after the accepted U4 nudge also increased total DRC or introduced
    shorting/hole-clearance debt. The `J_BAT` pad-2-to-left-return, `J_BAT`
    `MP1` dogleg, simple `R8` relocation, `VBUS_5V` dogleg, `VBAT_PROTECTED`
-   trunk retarget, and `Q1`/`R2A` service-lane dogleg probes also failed the
-   gate by expanding shorting or raising total DRC. The accepted R1 horizontal
+   trunk retarget, and pre-placement `Q1`/`R2A` service-lane dogleg probes also
+   failed the gate by expanding shorting or raising total DRC. The accepted
+   `R2A` placement retarget is retained because it reduces both total DRC and
+   shorting rows without changing ERC, unconnected count, or parity. The
+   accepted R1 horizontal
    retarget with B-side-only GND return and accepted U4 nudge are retained. The
    accepted C1A local-MCU relocation, accepted TP_VBAT / right-SW1 ground
    cleanup, and accepted B-side SW1 click reroute are now retained. The accepted

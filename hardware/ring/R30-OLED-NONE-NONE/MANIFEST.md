@@ -122,7 +122,7 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
 ## Missing Artifacts
 
 - Clean KiCad DRC after the parity-clean first-pass schematic capture; local
-  KiCad CLI `10.0.1` DRC still reports violations and unconnected items, so the
+  KiCad CLI `10.0.2` DRC still reports violations and unconnected items, so the
   board is not fabrication-release
 - Printed/measured results from the new CAD coupons and full-shell export
 - Measured ring stackup with focal-distance verification
@@ -221,8 +221,13 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   This follow-on moves the dense left-service reference fields for `J_BAT`,
   `Q1`, `R8`, and `R2A` from `F.SilkS` to `F.Fab`, keeping the bring-up labels
   in the source file without printing clipped silkscreen in the service pocket.
-  KiCad CLI `10.0.2` now reports DRC=105 and unconnected=9, with
-  schematic-parity=0, because the board is still hand-routed
+  KiCad CLI `10.0.2` then reported DRC=105 and unconnected=9, with
+  schematic-parity=0. This follow-on moves non-shell-bound `R2A` to
+  `(111.650, 95.000)` and retargets its `USB_CC1_RD` plus local GND endpoints,
+  clearing the `USB_CC1_RD` / `CHARGE_GATE` short while keeping ERC,
+  unconnected count, and schematic/PCB parity unchanged. KiCad CLI `10.0.2`
+  now reports DRC=104 and unconnected=9, with schematic-parity=0, because the
+  board is still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
 - Later-board allocation decision for PAW3204 `SENSOR_NRESET` or
