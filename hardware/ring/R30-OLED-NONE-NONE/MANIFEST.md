@@ -238,9 +238,14 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   non-polar `R9` divider resistor in place so the right-side `VBUS_5V` trunk
   lands on the VBUS pad and `VBUS_DETECT` leaves from the opposite pad into the
   existing top node, while moving `R9`'s source reference field to `F.Fab` to
-  avoid printed copper overlap in that dense pocket. KiCad CLI `10.0.2` now
-  reports DRC=98 and unconnected=9, with schematic-parity=0, because the board
-  is still hand-routed
+  avoid printed copper overlap in that dense pocket. KiCad CLI `10.0.2` then
+  reported DRC=98 and unconnected=9, with schematic-parity=0. This follow-on
+  moves non-shell-bound `R11` and `TP_CHRG` down into the charger-status pocket
+  at `y=105.000`, retargets their `CHRG_STAT` and `VREG_3V3` local segments,
+  and moves their source reference fields to `F.Fab` so the dense regulator
+  pocket is not burdened with printed labels. KiCad CLI `10.0.2` now reports
+  DRC=95 and unconnected=9, with schematic-parity=0, because the board is still
+  hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
 - Later-board allocation decision for PAW3204 `SENSOR_NRESET` or

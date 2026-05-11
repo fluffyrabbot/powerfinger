@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.2` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 98 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 95 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 9 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -299,8 +299,15 @@ This pass flips non-polar `R9` in place so the right-side `VBUS_5V` trunk lands
 on its VBUS pad instead of crossing the `VBUS_DETECT` pad, reroutes
 `VBUS_DETECT` from the flipped divider pad into the existing top node, and
 moves `R9`'s reference field to `F.Fab` so the source keeps the label without
-printing it in the copper-dense divider pocket. KiCad CLI `10.0.2` now reports
+printing it in the copper-dense divider pocket. KiCad CLI `10.0.2` reported
 R30 `DRC=98`, `unconnected=9`,
+and schematic-parity `0`.
+This pass moves non-shell-bound `R11` and `TP_CHRG` down into the charger-status
+pocket at `y=105.000`, shortening the `CHRG_STAT` run and keeping the TP4054
+status pull-up local while avoiding the prior U4/C2 mask-bridge crossings.
+Their source reference fields move to `F.Fab` so the labels remain in the board
+source without printing in the dense regulator pocket. KiCad CLI `10.0.2` now
+reports R30 `DRC=95`, `unconnected=9`,
 and schematic-parity `0`.
 
 ## ERC top categories
@@ -313,12 +320,12 @@ and sheet-interface cleanup in this snapshot.
 
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
-| `text_height` | 26 | Silkscreen text below the rule minimum |
-| `solder_mask_bridge` | 22 | Adjacent pads of different nets share an unbroken mask aperture |
+| `text_height` | 24 | Silkscreen text below the rule minimum |
+| `solder_mask_bridge` | 20 | Adjacent pads of different nets share an unbroken mask aperture |
 | `tracks_crossing` | 20 | Tracks of different nets physically crossing on the same layer |
-| `clearance` | 15 | Copper-to-copper or pad-to-track clearance failures |
+| `clearance` | 17 | Copper-to-copper or pad-to-track clearance failures |
 | `unconnected_items` | 9 | Routed pads with no track or via reaching them |
-| `silk_over_copper` | 9 | Silkscreen text crossing exposed copper |
+| `silk_over_copper` | 8 | Silkscreen text crossing exposed copper |
 | `courtyards_overlap` | 3 | Footprint courtyard overlaps in the dense service/MCU pockets |
 | `silk_overlap` | 2 | Silkscreen items overlap each other |
 | `silk_edge_clearance` | 1 | Silkscreen too close to the board edge |
@@ -484,6 +491,9 @@ PCB items. The closure order this snapshot recommends:
    accepted `R9` in-place flip is retained because it removes the
    `VBUS_5V`/`VBUS_DETECT` divider crossing and one mask bridge without changing
    ERC, unconnected count, parity, or the closed shorting bucket. The
+   accepted `R11` / `TP_CHRG` relocation is retained because it reduces the
+   charger-status mask-bridge cluster and total DRC while preserving ERC,
+   unconnected count, parity, and the closed shorting bucket. The
    accepted R1 horizontal
    retarget with B-side-only GND return and accepted U4 nudge are retained. The
    accepted C1A local-MCU relocation, accepted TP_VBAT / right-SW1 ground

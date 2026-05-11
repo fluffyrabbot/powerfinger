@@ -150,6 +150,9 @@ release.
   VBUS pad and `VBUS_DETECT` exits the opposite pad into the existing top node,
   plus moving `R9`'s source reference field to `F.Fab` in the copper-dense
   divider pocket
+- non-shell-bound `R11` / `TP_CHRG` relocation down into the charger-status
+  pocket at `y=105.000`, shortening the `CHRG_STAT` run and moving their source
+  reference fields to `F.Fab` in the dense regulator pocket
 
 This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
 charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
@@ -190,7 +193,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.2` snapshot is
-  ERC=0, DRC=98, unconnected=9, and schematic-parity=0; the remaining board
+  ERC=0, DRC=95, unconnected=9, and schematic-parity=0; the remaining board
   story is dominated by unconnected items plus hand-routed crossing, clearance,
   mask-bridge, courtyard, and silkscreen failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.
