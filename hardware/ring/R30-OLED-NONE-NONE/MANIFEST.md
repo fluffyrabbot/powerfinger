@@ -261,8 +261,12 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   with schematic-parity=0. This follow-on keeps the accepted `NTC_SENSE`,
   `VREG_3V3`, and `CHRG_STAT` copper after scratch variants reintroduced
   shorting or raised total DRC, and instead moves the remaining source-only
-  silkscreen marks to `F.Fab`/`B.Fab`. KiCad CLI `10.0.2` now reports DRC=60
-  and unconnected=9, with schematic-parity=0,
+  silkscreen marks to `F.Fab`/`B.Fab`. KiCad CLI `10.0.2` then reported DRC=60
+  and unconnected=9, with schematic-parity=0. This follow-on keeps
+  `solder_mask_min_width=0.05` but changes the first-board pad mask expansion
+  from `0.05` to `0`, reducing mask-bridge rows without relaxing the minimum
+  mask-web rule. KiCad CLI `10.0.2` now reports DRC=57 and unconnected=9, with
+  schematic-parity=0,
   because the board is still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad

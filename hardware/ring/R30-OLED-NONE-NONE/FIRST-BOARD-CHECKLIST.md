@@ -16,7 +16,7 @@ This checklist is the execution contract for the active ring hardware lane.
 - [x] Validate the PAW3204-class sensor placement against the aperture datum in
   the PCB pass
 - [ ] Backfill schematic symbols to match the PCB pass and clear KiCad DRC
-  (current snapshot in `kicad/CURRENT-VIOLATIONS.md`: ERC=0, DRC=60,
+  (current snapshot in `kicad/CURRENT-VIOLATIONS.md`: ERC=0, DRC=57,
   unconnected=9, parity=0 — regenerate with
   `scripts/verify-firmware-local.sh --kicad-only`)
 - [x] Add project-local `PowerFinger` symbols and `PowerFinger_Ring`

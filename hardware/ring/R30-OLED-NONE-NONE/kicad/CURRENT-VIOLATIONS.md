@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.2` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 60 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 57 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 9 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -336,9 +336,15 @@ raised total DRC. It instead moves the remaining source-only silkscreen marks
 for `J1`, `ANT`, `U2`, `U3`, `D1`, `R10`, `R3`, `NTC1`, `R2B`, `R5`,
 `C1A`/`C1B`, `C2`, `TP_RST`, `TP_MOT`, `TP_VBUS`, and `TP_LEDKIT` to
 `F.Fab`/`B.Fab`, clearing all remaining silkscreen text buckets without
-changing electrical geometry. KiCad CLI `10.0.2` now reports R30 `DRC=60`,
+changing electrical geometry. KiCad CLI `10.0.2` reported R30 `DRC=60`,
 `unconnected=9`,
 and schematic-parity `0`.
+This pass keeps the board setup's `solder_mask_min_width=0.05` rule, but
+changes the first-board pad mask expansion from `0.05` to `0` so pad apertures
+no longer grow into nearby service/regulator tracks. Scratch variants that
+relaxed the min-width rule were rejected as rule changes rather than geometry
+cleanup. KiCad CLI `10.0.2` now reports R30 `DRC=57`, `unconnected=9`, and
+schematic-parity `0`.
 
 ## ERC top categories
 
@@ -351,7 +357,7 @@ and sheet-interface cleanup in this snapshot.
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
 | `tracks_crossing` | 20 | Tracks of different nets physically crossing on the same layer |
-| `solder_mask_bridge` | 20 | Adjacent pads of different nets share an unbroken mask aperture |
+| `solder_mask_bridge` | 17 | Adjacent pads of different nets share an unbroken mask aperture |
 | `clearance` | 17 | Copper-to-copper or pad-to-track clearance failures |
 | `unconnected_items` | 9 | Routed pads with no track or via reaching them |
 | `courtyards_overlap` | 3 | Footprint courtyard overlaps in the dense service/MCU pockets |
@@ -408,7 +414,9 @@ rows after CC1 and gate copper variants reintroduced shorting or unconnected
 drift. The latest remaining-label cleanup is retained because the
 `NTC_SENSE`/`VREG_3V3`/`CHRG_STAT` copper probes were worse, while moving
 source-only marks to fabrication layers clears the last silkscreen DRC buckets
-without touching copper.
+without touching copper. The latest pad-mask expansion cleanup is retained
+because it reduces mask-bridge rows while preserving the project minimum mask
+web rule and avoiding new shorts, unconnected rows, or parity drift.
 
 ## What this means for downstream packets
 

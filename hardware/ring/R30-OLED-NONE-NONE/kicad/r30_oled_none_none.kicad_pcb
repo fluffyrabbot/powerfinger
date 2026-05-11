@@ -37,7 +37,7 @@
     (49 "F.Fab" user)
   )
   (setup
-    (pad_to_mask_clearance 0.05)
+    (pad_to_mask_clearance 0)
     (solder_mask_min_width 0.05)
     (allow_soldermask_bridges_in_footprints no)
     (pcbplotparams
