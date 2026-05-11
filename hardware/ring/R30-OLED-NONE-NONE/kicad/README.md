@@ -185,6 +185,10 @@ release.
 - SENSOR_SCLK MCU-column cleanup that rejects direct SCLK, top-dogleg SCLK,
   `VBUS_DETECT`, and `SENSOR_MOTION_N` route variants with shorts or clearance
   debt, then raises the local SCLK jog from `y=99.900` to `y=99.980`
+- TP_MOT MCU-column cleanup that rejects VBUS spine, VBUS dogleg, B-side
+  motion-hop, and right-of-VBUS `TP_MOT` variants with dangling vias, shorts,
+  mask, or clearance debt, then moves `TP_MOT` to `(121.250, 99.500)` and
+  retargets its local `SENSOR_MOTION_N` endpoint
 
 This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
 charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
@@ -225,7 +229,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.2` snapshot is
-  ERC=0, DRC=51, unconnected=9, and schematic-parity=0; the remaining board
+  ERC=0, DRC=48, unconnected=9, and schematic-parity=0; the remaining board
   story is dominated by unconnected items plus hand-routed crossing, clearance,
   mask-bridge, and courtyard failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.

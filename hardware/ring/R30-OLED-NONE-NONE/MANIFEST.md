@@ -286,8 +286,14 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   unconnected=9, with schematic-parity=0. This follow-on rejects direct SCLK,
   top-dogleg SCLK, `VBUS_DETECT`, and `SENSOR_MOTION_N` route variants that
   introduced shorts or clearance debt, and instead raises the local
-  `SENSOR_SCLK` jog from `y=99.900` to `y=99.980`. KiCad CLI `10.0.2` now
-  reports DRC=51 and unconnected=9, with schematic-parity=0,
+  `SENSOR_SCLK` jog from `y=99.900` to `y=99.980`. KiCad CLI `10.0.2` then
+  reported DRC=51 and unconnected=9, with schematic-parity=0. This follow-on
+  rejects VBUS spine, VBUS dogleg, B-side motion-hop, and right-of-VBUS
+  `TP_MOT` variants that held total DRC or added dangling vias, shorts, mask, or
+  clearance debt, and instead moves non-shell-bound `TP_MOT` from
+  `(122.050, 97.900)` to `(121.250, 99.500)` while retargeting its local
+  `SENSOR_MOTION_N` endpoint. KiCad CLI `10.0.2` now reports DRC=48 and
+  unconnected=9, with schematic-parity=0,
   because the board is still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad

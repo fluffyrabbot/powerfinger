@@ -661,7 +661,7 @@
   (footprint "TestPoint:TestPoint_Pad_D1.0mm"
     (layer "F.Cu")
     (uuid "5f3297a0-50f6-4951-a3e8-27fe74000119")
-    (at 122.050 97.900 0)
+    (at 121.250 99.500 0)
     (property "Reference" "TP_MOT" (at 0 -1.20 0) (layer "F.Fab") (effects (font (size 0.55 0.55) (thickness 0.08))))
     (property "Value" "SENSOR_MOTION_N local bring-up pad only" (at 0 1.20 0) (layer "F.Fab") (effects (font (size 0.55 0.55) (thickness 0.08))))
     (pad "1" smd circle (at 0 0) (size 1.00 1.00) (layers "F.Cu" "F.Mask") (net 13 "SENSOR_MOTION_N") (pinfunction "1") (pintype "passive"))
@@ -738,7 +738,7 @@
   (segment (start 121.180 100.600) (end 121.180 101.905) (width 0.20) (layer "F.Cu") (net 11) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000215"))
   (segment (start 121.180 101.905) (end 119.300 101.905) (width 0.20) (layer "F.Cu") (net 11) (uuid "5f004ae7-42ef-474b-bd4c-79e0ade64c48"))
   (segment (start 117.750 101.800) (end 119.300 100.635) (width 0.20) (layer "F.Cu") (net 12) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000216"))
-  (segment (start 119.300 99.365) (end 122.050 97.900) (width 0.20) (layer "F.Cu") (net 13) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000218"))
+  (segment (start 119.300 99.365) (end 121.250 99.500) (width 0.20) (layer "F.Cu") (net 13) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000218"))
   (segment (start 119.300 98.095) (end 122.050 96.000) (width 0.20) (layer "F.Cu") (net 14) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000219"))
   (segment (start 114.200 95.000) (end 117.750 103.000) (width 0.20) (layer "B.Cu") (net 15) (uuid "6816bb59-e020-4f06-8c3c-9b3d8700021a"))
   (segment (start 99.800 100.500) (end 100.600 100.700) (width 0.20) (layer "F.Cu") (net 16) (uuid "6816bb59-e020-4f06-8c3c-9b3d8700024f"))
