@@ -1,178 +1,8 @@
 # SPDX-License-Identifier: MIT
 
 class SelfTestFixtures
-  def self.run(repo_root)
-    new(repo_root).run
-  end
-
-  def initialize(repo_root)
-    @repo_root = repo_root
-  end
-
-  def run
-    Dir.mktmpdir("powerfinger-contract-check-") do |tmp|
-      copy_fixture_tree(tmp)
-      ContractCheck.new(tmp).run
-    end
-
-    fixtures.each do |name, expected_error, mutate|
-      Dir.mktmpdir("powerfinger-contract-check-") do |tmp|
-        copy_fixture_tree(tmp)
-        mutate.call(tmp)
-        begin
-          ContractCheck.new(tmp).run
-        rescue SystemExit => e
-          raise "#{name}: expected failure, got exit 0" if e.status == 0
-        rescue ContractError => e
-          unless e.message.include?(expected_error)
-            raise "#{name}: expected #{expected_error.inspect}, got #{e.message.inspect}"
-          end
-          puts "ok: self-test rejected #{name}"
-          next
-        end
-        raise "#{name}: expected failure, checker passed"
-      end
-    end
-
-    puts "ok: contract checker self-test fixtures passed"
-  end
-
-  private
-
-  def fixtures
-    [
-      [
-        "missing contract reference",
-        "variant contracts.sensor points at missing file",
-        lambda do |root|
-          path = File.join(root, ContractCheck::VARIANT_REL)
-          data = YAML.load_file(path)
-          data["contracts"]["sensor"] = "hardware/contracts/missing-sensor.yaml"
-          File.write(path, data.to_yaml)
-        end,
-      ],
-      [
-        "pin drift",
-        "generated sdkconfig profile drift",
-        lambda do |root|
-          path = File.join(root, ContractCheck::BOARD_REL)
-          data = YAML.load_file(path)
-          data["interfaces"]["optical_sensor_shared_path"]["pins"]["sclk"]["mcu_resource"] = "GPIO14"
-          File.write(path, data.to_yaml)
-        end,
-      ],
-      [
-        "ADC channel drift",
-        "generated sdkconfig profile drift",
-        lambda do |root|
-          path = File.join(root, ContractCheck::BOARD_REL)
-          data = YAML.load_file(path)
-          data["interfaces"]["battery_and_charge_safety"]["vbat_sense"]["mcu_resource"] = "ADC1_CH2/GPIO0"
-          File.write(path, data.to_yaml)
-        end,
-      ],
-      [
-        "firmware symbol drift",
-        "firmware_symbol expected CONFIG_POWERFINGER_DOME_PIN",
-        lambda do |root|
-          path = File.join(root, ContractCheck::BOARD_REL)
-          data = YAML.load_file(path)
-          data["interfaces"]["click"]["primary_snap_dome"]["firmware_symbol"] = "CONFIG_POWERFINGER_ALT_DOME_PIN"
-          File.write(path, data.to_yaml)
-        end,
-      ],
-      [
-        "contract identity drift",
-        "board id/path mismatch",
-        lambda do |root|
-          path = File.join(root, ContractCheck::BOARD_REL)
-          data = YAML.load_file(path)
-          data["id"] = "board.r30-rigid-p1"
-          File.write(path, data.to_yaml)
-        end,
-      ],
-      [
-        "BOM target drift",
-        "BOM target row must include ~$9",
-        lambda do |root|
-          path = File.join(root, "hardware/bom/R30-OLED-NONE-NONE.csv")
-          text = File.read(path).sub("~$9\",", "~$10\",")
-          File.write(path, text)
-        end,
-      ],
-      [
-        "BOM anchor drift",
-        "BOM U2 field Value expected PAW3204DB-TJ3L",
-        lambda do |root|
-          path = File.join(root, "hardware/bom/R30-OLED-NONE-NONE.csv")
-          text = File.read(path).sub("PAW3204DB-TJ3L,8-pin optical", "PAW3204DB-ALT,8-pin optical")
-          File.write(path, text)
-        end,
-      ],
-      [
-        "inline BOM anchor drift",
-        "variant BOM anchors must live in component_contract, not inline",
-        lambda do |root|
-          path = File.join(root, ContractCheck::VARIANT_REL)
-          data = YAML.load_file(path)
-          data["bom"]["active_component_anchors"] = {
-            "U2" => { "function" => "motion_sensor" },
-          }
-          File.write(path, data.to_yaml)
-        end,
-      ],
-      [
-        "substitution viability drift",
-        "BOM U2 notes expected rejected substitute YS8205",
-        lambda do |root|
-          path = File.join(root, "hardware/bom/R30-OLED-NONE-NONE.csv")
-          text = File.read(path).sub("YS8205 is NOT a standalone sensor", "YS8205 maybe usable")
-          File.write(path, text)
-        end,
-      ],
-      [
-        "charge substitution drift",
-        "BOM U3 notes expected rejected substitute TP4056",
-        lambda do |root|
-          path = File.join(root, "hardware/bom/R30-OLED-NONE-NONE.csv")
-          text = File.read(path).sub("TP4056 requires SOP-8 footprint (NOT drop-in)", "TP4056 is a production alternate")
-          File.write(path, text)
-        end,
-      ],
-      [
-        "false firmware behavior claim",
-        "paw3204_reset_firmware_consumer non-claim must be false",
-        lambda do |root|
-          path = File.join(root, ContractCheck::BOARD_REL)
-          data = YAML.load_file(path)
-          data["non_claims"]["paw3204_reset_firmware_consumer"] = true
-          File.write(path, data.to_yaml)
-        end,
-      ],
-      [
-        "envelope mismatch",
-        "variant max height must match enclosure acceptance",
-        lambda do |root|
-          path = File.join(root, ContractCheck::VARIANT_REL)
-          data = YAML.load_file(path)
-          data["physical"]["finger_to_surface_height_mm_target_max"] = 11
-          File.write(path, data.to_yaml)
-        end,
-      ],
-      [
-        "generated sdkconfig drift",
-        "generated sdkconfig profile drift",
-        lambda do |root|
-          path = File.join(root, ContractCheck::SDKCONFIG_REL)
-          text = File.read(path).sub("CONFIG_POWERFINGER_DOME_PIN=8", "CONFIG_POWERFINGER_DOME_PIN=9")
-          File.write(path, text)
-        end,
-      ],
-    ]
-  end
-
-  def copy_fixture_tree(tmp)
-    paths = [
+  class FixtureTree
+    PATHS = [
       "variants",
       "hardware/contracts",
       "hardware/bom",
@@ -191,13 +21,204 @@ class SelfTestFixtures
       "firmware/ring/components/sensors/paw3204.c",
       "firmware/ring/components/sensors/include/sensor_interface.h",
       "firmware/ring/components/click/include/click_interface.h",
-    ]
+    ].freeze
 
-    paths.each do |rel|
-      src = File.join(@repo_root, rel)
-      dst = File.join(tmp, rel)
-      FileUtils.mkdir_p(File.dirname(dst))
-      FileUtils.cp_r(src, dst)
+    def initialize(repo_root, paths: PATHS)
+      @repo_root = repo_root
+      @paths = paths
     end
+
+    def copy_to(tmp)
+      @paths.each do |rel|
+        src = File.join(@repo_root, rel)
+        dst = File.join(tmp, rel)
+        FileUtils.mkdir_p(File.dirname(dst))
+        FileUtils.cp_r(src, dst)
+      end
+    end
+  end
+
+  Fixture = Struct.new(:name, :expected_error, :mutation, keyword_init: true) do
+    def mutate(root)
+      mutation.call(root)
+    end
+  end
+
+  def self.run(repo_root)
+    new(repo_root).run
+  end
+
+  def initialize(repo_root)
+    @fixture_tree = FixtureTree.new(repo_root)
+  end
+
+  def run
+    Dir.mktmpdir("powerfinger-contract-check-") do |tmp|
+      @fixture_tree.copy_to(tmp)
+      ContractCheck.new(tmp).run
+    end
+
+    fixtures.each do |fixture|
+      Dir.mktmpdir("powerfinger-contract-check-") do |tmp|
+        @fixture_tree.copy_to(tmp)
+        fixture.mutate(tmp)
+        begin
+          ContractCheck.new(tmp).run
+        rescue SystemExit => e
+          raise "#{fixture.name}: expected failure, got exit 0" if e.status == 0
+        rescue ContractError => e
+          unless e.message.include?(fixture.expected_error)
+            raise "#{fixture.name}: expected #{fixture.expected_error.inspect}, got #{e.message.inspect}"
+          end
+          puts "ok: self-test rejected #{fixture.name}"
+          next
+        end
+        raise "#{fixture.name}: expected failure, checker passed"
+      end
+    end
+
+    puts "ok: contract checker self-test fixtures passed"
+  end
+
+  private
+
+  def fixtures
+    [
+      fixture(
+        "missing contract reference",
+        "variant contracts.sensor points at missing file",
+        lambda do |root|
+          mutate_yaml(root, ContractCheck::VARIANT_REL) do |data|
+            data["contracts"]["sensor"] = "hardware/contracts/missing-sensor.yaml"
+          end
+        end,
+      ),
+      fixture(
+        "pin drift",
+        "generated sdkconfig profile drift",
+        lambda do |root|
+          mutate_yaml(root, ContractCheck::BOARD_REL) do |data|
+            data["interfaces"]["optical_sensor_shared_path"]["pins"]["sclk"]["mcu_resource"] = "GPIO14"
+          end
+        end,
+      ),
+      fixture(
+        "ADC channel drift",
+        "generated sdkconfig profile drift",
+        lambda do |root|
+          mutate_yaml(root, ContractCheck::BOARD_REL) do |data|
+            data["interfaces"]["battery_and_charge_safety"]["vbat_sense"]["mcu_resource"] = "ADC1_CH2/GPIO0"
+          end
+        end,
+      ),
+      fixture(
+        "firmware symbol drift",
+        "firmware_symbol expected CONFIG_POWERFINGER_DOME_PIN",
+        lambda do |root|
+          mutate_yaml(root, ContractCheck::BOARD_REL) do |data|
+            data["interfaces"]["click"]["primary_snap_dome"]["firmware_symbol"] = "CONFIG_POWERFINGER_ALT_DOME_PIN"
+          end
+        end,
+      ),
+      fixture(
+        "contract identity drift",
+        "board id/path mismatch",
+        lambda do |root|
+          mutate_yaml(root, ContractCheck::BOARD_REL) do |data|
+            data["id"] = "board.r30-rigid-p1"
+          end
+        end,
+      ),
+      fixture(
+        "BOM target drift",
+        "BOM target row must include ~$9",
+        lambda do |root|
+          mutate_text(root, "hardware/bom/R30-OLED-NONE-NONE.csv") do |text|
+            text.sub("~$9\",", "~$10\",")
+          end
+        end,
+      ),
+      fixture(
+        "BOM anchor drift",
+        "BOM U2 field Value expected PAW3204DB-TJ3L",
+        lambda do |root|
+          mutate_text(root, "hardware/bom/R30-OLED-NONE-NONE.csv") do |text|
+            text.sub("PAW3204DB-TJ3L,8-pin optical", "PAW3204DB-ALT,8-pin optical")
+          end
+        end,
+      ),
+      fixture(
+        "inline BOM anchor drift",
+        "variant BOM anchors must live in component_contract, not inline",
+        lambda do |root|
+          mutate_yaml(root, ContractCheck::VARIANT_REL) do |data|
+            data["bom"]["active_component_anchors"] = {
+              "U2" => { "function" => "motion_sensor" },
+            }
+          end
+        end,
+      ),
+      fixture(
+        "substitution viability drift",
+        "BOM U2 notes expected rejected substitute YS8205",
+        lambda do |root|
+          mutate_text(root, "hardware/bom/R30-OLED-NONE-NONE.csv") do |text|
+            text.sub("YS8205 is NOT a standalone sensor", "YS8205 maybe usable")
+          end
+        end,
+      ),
+      fixture(
+        "charge substitution drift",
+        "BOM U3 notes expected rejected substitute TP4056",
+        lambda do |root|
+          mutate_text(root, "hardware/bom/R30-OLED-NONE-NONE.csv") do |text|
+            text.sub("TP4056 requires SOP-8 footprint (NOT drop-in)", "TP4056 is a production alternate")
+          end
+        end,
+      ),
+      fixture(
+        "false firmware behavior claim",
+        "paw3204_reset_firmware_consumer non-claim must be false",
+        lambda do |root|
+          mutate_yaml(root, ContractCheck::BOARD_REL) do |data|
+            data["non_claims"]["paw3204_reset_firmware_consumer"] = true
+          end
+        end,
+      ),
+      fixture(
+        "envelope mismatch",
+        "variant max height must match enclosure acceptance",
+        lambda do |root|
+          mutate_yaml(root, ContractCheck::VARIANT_REL) do |data|
+            data["physical"]["finger_to_surface_height_mm_target_max"] = 11
+          end
+        end,
+      ),
+      fixture(
+        "generated sdkconfig drift",
+        "generated sdkconfig profile drift",
+        lambda do |root|
+          mutate_text(root, ContractCheck::SDKCONFIG_REL) do |text|
+            text.sub("CONFIG_POWERFINGER_DOME_PIN=8", "CONFIG_POWERFINGER_DOME_PIN=9")
+          end
+        end,
+      ),
+    ]
+  end
+
+  def fixture(name, expected_error, mutation)
+    Fixture.new(name: name, expected_error: expected_error, mutation: mutation)
+  end
+
+  def mutate_yaml(root, rel, &block)
+    path = File.join(root, rel)
+    data = YAML.load_file(path)
+    block.call(data)
+    File.write(path, data.to_yaml)
+  end
+
+  def mutate_text(root, rel, &block)
+    path = File.join(root, rel)
+    File.write(path, block.call(File.read(path)))
   end
 end

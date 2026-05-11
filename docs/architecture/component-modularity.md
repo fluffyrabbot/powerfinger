@@ -97,18 +97,20 @@ validation, packet-text validation, generated sdkconfig validation, and
 component/BOM validation, plus a shared validator base for common checker
 delegation, a schema/identity validator for variant and contract shape, a
 board-interface validator for hard pin/interface expectations, a dedicated
-self-test fixture runner, and a focused sdkconfig profile generator. The
-generator owns sdkconfig value derivation for selected firmware symbols, GPIO
-pin values, ADC channel values, wake masks, and the disabled Hall rail. The
-board-interface validator owns the active R30 pin expectation table and
-non-production behavior claims, so `scripts/contract_check.rb` stays a CLI
-wrapper and shared contract helper instead of owning board-profile semantics.
+self-test fixture runner with named fixture objects, shared mutation helpers,
+and a named fixture tree object for copied active-lane proof paths, plus a
+focused sdkconfig profile generator. The generator owns sdkconfig value
+derivation for selected firmware symbols, GPIO pin values, ADC channel values,
+wake masks, and the disabled Hall rail. The board-interface validator owns the
+active R30 pin expectation table and non-production behavior claims, so
+`scripts/contract_check.rb` stays a CLI wrapper and shared contract helper
+instead of owning board-profile semantics.
 
-The next narrow implementation step is to make the fixture self-test harness
-less repetitive by moving fixture mutation/copy helpers behind named fixture
-objects. Keep `--print-sdkconfig-profile` byte-for-byte stable, preserve
-hard-drift failure semantics, and leave KiCad geometry parsing out of scope.
-Keep fixture coverage around:
+The next narrow implementation step is to move the self-test fixture catalog
+behind a named fixture suite object so expected errors and mutations can be
+extended without touching runner control flow. Keep `--print-sdkconfig-profile`
+byte-for-byte stable, preserve hard-drift failure semantics, and leave KiCad
+geometry parsing out of scope. Keep fixture coverage around:
 
 - `variants/r30-oled-none-none.yaml`
 - `hardware/contracts/board.r30-rigid-p0.yaml`
