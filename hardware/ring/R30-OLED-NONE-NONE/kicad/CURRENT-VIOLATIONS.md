@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.2` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 86 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 83 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 9 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -321,7 +321,14 @@ copper because scratch `CHARGE_EN` route variants and `R6` placement/orientation
 variants all reintroduced shorting or unconnected debt. It instead moves the
 source-only `Q2`, `U4`, and `R6` reference fields to `F.Fab`, clearing local
 silkscreen DRC rows without changing electrical geometry. KiCad CLI `10.0.2`
-now reports R30 `DRC=86`, `unconnected=9`,
+reported R30 `DRC=86`, `unconnected=9`,
+and schematic-parity `0`.
+This pass keeps the accepted `USB_CC1_RD`, `VBUS_5V`, and `CHARGE_GATE` copper
+because scratch CC1 and gate route variants reintroduced shorting or
+unconnected drift. It instead moves the source-only `R4` and `R1` reference
+fields to `F.Fab`, clearing local silkscreen DRC rows without changing
+electrical geometry. KiCad CLI `10.0.2` now reports R30 `DRC=83`,
+`unconnected=9`,
 and schematic-parity `0`.
 
 ## ERC top categories
@@ -336,10 +343,10 @@ and sheet-interface cleanup in this snapshot.
 |------|-------|----------------------|
 | `tracks_crossing` | 20 | Tracks of different nets physically crossing on the same layer |
 | `solder_mask_bridge` | 20 | Adjacent pads of different nets share an unbroken mask aperture |
-| `text_height` | 18 | Silkscreen text below the rule minimum |
+| `text_height` | 16 | Silkscreen text below the rule minimum |
 | `clearance` | 17 | Copper-to-copper or pad-to-track clearance failures |
 | `unconnected_items` | 9 | Routed pads with no track or via reaching them |
-| `silk_over_copper` | 7 | Silkscreen text crossing exposed copper |
+| `silk_over_copper` | 6 | Silkscreen text crossing exposed copper |
 | `courtyards_overlap` | 3 | Footprint courtyard overlaps in the dense service/MCU pockets |
 | `silk_overlap` | 1 | Silkscreen items overlap each other |
 
@@ -389,7 +396,10 @@ routed internal cutout. The `R2A` placement cleanup removes the `USB_CC1_RD` /
 removes the `SW1` upper-ring short without moving the shell-bound click
 footprint. The latest top-edge `VBUS_5V` retarget removes the remaining
 `J_BAT` `MP1` short; the current report has no `shorting_items` rows, though
-the board still has DRC debt and remains not fab-clean.
+the board still has DRC debt and remains not fab-clean. The latest left-service
+source-label cleanup is retained because it removes `R4` and `R1` printed-label
+rows after CC1 and gate copper variants reintroduced shorting or unconnected
+drift.
 
 ## What this means for downstream packets
 
