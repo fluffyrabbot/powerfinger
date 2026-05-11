@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.2` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 48 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 45 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 9 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -392,6 +392,14 @@ to `(113.000, 92.100)`, moves the serviceable `SW1` dome from
 `(114.200, 95.000)` to `(114.200, 95.300)`, and moves the shell dome pocket with
 it. KiCad CLI `10.0.2` now reports R30 `DRC=46`, `unconnected=9`, and
 schematic-parity `0`.
+This follow-on rejects USB data-pair doglegs, D+ branch-via moves, D+ rail
+reroutes, and broad `NTC_SENSE` layer-hop/width/dogleg variants because they
+held total DRC or traded the target row for shorts, clearance, mask, or
+track-width debt. It instead moves only the local `NTC_SENSE` junction from
+`(110.420, 106.700)` to `(109.900, 106.700)`, clearing one front solder-mask
+bridge while preserving the existing NTC divider endpoints and MCU route. KiCad
+CLI `10.0.2` now reports R30 `DRC=45`, `unconnected=9`, and schematic-parity
+`0`.
 
 ## ERC top categories
 
@@ -404,7 +412,7 @@ and sheet-interface cleanup in this snapshot.
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
 | `tracks_crossing` | 18 | Tracks of different nets physically crossing on the same layer |
-| `solder_mask_bridge` | 13 | Adjacent pads of different nets share an unbroken mask aperture |
+| `solder_mask_bridge` | 12 | Adjacent pads of different nets share an unbroken mask aperture |
 | `clearance` | 12 | Copper-to-copper or pad-to-track clearance failures |
 | `unconnected_items` | 9 | Routed pads with no track or via reaching them |
 | `courtyards_overlap` | 3 | Footprint courtyard overlaps in the dense service/MCU pockets |

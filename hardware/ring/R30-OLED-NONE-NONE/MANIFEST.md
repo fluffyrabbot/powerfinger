@@ -299,7 +299,12 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   instead lowers the `VBAT_SENSE` divider junction to `(113.000, 92.100)` while
   moving `SW1` and the CAD dome pocket from `(114.200, 95.000)` to
   `(114.200, 95.300)`. KiCad CLI `10.0.2` now reports DRC=46 and unconnected=9,
-  with schematic-parity=0, because the board is still hand-routed
+  with schematic-parity=0. This follow-on rejects USB data-pair and broad
+  `NTC_SENSE` trunk/layer-hop variants that held total DRC or added shorts,
+  clearance, mask, or track-width debt, and instead moves only the local
+  `NTC_SENSE` junction from `(110.420, 106.700)` to `(109.900, 106.700)`. KiCad
+  CLI `10.0.2` now reports DRC=45 and unconnected=9, with schematic-parity=0,
+  because the board is still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
 - Later-board allocation decision for PAW3204 `SENSOR_NRESET` or

@@ -192,6 +192,10 @@ release.
   motion-hop, and right-of-VBUS `TP_MOT` variants with dangling vias, shorts,
   mask, or clearance debt, then moves `TP_MOT` to `(121.250, 99.500)` and
   retargets its local `SENSOR_MOTION_N` endpoint
+- NTC sense-spine cleanup that rejects USB data-pair and broad `NTC_SENSE`
+  trunk/layer-hop variants with shorts, clearance, mask, or track-width debt,
+  then moves only the local `NTC_SENSE` junction from `(110.420, 106.700)` to
+  `(109.900, 106.700)`
 
 This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
 charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
@@ -232,7 +236,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.2` snapshot is
-  ERC=0, DRC=46, unconnected=9, and schematic-parity=0; the remaining board
+  ERC=0, DRC=45, unconnected=9, and schematic-parity=0; the remaining board
   story is dominated by unconnected items plus hand-routed crossing, clearance,
   mask-bridge, and courtyard failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.
