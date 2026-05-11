@@ -174,6 +174,9 @@ release.
 - regulator/C2 spoke-width cleanup that keeps U4 and C2 placement fixed after
   scratch placement variants reintroduced shorts or held total DRC, and narrows
   the two `VBAT_PROTECTED` spokes from `0.32` to `0.24`
+- Q1 left-service clearance cleanup that rejects R4 orientation and CC1 dogleg
+  variants with unconnected or shorting debt, then nudges Q1 upward by
+  `0.20` mm and retargets its three local service endpoints
 
 This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
 charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
@@ -214,7 +217,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.2` snapshot is
-  ERC=0, DRC=56, unconnected=9, and schematic-parity=0; the remaining board
+  ERC=0, DRC=55, unconnected=9, and schematic-parity=0; the remaining board
   story is dominated by unconnected items plus hand-routed crossing, clearance,
   mask-bridge, and courtyard failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.

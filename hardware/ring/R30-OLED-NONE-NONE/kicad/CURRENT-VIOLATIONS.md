@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.2` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` violations | 0 | Project-local symbols/footprints and sheet-interface labels are now ERC-clean |
-| `pcb drc` violations | 56 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 55 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 9 | Net endpoints with no track to them |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -349,8 +349,13 @@ This pass keeps U4 and C2 placement fixed after scratch placement variants
 either held total DRC or reintroduced shorts. It instead narrows the two
 `VBAT_PROTECTED` regulator/C2 spokes from `0.32` to `0.24`, reducing local
 mask/clearance pressure while keeping the route above the first-board minimum
-trace width. KiCad CLI `10.0.2` now reports R30 `DRC=56`, `unconnected=9`, and
+trace width. KiCad CLI `10.0.2` reported R30 `DRC=56`, `unconnected=9`, and
 schematic-parity `0`.
+This pass keeps the rejected R4 orientation and CC1 dogleg variants out because
+they added unconnected drift or shorting risk. It instead nudges non-shell-bound
+Q1 upward by `0.20` mm and retargets its three local service endpoints, reducing
+left-service clearance debt without moving J1, R4, or R2A. KiCad CLI `10.0.2`
+now reports R30 `DRC=55`, `unconnected=9`, and schematic-parity `0`.
 
 ## ERC top categories
 
@@ -364,7 +369,7 @@ and sheet-interface cleanup in this snapshot.
 |------|-------|----------------------|
 | `tracks_crossing` | 21 | Tracks of different nets physically crossing on the same layer |
 | `solder_mask_bridge` | 16 | Adjacent pads of different nets share an unbroken mask aperture |
-| `clearance` | 16 | Copper-to-copper or pad-to-track clearance failures |
+| `clearance` | 15 | Copper-to-copper or pad-to-track clearance failures |
 | `unconnected_items` | 9 | Routed pads with no track or via reaching them |
 | `courtyards_overlap` | 3 | Footprint courtyard overlaps in the dense service/MCU pockets |
 
@@ -426,7 +431,9 @@ web rule and avoiding new shorts, unconnected rows, or parity drift. The latest
 `VBAT_PROTECTED` spoke-width cleanup is retained because it lowers total DRC
 without moving U4/C2 or disturbing ERC, unconnected count, or schematic parity,
 even though one crossing-class row remains newly visible in the current bucket
-mix.
+mix. The latest Q1 nudge is retained because it lowers left-service clearance
+debt without accepting the R4 orientation or CC1 dogleg variants that added
+unconnected drift or shorting risk.
 
 ## What this means for downstream packets
 
