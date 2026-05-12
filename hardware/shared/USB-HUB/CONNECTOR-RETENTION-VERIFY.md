@@ -19,22 +19,34 @@ Fill this document with first-board mechanical evidence for the direct-plug hub.
 | Boot/reset access remains usable after enclosure install | Required | Service gauge STL generated, not physically measured | `TP6` / `TP7` expose `EN` and `BOOT_N`; `SW1` is pad-actuated for `BOOT_N`. The `service_hatch_reach_gauge` export gives a cheap print for checking probe and spudger reach before committing to a full enclosure print. |
 | Connector style leaves enough clearance for adjacent ports | Required | Host-fit coupon STL generated, not physically measured | The direct-plug assumption forced a stepped `54 x 26 mm` board with a shell-tab-bearing nose. Use the `host_fit_coupon` or `validation_set` export to check the wider-body envelope against real adjacent USB-A ports; do not infer clearance from schematic or CAD alone. |
 
-## Local Coupon Generation
+## Local Print / Preview Bundle
 
-Generated on 2026-05-10 with `OpenSCAD version 2026.04.26` from
-`hardware/shared/USB-HUB/cad/usb_hub_enclosure_blank.scad`.
+Regenerate the local coupon artifacts from the repository root:
 
-| Export mode | Local output | OpenSCAD result | SHA-256 |
-|-------------|--------------|-----------------|---------|
-| `host_fit_coupon` | `build/usb-hub-mechanical/usb-hub-host-fit-coupon.stl` | Manifold, NoError | `3f64d99f272ea87bee48ee61758ad1bfd29d1b0880c565aee77308c62897d8ec` |
-| `clamp_alignment_gauge` | `build/usb-hub-mechanical/usb-hub-clamp-alignment-gauge.stl` | Manifold, NoError | `8dedb2c4e14fe477d5ef121a8eef6370acf168cf1ac567192be8eb9a2721901e` |
-| `service_hatch_reach_gauge` | `build/usb-hub-mechanical/usb-hub-service-hatch-reach-gauge.stl` | Manifold, NoError | `6857b8a51234b8e5214fdf08e3eeb268f03fe88de46752e62e8f7f3095d9e61e` |
-| `validation_set` | `build/usb-hub-mechanical/usb-hub-validation-set.stl` | Manifold, NoError | `41d0460b5cc6be31486766279c4c0e7017a8890791d59325c086263c5f49ddc3` |
+```sh
+scripts/generate-usb-hub-validation-coupons.sh
+```
 
-These are printable-artifact checks only. They do not prove USB-A host seating,
+Default output: `build/usb-hub-mechanical/`.
+
+The command renders printable STLs:
+
+- `usb-hub-host-fit-coupon.stl`
+- `usb-hub-clamp-alignment-gauge.stl`
+- `usb-hub-service-hatch-reach-gauge.stl`
+- `usb-hub-validation-set.stl`
+
+It also writes matching `previews/*.png` files for visual review before
+printing, `README.md` for the bundle handoff, `COUPON-MANIFEST.md` with
+OpenSCAD version, file sizes, SHA-256 hashes, and render results, plus
+`PHYSICAL-CHECK-WORKSHEET.md` as the blank capture sheet for host-fit,
+clamp-alignment, service-hatch reach, adjacent-port clearance, and
+connector-retention checks.
+
+These are print/preview artifacts only. They do not prove USB-A host seating,
 adjacent-port clearance, clamp load sharing, hatch reach, or connector strain.
 Those rows must stay non-green until physical coupon prints are checked against
-real hosts and a board or board blank.
+real hosts, a board or board blank, and the intended service tools.
 
 ## Sign-Off
 

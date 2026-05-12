@@ -57,5 +57,6 @@ This checklist is the execution contract for the active hub hardware lane.
 - [ ] Link assembled board / enclosure observations from `MANIFEST.md`
 - [x] Keep the packet honest that this is a board-source pass, not measured
   mechanical evidence
-- [x] Run local OpenSCAD sanity renders for the enclosure source and
-  quick-print validation modes
+- [x] Add a durable local command for OpenSCAD quick-print validation coupon
+  and preview-bundle regeneration:
+  `scripts/generate-usb-hub-validation-coupons.sh`

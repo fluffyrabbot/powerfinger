@@ -60,14 +60,17 @@ measured.
 
 ## Local Sanity Check
 
-Render syntax/manifold checks from `hardware/shared/USB-HUB`:
+Render the full enclosure syntax/manifold check from the repository root:
 
 ```sh
-openscad -o /tmp/powerfinger-usb-hub-enclosure.stl cad/usb_hub_enclosure_blank.scad
-openscad -D 'export_mode="validation_set"' -o /tmp/powerfinger-usb-hub-validation-set.stl cad/usb_hub_enclosure_blank.scad
-openscad -D 'export_mode="host_fit_coupon"' -o /tmp/powerfinger-usb-hub-host-fit-coupon.stl cad/usb_hub_enclosure_blank.scad
-openscad -D 'export_mode="clamp_alignment_gauge"' -o /tmp/powerfinger-usb-hub-clamp-gauge.stl cad/usb_hub_enclosure_blank.scad
-openscad -D 'export_mode="service_hatch_reach_gauge"' -o /tmp/powerfinger-usb-hub-service-gauge.stl cad/usb_hub_enclosure_blank.scad
+openscad -o /tmp/powerfinger-usb-hub-enclosure.stl hardware/shared/USB-HUB/cad/usb_hub_enclosure_blank.scad
+```
+
+Regenerate the quick-print validation coupon set, preview PNGs, hash manifest,
+OpenSCAD logs, bundle README, and blank physical-check worksheet with:
+
+```sh
+scripts/generate-usb-hub-validation-coupons.sh
 ```
 
 Use [../FIRST-BOARD-CHECKLIST.md](../FIRST-BOARD-CHECKLIST.md) and
