@@ -44,16 +44,17 @@ alternatives are actually viable, and flags single-source risks.
 ### Factory Quote Readiness
 
 The component sourcing data above is not a manufacturer quote and does not
-prove build readiness. The current Shenzhen / Seeed starter packet is
+prove build readiness. The current Shenzhen / Seeed packet is
 [`docs/sensors-converge-2026/SHENZHEN-SEEED-QUOTE-PACKET.md`](sensors-converge-2026/SHENZHEN-SEEED-QUOTE-PACKET.md).
 
 Use that packet with these constraints:
 
-- `USB-HUB` is the cleaner first quote candidate: the packet records
+- `USB-HUB` is the send-now quote path: the packet records
   all-severity ERC=0, PCB DRC=0, unconnected=0, and schematic parity=0.
-- `R30-OLED-NONE-NONE` is not fabrication-release: the packet records ERC=0,
-  PCB DRC=44, unconnected=9, schematic parity=0. Ask for DFM/pre-fab review
-  and costability feedback until that blocker is cleared.
+- `R30-OLED-NONE-NONE` is an explicit DFM/pre-fab review annex, not a
+  fabrication or assembly quote request: the packet records ERC=0, PCB DRC=44,
+  unconnected=9, schematic parity=0. Ask for DFM/pre-fab review and costability
+  feedback until that blocker is cleared.
 - Do not turn distributor availability into vendor commitments. MOQ, lead time,
   yield, defects, realized COGS, payment terms, and license/source-return
   behavior belong in [`docs/REFERENCE-MANUFACTURERS.md`](REFERENCE-MANUFACTURERS.md)

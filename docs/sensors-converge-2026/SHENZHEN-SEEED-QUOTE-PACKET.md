@@ -1,19 +1,27 @@
 <!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
 # Shenzhen / Seeed Quote Packet
 
-This is the smallest current packet to hand to a Shenzhen prototype house or
-Seeed Fusion / Propagate contact for first conversation and DFM scoping. It is
-not a purchase order, not a vendor endorsement, and not a claim that the ring is
-fabrication-ready.
+This is the smallest current offline packet to hand to a Shenzhen prototype
+house or Seeed Fusion / Propagate contact for first conversation and DFM
+scoping. It is not a purchase order, not a vendor endorsement, and not a claim
+that every attached design is fabrication-ready.
+
+The packet is intentionally split into two paths:
+
+- Send-now quote path: `USB-HUB` PCB fab/assembly quote plus
+  connector/enclosure DFM review.
+- Optional annex: `R30-OLED-NONE-NONE` DFM/pre-fab review only. Do not quote
+  ring PCB fabrication or assembly from the annex until its PCB DRC is closed.
 
 ## Scope To Quote
 
-Quote the active validation-lane pair:
+Quote only the send-now hub path unless the factory explicitly accepts the ring
+annex as a DFM/pre-fab review input.
 
 | Item | Packet | Request | Current status |
 |---|---|---|---|
-| Optical ring | `hardware/ring/R30-OLED-NONE-NONE/` | DFM/pre-fab review, BOM costability review, assembly/serviceability feedback, and quote once PCB DRC is closed | BOM-backed packet and first routed rigid P0 source exist; KiCad snapshot is still red: ERC=0, PCB DRC=44, unconnected=9, parity=0 |
 | USB hub dongle | `hardware/shared/USB-HUB/` | PCB fab/assembly quote, enclosure/connector-retention DFM review, and serviceability feedback | BOM-backed packet and routed first-board source exist; schematic ERC=0, PCB DRC=0, unconnected=0, parity=0 |
+| Optical ring annex | `hardware/ring/R30-OLED-NONE-NONE/` | DFM/pre-fab review, BOM costability review, and assembly/serviceability feedback only | BOM-backed packet and first routed rigid P0 source exist; KiCad snapshot is still red: ERC=0, PCB DRC=44, unconnected=9, parity=0 |
 
 Do not quote secondary ring, wand, puck, OCR, cloud, or companion-app product
 features as part of this starter packet.
@@ -33,41 +41,6 @@ features as part of this starter packet.
 - No invented measurements: printed fit, focal-distance, RF, click ergonomics,
   connector strain, adjacent-port clearance, yield, lead time, and realized COGS
   are not measured yet unless a packet evidence file says otherwise.
-
-## Active Ring Snapshot
-
-Packet: `hardware/ring/R30-OLED-NONE-NONE/`
-
-- Variant: `R30-OLED-NONE-NONE`, optical ring, `30 deg` sensor posture.
-- Use case: one of two identical rings in the default cursor + scroll pair.
-- Surface claim today: opaque rigid surfaces only; not glass.
-- PCB: rigid P0, `43 x 18 mm`, split into power/service, sensor/click, and
-  MCU/radio zones.
-- MCU/radio: `ESP32-C3-MINI-1-N4` module, with antenna keep-out preserved.
-- Sensor: `PAW3204DB-TJ3L` optical sensor plus matched lens/emitter kit;
-  `LED1` is dropped from the first capture unless bare-sensor sourcing forces
-  it back in. `ADNS-2080` is the evaluated fallback class for a future board
-  profile, not a drop-in substitution for this packet; `YS8205`-style
-  integrated USB mouse controllers are not acceptable replacements.
-- Battery: protected `80-100 mAh` LiPo pack, harness-terminated to a JST-SH
-  2-pin 1.0 mm plug; direct cell-tab soldering is rejected.
-- Battery connector: JST-SH right-angle 2-pin 1.0 mm class on `J_BAT`.
-- Service connector: USB-C 2.0 16-pin receptacle class with through-hole shell
-  stakes; SMD-only and power-only USB-C are rejected for P0.
-- Power path: TP4054 charger, `20 kohm` charge resistor, RT9080-33GJ5 LDO, NTC
-  divider, SI2301-class high-side `Q1`, and 2N7002 `Q2` logic-safe charge-gate
-  driver with `R6 = 100k`.
-- Sense/status support: `R7`/`R8 = 100k`/`100k` for `VBAT_SENSE`,
-  `R9`/`R10 = 220k`/`100k` for `VBUS_DETECT`, and `R11 = 100k` for local
-  `CHRG_STAT`. `CHRG_STAT` is not claimed as a firmware-consumed GPIO yet.
-- USB ESD: TPD2E2U06DCK-class rail-less dual data-line shunt in SC-70/SOT-323.
-- Mechanical packet: OpenSCAD lower shell and service lid with raised rim,
-  glide-pad pockets, board rails/stops, lid compression pads, USB-C opening,
-  dome pocket, battery lead channel, service-loop relief, and quick-print fit
-  coupon modes.
-- Open blockers: board is not fabrication-release; printed/measured fit,
-  stackup, focal-distance, RF, click force, battery service, and fastener choice
-  remain evidence items.
 
 ## Active USB Hub Snapshot
 
@@ -101,36 +74,77 @@ Packet: `hardware/shared/USB-HUB/`
   adjacent-port clearance, and connector-retention evidence are not measured
   yet.
 
+## R30 DFM / Pre-Fab Review Annex
+
+Packet: `hardware/ring/R30-OLED-NONE-NONE/`
+
+Use this annex only when the factory is willing to give early manufacturability,
+assembly, serviceability, sourcing, and costability feedback before a fab-clean
+ring PCB exists. The annex is not a ring PCB fab/assembly quote request and is
+not a release-to-build package.
+
+- Variant: `R30-OLED-NONE-NONE`, optical ring, `30 deg` sensor posture.
+- Use case: one of two identical rings in the default cursor + scroll pair.
+- Surface claim today: opaque rigid surfaces only; not glass.
+- PCB: rigid P0, `43 x 18 mm`, split into power/service, sensor/click, and
+  MCU/radio zones.
+- KiCad status: ERC=0, PCB DRC=44, unconnected=9, schematic parity=0; the board
+  is still red and must not be treated as fabrication-release.
+- MCU/radio: `ESP32-C3-MINI-1-N4` module, with antenna keep-out preserved.
+- Sensor: `PAW3204DB-TJ3L` optical sensor plus matched lens/emitter kit;
+  `LED1` is dropped from the first capture unless bare-sensor sourcing forces
+  it back in. `ADNS-2080` is the evaluated fallback class for a future board
+  profile, not a drop-in substitution for this packet; `YS8205`-style
+  integrated USB mouse controllers are not acceptable replacements.
+- Battery: protected `80-100 mAh` LiPo pack, harness-terminated to a JST-SH
+  2-pin 1.0 mm plug; direct cell-tab soldering is rejected.
+- Battery connector: JST-SH right-angle 2-pin 1.0 mm class on `J_BAT`.
+- Service connector: USB-C 2.0 16-pin receptacle class with through-hole shell
+  stakes; SMD-only and power-only USB-C are rejected for P0.
+- Power path: TP4054 charger, `20 kohm` charge resistor, RT9080-33GJ5 LDO, NTC
+  divider, SI2301-class high-side `Q1`, and 2N7002 `Q2` logic-safe charge-gate
+  driver with `R6 = 100k`.
+- Sense/status support: `R7`/`R8 = 100k`/`100k` for `VBAT_SENSE`,
+  `R9`/`R10 = 220k`/`100k` for `VBUS_DETECT`, and `R11 = 100k` for local
+  `CHRG_STAT`. `CHRG_STAT` is not claimed as a firmware-consumed GPIO yet.
+- USB ESD: TPD2E2U06DCK-class rail-less dual data-line shunt in SC-70/SOT-323.
+- Mechanical packet: OpenSCAD lower shell and service lid with raised rim,
+  glide-pad pockets, board rails/stops, lid compression pads, USB-C opening,
+  dome pocket, battery lead channel, service-loop relief, and quick-print fit
+  coupon modes.
+- Open blockers: PCB DRC, printed/measured fit, stackup, focal-distance, RF,
+  click force, battery service, and fastener choice remain evidence items.
+
 ## Quote Questions
 
-Ask the factory to respond with:
+Ask the factory to respond to the `USB-HUB` send-now path with:
 
-1. Whether they can review the active ring while its PCB is still DRC-red, and
-   whether they prefer a DFM-only quote before release-to-build.
-2. Hub PCB fab/assembly quote using the current `USB-HUB` packet and BOM target
+1. Hub PCB fab/assembly quote using the current `USB-HUB` packet and BOM target
    as a starting point.
+2. Connector/enclosure DFM notes for the SOFNG USB-05 direct-plug topology,
+   including whether they see manufacturability risk before physical
+   connector-retention evidence exists.
 3. Any part substitutions they propose, with exact MPN, footprint impact,
    source, MOQ, and whether the substitution preserves serviceability and
    offline operation.
-4. Whether they can source or assemble the PAW3204 sensor/lens/emitter path, or
-   whether they require the ADNS-2080 alternate path to be evaluated first.
-5. Whether the ring USB-C through-hole-stake class and hub SOFNG USB-05 direct
-   plug are manufacturable at the intended prototype scale.
-6. What editable source they would return for any DFM modifications so the
+4. What editable source they would return for any DFM modifications so the
    CERN-OHL-S hardware disclosure remains complete.
 
-## Source Files To Send Or Link
+If the factory accepts the `R30-OLED-NONE-NONE` annex as DFM/pre-fab review
+input, ask separately:
 
-- `hardware/bom/R30-OLED-NONE-NONE.csv`
+1. Whether they can review the active ring while its PCB is still DRC-red, and
+   what feedback they can give before release-to-build.
+2. Whether they can source or assemble the PAW3204 sensor/lens/emitter path, or
+   whether they require the ADNS-2080 alternate path to be evaluated first.
+3. Whether the ring USB-C through-hole-stake class is manufacturable at the
+   intended prototype scale.
+4. Which DRC, stackup, focal-distance, shell-fit, serviceability, or sourcing
+   issues they would require closed before quoting ring PCB fab/assembly.
+
+## USB-HUB Send-Now Source Files To Send Or Link
+
 - `hardware/bom/USB-HUB.csv`
-- `hardware/ring/R30-OLED-NONE-NONE/MANIFEST.md`
-- `hardware/ring/R30-OLED-NONE-NONE/FIRST-BOARD-CHECKLIST.md`
-- `hardware/ring/R30-OLED-NONE-NONE/kicad/CURRENT-VIOLATIONS.md`
-- `hardware/ring/R30-OLED-NONE-NONE/kicad/CAPTURE-BINDINGS.md`
-- `hardware/ring/R30-OLED-NONE-NONE/kicad/r30_oled_none_none.kicad_pro`
-- `hardware/ring/R30-OLED-NONE-NONE/kicad/r30_oled_none_none.kicad_sch`
-- `hardware/ring/R30-OLED-NONE-NONE/kicad/r30_oled_none_none.kicad_pcb`
-- `hardware/ring/R30-OLED-NONE-NONE/cad/r30_oled_none_none_shell_blank.scad`
 - `hardware/shared/USB-HUB/MANIFEST.md`
 - `hardware/shared/USB-HUB/FIRST-BOARD-CHECKLIST.md`
 - `hardware/shared/USB-HUB/CONNECTOR-RETENTION-VERIFY.md`
@@ -161,15 +175,35 @@ Ask the factory to respond with:
 - `LICENSE-HARDWARE`
 - `LICENSE-SOFTWARE`
 
+## R30-OLED-NONE-NONE DFM / Pre-Fab Review Annex Files
+
+- `hardware/bom/R30-OLED-NONE-NONE.csv`
+- `hardware/ring/R30-OLED-NONE-NONE/MANIFEST.md`
+- `hardware/ring/R30-OLED-NONE-NONE/FIRST-BOARD-CHECKLIST.md`
+- `hardware/ring/R30-OLED-NONE-NONE/kicad/CURRENT-VIOLATIONS.md`
+- `hardware/ring/R30-OLED-NONE-NONE/kicad/CAPTURE-BINDINGS.md`
+- `hardware/ring/R30-OLED-NONE-NONE/kicad/r30_oled_none_none.kicad_pro`
+- `hardware/ring/R30-OLED-NONE-NONE/kicad/r30_oled_none_none.kicad_sch`
+- `hardware/ring/R30-OLED-NONE-NONE/kicad/r30_oled_none_none.kicad_pcb`
+- `hardware/ring/R30-OLED-NONE-NONE/cad/r30_oled_none_none_shell_blank.scad`
+- `LICENSE-HARDWARE`
+- `LICENSE-SOFTWARE`
+
 ## Local Export
 
-Regenerate a local copy of exactly the file list above:
+Regenerate a local copy of exactly the `USB-HUB` send-now file list:
 
 ```bash
 scripts/export-shenzhen-seeed-quote-packet.sh
 ```
 
-Default output: `build/quote-packets/shenzhen-seeed-current/`.
+Default output: `build/quote-packets/shenzhen-seeed-usb-hub-current/`.
+
+To include the R30 DFM/pre-fab review annex in a separate subdirectory:
+
+```bash
+scripts/export-shenzhen-seeed-quote-packet.sh --include-r30-annex
+```
 
 The script copies existing source files only and writes
 `PACKET-MANIFEST.md` with file sizes and SHA-256 hashes. It does not generate
