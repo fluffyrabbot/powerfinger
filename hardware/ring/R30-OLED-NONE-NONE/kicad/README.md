@@ -154,8 +154,9 @@ release.
   plus moving `R9`'s source reference field to `F.Fab` in the copper-dense
   divider pocket
 - `SW1` dome-pocket relief that moves the shell-bound click center down to
-  `(114.350, 95.780)` and moves the CAD dome pocket with it, clearing one more
-  DRC row while keeping the current shorting bucket closed
+  `(114.350, 95.780)` and moves the CAD dome pocket with it; repeated KiCad
+  runs now keep the conservative DRC count at `44` while preserving
+  `unconnected=9`, parity `0`, and the closed shorting bucket
 - non-shell-bound `R11` / `TP_CHRG` relocation down into the charger-status
   pocket at `y=105.000`, shortening the `CHRG_STAT` run and moving their source
   reference fields to `F.Fab` in the dense regulator pocket
@@ -243,7 +244,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.2` snapshot is
-  ERC=0, DRC=43, unconnected=9, and schematic-parity=0; the remaining board
+  ERC=0, DRC=44, unconnected=9, and schematic-parity=0; the remaining board
   story is dominated by unconnected items plus hand-routed crossing, clearance,
   mask-bridge, and courtyard failures.
 - Treat the first PCB as a routed board pass, not a green fabrication release.

@@ -314,8 +314,9 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   held total DRC or opened shorting, clearance, mask, or courtyard debt, and
   instead moves shell-bound `SW1` from `(114.200, 95.300)` to
   `(114.350, 95.780)` while moving the CAD dome pocket with it. KiCad CLI
-  `10.0.2` now reports DRC=43 and unconnected=9, with schematic-parity=0 and
-  no current shorting bucket, because the board is still hand-routed
+  `10.0.2` repeat runs later reported DRC=43..44; this packet records the
+  conservative DRC=44 snapshot with unconnected=9, schematic-parity=0, and no
+  current shorting bucket, because the board is still hand-routed
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
   reported in software rather than only checked at the local status pad
 - Later-board allocation decision for PAW3204 `SENSOR_NRESET` or
