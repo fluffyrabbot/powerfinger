@@ -578,7 +578,7 @@
   (footprint "PowerFinger_Ring:TestPoint_Pad_D1.0mm_FirstBoard"
     (layer "F.Cu")
     (uuid "5f3297a0-50f6-4951-a3e8-27fe74000116")
-    (at 116.000 104.000 0)
+    (at 109.800 101.600 0)
     (attr exclude_from_bom)
     (property "Reference" "TP_CHRG" (at 0 -1.20 0) (layer "F.Fab") (effects (font (size 0.55 0.55) (thickness 0.08))))
     (property "Value" "CHRG_STAT fixture status pad" (at 0 1.20 0) (layer "F.Fab") (effects (font (size 0.55 0.55) (thickness 0.08))))
@@ -705,7 +705,7 @@
   (segment (start 106.450 108.200) (end 119.600 108.200) (width 0.20) (layer "F.Cu") (net 17) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000245"))
   (segment (start 119.600 108.200) (end 119.600 106.350) (width 0.20) (layer "F.Cu") (net 17) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000246"))
   (segment (start 99.800 101.500) (end 99.920 101.500) (width 0.20) (layer "F.Cu") (net 19) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000220"))
-  (segment (start 108.950 101.550) (end 116.000 104.000) (width 0.20) (layer "F.Cu") (net 20) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000221"))
+  (segment (start 108.950 101.550) (end 109.800 101.600) (width 0.20) (layer "F.Cu") (net 20) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000221"))
   (segment (start 112.280 92.400) (end 113.000 92.100) (width 0.20) (layer "F.Cu") (net 21) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000236"))
   (segment (start 111.620 93.400) (end 113.000 92.100) (width 0.20) (layer "F.Cu") (net 21) (uuid "6816bb59-e020-4f06-8c3c-9b3d87000237"))
   (segment (start 113.000 92.100) (end 116.600 92.900) (width 0.20) (layer "F.Cu") (net 21) (uuid "22222222-2222-4222-8222-000000000002"))

@@ -294,6 +294,13 @@ release.
   `J1`, `R2A`, `R2B`, `SW1`, the service jumper, or shell CAD anchors; KiCad
   CLI `10.0.2` now reports ERC `0`, DRC `26`, unconnected `0`, and schematic
   parity `0` with no current shorting, dangling, or courtyard bucket
+- TP_CHRG endpoint cleanup that moves only the fixture-observed status pad and
+  its local `CHRG_STAT` segment from `(116.000, 104.000)` to
+  `(109.800, 101.600)`, shortening the charger-status spur beside `U3` without
+  adding an onboard pull-up, firmware consumer, shell change, service-anchor
+  move, or BOM change; KiCad CLI `10.0.2` now reports ERC `0`, DRC `23`,
+  unconnected `0`, and schematic parity `0` with no current shorting, dangling,
+  or courtyard bucket
 
 This pass cuts the onboard active charge-enable switch from the first P0:
 fixture VBUS now feeds TP4054 `VCC` through a non-BOM `Q1` service jumper, and
@@ -336,7 +343,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.2` snapshot is
-  ERC=0, DRC=26, unconnected=0, and schematic-parity=0; the remaining board
+  ERC=0, DRC=23, unconnected=0, and schematic-parity=0; the remaining board
   story is dominated by hand-routed crossing, clearance, and mask-bridge debt.
 - Treat the first PCB as a routed board pass, not a green fabrication release.
   Clear schematic backfill, net cleanup, and DRC/ERC before fabrication.

@@ -476,6 +476,13 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   the fixture-fed service jumper, or shell CAD anchors. KiCad CLI `10.0.2` now
   verifies at `ERC=0`, `DRC=26`, `unconnected=0`, schematic-parity `0`, with no
   current shorting, dangling, or courtyard bucket.
+  This follow-on moves only the fixture-observed `TP_CHRG` pad and its local
+  `CHRG_STAT` endpoint from `(116.000, 104.000)` to `(109.800, 101.600)`,
+  shortening the charger-status spur beside `U3` without adding an onboard
+  pull-up, MCU consumer, shell change, service-anchor move, or BOM change.
+  KiCad CLI `10.0.2` now verifies at `ERC=0`, `DRC=23`, `unconnected=0`,
+  schematic-parity `0`, with no current shorting, dangling, or courtyard
+  bucket.
   The placement-level four-layer scratch is rejected too. Moving only
   non-shell-bound support parts while keeping `J1`, `J_BAT`, `U1`, `U2`, `SW1`,
   the PAW3204 aperture, antenna keep-out, outline, and first-board BOM/netlist
