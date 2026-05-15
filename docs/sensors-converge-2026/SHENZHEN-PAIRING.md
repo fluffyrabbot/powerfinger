@@ -193,11 +193,15 @@ require explicit handling.
       and keep the packet status honest: the active hub is quoteable as a
       first-board candidate, while the active ring is DFM/pre-fab review until
       its DRC/unconnected blockers are cleared.
+- [ ] Use [`SHENZHEN-FIRST-CONTACT-TEMPLATE.md`](SHENZHEN-FIRST-CONTACT-TEMPLATE.md)
+      for the first Shenzhen / Seeed outbound message so the contact starts
+      from the same hub-quote / ring-review boundary as the packet.
 - [ ] WeChat account with English profile + project-neutral handle. Most
       factory communication will route through WeChat after first contact.
-- [ ] Translated one-pager (Chinese, simplified). The Western one-pager is
-      not appropriate for factory floor conversations; specs and BOM in
-      Chinese on a single page is what's expected.
+- [ ] Translated one-pager (Chinese, simplified):
+      [`SHENZHEN-FACTORY-ONE-PAGER.zh-CN.md`](SHENZHEN-FACTORY-ONE-PAGER.zh-CN.md).
+      The Western one-pager is not appropriate for factory floor conversations;
+      specs and BOM in Chinese on a single page is what's expected.
 - [ ] Sample physical artifact (3D-printed shell or populated PCB) — same
       principle as the FLOOR-PLAYBOOK, except in Shenzhen the artifact is
       a quote-enabling document, not a pitch device.

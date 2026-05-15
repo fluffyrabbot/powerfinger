@@ -19,7 +19,9 @@ Link" in docs/sensors-converge-2026/SHENZHEN-SEEED-QUOTE-PACKET.md and writes a
 local PACKET-MANIFEST.md with file sizes and SHA-256 hashes.
 
 With --include-r30-annex, also copies the "R30-OLED-NONE-NONE DFM / Pre-Fab
-Review Annex Files" list under R30-OLED-NONE-NONE-DFM-ANNEX/.
+Review Annex Files" list under R30-OLED-NONE-NONE-DFM-ANNEX/. That annex must
+include hardware/ring/R30-OLED-NONE-NONE/kicad/CURRENT-VIOLATIONS.md because it
+is the checked-in source for the quote-facing R30 KiCad status.
 
 With no output directory, regenerates:
   build/quote-packets/shenzhen-seeed-usb-hub-current
@@ -78,6 +80,7 @@ read_doc_section() {
 
 hub_section="USB-HUB Send-Now Source Files To Send Or Link"
 r30_section="R30-OLED-NONE-NONE DFM / Pre-Fab Review Annex Files"
+r30_status_source="hardware/ring/R30-OLED-NONE-NONE/kicad/CURRENT-VIOLATIONS.md"
 
 packet_files=()
 while IFS= read -r rel_path; do
@@ -92,6 +95,15 @@ if [[ "$include_r30_annex" -eq 1 ]]; then
         r30_annex_files+=("$rel_path")
     done < <(read_doc_section "$r30_section")
     [[ "${#r30_annex_files[@]}" -gt 0 ]] || die "no source files found in $packet_doc section: $r30_section"
+
+    has_r30_status_source=0
+    for rel_path in "${r30_annex_files[@]}"; do
+        if [[ "$rel_path" == "$r30_status_source" ]]; then
+            has_r30_status_source=1
+            break
+        fi
+    done
+    [[ "$has_r30_status_source" -eq 1 ]] || die "R30 annex must include checked-in status source: $r30_status_source"
 fi
 
 missing=()

@@ -21,7 +21,7 @@ annex as a DFM/pre-fab review input.
 | Item | Packet | Request | Current status |
 |---|---|---|---|
 | USB hub dongle | `hardware/shared/USB-HUB/` | PCB fab/assembly quote, enclosure/connector-retention DFM review, and serviceability feedback | BOM-backed packet and routed first-board source exist; schematic ERC=0, PCB DRC=0, unconnected=0, parity=0 |
-| Optical ring annex | `hardware/ring/R30-OLED-NONE-NONE/` | DFM/pre-fab review, BOM costability review, and assembly/serviceability feedback only | BOM-backed packet and first routed rigid P0 source exist; KiCad snapshot is still red: ERC=0, PCB DRC=44, unconnected=9, parity=0 |
+| Optical ring annex | `hardware/ring/R30-OLED-NONE-NONE/` | DFM/pre-fab review, BOM costability review, and assembly/serviceability feedback only | BOM-backed packet and first routed rigid P0 source exist; KiCad snapshot is still red; consume `hardware/ring/R30-OLED-NONE-NONE/kicad/CURRENT-VIOLATIONS.md` as the checked-in status source |
 
 Do not quote secondary ring, wand, puck, OCR, cloud, or companion-app product
 features as part of this starter packet.
@@ -78,6 +78,12 @@ Packet: `hardware/shared/USB-HUB/`
 
 Packet: `hardware/ring/R30-OLED-NONE-NONE/`
 
+Status source: `hardware/ring/R30-OLED-NONE-NONE/kicad/CURRENT-VIOLATIONS.md`
+is the checked-in quote-facing source for the R30 KiCad snapshot. Do not
+copy-edit numeric R30 ERC/DRC/unconnected/parity counts into this packet; keep
+this annex pointed at the status source so exported packets cannot drift from
+the actual KiCad proof.
+
 Use this annex only when the factory is willing to give early manufacturability,
 assembly, serviceability, sourcing, and costability feedback before a fab-clean
 ring PCB exists. The annex is not a ring PCB fab/assembly quote request and is
@@ -88,30 +94,35 @@ not a release-to-build package.
 - Surface claim today: opaque rigid surfaces only; not glass.
 - PCB: rigid P0, `43 x 18 mm`, split into power/service, sensor/click, and
   MCU/radio zones.
-- KiCad status: ERC=0, PCB DRC=44, unconnected=9, schematic parity=0; the board
-  is still red and must not be treated as fabrication-release.
+- KiCad status: still red per `kicad/CURRENT-VIOLATIONS.md`; the board must
+  not be treated as fabrication-release until that checked-in snapshot is
+  fab-clean.
 - MCU/radio: `ESP32-C3-MINI-1-N4` module, with antenna keep-out preserved.
 - Sensor: `PAW3204DB-TJ3L` optical sensor plus matched lens/emitter kit;
   `LED1` is dropped from the first capture unless bare-sensor sourcing forces
   it back in. `ADNS-2080` is the evaluated fallback class for a future board
   profile, not a drop-in substitution for this packet; `YS8205`-style
   integrated USB mouse controllers are not acceptable replacements.
-- Battery: protected `80-100 mAh` LiPo pack, harness-terminated to a JST-SH
-  2-pin 1.0 mm plug; direct cell-tab soldering is rejected.
-- Battery connector: JST-SH right-angle 2-pin 1.0 mm class on `J_BAT`.
-- Service connector: USB-C 2.0 16-pin receptacle class with through-hole shell
-  stakes; SMD-only and power-only USB-C are rejected for P0.
+- Battery: protected `80-100 mAh` LiPo pack, connected through off-board
+  same-net battery service pads on `J_BAT`; direct cell-tab soldering is
+  rejected, and battery service must remain replaceable through a harness or
+  fixture.
+- Service interface: off-board same-net USB service pads on `J1` for USB2 data,
+  VBUS, CC pulldowns, GND, and shield continuity; charge/program service now
+  requires an external fixture or pogo harness rather than an onboard USB-C
+  receptacle.
 - Power path: TP4054 charger, `20 kohm` charge resistor, RT9080-33GJ5 LDO, NTC
-  divider, SI2301-class high-side `Q1`, and 2N7002 `Q2` logic-safe charge-gate
-  driver with `R6 = 100k`.
+  divider, and non-BOM `Q1` VBUS service jumper from fixture VBUS to TP4054
+  `VCC`; no onboard MCU charge-enable switch is claimed in this P0.
 - Sense/status support: `R7`/`R8 = 100k`/`100k` for `VBAT_SENSE`,
-  `R9`/`R10 = 220k`/`100k` for `VBUS_DETECT`, and `R11 = 100k` for local
-  `CHRG_STAT`. `CHRG_STAT` is not claimed as a firmware-consumed GPIO yet.
+  `R9`/`R10 = 220k`/`100k` for `VBUS_DETECT`, and `TP_CHRG` as a
+  fixture-observed `CHRG_STAT` pad with no onboard pull-up. `CHRG_STAT` is not
+  claimed as a firmware-consumed GPIO yet.
 - USB ESD: TPD2E2U06DCK-class rail-less dual data-line shunt in SC-70/SOT-323.
 - Mechanical packet: OpenSCAD lower shell and service lid with raised rim,
-  glide-pad pockets, board rails/stops, lid compression pads, USB-C opening,
-  dome pocket, battery lead channel, service-loop relief, and quick-print fit
-  coupon modes.
+  glide-pad pockets, board rails/stops, lid compression pads, service-pad
+  access opening, dome pocket, battery harness channel, service-loop relief, and
+  quick-print fit coupon modes.
 - Open blockers: PCB DRC, printed/measured fit, stackup, focal-distance, RF,
   click force, battery service, and fastener choice remain evidence items.
 
@@ -137,13 +148,16 @@ input, ask separately:
    what feedback they can give before release-to-build.
 2. Whether they can source or assemble the PAW3204 sensor/lens/emitter path, or
    whether they require the ADNS-2080 alternate path to be evaluated first.
-3. Whether the ring USB-C through-hole-stake class is manufacturable at the
+3. Whether the ring's off-board USB service-pad fixture path and replaceable
+   battery harness or fixture path are manufacturable and serviceable at the
    intended prototype scale.
 4. Which DRC, stackup, focal-distance, shell-fit, serviceability, or sourcing
    issues they would require closed before quoting ring PCB fab/assembly.
 
 ## USB-HUB Send-Now Source Files To Send Or Link
 
+- `docs/sensors-converge-2026/SHENZHEN-FIRST-CONTACT-TEMPLATE.md`
+- `docs/sensors-converge-2026/SHENZHEN-FACTORY-ONE-PAGER.zh-CN.md`
 - `hardware/bom/USB-HUB.csv`
 - `hardware/shared/USB-HUB/MANIFEST.md`
 - `hardware/shared/USB-HUB/FIRST-BOARD-CHECKLIST.md`
@@ -197,7 +211,9 @@ Regenerate a local copy of exactly the `USB-HUB` send-now file list:
 scripts/export-shenzhen-seeed-quote-packet.sh
 ```
 
-Default output: `build/quote-packets/shenzhen-seeed-usb-hub-current/`.
+Default output: `build/quote-packets/shenzhen-seeed-usb-hub-current/`. The
+send-now export includes the first-contact template and simplified-Chinese
+factory one-pager under `docs/sensors-converge-2026/`.
 
 To include the R30 DFM/pre-fab review annex in a separate subdirectory:
 
@@ -208,3 +224,42 @@ scripts/export-shenzhen-seeed-quote-packet.sh --include-r30-annex
 The script copies existing source files only and writes
 `PACKET-MANIFEST.md` with file sizes and SHA-256 hashes. It does not generate
 Gerbers, STLs, zip archives, or any other derived fabrication artifacts.
+
+For one local first-board mechanical print/preview packet covering both the
+USB-HUB coupon lane and the R30 DFM/pre-fab coupon lane:
+
+```bash
+scripts/generate-first-board-mechanical-packet.sh
+```
+
+Default output: `build/first-board-mechanical-packet/`, with `USB-HUB/` and
+`R30-OLED-NONE-NONE/` sub-bundles. This command only assembles generated
+STLs, preview PNGs, hash manifests, OpenSCAD logs, README files, and blank
+physical-check worksheets from the two active coupon generators. It does not
+turn either lane into measured fit, connector-retention, stackup,
+focal-distance, comfort, click, or RF evidence.
+
+To also isolate the first physical-check print sweep in `FIRST-SWEEP/`, use:
+
+```bash
+scripts/generate-first-board-mechanical-packet.sh --first-sweep
+```
+
+That first sweep selects only the USB-HUB host-fit coupon, USB-HUB clamp
+alignment gauge, R30 service-access coupon, and R30 board-retention coupon plus
+matching previews/logs and a blank worksheet. Keep result fields blank until
+those printed coupons are checked against real hosts, plugs, boards, board
+blanks, or fixtures.
+
+For the USB-HUB physical coupon lane, regenerate the local STL/preview coupon
+bundle and blank evidence worksheet separately:
+
+```bash
+scripts/generate-usb-hub-validation-coupons.sh
+```
+
+Default output: `build/usb-hub-mechanical/`. The generated `README.md`,
+`COUPON-MANIFEST.md`, `previews/*.png`, and `PHYSICAL-CHECK-WORKSHEET.md` are
+local evidence scaffolding only; they are not proof of fit, strain, or
+clearance until printed coupon observations are recorded back into the USB-HUB
+packet docs.

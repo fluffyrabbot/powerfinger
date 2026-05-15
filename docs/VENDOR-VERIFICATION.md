@@ -52,9 +52,11 @@ Use that packet with these constraints:
 - `USB-HUB` is the send-now quote path: the packet records
   all-severity ERC=0, PCB DRC=0, unconnected=0, and schematic parity=0.
 - `R30-OLED-NONE-NONE` is an explicit DFM/pre-fab review annex, not a
-  fabrication or assembly quote request: the packet records ERC=0, PCB DRC=44,
-  unconnected=9, schematic parity=0. Ask for DFM/pre-fab review and costability
-  feedback until that blocker is cleared.
+  fabrication or assembly quote request. Its quote-facing KiCad status is
+  owned by
+  [`hardware/ring/R30-OLED-NONE-NONE/kicad/CURRENT-VIOLATIONS.md`](../hardware/ring/R30-OLED-NONE-NONE/kicad/CURRENT-VIOLATIONS.md);
+  ask for DFM/pre-fab review and costability feedback until that checked-in
+  snapshot is fab-clean.
 - Do not turn distributor availability into vendor commitments. MOQ, lead time,
   yield, defects, realized COGS, payment terms, and license/source-return
   behavior belong in [`docs/REFERENCE-MANUFACTURERS.md`](REFERENCE-MANUFACTURERS.md)
