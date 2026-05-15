@@ -470,6 +470,12 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   `10.0.2` now verifies at `ERC=0`, `DRC=27`, `unconnected=0`,
   schematic-parity `0`, with no current shorting, dangling, or courtyard
   bucket.
+  This follow-on moves the `R2B` / lower service-shield GND leg from F.Cu to a
+  B-side via pair between `(100.880, 101.500)` and `(100.650, 104.100)`. That
+  clears the local `VBUS_5V` crossing without moving `J1`, `R2A`, `R2B`, `SW1`,
+  the fixture-fed service jumper, or shell CAD anchors. KiCad CLI `10.0.2` now
+  verifies at `ERC=0`, `DRC=26`, `unconnected=0`, schematic-parity `0`, with no
+  current shorting, dangling, or courtyard bucket.
   The placement-level four-layer scratch is rejected too. Moving only
   non-shell-bound support parts while keeping `J1`, `J_BAT`, `U1`, `U2`, `SW1`,
   the PAW3204 aperture, antenna keep-out, outline, and first-board BOM/netlist

@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.2` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` messages | 0 | No current ERC errors or warnings |
-| `pcb drc` violations | 27 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 26 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 0 | All current KiCad unconnected rows are closed |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -610,9 +610,9 @@ and sheet-interface cleanup in this snapshot.
 
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
-| `tracks_crossing` | 16 | Tracks of different nets physically crossing on the same layer |
-| `solder_mask_bridge` | 7 | Adjacent pads of different nets share an unbroken mask aperture |
-| `clearance` | 7 | Copper-to-copper or pad-to-track clearance failures in the live wrapper report |
+| `tracks_crossing` | 14 | Tracks of different nets physically crossing on the same layer |
+| `solder_mask_bridge` | 6 | Adjacent pads of different nets share an unbroken mask aperture |
+| `clearance` | 6 | Copper-to-copper or pad-to-track clearance failures in the live wrapper report |
 | `unconnected_items` | 0 | Closed by the three-contact `SW1` ring topology |
 
 The explicit unconnected and shorting buckets are now closed in the current
@@ -759,6 +759,13 @@ GND via moves to `(112.000, 102.700)` to preserve GND continuity without
 reopening the shorting bucket. KiCad CLI `10.0.2` now reports `ERC=0`,
 `DRC=27`, `unconnected=0`, schematic parity `0`, with no current shorting,
 dangling, or courtyard bucket.
+The retained left-service return topology then moves the `R2B` / lower service
+shield GND leg from the front layer to a B-side via pair between
+`(100.880, 101.500)` and `(100.650, 104.100)`. This removes the remaining
+local `VBUS_5V` crossing at the lower off-board service-pad row without moving
+`J1`, `R2A`, `R2B`, `SW1`, the fixture-fed charge-service jumper, or any shell
+CAD anchor. KiCad CLI `10.0.2` now reports `ERC=0`, `DRC=26`, `unconnected=0`,
+schematic parity `0`, with no current shorting, dangling, or courtyard bucket.
 The follow-on clearance-only scratch pass is not retained because every tested
 route-only clearance fix either held total DRC at `40` or reintroduced shorts.
 This confirms that one-net doglegs are not the next useful reduction.
@@ -946,22 +953,24 @@ PCB items. The closure order this snapshot recommends:
    shorting or courtyard debt.
 2. The component-class and local endpoint cuts have crossed the gate for the USB
    service interface, battery service interface, U4 regulator land pattern and
-   pad refinement, `R8` divider clearance, and charge-service topology: the
+   pad refinement, `R8` divider clearance, charge-service topology, and the
+   left-service `R2B` / lower service-shield return topology: the
    live packet now uses source-controlled service/clearance footprints and
-   proves `ERC=0`, `DRC=27`, `unconnected=0`, schematic parity `0`, and no
+   proves `ERC=0`, `DRC=26`, `unconnected=0`, schematic parity `0`, and no
    shorting/courtyard bucket. Do not silently
    reintroduce an onboard USB-C receptacle, JST-SH battery body, stock U4 land
    pattern, the larger U4 pads, the old `R8` endpoint geometry, the onboard
-   `R11` pull-up, or the active `Q1`/`R4`/`Q2`/`R6` charge gate unless the
+   `R11` pull-up, the active `Q1`/`R4`/`Q2`/`R6` charge gate, or the former
+   front-layer lower service-shield return unless the
    schematic, PCB, shell CAD where applicable, BOM/manifest, stackup notes,
    packet counts, and first-board checklist move together and beat this
    retained state.
 3. The next honest reducer should avoid already-rejected broad route-migration
-   lanes. Scratch the remaining left-service `VBUS_5V` / `USB_CC1_RD` /
-   `R2A` / left-`SW1` pocket as a source-controlled endpoint-topology cut while
-   keeping the fixture-fed charge-service jumper, U4/C2, off-board service
-   anchors, shell-bound placements, and the active BOM contract fixed. Retain
-   only a live `DRC<27` result with `unconnected=0`, no ERC errors, no new
+   lanes. Scratch the remaining U4/C2/TP_CHRG regulator-status pocket as a
+   source-controlled endpoint-topology or footprint cut while keeping the
+   fixture-fed charge-service jumper, off-board service anchors, shell-bound
+   placements, and the active BOM contract fixed. Retain only a live `DRC<26`
+   result with `unconnected=0`, no ERC errors, no new
    schematic-parity errors, and no shorting, dangling, or courtyard bucket.
 4. Re-run ERC + DRC and update this file's counts in the same commit.
 5. Only then update `MANIFEST.md` to drop the "not fabrication-released"
