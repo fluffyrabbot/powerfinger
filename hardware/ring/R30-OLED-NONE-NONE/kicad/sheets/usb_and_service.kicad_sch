@@ -1477,7 +1477,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "USB4215-class 16P TH stakes"
+		(property "Value" "off-board USB service pads"
 			(at 90.17 99.695 0.0000)
 			(effects
 				(font
@@ -1486,7 +1486,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "PowerFinger_Ring:USB_C_Receptacle_GCT_USB4215_Class_16P_TH_Stakes"
+		(property "Footprint" "PowerFinger_Ring:Offboard_USB_Service_SameNet"
 			(at 93.98 80.01 0.0000)
 			(effects
 				(font
@@ -1495,7 +1495,7 @@
 				(hide yes)
 			)
 		)
-		(property "mfg_part_num" "USB4215-class"
+		(property "mfg_part_num" "OFFBOARD-SERVICE-PADS"
 			(at 92.71 85.0899 0)
 			(effects
 				(font
@@ -1504,7 +1504,7 @@
 				(justify left)
 			)
 		)
-		(property "manufacturer" "GCT"
+		(property "manufacturer" "PowerFinger"
 			(at 92.71 85.0899 0)
 			(effects
 				(font
@@ -2090,7 +2090,7 @@
 		(at 105.41 95.25)
 		(uuid "093055d3-bb32-4868-99c5-204ac32877fa")
 	)
-	(text "USB and service interface scaffold: VBUS entry, CC sink-attach, ESD protection, and native USB data nets are locked here before the USB-C receptacle, ESD array, and service pads land."
+	(text "USB and service interface scaffold: VBUS entry, CC sink-attach, ESD protection, and native USB data nets are locked here for the off-board same-net service pads and ESD array."
 		(exclude_from_sim no)
 		(at 20.32 20.32 0.0000)
 		(effects

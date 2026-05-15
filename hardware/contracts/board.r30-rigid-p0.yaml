@@ -58,15 +58,16 @@ interfaces:
       mcu_resource: GPIO3
       firmware_symbol: CONFIG_POWERFINGER_VBUS_DETECT_PIN
       divider: 220k_over_100k
-    charge_enable:
-      mcu_resource: GPIO10
-      firmware_symbol: CONFIG_POWERFINGER_CHARGE_ENABLE_PIN
-      gate_driver: 2N7002 low-side driver for high-side P-channel MOSFET gate
-      safe_default: charge_disabled
+    charge_service_vbus:
+      mcu_resource: none
+      firmware_symbol: none
+      topology: fixture-fed VBUS service jumper into TP4054 VCC
+      safe_default: charge controlled by external fixture VBUS presence
+      production_behavior_claimed: false
     chrg_stat:
       mcu_resource: none
       firmware_symbol: none
-      status: pulled-up local test pad only
+      status: fixture-observed local status pad; external pull-up required if used
       production_behavior_claimed: false
       local_test_only: true
   service_usb:
@@ -82,8 +83,10 @@ constraints:
     - GPIO8
     - GPIO9
   no_5v_gate_pullup_directly_on_mcu_gpio: true
-  usb_c_shell_stakes_required: true
-  battery_connector_required: JST-SH 2-pin 1.0mm harness receptacle
+  onboard_mcu_charge_enable_claimed: false
+  onboard_usb_c_receptacle_claimed: false
+  off_board_usb_service_fixture_required: true
+  battery_interface_required: off-board same-net replaceable harness or fixture pads
 compatible_contracts:
   sensors:
     - hardware/contracts/sensor.paw3204.yaml
@@ -97,5 +100,6 @@ verification:
     - physical stackup and fit coupon evidence is not yet filled
 non_claims:
   chrg_stat_firmware_consumer: false
+  charge_enable_firmware_consumer: false
   paw3204_reset_firmware_consumer: false
   paw3204_motion_wake_firmware_consumer: false

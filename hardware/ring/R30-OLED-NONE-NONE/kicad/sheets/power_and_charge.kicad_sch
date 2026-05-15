@@ -5,309 +5,47 @@
 	(uuid "3bb73a68-f2e3-4fdc-8035-844d8d9ecf61")
 	(paper "A4")
 	(lib_symbols
-		(symbol "PowerFinger:SI2301_SOT23_FirstBoard"
-			(pin_numbers
-				(hide yes)
-			)
-			(pin_names
-				(offset 0)
-				(hide yes)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(in_pos_files yes)
-			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "Q"
-				(at 5.08 1.27 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-				)
-			)
-			(property "Value" "Q_PMOS"
-				(at 5.08 -1.27 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-				)
-			)
-			(property "Footprint" ""
-				(at 5.08 2.54 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Description" "P-MOSFET transistor"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_keywords" "PMOS P-MOS"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(symbol "SI2301_SOT23_FirstBoard_0_1"
-				(polyline
-					(pts
-						(xy 0.254 1.905) (xy 0.254 -1.905)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.254 0) (xy -2.54 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.762 2.286) (xy 0.762 1.27)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.762 1.778) (xy 3.302 1.778) (xy 3.302 -1.778) (xy 0.762 -1.778)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.762 0.508) (xy 0.762 -0.508)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.762 -1.27) (xy 0.762 -2.286)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(circle
-					(center 1.651 0)
-					(radius 2.794)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 2.286 0) (xy 1.27 0.381) (xy 1.27 -0.381) (xy 2.286 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(polyline
-					(pts
-						(xy 2.54 2.54) (xy 2.54 1.778)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(circle
-					(center 2.54 1.778)
-					(radius 0.254)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(circle
-					(center 2.54 -1.778)
-					(radius 0.254)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(polyline
-					(pts
-						(xy 2.54 -2.54) (xy 2.54 0) (xy 0.762 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 2.921 -0.381) (xy 3.683 -0.381)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 3.302 -0.381) (xy 2.921 0.254) (xy 3.683 0.254) (xy 3.302 -0.381)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "SI2301_SOT23_FirstBoard_1_1"
-				(pin passive line
-					(at 2.54 5.08 270)
-					(length 2.54)
-					(name "D"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at -5.08 0 0)
-					(length 2.54)
-					(name "G"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 2.54 -5.08 90)
-					(length 2.54)
-					(name "S"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
+		  (symbol "PowerFinger:VBUS_Service_Jumper_SOT23Land" (pin_numbers hide) (pin_names (offset 0)) (in_bom no) (on_board yes)
+		  (property "Reference" "Q" (at 5.08 1.27 0)
+		    (effects (font (size 1.27 1.27)) (justify left))
+		  )
+		  (property "Value" "VBUS service jumper" (at 5.08 -1.27 0)
+		    (effects (font (size 1.27 1.27)) (justify left))
+		  )
+		  (property "Footprint" "PowerFinger_Ring:VBUS_Service_Jumper_SOT23Land" (at 5.08 2.54 0)
+		    (effects (font (size 1.27 1.27)) hide)
+		  )
+		  (property "Datasheet" "" (at 0 0 0)
+		    (effects (font (size 1.27 1.27)) hide)
+		  )
+		  (property "ki_description" "PCB copper VBUS service jumper using a SOT-23 service land" (at 0 0 0)
+		    (effects (font (size 1.27 1.27)) hide)
+		  )
+		  (symbol "VBUS_Service_Jumper_SOT23Land_0_1"
+		    (rectangle (start -1.27 2.54) (end 2.54 -2.54)
+		      (stroke (width 0.254) (type default))
+		      (fill (type none))
+		    )
+		    (polyline
+		      (pts (xy 0.0 1.27) (xy 1.27 1.27) (xy 1.27 -1.27) (xy 0.0 -1.27))
+		      (stroke (width 0.254) (type default))
+		      (fill (type none))
+		    )
+		  )
+		  (symbol "VBUS_Service_Jumper_SOT23Land_1_1"
+		    (pin passive line (at 2.54 5.08 270) (length 2.54)
+		      (name "VBUS_OUT" (effects (font (size 1.27 1.27))))
+		      (number "2" (effects (font (size 1.27 1.27))))
+		    )
+		    (pin no_connect line (at -5.08 0 0) (length 2.54)
+		      (name "NC" (effects (font (size 1.27 1.27))))
+		      (number "1" (effects (font (size 1.27 1.27))))
+		    )
+		    (pin passive line (at 2.54 -5.08 90) (length 2.54)
+		      (name "VBUS_IN" (effects (font (size 1.27 1.27))))
+		      (number "3" (effects (font (size 1.27 1.27))))
+		    )
+		  )
 		)
 		(symbol "Device:R"
 			(pin_numbers
@@ -316,8 +54,8 @@
 			(pin_names
 				(offset 0)
 			)
-			(exclude_from_sim no)
-			(in_bom yes)
+				(exclude_from_sim no)
+				(in_bom no)
 			(on_board yes)
 			(in_pos_files yes)
 			(duplicate_pin_numbers_are_jumpers no)
@@ -432,310 +170,6 @@
 					(at 0 -3.81 90)
 					(length 1.27)
 					(name ""
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
-		(symbol "PowerFinger:2N7002_SOT23_FirstBoard"
-			(pin_numbers
-				(hide yes)
-			)
-			(pin_names
-				(offset 0)
-				(hide yes)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(in_pos_files yes)
-			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "Q"
-				(at 5.08 1.27 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-				)
-			)
-			(property "Value" "Q_NMOS"
-				(at 5.08 -1.27 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-				)
-			)
-			(property "Footprint" ""
-				(at 5.08 2.54 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Description" "N-MOSFET transistor"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_keywords" "NMOS N-MOS"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(symbol "2N7002_SOT23_FirstBoard_0_1"
-				(polyline
-					(pts
-						(xy 0.254 1.905) (xy 0.254 -1.905)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.254 0) (xy -2.54 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.762 2.286) (xy 0.762 1.27)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.762 0.508) (xy 0.762 -0.508)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.762 -1.27) (xy 0.762 -2.286)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.762 -1.778) (xy 3.302 -1.778) (xy 3.302 1.778) (xy 0.762 1.778)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 1.016 0) (xy 2.032 0.381) (xy 2.032 -0.381) (xy 1.016 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(circle
-					(center 1.651 0)
-					(radius 2.794)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 2.54 2.54) (xy 2.54 1.778)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(circle
-					(center 2.54 1.778)
-					(radius 0.254)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(circle
-					(center 2.54 -1.778)
-					(radius 0.254)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(polyline
-					(pts
-						(xy 2.54 -2.54) (xy 2.54 0) (xy 0.762 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 2.921 0.381) (xy 3.683 0.381)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 3.302 0.381) (xy 2.921 -0.254) (xy 3.683 -0.254) (xy 3.302 0.381)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "2N7002_SOT23_FirstBoard_1_1"
-				(pin passive line
-					(at 2.54 5.08 270)
-					(length 2.54)
-					(name "D"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at -5.08 0 0)
-					(length 2.54)
-					(name "G"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 2.54 -5.08 90)
-					(length 2.54)
-					(name "S"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1817,7 +1251,7 @@
 					)
 				)
 			)
-			(property "Value" "SM02B-SRSS-TB class"
+			(property "Value" "off-board battery service pads"
 				(at 0 -10.16 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1827,7 +1261,7 @@
 					)
 				)
 			)
-			(property "Footprint" "PowerFinger_Ring:JST_SH_SM02B-SRSS-TB_RA_1x02_P1.00mm"
+			(property "Footprint" "PowerFinger_Ring:Offboard_Battery_Service_SameNet"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1849,7 +1283,7 @@
 					)
 				)
 			)
-			(property "Description" "JST-SH right-angle 2-pin battery connector with grounded mounting pads"
+			(property "Description" "Off-board same-net replaceable battery service pads with grounded MP shield pads"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -2074,11 +1508,11 @@
 		)
 	)
 	(symbol
-		(lib_id "PowerFinger:SI2301_SOT23_FirstBoard")
+		(lib_id "PowerFinger:VBUS_Service_Jumper_SOT23Land")
 		(at 80.01 90.17 0)
 		(unit 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced no)
@@ -2092,7 +1526,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "SI2301 P-FET"
+		(property "Value" "VBUS service jumper"
 			(at 85.09 88.9 0.0000)
 			(effects
 				(font
@@ -2101,7 +1535,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
+		(property "Footprint" "PowerFinger_Ring:VBUS_Service_Jumper_SOT23Land"
 			(at 85.09 92.71 0.0000)
 			(effects
 				(font
@@ -2110,7 +1544,7 @@
 				(hide yes)
 			)
 		)
-		(property "mfg_part_num" "SI2301CDS"
+		(property "mfg_part_num" "PCB-COPPER-JUMPER"
 			(at 82.55 95.2499 0)
 			(effects
 				(font
@@ -2119,7 +1553,7 @@
 				(justify left)
 			)
 		)
-		(property "manufacturer" "—"
+		(property "manufacturer" "PowerFinger"
 			(at 82.55 95.2499 0)
 			(effects
 				(font
@@ -2150,246 +1584,6 @@
 			(project "simple_circuit"
 				(path "/3bb73a68-f2e3-4fdc-8035-844d8d9ecf61"
 					(reference "Q1")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R")
-		(at 69.85 80.01 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "0d0de1c0-3611-4a6c-b4f1-16ef365b2544")
-		(property "Reference" "R4"
-			(at 71.882 80.01 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "100k"
-			(at 69.85 80.01 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 68.072 80.01 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "mfg_part_num" ""
-			(at 72.39 85.0899 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "manufacturer" "—"
-			(at 72.39 85.0899 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "lcsc" ""
-			(at 72.39 85.0899 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(pin "1"
-			(uuid "6c42f959-85f5-4292-bbbe-b8328508cbae")
-		)
-		(pin "2"
-			(uuid "1370bb58-6937-45ff-862d-94be60b86378")
-		)
-		(instances
-			(project "simple_circuit"
-				(path "/3bb73a68-f2e3-4fdc-8035-844d8d9ecf61"
-					(reference "R4")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "PowerFinger:2N7002_SOT23_FirstBoard")
-		(at 59.69 100.33 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "26a28dec-c8c7-4deb-8554-009ddeac7f2c")
-		(property "Reference" "Q2"
-			(at 64.77 101.6 0.0000)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "2N7002 gate driver"
-			(at 64.77 99.06 0.0000)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
-			(at 64.77 102.87 0.0000)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "mfg_part_num" "2N7002"
-			(at 62.23 105.4099 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "manufacturer" "—"
-			(at 62.23 105.4099 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "lcsc" ""
-			(at 62.23 105.4099 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(pin "3"
-			(uuid "9dbdfecd-d736-4cc0-b474-ff4161f0131e")
-		)
-		(pin "1"
-			(uuid "a2673932-d127-4f5a-af57-01b0217cc7e0")
-		)
-		(pin "2"
-			(uuid "f28f99ec-f1ba-42e5-a8b6-1f4feaa2a9df")
-		)
-		(instances
-			(project "simple_circuit"
-				(path "/3bb73a68-f2e3-4fdc-8035-844d8d9ecf61"
-					(reference "Q2")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R")
-		(at 49.53 110.49 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "2969983e-5445-4e44-bed8-6e15f573af46")
-		(property "Reference" "R6"
-			(at 51.562 110.49 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "100k"
-			(at 49.53 110.49 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 47.752 110.49 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "mfg_part_num" ""
-			(at 52.07 115.5699 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "manufacturer" "—"
-			(at 52.07 115.5699 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "lcsc" ""
-			(at 52.07 115.5699 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(pin "1"
-			(uuid "3f83825b-f2f9-447a-9af6-fe4bf66df4b9")
-		)
-		(pin "2"
-			(uuid "2317b0a0-c815-472d-87ca-551ecb6a2729")
-		)
-		(instances
-			(project "simple_circuit"
-				(path "/3bb73a68-f2e3-4fdc-8035-844d8d9ecf61"
-					(reference "R6")
 					(unit 1)
 				)
 			)
@@ -2563,85 +1757,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:R")
-		(at 129.54 80.01 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "438d5db6-6549-4549-8b9f-22fcfe2e34c4")
-		(property "Reference" "R11"
-			(at 131.572 80.01 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "100k"
-			(at 129.54 80.01 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 127.762 80.01 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "mfg_part_num" ""
-			(at 132.08 85.0899 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "manufacturer" "—"
-			(at 132.08 85.0899 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "lcsc" ""
-			(at 132.08 85.0899 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(pin "1"
-			(uuid "66e028e4-8db9-4b74-b0e3-99bb88ddebdf")
-		)
-		(pin "2"
-			(uuid "0a4dec20-c3d3-408f-98a3-4a8157e700a3")
-		)
-		(instances
-			(project "simple_circuit"
-				(path "/3bb73a68-f2e3-4fdc-8035-844d8d9ecf61"
-					(reference "R11")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Regulator_Linear:AP2112K-3.3")
 		(at 160.02 90.17 0)
 		(unit 1)
@@ -2669,7 +1784,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_TO_SOT_SMD:SOT-23-5"
+		(property "Footprint" "PowerFinger_Ring:RT9080_33GJ5_SOT23_5_ServiceClearance"
 			(at 160.02 98.425 0.0000)
 			(effects
 				(font
@@ -3481,46 +2596,6 @@
 		)
 	)
 	(symbol
-		(lib_id "power:PWR_FLAG")
-		(at 95.25 74.93 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "0a993172-1856-4df5-8d85-305e11ed1ff6")
-		(property "Reference" "#PWR0002"
-			(at 95.25 76.835 0.0000)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Value" "PWR_FLAG"
-			(at 95.25 69.85 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "7fa480d8-487e-40c5-8bd6-1491c75636aa")
-		)
-		(instances
-			(project "simple_circuit"
-				(path "/3bb73a68-f2e3-4fdc-8035-844d8d9ecf61"
-					(reference "#PWR0002")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "power:GND")
 		(at 39.37 119.38 0)
 		(unit 1)
@@ -3618,7 +2693,7 @@
 				)
 			)
 		)
-		(property "Value" "SM02B-SRSS-TB class"
+		(property "Value" "off-board battery service pads"
 			(at 195.58 125.73 0)
 			(effects
 				(font
@@ -3626,7 +2701,7 @@
 				)
 			)
 		)
-		(property "Footprint" "PowerFinger_Ring:JST_SH_SM02B-SRSS-TB_RA_1x02_P1.00mm"
+		(property "Footprint" "PowerFinger_Ring:Offboard_Battery_Service_SameNet"
 			(at 195.58 130.81 0)
 			(effects
 				(font
@@ -3635,7 +2710,7 @@
 				(hide yes)
 			)
 		)
-		(property "mfg_part_num" "SM02B-SRSS-TB class"
+		(property "mfg_part_num" "OFFBOARD-BAT-SERVICE-PADS"
 			(at 198.12 135.8899 0)
 			(effects
 				(font
@@ -3643,7 +2718,7 @@
 				)
 			)
 		)
-		(property "manufacturer" "JST-compatible"
+		(property "manufacturer" "PowerFinger"
 			(at 198.12 135.8899 0)
 			(effects
 				(font
@@ -3679,81 +2754,81 @@
 				)
 			)
 		)
-	)
-	(symbol
-		(lib_id "Connector:TestPoint")
-		(at 190.5 144.78 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced no)
-		(uuid "27b3526a-48a4-4a31-9570-52cac65e3566")
-		(property "Reference" "TP_CHRG"
-			(at 190.5 151.638 0)
-			(effects
-				(font
-					(size 1.27 1.27)
+		)
+			(symbol
+				(lib_id "Connector:TestPoint")
+				(at 190.5 144.78 0)
+				(unit 1)
+				(exclude_from_sim no)
+				(in_bom no)
+				(on_board yes)
+			(dnp no)
+			(fields_autoplaced no)
+			(uuid "27b3526a-48a4-4a31-9570-52cac65e3566")
+			(property "Reference" "TP_CHRG"
+				(at 190.5 151.638 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "CHRG_STAT fixture status pad"
+				(at 190.5 149.86 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+				)
+				(property "Footprint" "PowerFinger_Ring:TestPoint_Pad_D1.0mm_FirstBoard"
+				(at 195.58 144.78 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "mfg_part_num" ""
+				(at 193.04 149.8599 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "manufacturer" "PCB"
+				(at 193.04 149.8599 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "lcsc" ""
+				(at 193.04 149.8599 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(pin "1"
+				(uuid "503cee70-43a1-4ddb-8d37-1db7cdef2281")
+			)
+			(instances
+				(project "simple_circuit"
+					(path "/3bb73a68-f2e3-4fdc-8035-844d8d9ecf61"
+						(reference "TP_CHRG")
+						(unit 1)
+					)
 				)
 			)
 		)
-		(property "Value" "CHRG_STAT pulled-up status pad"
-			(at 190.5 149.86 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "TestPoint:TestPoint_Pad_D1.0mm"
-			(at 195.58 144.78 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "mfg_part_num" ""
-			(at 193.04 149.8599 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "manufacturer" "PCB"
-			(at 193.04 149.8599 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "lcsc" ""
-			(at 193.04 149.8599 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "503cee70-43a1-4ddb-8d37-1db7cdef2281")
-		)
-		(instances
-			(project "simple_circuit"
-				(path "/3bb73a68-f2e3-4fdc-8035-844d8d9ecf61"
-					(reference "TP_CHRG")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(wire
-		(pts
-			(xy 39.37 119.38) (xy 44.45 119.38)
+		(wire
+			(pts
+				(xy 39.37 119.38) (xy 44.45 119.38)
 		)
 		(stroke
 			(width 0)
@@ -3772,7 +2847,7 @@
 		)
 		(uuid "bbd3c672-152a-4d6b-b90c-6c0e511ae65c")
 	)
-	(global_label "VBUS_CHG_SW"
+	(global_label "VBUS_5V"
 		(shape passive)
 		(at 82.55 85.09 0.0000)
 		(effects
@@ -3783,93 +2858,9 @@
 		)
 		(uuid "0add65fe-8d8f-449f-8fb6-8612d03eb472")
 	)
-	(global_label "CHARGE_GATE"
-		(shape passive)
-		(at 74.93 90.17 0.0000)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "7e342649-193c-40ab-96a6-ad42a22e8b2c")
-	)
-	(global_label "CHARGE_GATE"
-		(shape passive)
-		(at 62.23 95.25 0.0000)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "71f27dca-9468-4c0b-bc55-ecba64d38d0d")
-	)
-	(global_label "GND"
-		(shape passive)
-		(at 62.23 105.41 0.0000)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "95fe14d1-4cf2-459d-bfa3-8e2bd8c4a7cf")
-	)
-	(global_label "CHARGE_EN"
-		(shape passive)
-		(at 54.61 100.33 0.0000)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "d3c42742-bca8-41a9-bd77-0af332e717af")
-	)
-	(global_label "VBUS_5V"
-		(shape passive)
-		(at 69.85 76.2 0.0000)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "93462abb-eacc-4ce5-b2ce-a6c019646ad6")
-	)
-	(global_label "CHARGE_GATE"
-		(shape passive)
-		(at 69.85 83.82 0.0000)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "3f1e79cf-036e-446b-864b-7da31d450ee9")
-	)
-	(global_label "CHARGE_EN"
-		(shape passive)
-		(at 49.53 106.68 0.0000)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "5c9312ae-f8c2-40aa-958a-4a549176b0aa")
-	)
-	(global_label "GND"
-		(shape passive)
-		(at 49.53 114.3 0.0000)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "9bcc55f0-b6be-4d37-a1a2-05038a02143b")
+	(no_connect
+		(at 74.93 90.17)
+		(uuid "2f3db535-f70b-4379-9ee4-935d0fa3d7a1")
 	)
 	(global_label "CHRG_STAT"
 		(shape input)
@@ -3904,7 +2895,7 @@
 		)
 		(uuid "4d32ef2f-da13-4d1a-8597-1a5a196ca6ee")
 	)
-	(global_label "VBUS_CHG_SW"
+	(global_label "VBUS_5V"
 		(shape passive)
 		(at 110.49 82.55 0.0000)
 		(effects
@@ -3947,28 +2938,6 @@
 			(justify left bottom)
 		)
 		(uuid "d5ce2fea-ab63-407b-8cea-4295b7791c0e")
-	)
-	(global_label "VREG_3V3"
-		(shape passive)
-		(at 129.54 76.2 0.0000)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "3ed82532-bcbc-4830-bc72-3ee822533ef2")
-	)
-	(global_label "CHRG_STAT"
-		(shape input)
-		(at 129.54 83.82 0.0000)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "cf4bd116-ea9c-463e-9175-6c26412a155b")
 	)
 	(global_label "VBAT_PROTECTED"
 		(shape input)
@@ -4014,7 +2983,7 @@
 		)
 		(uuid "909e2f7b-409b-4c55-a891-416da815e947")
 	)
-	(global_label "VBUS_CHG_SW"
+	(global_label "VBUS_5V"
 		(shape passive)
 		(at 105.41 106.68 0.0000)
 		(effects
@@ -4223,17 +3192,6 @@
 		)
 		(uuid "c802887c-ca1f-4edb-a458-46c85a13a29f")
 	)
-	(global_label "VBUS_CHG_SW"
-		(shape passive)
-		(at 95.25 74.93 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "8e72e247-54a2-48d8-be69-e55e9d4208b2")
-	)
 	(global_label "GND"
 		(shape passive)
 		(at 44.45 119.38 0)
@@ -4278,31 +3236,31 @@
 		)
 		(uuid "b63c64a2-1e75-4659-8ed5-e230a597b38b")
 	)
-	(global_label "GND"
-		(shape passive)
-		(at 190.5 138.43 0)
+		(global_label "GND"
+			(shape passive)
+			(at 190.5 138.43 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 			(justify left bottom)
 		)
-		(uuid "2d8ffdd6-dfef-411b-9b59-66141eb725e2")
-	)
-	(global_label "CHRG_STAT"
-		(shape input)
-		(at 190.5 144.78 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
+			(uuid "2d8ffdd6-dfef-411b-9b59-66141eb725e2")
 		)
-		(uuid "644db65e-d14b-458a-911d-8a70400c87af")
-	)
-	(hierarchical_label "VREG_3V3"
-		(shape output)
-		(at 187.96 38.1 180)
+		(global_label "CHRG_STAT"
+			(shape input)
+			(at 190.5 144.78 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+			(uuid "644db65e-d14b-458a-911d-8a70400c87af")
+		)
+		(hierarchical_label "VREG_3V3"
+			(shape output)
+			(at 187.96 38.1 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4333,17 +3291,6 @@
 		)
 		(uuid "f03a478d-87a0-48bb-95e9-40b1d8ad6f73")
 	)
-	(hierarchical_label "CHARGE_EN"
-		(shape input)
-		(at 25.4 53.34 0.0000)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "2f77b608-7bac-4cd1-a7fa-8eb0bb33edf3")
-	)
 	(hierarchical_label "VBUS_5V"
 		(shape input)
 		(at 25.4 60.96 0.0000)
@@ -4365,23 +3312,6 @@
 			(justify left)
 		)
 		(uuid "cf7b8a7f-5a0e-4bb6-a502-33f10b3c71c6")
-	)
-	(wire
-		(pts
-			(xy 25.4 53.34) (xy 33.02 53.34)
-		)
-		(stroke (width 0) (type default) (color 0 0 0 0))
-		(uuid "4406df46-65f9-5cfc-9e53-1fd9cb349aeb")
-	)
-	(global_label "CHARGE_EN"
-		(shape passive)
-		(at 33.02 53.34 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-		)
-		(uuid "6c8f873a-bf79-5bde-8cbd-5e250075d06e")
 	)
 	(wire
 		(pts
@@ -4468,7 +3398,7 @@
 		)
 		(uuid "269aec41-a7e8-5ec1-8f95-0a5ffe0081b7")
 	)
-	(text "Power-path interface scaffold: regulator, sensing, and charge-gate nets are locked here before component symbols land."
+	(text "Power-path interface scaffold: regulator, sensing, and fixture-fed charge nets are locked here before component symbols land."
 		(exclude_from_sim no)
 		(at 20.32 20.32 0.0000)
 		(effects

@@ -26,7 +26,8 @@ hardware drop must preserve.
 
 - Battery replacement must not require shell destruction.
 - Glide pads must be replaceable wear items.
-- USB-C connector repair must not require discarding the entire shell.
+- Service-pad or fixture-interface repair must not require discarding the
+  entire shell.
 - Sensor and lens must remain field-replaceable even if fine-pitch rework is
   required.
 
@@ -35,4 +36,3 @@ hardware drop must preserve.
 If teardown requires cutting the shell, peeling a battery from permanent epoxy,
 or sacrificing the sensor mount to reach the cell, the design fails the current
 repairability baseline.
-

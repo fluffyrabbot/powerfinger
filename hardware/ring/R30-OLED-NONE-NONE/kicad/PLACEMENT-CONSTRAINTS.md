@@ -15,7 +15,7 @@ References:
 - PAW3204-class optical sensor and matched lens stack
 - TP4054 charge controller with `20 kohm` RPROG
 - RT9080-33GJ5 low-Iq regulator
-- P-channel MOSFET for charge enable/disable
+- Non-BOM VBUS service jumper into TP4054 `VCC`
 - NTC thermistor and divider for cell temperature monitoring
 - Dome click switch
 - USB-C charge/debug entry
@@ -30,16 +30,16 @@ placement classes for P0:
   and shell exterior
 - `U2`: bottom-side `PAW3204DB-TJ3L` 8-pin optical package centered on the
   aperture datum
-- `J_BAT`: JST-SH `SM02B-SRSS-TB`-class right-angle 2-pin 1.0 mm battery
-  receptacle
-- `J1`: `USB4215`-class 16-pin USB 2.0 Type-C receptacle with four through-hole
-  shell stakes
-- `U3`/`U4`: SOT-23-5 TP4054 and RT9080 footprints, with the TP4054 pinout kept
-  distinct from MCP73831-style chargers
-- `Q1`: SOT-23 P-channel VBUS switch before TP4054 `VCC`
-- `Q2`/`R6`: BDFL-accepted 2N7002 logic-safe charge-gate driver and
-  pulldown; these must stay unless the BDFL explicitly replaces the charge
-  switch with a real logic-level load-switch part
+- `J_BAT`: source-controlled off-board same-net battery service pads for
+  `VBAT+`, `VBAT-`, and grounded shield/service pads
+- `J1`: source-controlled off-board same-net USB service pads for USB2 data,
+  VBUS, CC pulldowns, GND, and shield continuity
+- `U3`: SOT-23-5 TP4054 footprint, with the TP4054 pinout kept distinct from
+  MCP73831-style chargers
+- `U4`: source-controlled RT9080-33GJ5 compact SOT-23-5 service-clearance
+  footprint; this keeps the same regulator and pinout while relieving the
+  first-board regulator/click corridor
+- `Q1`: source-controlled non-BOM VBUS service jumper before TP4054 `VCC`
 
 ## Mechanical / RF Placement Rules
 
@@ -69,16 +69,16 @@ placement classes for P0:
 
 ## Safety / Service Rules
 
-- The battery must remain removable without de-soldering the USB-C connector.
+- The battery must remain removable without de-soldering the service pads or
+  the cell.
 - The NTC placement must reflect actual cell temperature, not board-ambient
   wishful thinking.
-- The charge MOSFET and TP4054 belong near the USB/VBUS entry, not deep inside
-  the RF-sensitive region.
-- The P-channel charge MOSFET gate must not connect directly to ESP32-C3
-  `GPIO10` while a pull-up can take the gate to `VBUS_5V`; use the `Q2`/`R6`
-  gate-driver path. A logic-level load switch is a substitution that needs a BOM
-  and repairability decision, not a silent routing equivalent.
-- The USB-C connector cannot be the only structural retention point for the
+- The VBUS service jumper and TP4054 belong near the USB/VBUS entry, not deep
+  inside the RF-sensitive region.
+- This P0 does not allocate ESP32-C3 `GPIO10` to charge control. Reintroducing
+  an onboard charge-enable switch needs a BOM, schematic, PCB, firmware, and
+  repairability decision, not a silent routing equivalent.
+- The off-board service pads cannot be a structural retention point for the
   board inside the shell.
 - The first CAD retention path is molded side rails, side stop lugs, and lid
   compression pads; do not add hidden adhesive, one-shot snaps, or metal clips
@@ -104,11 +104,11 @@ at respin time.
 - No component, copper pour, or keep-out on a zone edge may overhang into an
   adjacent zone's footprint. A valid rigid-to-flex split line must already
   exist between each zone pair on the rigid P0.
-- `J1` USB-C entry belongs in the battery + charge-path zone, near the VBUS
+- `J1` service entry belongs in the battery + charge-path zone, near the VBUS
   entry rule in `Safety / Service Rules`, not across the zone boundary into
   the MCU region.
-- `J_BAT` battery harness connector belongs in the battery zone and must not
-  force the battery envelope across the MCU or sensor zone boundary.
+- `J_BAT` battery service-pad interface belongs in the battery zone and must
+  not force the battery envelope across the MCU or sensor zone boundary.
 - Antenna keep-out, battery envelope, sensor aperture, and dome actuation area
   are zone-bounded by earlier rules — do not compromise those boundaries to
   save a small amount of copper on the rigid P0.

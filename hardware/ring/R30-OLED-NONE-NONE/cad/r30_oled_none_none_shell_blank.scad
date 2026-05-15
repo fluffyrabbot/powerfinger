@@ -39,13 +39,13 @@ pcb_pod_size_mm = [pcb_size_mm[0] + (2 * pcb_pod_margin_mm[0]),
                    shell_height_mm];
 pcb_pod_corner_radius_mm = 2.2;
 
-usb_c_center_mm = [-17.85, 0.0, pcb_top_z_mm + 1.55];
-usb_c_opening_mm = [4.8, 10.6, 3.8];
-usb_c_body_keepout_mm = [8.0, 8.2, 3.8];
+service_access_center_mm = [-17.85, 0.0, pcb_top_z_mm + 0.70];
+service_access_opening_mm = [2.6, 8.2, 1.8];
+service_fixture_keepout_mm = [4.2, 7.4, 1.8];
 
 sensor_pcb_center_mm = [-4.00, 0.0, 1.7];
 dome_switch_center_mm = [-6.15, -4.22, pcb_top_z_mm + 0.45];
-battery_connector_center_mm = [-11.90, -5.75, pcb_top_z_mm + 0.55];
+battery_connector_center_mm = [-11.90, -5.75, pcb_top_z_mm + 0.35];
 antenna_keepout_center_mm = [17.575, 0.0, pcb_top_z_mm + 1.2];
 antenna_keepout_mm = [7.85, 16.7, 2.4];
 
@@ -64,8 +64,8 @@ dome_pocket_diameter_mm = 6.6;
 dome_actuator_relief_diameter_mm = 3.2;
 dome_pocket_depth_mm = 1.5;
 
-battery_lead_channel_mm = [13.0, 3.2, 2.0];
-battery_lead_channel_center_mm = [-6.7, -3.9, pcb_top_z_mm + 0.45];
+battery_harness_channel_mm = [13.0, 3.2, 2.0];
+battery_harness_channel_center_mm = [-6.7, -3.9, pcb_top_z_mm + 0.45];
 battery_lift_window_mm = [22.0, 16.5, shell_height_mm - service_seam_height_mm - lid_top_skin_mm + 0.1];
 battery_lift_window_center_mm = [-4.6, 0.8, service_seam_height_mm + 0.85];
 battery_service_loop_relief_mm = [12.0, 6.0, 1.6];
@@ -95,10 +95,10 @@ show_reference_fasteners = true;
 
 // Export modes:
 //   shell
-//   usb_c_coupon
+//   service_access_coupon
 //   board_retention_coupon
 //   lid_pad_coupon
-//   battery_lead_coupon
+//   battery_harness_coupon
 //   service_lid_coupon
 //   fit_coupons
 export_mode = "shell";
@@ -128,13 +128,13 @@ assert(lid_top_skin_mm > 0.8);
 assert(band_width_mm >= sensor_aperture_diameter_mm + 6);
 assert(seam_socket_inner_diameter_mm > inner_diameter_mm + 2.0);
 assert(pcb_pod_size_mm[1] >= pcb_size_mm[1] + 2.0);
-assert(usb_c_opening_mm[1] > 9.0);
+assert(service_access_opening_mm[1] > 7.5);
 assert(service_screw_centers_mm[1][0] < antenna_keepout_center_mm[0] - antenna_keepout_mm[0] / 2);
 assert(export_mode == "shell" ||
-       export_mode == "usb_c_coupon" ||
+       export_mode == "service_access_coupon" ||
        export_mode == "board_retention_coupon" ||
        export_mode == "lid_pad_coupon" ||
-       export_mode == "battery_lead_coupon" ||
+       export_mode == "battery_harness_coupon" ||
        export_mode == "service_lid_coupon" ||
        export_mode == "fit_coupons",
        str("unknown export_mode: ", export_mode));
@@ -231,14 +231,16 @@ module top_component_clearance() {
              center = true);
 }
 
-module usb_c_opening() {
-    translate(usb_c_center_mm)
-        cube(usb_c_opening_mm, center = true);
+module service_access_opening() {
+    translate(service_access_center_mm)
+        cube(service_access_opening_mm, center = true);
 }
 
-module usb_c_body_keepout() {
-    translate([usb_c_center_mm[0] + 1.2, usb_c_center_mm[1], usb_c_center_mm[2] - 0.1])
-        cube(usb_c_body_keepout_mm, center = true);
+module service_fixture_keepout() {
+    translate([service_access_center_mm[0] + 1.2,
+               service_access_center_mm[1],
+               service_access_center_mm[2] - 0.1])
+        cube(service_fixture_keepout_mm, center = true);
 }
 
 module dome_switch_pocket() {
@@ -255,9 +257,9 @@ module dome_actuator_relief() {
         cylinder(h = 0.8, d = dome_actuator_relief_diameter_mm, center = true);
 }
 
-module battery_lead_channel() {
-    translate(battery_lead_channel_center_mm)
-        cube(battery_lead_channel_mm, center = true);
+module battery_harness_channel() {
+    translate(battery_harness_channel_center_mm)
+        cube(battery_harness_channel_mm, center = true);
 }
 
 module battery_service_loop_relief() {
@@ -317,9 +319,9 @@ module lower_clearance_cuts() {
         sensor_cavity();
         module_pocket();
         pcb_tray_clearance();
-        usb_c_opening();
-        usb_c_body_keepout();
-        battery_lead_channel();
+        service_access_opening();
+        service_fixture_keepout();
+        battery_harness_channel();
         battery_service_loop_relief();
         sensor_tunnel();
         seam_socket();
@@ -333,7 +335,7 @@ module lid_service_clearance() {
         finger_opening();
         top_component_clearance();
         battery_lift_window();
-        usb_c_opening();
+        service_access_opening();
         dome_switch_pocket();
         dome_actuator_relief();
     }
@@ -402,19 +404,19 @@ module coupon_base(size) {
         cube([size[0], size[1], coupon_base_thickness_mm], center = true);
 }
 
-module usb_c_opening_fit_coupon() {
-    wall_height = usb_c_opening_mm[2] + 2.2;
+module service_access_fit_coupon() {
+    wall_height = service_access_opening_mm[2] + 2.2;
     wall_center_z = coupon_base_thickness_mm + wall_height / 2;
     board_slot_center_z = coupon_base_thickness_mm + board_rail_size_mm[2] +
                           (pcb_size_mm[2] + coupon_board_slide_clearance_mm) / 2;
 
     difference() {
         union() {
-            coupon_base([18.0, usb_c_opening_mm[1] + 7.0]);
+            coupon_base([18.0, service_access_opening_mm[1] + 7.0]);
 
             translate([-6.0, 0, wall_center_z])
                 cube([coupon_wall_mm,
-                      usb_c_opening_mm[1] + 5.0,
+                      service_access_opening_mm[1] + 5.0,
                       wall_height],
                      center = true);
 
@@ -429,8 +431,8 @@ module usb_c_opening_fit_coupon() {
 
         translate([-6.0, 0, wall_center_z])
             cube([coupon_wall_mm + 0.4,
-                  usb_c_opening_mm[1],
-                  usb_c_opening_mm[2]],
+                  service_access_opening_mm[1],
+                  service_access_opening_mm[2]],
                  center = true);
 
         translate([1.8, 0, board_slot_center_z])
@@ -497,7 +499,7 @@ module lid_compression_pad_fit_coupon() {
     }
 }
 
-module battery_lead_service_loop_fit_coupon() {
+module battery_harness_service_loop_fit_coupon() {
     block_size = [26.0, 18.0, 5.2];
 
     difference() {
@@ -505,9 +507,9 @@ module battery_lead_service_loop_fit_coupon() {
             cube(block_size, center = true);
 
         translate([-5.4, -4.4, 2.8])
-            cube([battery_lead_channel_mm[0],
-                  battery_lead_channel_mm[1],
-                  battery_lead_channel_mm[2] + 0.2],
+            cube([battery_harness_channel_mm[0],
+                  battery_harness_channel_mm[1],
+                  battery_harness_channel_mm[2] + 0.2],
                  center = true);
 
         translate([0.0, 3.9, 3.0])
@@ -582,7 +584,7 @@ module service_lid_removal_fit_coupon() {
 
 module fit_coupon_set() {
     translate([-34.0, 20.0, 0])
-        usb_c_opening_fit_coupon();
+        service_access_fit_coupon();
 
     translate([34.0, 20.0, 0])
         board_retention_fit_coupon();
@@ -591,7 +593,7 @@ module fit_coupon_set() {
         lid_compression_pad_fit_coupon();
 
     translate([34.0, -20.0, 0])
-        battery_lead_service_loop_fit_coupon();
+        battery_harness_service_loop_fit_coupon();
 
     translate([0, -54.0, 0])
         service_lid_removal_fit_coupon();
@@ -635,8 +637,8 @@ module reference_solids() {
     %translate(pcb_tray_center_mm)
         color("limegreen") cube(pcb_size_mm, center = true);
 
-    %translate(usb_c_center_mm)
-        color("silver") cube(usb_c_body_keepout_mm, center = true);
+    %translate(service_access_center_mm)
+        color("silver") cube(service_fixture_keepout_mm, center = true);
 
     %translate(battery_center_mm)
         color("gold") cube(battery_keepout_mm, center = true);
@@ -651,7 +653,7 @@ module reference_solids() {
         color("orange") cylinder(h = 0.5, d = 5.3, center = true);
 
     %translate(battery_connector_center_mm)
-        color("darkorange") cube([5.0, 3.1, 1.4], center = true);
+        color("darkorange") cube([3.2, 2.9, 0.8], center = true);
 
     %translate(antenna_keepout_center_mm)
         color("violet") cube(antenna_keepout_mm, center = true);
@@ -682,14 +684,14 @@ module shell_packet() {
 
 if (export_mode == "shell") {
     shell_packet();
-} else if (export_mode == "usb_c_coupon") {
-    usb_c_opening_fit_coupon();
+} else if (export_mode == "service_access_coupon") {
+    service_access_fit_coupon();
 } else if (export_mode == "board_retention_coupon") {
     board_retention_fit_coupon();
 } else if (export_mode == "lid_pad_coupon") {
     lid_compression_pad_fit_coupon();
-} else if (export_mode == "battery_lead_coupon") {
-    battery_lead_service_loop_fit_coupon();
+} else if (export_mode == "battery_harness_coupon") {
+    battery_harness_service_loop_fit_coupon();
 } else if (export_mode == "service_lid_coupon") {
     service_lid_removal_fit_coupon();
 } else if (export_mode == "fit_coupons") {

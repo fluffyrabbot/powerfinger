@@ -32,12 +32,12 @@ release.
 
 ## Capture Order
 
-1. Power tree: protected LiPo, TP4054 charge path, RT9080 LDO, charge-enable
-   MOSFET, NTC divider
+1. Power tree: protected LiPo, TP4054 charge path, RT9080 LDO, fixture-fed
+   VBUS service jumper, NTC divider
 2. MCU/module block: `ESP32-C3-MINI-1-N4` with antenna keep-out reserved first
 3. Sensor block: PAW3204-class optical sensor plus matching lens and aperture
 4. Human input block: dome switch and any required debounce/passive support
-5. USB-C and programming path for charging plus firmware bring-up
+5. Off-board USB service/programming path for charging plus firmware bring-up
 
 ## First Routed Board Pass
 
@@ -52,27 +52,28 @@ release.
 - bottom-side PAW3204 placement centered on the `6.2 mm` optical aperture datum
   recorded as a `Cmts.User` alignment circle, not an internal `Edge.Cuts`
   fabrication cutout through the populated PCB
-- JST-SH right-angle battery receptacle for a harnessed, replaceable protected
-  cell
-- USB-C service connector class locked to 16-pin USB 2.0 with through-hole
-  shell stakes
-- TP4054 path routed through a P-channel VBUS switch, `20 kohm` RPROG, RT9080
-  regulation, and an NTC divider near the battery connector
+- off-board same-net battery service pads for a replaceable protected-cell
+  harness or fixture; no onboard JST-SH receptacle body is claimed
+- Off-board same-net USB service pads for USB2 data, VBUS, CC pulldowns, GND,
+  and shield continuity; charge/program service now requires a fixture or pogo
+  harness rather than an onboard USB-C receptacle
+- TP4054 path routed through a non-BOM fixture-fed VBUS service jumper,
+  `20 kohm` RPROG, RT9080 regulation, and an NTC divider near the battery
+  service pads
 - MCU/radio and sensor/click sheets populated with first-pass symbol
   counterparts for the routed `U1`, `U2`, `SW1`, decoupling, sense testpads,
   and sensor bring-up pads
 - routed sheet nets promoted to passive global labels where they intentionally
-  match flat PCB net names, with project-local SOT-23 pin-numbered
-  `Q1`/`Q2` symbols, aligned USB ESD D+/D- labels, and USB-C shield stakes
-  mapped to `SH`
+  match flat PCB net names, with the project-local `Q1` VBUS service jumper,
+  aligned USB ESD D+/D- labels, and service shield pads mapped to `SH`
 - `J_BAT` backed by a project-local first-board symbol that models `MP1`/`MP2`
-  as GND-tied mounting/shield pads, so schematic/PCB parity is clean
+  as GND-tied shield/service pads, so schematic/PCB parity is clean
 - first routing cleanup of USB-C SMT contact pad length, snap-dome contact
   geometry, and wrong first-pass power/USB endpoint coordinates
 - second routing cleanup of the SDIO/motion fanout, VBUS-detect dogleg, long
   VBUS detector feed, and minimum routed trace width
-- charger-cluster cleanup that rotates `Q1` off the J1 `A7` row and moves
-  `R4` with it instead of routing raw and switched VBUS through the A7/A8 lane
+- charger-service cleanup that replaces the active `Q1`/`R4`/`Q2`/`R6`
+  charge-gate with a non-BOM fixture-fed VBUS jumper into TP4054 `VCC`
 - USB/D1 fanout cleanup that nudges `D1` upward, doglegs J1 `A6`/`A7` before
   the drop, and separates the long `USB_D+`/`USB_D-` lanes into U1
 - connector-edge cleanup that extends the fixed J1 service lip leftward and
@@ -106,8 +107,7 @@ release.
 - sensor-rail cleanup that moves the `VREG_3V3` via off the PAW3204
   `SENSOR_LED_KIT`/GND pad column, routes the sensor `VDD`/`VDDA` feed down a
   right-side `B.Cu` trunk, and keeps `C1B` tied in with a short local branch
-- `R6` / `TP_LEDKIT` placement cleanup that lands the charge-enable pulldown on
-  the existing local GND run and moves the PAW3204 LED test pad out of the
+- `TP_LEDKIT` placement cleanup that moves the PAW3204 LED test pad out of the
   `C1B` / GND pinch
 - U3 VBAT escape cleanup that routes TP4054 BAT around the GND/CHRG pad row
   through an outer dogleg before rejoining the U4 VIN trunk
@@ -148,15 +148,16 @@ release.
   `(114.200, 95.300)`, reducing total DRC while keeping shorts closed
 - top-edge `VBUS_5V` trunk cleanup that retargets the VBUS feed from
   `(105.820, 91.600)` to `(105.600, 91.600)`, clearing the `J_BAT` `MP1`
-  short without moving the shell-bound battery connector
+  short without moving the then-shell-bound battery connector
 - in-place `R9` divider flip so the right-side `VBUS_5V` trunk lands on the
   VBUS pad and `VBUS_DETECT` exits the opposite pad into the existing top node,
   plus moving `R9`'s source reference field to `F.Fab` in the copper-dense
   divider pocket
 - `SW1` dome-pocket relief that moves the shell-bound click center down to
-  `(114.350, 95.780)` and moves the CAD dome pocket with it; repeated KiCad
-  runs now keep the conservative DRC count at `44` while preserving
-  `unconnected=9`, parity `0`, and the closed shorting bucket
+  `(114.350, 95.780)` and moves the CAD dome pocket with it; this established
+  the earlier short-free topology that later ground-continuity and
+  three-contact dome-ring closures brought to the current verified
+  `DRC=40`, `unconnected=0`, parity `0` snapshot
 - non-shell-bound `R11` / `TP_CHRG` relocation down into the charger-status
   pocket at `y=105.000`, shortening the `CHRG_STAT` run and moving their source
   reference fields to `F.Fab` in the dense regulator pocket
@@ -204,17 +205,101 @@ release.
   moves, and broad R2B shifts with shorts, copper-edge, hole-clearance, mask, or
   extra clearance debt, then moves only `R2B` from `(100.500, 101.500)` to
   `(100.400, 101.500)` and retargets its local `USB_CC2_RD` and GND endpoints
+- GND-continuity cleanup that keeps the shell-bound placements and schematic
+  contracts intact while closing six unconnected rows: a lower `SW1` local GND
+  stitch, via-assisted U3 and C2 returns, a via-assisted `J_BAT` pad-2 return,
+  a left-trunk B-side bridge, and a C2-to-U1-side GND return; direct `J1` A12
+  and top-`SW1` closure variants were rejected because they reintroduced
+  current shorting rows
+- `J1` A12 service-ground cleanup that closes the lower USB-C ground row from
+  the existing lower GND rail endpoint to the accepted service-edge via while
+  leaving the USB-D- fanout intact; top-`SW1` closure remains blocked by the
+  latent U4, U1, and Q2 power/sense shorts exposed by direct top-ring closure
+- three-contact `SW1` dome-ring cleanup that removes the top ring contact from
+  the board and source footprint, keeps the left/right/lower dome contacts, and
+  ties the remaining right/lower GND contacts together without reopening shorts
+  or courtyard debt
+- follow-on scratch-only routing proofs that reject local patch moves after the
+  unconnected bucket closed: clearance-only doglegs, placement-level corridor
+  moves, local-spine redraws, left-service USB/charge fanout repartitions, and
+  right-side regulator/click density moves all failed to beat the retained
+  `DRC=40` board without reopening shorting, dangling, or unconnected debt
+- clean-room active-R30 lane scratches inside the same packet envelope are also
+  rejected for this two-layer pass: all-pad lane sketches returned non-library
+  `DRC=560..564`, while safer function-lane sketches still returned
+  non-library `DRC=405..416`; none kept `unconnected=0` or the closed shorting
+  bucket, so the next reducer is a stackup/envelope architecture decision rather
+  than another local route patch
+- first four-layer architecture scratches are rejected as route migrations: a
+  KiCad 10-format stackup-only scratch stayed effectively tied with the live
+  packet, while inner-layer moves for the existing `VREG_3V3` /
+  `VBAT_PROTECTED` diagonals and VREG bus returned non-library `DRC=58..76`
+  with reopened unconnected and shorting buckets
+- placement-level four-layer scratches are rejected while all shell/service
+  anchors remain fixed: support-part moves plus retained routes returned
+  non-library `DRC=127`, targeted inner-power replacements returned
+  non-library `DRC=137`, and full via-per-pad reroutes returned non-library
+  `DRC=549..573`; the next reducer must let the service edge, `J1`, `J_BAT`,
+  and `SW1` move with shell CAD, or change component classes
+- envelope scratches that moved the service edge, `J1`, `J_BAT`, `SW1`, and
+  support parts together are also rejected with the current first-board
+  BOM/netlist: retained-route variants returned non-library `DRC=149..157`, and
+  generated bus reroutes returned non-library `DRC=307..317`; the next reducer
+  is a component-class cut, starting with the USB-C service connector or
+  off-board charge/program service
+- component-class USB service cut that replaces the through-hole-staked USB-C
+  receptacle with source-controlled off-board same-net service pads, adds a GND
+  continuity via at the former shell-stake return, and moves `USB_CC1_RD` onto
+  a B-side jog; KiCad CLI `10.0.2` then reported ERC `0`, DRC `38`,
+  unconnected `0`, and schematic parity `0` with no current shorting or
+  courtyard bucket
+- regulator/input-cap component-class scratches are rejected: same-center `U4`
+  pad shrink, `C2` 0402 substitution, tiny same-pin DFN regulator sketches,
+  `VREG_3V3` / `VBAT_PROTECTED` route migration, and connected C2 placement
+  sweeps did not produce a retainable `DRC<38` board without reopening
+  unconnected or shorting debt
+- battery-service component-class cut that replaces the onboard JST-SH body
+  with source-controlled off-board same-net service pads while preserving
+  `VBAT+`, `VBAT-`, `MP1`, and `MP2` parity; KiCad CLI `10.0.2` then reported
+  ERC `0`, DRC `36`, unconnected `0`, and schematic parity `0` with no current
+  shorting or courtyard bucket
+- U4 regulator land-pattern cut that keeps the RT9080 part and pinout, moves
+  non-shell-bound `U4` by `(+0.05, -0.05) mm`, and switches only that footprint
+  to `PowerFinger_Ring:RT9080_33GJ5_SOT23_5_ServiceClearance`; KiCad CLI
+  `10.0.2` then reported ERC `0`, DRC `34`, unconnected `0`, and schematic parity
+  `0` with no current shorting or courtyard bucket
+- `R8` divider clearance cleanup that moves only non-shell-bound `R8` to
+  `(112.100, 93.400)` and retargets its local `VBAT_SENSE`/GND endpoints;
+  KiCad CLI `10.0.2` then reported ERC `0`, DRC `33`, unconnected `0`, and
+  schematic parity `0` with no current shorting or courtyard bucket
+- U4 land-pattern refinement that keeps the RT9080 part, pinout, placement, and
+  source-controlled footprint name fixed while shrinking the local pads to
+  `0.40 x 0.78 mm`; KiCad CLI `10.0.2` now reports ERC `0`, DRC `32`,
+  unconnected `0`, and schematic parity `0` with no current shorting or
+  courtyard bucket
+- CHRG_STAT fixture-status cut that removes the onboard `R11` pull-up and its
+  local `VREG_3V3` spoke while keeping `TP_CHRG` as a fixture-observed
+  TP4054 status pad; KiCad CLI `10.0.2` now reports ERC `0`, DRC `31`,
+  unconnected `0`, and schematic parity `0` with no current shorting or
+  courtyard bucket
+- fixture-fed charge-service cut that removes `R4`, `Q2`, `R6`,
+  `CHARGE_GATE`, `CHARGE_EN`, and `VBUS_CHG_SW` from this P0, reties U3 `VCC`
+  directly to `VBUS_5V` through the non-BOM `Q1` service jumper, marks ESP32-C3
+  `GPIO10` no-connect, and moves the local U4 GND via to `(112.000, 102.700)`;
+  KiCad CLI `10.0.2` now reports ERC `0`, DRC `27`, unconnected `0`, and
+  schematic parity `0` with no current shorting or courtyard bucket
 
-This pass accepts `Q2` = 2N7002 SOT-23 plus `R6` = `100k` as the logic-safe
-charge-gate driver; the direct MCU-to-P-channel-gate option is rejected while
-the gate can see `VBUS_5V`. The PCB now also carries the recommended
-sense/status support parts: `R7`/`R8` = `100k`/`100k` for `VBAT_SENSE`,
-`R9`/`R10` = `220k`/`100k` for `VBUS_DETECT`, and `R11` = `100k` as the TP4054
-`CHRG_STAT` pull-up. `VBAT_SENSE` and `VBUS_DETECT` are routed to the ESP32-C3
-resources named in [INTERFACE-CONTRACT.md](INTERFACE-CONTRACT.md). `CHRG_STAT`
-is pulled up and locally testable, but no MCU GPIO or firmware consumer is
-claimed yet. PAW3204 `SENSOR_NRESET` and `SENSOR_MOTION_N` are likewise local
-bring-up pads only for the first optical board, not firmware reset or wake
+This pass cuts the onboard active charge-enable switch from the first P0:
+fixture VBUS now feeds TP4054 `VCC` through a non-BOM `Q1` service jumper, and
+ESP32-C3 `GPIO10` is intentionally no-connect. The PCB also carries the
+recommended sense support parts: `R7`/`R8` = `100k`/`100k` for `VBAT_SENSE` and
+`R9`/`R10` = `220k`/`100k` for `VBUS_DETECT`. `VBAT_SENSE` and `VBUS_DETECT`
+are routed to the ESP32-C3 resources named in
+[INTERFACE-CONTRACT.md](INTERFACE-CONTRACT.md). `CHRG_STAT` remains locally
+testable at `TP_CHRG`, but it has no onboard pull-up and no MCU GPIO or
+firmware consumer is claimed yet. A fixture must provide a pull-up if charger
+status is measured. PAW3204 `SENSOR_NRESET` and `SENSOR_MOTION_N` are likewise
+local bring-up pads only for the first optical board, not firmware reset or wake
 signals. The `43 x 18 mm` rigid pass now drives the shell CAD fit pass, but it
 still does not prove the package is comfortable, printable, RF-clean, or
 serviceable with a populated board.
@@ -226,8 +311,9 @@ shell using these KiCad facts:
 
 - board outline: `99..142 x 91..109 mm`, treated as a `43 x 18 mm` PCB around
   center `(120.5, 100)`
-- USB-C opening: `J1` at `(102.650, 100.000)` on the left service edge
-- battery lead path: `J_BAT` at `(108.600, 94.250)`
+- off-board service-pad access: `J1` at `(102.650, 100.000)` on the left
+  service edge
+- off-board battery service path: `J_BAT` at `(108.600, 94.250)`
 - dome pocket: `SW1` at `(114.350, 95.780)`
 - optical datum: `U2`/board aperture at `(116.500, 100.000)`
 - antenna keep-out: external no-footprint zone from `x=134.150` to board edge
@@ -244,9 +330,8 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.2` snapshot is
-  ERC=0, DRC=44, unconnected=9, and schematic-parity=0; the remaining board
-  story is dominated by unconnected items plus hand-routed crossing, clearance,
-  mask-bridge, and courtyard failures.
+  ERC=0, DRC=27, unconnected=0, and schematic-parity=0; the remaining board
+  story is dominated by hand-routed crossing, clearance, and mask-bridge debt.
 - Treat the first PCB as a routed board pass, not a green fabrication release.
   Clear schematic backfill, net cleanup, and DRC/ERC before fabrication.
 - Close `../FIRST-BOARD-CHECKLIST.md` and `../STACKUP-VERIFY.md` before treating

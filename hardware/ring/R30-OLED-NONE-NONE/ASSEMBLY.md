@@ -26,7 +26,7 @@ claim that the package is already mechanically validated.
 - Potting compound
 - Cyanoacrylate or epoxy bridging the primary service seam
 - Battery adhesive that requires bending or puncturing the cell to remove
-- USB-C connector acting as the sole mechanical retention feature
+- Service pads or fixture access acting as the sole mechanical retention feature
 
 ## Intended Assembly Order
 
@@ -51,4 +51,3 @@ claim that the package is already mechanically validated.
 - Shell size parameters used for the wearer
 - Closure method used
 - Any adhesive used near the battery, lens, or service seam
-

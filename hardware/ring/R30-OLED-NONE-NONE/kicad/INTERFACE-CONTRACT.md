@@ -18,10 +18,10 @@ It exists to stop two kinds of drift:
   `GPIO6` = PMW3360 `NCS`, `GPIO7` = PMW3360 `MISO`.
 - Keep charge-safety nets off new strapping-pin dependencies where possible.
   Espressif documents `GPIO2`, `GPIO8`, and `GPIO9` as strapping pins on
-  ESP32-C3, so the new VBUS-detect and charge-enable choices avoid them.
+  ESP32-C3, so the VBUS-detect choice avoids them.
 - Keep the pre-hardware dev-board lane honest: firmware Kconfig defaults for
-  the NTC, charge-enable gate, and VBUS detect stay disabled (`-1`) until the
-  real ring hardware populates them.
+  the NTC and VBUS detect stay disabled (`-1`) until the real ring hardware
+  populates them. This P0 does not allocate an MCU charge-enable gate.
 
 ## First-Pass Pin Plan
 
@@ -30,7 +30,7 @@ It exists to stop two kinds of drift:
 | VBAT sense | `ADC1_CH0` / `GPIO0` | `CONFIG_POWERFINGER_VBAT_ADC_CHANNEL` | Active default | Existing battery monitor path |
 | Cell NTC sense | `ADC1_CH1` / `GPIO1` | `CONFIG_POWERFINGER_NTC_ADC_CHANNEL` | Recommended first board | Matches the published battery-safety requirement without colliding with the optical lane |
 | USB VBUS detect | `GPIO3` | `CONFIG_POWERFINGER_VBUS_DETECT_PIN` | Recommended first board | Input only from a resistor-divided 5V-detect net |
-| Charger status | none allocated | none | Local hardware test only | `CHRG_STAT` is pulled up on the PCB, but this packet does not claim firmware consumption |
+| Charger status | none allocated | none | Fixture hardware test only | `CHRG_STAT` is exposed on a local pad without an onboard pull-up; a test fixture must provide a pull-up if status is measured |
 | Sensor clock | `GPIO4` | `CONFIG_POWERFINGER_SENSOR_SCLK_PIN` | Active default | Shared PAW3204 / PMW3360 clock path |
 | Sensor data out | `GPIO5` | `CONFIG_POWERFINGER_SENSOR_SDIO_PIN` | Active default | PAW3204 bidirectional SDIO, PMW3360 MOSI |
 | Sensor chip select | `GPIO6` | `CONFIG_POWERFINGER_SENSOR_NCS_PIN` | Active default | PMW3360-only; leave unconnected on PAW3204 capture |
@@ -39,7 +39,7 @@ It exists to stop two kinds of drift:
 | PAW3204 motion wake | none allocated | none | Local hardware test only | `SENSOR_MOTION_N` stays on a pad for scope/logic-analyzer checks; the first optical board wakes from the dome only |
 | Primary click | `GPIO8` | `CONFIG_POWERFINGER_DOME_PIN` | Active default | Existing wake-capable dome path |
 | Ball-variant Hall gate | `GPIO9` | `CONFIG_POWERFINGER_HALL_POWER_PIN` | Cross-variant reserve | Not used on the optical capture, retained for ring-family consistency |
-| Charge enable gate | `GPIO10` | `CONFIG_POWERFINGER_CHARGE_ENABLE_PIN` | Recommended first board | Non-strapping output for the default-off P-channel MOSFET gate |
+| Charge service enable | none | none | Fixture hardware only | Fixture VBUS presence feeds TP4054 `VCC` through the non-BOM `Q1` service jumper; ESP32-C3 `GPIO10` is no-connect in this P0 |
 | Native USB D- | `GPIO18` | Reserved | Recommended first board | Service/debug path if the ring keeps onboard USB data |
 | Native USB D+ | `GPIO19` | Reserved | Recommended first board | Pair with `GPIO18` for native USB service/debug |
 
@@ -47,8 +47,9 @@ It exists to stop two kinds of drift:
 
 - The active optical ring should not route VBUS detect to `GPIO4`; that
   collides with the current PAW3204/PMW3360 shared clock path.
-- `GPIO10` is intentionally reserved for the charge-enable gate so the safe-
-  default pull-up on the MOSFET does not become a new boot-strap dependency.
+- `GPIO10` is intentionally no-connect on this P0 after cutting the active
+  charge-gate island. Reintroduce charge-enable firmware only with a matching
+  schematic, PCB, BOM, and firmware contract update.
 - The first optical board intentionally does not allocate MCU GPIOs for PAW3204
   `RST/QB/PD` or `MOTSWK`. Reset control is not needed for the polling-based
   PAW3204 bring-up path, and motion wake would add firmware sleep semantics
@@ -63,26 +64,28 @@ It exists to stop two kinds of drift:
 
 ## Current Firmware Alignment
 
-- Host-side power-manager tests now use the same first-pass safety path:
-  `NTC = ADC1_CH1`, `VBUS detect = GPIO3`, `charge enable = GPIO10`.
-- Production ring firmware still leaves NTC, charge-enable, and VBUS-detect
-  hardware disabled by default for pre-hardware dev boards; enable them only in
-  a real R30 board config that matches this capture.
+- Host-side power-manager tests keep generic charge-enable coverage, but this
+  R30 P0 board contract uses only `NTC = ADC1_CH1` and `VBUS detect = GPIO3`
+  as populated MCU safety/sense paths.
+- Production ring firmware still leaves NTC and VBUS-detect hardware disabled
+  by default for pre-hardware dev boards; enable them only in a real R30 board
+  config that matches this capture. Do not enable
+  `CONFIG_POWERFINGER_CHARGE_ENABLE_PIN` for this P0.
 - No production firmware symbol currently consumes `CHRG_STAT`. Keep it as a
-  pulled-up local status/test point until a spare MCU GPIO and firmware config
-  are deliberately allocated.
+  fixture-observed local status/test point until a spare MCU GPIO and firmware
+  config are deliberately allocated.
 
 ## Current PCB Alignment
 
-- `GPIO10` drives `CHARGE_EN` through a `Q2` low-side gate driver. Do not route
-  `GPIO10` directly to the P-channel gate while that gate has a `VBUS_5V`
-  pull-up.
+- `GPIO10` is no-connect. `Q1` is a non-BOM VBUS service jumper and TP4054
+  `VCC` is fed directly from fixture `VBUS_5V`; there is no routed
+  `CHARGE_EN`, `CHARGE_GATE`, or `VBUS_CHG_SW` net in this P0.
 - `NTC_SENSE` is routed as the active NTC divider sense net near the battery
   connector.
 - `VBAT_SENSE` now routes through `R7`/`R8` to ESP32-C3 `GPIO0`.
 - `VBUS_DETECT` now routes through `R9`/`R10` to ESP32-C3 `GPIO3`.
-- `CHRG_STAT` now has `R11` as a `VREG_3V3` pull-up and a local status pad, but
-  it does not route to the MCU in this packet.
+- `CHRG_STAT` now has a local fixture status pad but no onboard pull-up; it
+  does not route to the MCU in this packet.
 - PAW3204 `RST/QB/PD` and `MOTSWK` are exposed on local pads in the PCB pass
   instead of consuming new MCU GPIOs. This is the explicit first-board decision:
   local bench access only, no firmware consumer, no wake-mask bit, and no reset

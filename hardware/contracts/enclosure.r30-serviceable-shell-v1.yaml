@@ -34,7 +34,7 @@ interfaces:
     aperture_diameter_mm: 6.2
     gap_control: raised_rim_plus_uhmwpe_glide_pads
   service_connector:
-    type: USB-C 2.0 receptacle with through-hole shell stakes
+    type: off-board same-net USB service pads with external fixture or pogo harness
     opening_modeled: true
 serviceability:
   top_service_lid: true
@@ -44,10 +44,10 @@ serviceability:
   battery_replacement_without_disturbing_glide_features: intended
 fit_coupons:
   export_modes:
-    - usb_c_coupon
+    - service_access_coupon
     - board_retention_coupon
     - lid_pad_coupon
-    - battery_lead_coupon
+    - battery_harness_coupon
     - service_lid_coupon
     - fit_coupons
   evidence_target: hardware/ring/R30-OLED-NONE-NONE/STACKUP-VERIFY.md
@@ -55,12 +55,12 @@ acceptance:
   finger_to_surface_height_mm_max: 10
   optical_gap_mm: { min: 2.4, max: 3.2 }
   shell_reopenable_after_full_assembly: required
-  usb_c_insertion_without_board_levering: required
-  board_lifts_out_without_prying_on_usb_c_or_antenna: required
+  service_fixture_access_without_board_levering: required
+  board_lifts_out_without_prying_on_service_pads_or_antenna: required
   no_metal_intrusion_in_antenna_keepout: required
 known_limits:
   - comfort is unmeasured
   - RF behavior is unmeasured
   - printable tolerance stack is unmeasured
   - dome actuation force and click displacement are unmeasured
-  - battery fit and service lead bend radius are unmeasured
+  - battery fit and service harness bend radius are unmeasured

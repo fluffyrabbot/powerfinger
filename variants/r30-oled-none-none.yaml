@@ -48,7 +48,7 @@ serviceability:
   battery_replaceable_without_solder: true
   shell_reopenable: true
   glue_seal_allowed: false
-  charging_and_service_connector: usb_c_receptacle_with_shell_stakes
+  charging_and_service_connector: off_board_same_net_service_pads_with_external_fixture
 non_claims:
   glass_surface_support: false
   chrg_stat_firmware_consumer: false

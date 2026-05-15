@@ -14,14 +14,14 @@ electrical:
   low_voltage_cutoff_mv_firmware: 3200
 connector:
   required: true
-  type: JST-SH
-  pitch_mm: 1.0
-  pins: 2
+  type: replaceable service harness or fixture tail
+  board_interface: J_BAT same-net off-board service pads
+  pins: 2 plus grounded service/shield pads
   soldered_cell_directly_to_board_allowed: false
 mechanical:
   envelope_mm: [20.0, 15.0, 4.2]
   swelling_allowance_required: true
-  lead_service_loop_required: true
+  harness_service_loop_required: true
   removable_through_top_service_opening: true
   destructive_shell_entry_allowed: false
 safety:
@@ -40,7 +40,7 @@ acceptance:
     - pcm_confirmation
     - UN_38_3_summary
   service_evidence_required:
-    - battery_lead_coupon_pass
+    - battery_harness_coupon_pass
     - service_lid_coupon_pass
 variant_bindings:
   r30_oled_none_none:

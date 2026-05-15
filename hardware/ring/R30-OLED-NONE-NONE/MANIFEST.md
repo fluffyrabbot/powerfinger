@@ -46,7 +46,8 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
 - PAW3204 optical sensor plus matched lens/emitter stack
 - LiPo cell
 - Service lid and closure screws
-- USB-C charging connector
+- Off-board USB service/charge fixture interface
+- Off-board replaceable battery service harness or fixture interface
 - Shell body and structural rim
 - UHMWPE glide pads
 - Dome click element
@@ -58,8 +59,11 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
 - `kicad/r30_oled_none_none.kicad_pcb` — first routed rigid P0 PCB source
 - Printable lower-shell and service-lid exports derived from `cad/r30_oled_none_none_shell_blank.scad`
 - Quick-print fit coupons exported from the same OpenSCAD file with
-  `export_mode` values for USB-C, board retention, lid pads, battery leads, and
-  service-lid removal
+  `export_mode` values for service-pad access, board retention, lid pads,
+  battery harness routing, and service-lid removal
+- Local generated coupon bundle from `scripts/generate-r30-ring-fit-coupons.sh`
+  under `build/r30-oled-none-none-mechanical/`; this includes STL/PNG/hash
+  scaffolding and a blank worksheet only, not physical fit evidence
 
 ## Current PCB Packet Scope
 
@@ -71,22 +75,26 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   the sensor lane P0-specific rather than adding PMW3360 copper
 - Treats ADNS-2080 as a sourcing fallback that needs a future evaluated board
   profile, not a drop-in substitution for this PAW3204 first-board packet
-- Locks `J_BAT` to a JST-SH right-angle 2-pin 1.0 mm battery harness receptacle
-  instead of direct cell solder
-- Locks service USB-C to a 16-pin USB 2.0 receptacle class with through-hole
-  shell stakes; SMD-only and power-only USB-C are rejected for P0
+- Replaces the onboard JST-SH `J_BAT` body with same-net off-board battery
+  service pads for `VBAT+`, `VBAT-`, and grounded `MP1`/`MP2`; battery service
+  must remain replaceable through a harness or fixture, not direct cell solder
+- Replaces the onboard USB-C receptacle with a same-net off-board service-pad
+  interface for USB2 data, VBUS, CC pulldowns, GND, and shield continuity; a
+  fixture or pogo harness is now required for charge/program service
 - Locks D1 to a rail-less TPD2E2U06DCK-class SC-70/SOT-323 USB data ESD shunt
   so the constrained service-edge pocket no longer needs a VBUS clamp branch
 - Routes the charge path with TP4054, `20 kohm` RPROG, RT9080, NTC divider, and
-  a BDFL-accepted 2N7002 `Q2` logic-safe charge-gate driver so ESP32-C3
-  `GPIO10` is not tied to a 5 V pull-up
+  a non-BOM `Q1` copper service jumper from fixture-fed `VBUS_5V` to TP4054
+  `VCC`; no onboard MCU charge-enable switch is claimed in this P0
+- Uses a source-controlled compact RT9080-33GJ5 SOT-23-5 land pattern for `U4`
+  to relieve the first-board regulator/click corridor without changing the
+  regulator, pinout, or BOM line
 - Recommends `R7`/`R8` = `100k`/`100k` for `VBAT_SENSE` to ESP32-C3 `GPIO0`;
   this accepts an always-on ~21 µA cell draw for first-board ADC reliability
 - Recommends `R9`/`R10` = `220k`/`100k` for `VBUS_DETECT` to ESP32-C3 `GPIO3`;
   this draws ~16 µA only from USB VBUS while plugged in
-- Recommends `R11` = `100k` as the TP4054 `CHRG_STAT` pull-up and keeps that
-  signal as a local status/test pad only; no firmware consumer or MCU GPIO is
-  claimed for it yet
+- Keeps `TP_CHRG` as a TP4054 `CHRG_STAT` fixture status pad without an onboard
+  pull-up; no firmware consumer or MCU GPIO is claimed for it yet
 - Keeps PAW3204 `SENSOR_NRESET` and `SENSOR_MOTION_N` as local bring-up pads
   only. The first optical board spends no MCU GPIOs on sensor reset or optical
   motion wake; firmware polls the PAW3204 and uses dome-only wake until real
@@ -98,23 +106,24 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   and four discrete glide-pad pockets
 - Models the routed board as a `43 x 18 mm` PCB in a shallow top pod instead of
   a generic module pocket; the PCB datum is KiCad board center `(120.5, 100)`
-- Adds a first-pass USB-C service opening at the left board edge for the
-  `USB4215`-class receptacle body and shell-stake footprint
+- Adds first-pass left-edge access for the off-board service-pad interface
+  instead of an onboard USB-C receptacle body or shell-stake footprint
 - Adds a non-USB board retention path: molded side rails, two side stop lugs,
   and small lid compression pads in board-edge keep-out zones
 - Adds a first-pass pocket over the `SW1` 5 mm dome at the current relieved
   board coordinate and a top relief for an accessible actuator; click force,
   cap material, and dome replacement are still unproven
-- Adds a battery lead channel from the actual `J_BAT` area plus a service-loop
-  relief and top lift window for a protected `80-100 mAh` cell
+- Adds a battery harness channel from the actual `J_BAT` service-pad area plus
+  a service-loop relief and top lift window for a protected `80-100 mAh` cell
 - Models a removable top service lid with a nested locating skirt, pry notch,
   and two top-access screw paths kept away from the antenna keep-out
-- Reserves service volume for a protected `80-100 mAh` cell, a battery lead
+- Reserves service volume for a protected `80-100 mAh` cell, a battery harness
   channel, and a small service-loop relief so battery removal is not forced to
-  start at the USB connector
+  start at the service connector
 - Adds quick-print validation coupons for the remaining fit unknowns:
-  `usb_c_coupon`, `board_retention_coupon`, `lid_pad_coupon`,
-  `battery_lead_coupon`, `service_lid_coupon`, and a combined `fit_coupons`
+  `service_access_coupon` for off-board service-pad access,
+  `board_retention_coupon`, `lid_pad_coupon`,
+  `battery_harness_coupon`, `service_lid_coupon`, and a combined `fit_coupons`
   sheet
 - Keeps this as a first-board fit pass only; it does not prove comfort, RF,
   screw clearance, dome actuation, or printable tolerances
@@ -122,22 +131,27 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
 ## Missing Artifacts
 
 - Clean KiCad DRC after the parity-clean first-pass schematic capture; local
-  KiCad CLI `10.0.2` DRC still reports violations and unconnected items, so the
-  board is not fabrication-release
+  KiCad CLI `10.0.2` DRC still reports violations, so the board is not
+  fabrication-release even though the unconnected-item bucket is now closed
 - Printed/measured results from the new CAD coupons and full-shell export
+- Completed physical-check worksheet copied from the local
+  `build/r30-oled-none-none-mechanical/PHYSICAL-CHECK-WORKSHEET.md` scaffold
+  after real coupon or board checks
 - Measured ring stackup with focal-distance verification
 - Assembly photos, torque values, and validated fit tolerances
 - Test notes tied to [docs/GO-NO-GO-RUBRIC.md](../../../docs/GO-NO-GO-RUBRIC.md)
-- Measured validation for the first-pass USB-C opening, board rails/stops/lid
-  pads, dome pocket, battery lead channel, and service-lid removal path; the
-  coupon modes make these quick to print, but the rows remain red until tested
-- BDFL accepted the packet recommendation for the first rigid P0: `Q2` =
-  2N7002 SOT-23, `R7`/`R8` = `100k`/`100k`, `R9`/`R10` = `220k`/`100k`, and
-  `R11` = `100k`. BSS138-class alternates or a logic-level load switch remain
-  explicit substitutions, not silent equivalents
-- Clean routed-board DRC after full schematic/PCB parity; `R7`-`R11`, `U1`,
+- Measured validation for the first-pass off-board service-pad access, board
+  rails/stops/lid pads, dome pocket, battery harness channel, and service-lid
+  removal path; the coupon modes make these quick to print, but the rows remain
+  red until tested
+- BDFL accepted the packet recommendation for the first rigid P0:
+  fixture-controlled charge VBUS, `R7`/`R8` = `100k`/`100k`, and
+  `R9`/`R10` = `220k`/`100k`. Reintroducing an onboard charge-enable switch or
+  a future onboard `CHRG_STAT` pull-up remains an explicit substitution, not a
+  silent equivalent
+- Clean routed-board DRC after full schematic/PCB parity; `R7`-`R10`, `U1`,
   `U2`, `SW1`, sensor support parts, bring-up pads, sheet-level routed nets,
-  USB ESD labels, charge-gate MOSFET pin mappings, USB-C shield stakes, and
+  USB ESD labels, charge-service jumper mapping, service shield pads, and
   `J_BAT` `MP1`/`MP2` mounting pads now have first-pass schematic counterparts,
   and schematic ERC is clean with project-local `PowerFinger` libraries loaded.
   The first routing cleanup fixed the USB-C contact pad geometry, snap-dome
@@ -172,7 +186,7 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   D1 island with a rail-less TPD2E2U06DCK-class SC-70/SOT-323 data shunt,
   removing the D1 VBUS branch while keeping ERC and schematic-parity clean.
   This pass adds a service-edge GND/shield spine across the J1 ground contacts
-  and shell stakes, ties nearby `R2B`, `R1`, and `J_BAT` `MP1` into that
+  and service shield pads, ties nearby `R2B`, `R1`, and `J_BAT` `MP1` into that
   return, and drops D1/NTC ground through a B-side via without reintroducing
   VBUS-clamped ESD protection. This pass reroutes the battery-side GND fanout:
   `R8`/`J_BAT` `MP2` now dogleg away from `VBAT_SENSE`, `J_BAT` pad 2 joins
@@ -233,7 +247,7 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   then reported DRC=102 and unconnected=9, with schematic-parity=0. This
   follow-on retargets the top-edge `VBUS_5V` trunk start to
   `(105.600, 91.600)`, clearing the `J_BAT` `MP1` short without moving the
-  shell-bound battery connector or adding a via. KiCad CLI `10.0.2` then reported
+  then-shell-bound battery connector or adding a via. KiCad CLI `10.0.2` then reported
   DRC=101 and unconnected=9, with schematic-parity=0. This follow-on flips the
   non-polar `R9` divider resistor in place so the right-side `VBUS_5V` trunk
   lands on the VBUS pad and `VBUS_DETECT` leaves from the opposite pad into the
@@ -314,11 +328,166 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   held total DRC or opened shorting, clearance, mask, or courtyard debt, and
   instead moves shell-bound `SW1` from `(114.200, 95.300)` to
   `(114.350, 95.780)` while moving the CAD dome pocket with it. KiCad CLI
-  `10.0.2` repeat runs later reported DRC=43..44; this packet records the
-  conservative DRC=44 snapshot with unconnected=9, schematic-parity=0, and no
-  current shorting bucket, because the board is still hand-routed
+  `10.0.2` repeat runs later reported DRC=43; the next courtyard-only cleanup
+  narrows the source-controlled `J1`, `J_BAT`, `U1`, and `SW1` first-board
+  courtyards without moving pads, copper, placements, or shell CAD bindings.
+  A follow-up scratch pass then tested `J_BAT` upward moves to create real
+  service-edge courtyard separation, but each candidate raised total DRC to
+  `47..49` and reintroduced shorting rows, so no placement move is retained.
+  This pass then narrows the `J1` service-edge courtyard to the actual USB-C
+  pad row, clearing the remaining `J1`/`J_BAT` courtyard row without moving
+  shell-bound pads, copper, placements, or CAD bindings. Same-slice C2
+  ground-return and R8 divider placement probes were rejected because they
+  raised total DRC. This follow-up rejects a via-assisted `NTC_SENSE` B-side
+  reroute and local GND-via move that reintroduced shorting or unconnected
+  drift, then rotates non-polar C2 so `VBAT_PROTECTED` reaches the near pad
+  without crossing through the C2 ground pad column. This follow-up rejects a
+  rotated-`U4` power/status topology: the best repaired variant reached
+  `DRC=38` with `unconnected=9`, but still introduced current shorting rows,
+  and the right-shifted correction rose to `DRC=44`. This follow-up also
+  rejects a broader left power-switch corridor scratch redraw: moving
+  `R11`/`TP_CHRG` beside `U3` raised DRC to `55`, a B-side `CHARGE_EN` hop
+  raised DRC to `46`, and a right-shifted `Q2` placement raised DRC to `43`
+  with `unconnected=10`. A true grouped placement translation that shifted
+  `Q1`/`Q2`/`U3` left and `U4` right raised DRC to `72` with
+  `unconnected=13`, so that topology is also rejected. Splitting `U4`/`C2` out
+  as a separate regulator island above the charge/switch corridor raised DRC to
+  `49` with `unconnected=10`, so that topology is rejected as well. This
+  follow-on then keeps the broader corridor placement intact and normalizes the
+  long `VREG_3V3` rail plus the short C2 `VBAT_PROTECTED` spoke to the
+  board-rule minimum `0.20 mm`; KiCad CLI `10.0.2` wrapper reruns now
+  conservatively reported DRC=39 with unconnected=9, schematic-parity=0, no
+  courtyard rows, and no current shorting bucket, because the board is still
+  hand-routed. This follow-on closes six GND-continuity rows through a lower
+  `SW1` local stitch plus via-assisted U3, C2, `J_BAT`, left-trunk, and
+  U1-side C2 returns. Direct `J1` A12 and top-`SW1` closure variants were
+  rejected because they reintroduced current shorting rows. KiCad CLI `10.0.2`
+  then reported DRC=39 with unconnected=3, schematic-parity=0, no courtyard
+  rows, and no current shorting bucket. This follow-on closes the `J1` A12
+  service-ground row through the existing lower GND rail instead of adding a
+  pad-local via that collides with `USB_D-`. Top-`SW1` closure remains rejected
+  as a four-contact footprint because the latent U4, U1, and Q2 power/sense
+  shorts are still exposed by direct top-ring closure. This follow-on instead
+  removes the top `SW1` dome-ring contact from the board and source footprint,
+  keeps the left/right/lower ring contacts, and ties the remaining right/lower
+  contacts together. KiCad CLI `10.0.2` then reported DRC=40 with unconnected=0,
+  schematic-parity=0, no courtyard rows, and no current shorting bucket.
+  A follow-on clearance-only scratch pass tested B-side and doglegged `SW1`
+  returns, `VREG_3V3` rail moves, remaining `0.24 mm` power-spoke
+  normalization, and small `VBAT_SENSE`/`NTC_SENSE`/`USB_CC1_RD`/
+  `CHARGE_GATE`/`CHARGE_EN`/`CHRG_STAT` doglegs; no candidate beat the live
+  `DRC=40` baseline without reopening shorting, so no additional PCB topology
+  is retained. A placement-level follow-up then tested bounded
+  `Q2`/`U4`/`C2`/`R11`/`TP_CHRG` moves with connected endpoint retargets rather
+  than detached components; the only below-40 scratch result introduced a
+  `VBAT_PROTECTED`/`CHARGE_EN` short, and the clean variants failed to beat
+  `DRC=40`, so no placement topology is retained either. A controlled corridor
+  rip-up then removed and redrew the local power/status spokes in scratch;
+  frozen-placement rewrites returned `DRC=48..50`, and grouped regulator-island
+  sketches returned `DRC=57..72` with shorting, hole-clearance, or unconnected
+  debt, so no rip-up topology is retained. A fuller blank-slate local-spine
+  scratch pass then removed and redrew all local `VBUS_CHG_SW`,
+  `VBAT_PROTECTED`, `VREG_3V3`, `PROG_R`, `CHARGE_GATE`, `CHARGE_EN`, and
+  `CHRG_STAT` copper in the active corridor; it returned raw `DRC=89..98` with
+  real shorting, dangling-track, and unconnected rows, so no local-spine
+  topology is retained. The follow-on left-service USB/charge fanout
+  repartition is rejected too: `J1` translations returned non-library
+  `DRC=75..81`, coupled service-pocket spreads returned non-library
+  `DRC=111..156`, and route-only USB/CC/VBUS fanout rewrites either reopened
+  shorting or unconnected rows or merely matched the retained `DRC=40` board.
+  No left-service fanout topology is retained. The right-side regulator/click
+  density follow-up is rejected as well: direct `SW1` moves returned
+  non-library `DRC=49..65`, `SW1`+`C1A` moves returned `DRC=62..66`,
+  `U4`/`C2`/`R11`/`TP_CHRG` island moves returned `DRC=78..90`, and
+  island-plus-`SW1`/VREG-branch variants returned `DRC=89..103`, all with
+  reopened shorting, dangling, or unconnected debt. No right-side density
+  topology is retained.
+  The clean-room active-R30 scratch-board follow-up is rejected too. The
+  no-placement-change all-pad lane sketch returned non-library `DRC=564` with
+  `unconnected_items=10`; the corresponding support-placement sketch returned
+  non-library `DRC=560` with `unconnected_items=9`. The safer function-lane
+  reroute still returned non-library `DRC=405` on existing placements and
+  `DRC=416` after support-placement moves, both with `unconnected_items=10`.
+  All of those scratch candidates reopened shorting and other fabrication
+  buckets, so no clean-room lane topology is retained.
+  The first four-layer architecture scratch is also not retained. A KiCad
+  10-format stackup-only scratch stayed effectively tied with the retained
+  board at non-library `DRC=41` in the upgraded scratch-report context. Moving
+  the worst `VREG_3V3` and `VBAT_PROTECTED` diagonals onto inner layers returned
+  non-library `DRC=58` with `unconnected_items=8` and `shorting_items=13`;
+  extending the VREG inner bus returned non-library `DRC=74` with
+  `unconnected_items=11`; and the VREG bus rewrite returned non-library
+  `DRC=76` with `unconnected_items=7`. No route-migration four-layer topology
+  is retained.
+  The retained component-class USB service cut replaces the
+  through-hole-staked USB-C receptacle with source-controlled off-board
+  same-net service pads, adds the GND continuity via formerly supplied by the
+  lower shell-stake return, and moves `USB_CC1_RD` onto a B-side jog. The live
+  packet then verified with KiCad CLI `10.0.2` at `DRC=38`, `unconnected=0`,
+  schematic-parity `0`, with no current shorting or courtyard bucket.
+  The regulator/input-cap component-class follow-up is rejected: same-center
+  `U4` pad-shrink and `C2` 0402 substitutions failed to beat the retained
+  state, tiny same-pin DFN regulator sketches reopened unconnected/shorting
+  buckets, diagonal route-migration sketches reopened shorting/unconnected
+  buckets, and the connected C2 placement sweep only tied non-library
+  `DRC=38`.
+  The retained battery-service component-class cut then replaces the onboard
+  JST-SH body with source-controlled off-board same-net battery service pads,
+  preserving `VBAT+`, `VBAT-`, `MP1`, and `MP2` parity. KiCad CLI `10.0.2`
+  then verified at `DRC=36`, `unconnected=0`,
+  schematic-parity `0`, with no current shorting or courtyard bucket.
+  This follow-on keeps the regulator choice and BOM fixed while moving
+  non-shell-bound `U4` by `(+0.05, -0.05) mm` and switching only that regulator
+  to the source-controlled `RT9080_33GJ5_SOT23_5_ServiceClearance` footprint.
+  Shell-bound `J1`, `J_BAT`, `SW1`, the shell CAD openings, and `C2` stay fixed.
+  KiCad CLI `10.0.2` then verified at `DRC=34`, `unconnected=0`,
+  schematic-parity `0`, with no current shorting or courtyard bucket.
+  This follow-on moves only non-shell-bound `R8` from `(111.800, 93.200)` to
+  `(112.100, 93.400)` and retargets its local `VBAT_SENSE` and GND endpoints,
+  closing the divider-pocket clearance row plus two nearby mask rows without
+  touching shell-bound placements, the U4 land-pattern cut, BOM values, or
+  schematic parity. KiCad CLI `10.0.2` then verified at `DRC=33`,
+  `unconnected=0`, schematic-parity `0`, with no current shorting or courtyard
+  bucket.
+  This follow-on keeps the RT9080 part, pinout, `U4` placement, and
+  source-controlled footprint name fixed while shrinking that local U4 land
+  pattern from `0.45 x 0.80 mm` pads to `0.40 x 0.78 mm` pads. KiCad CLI
+  `10.0.2` then verified at `ERC=0`, `DRC=32`, `unconnected=0`,
+  schematic-parity `0`, with no current shorting or courtyard bucket.
+  This follow-on removes the onboard `R11` `CHRG_STAT` pull-up and its local
+  `VREG_3V3` spoke while keeping `TP_CHRG` as a fixture-observed TP4054 status
+  pad. A fixture must provide a pull-up if charger status is measured.
+  This follow-on moves only `TP_CHRG` and its local `CHRG_STAT` segment from
+  `(116.100, 105.000)` to `(116.000, 104.000)`, keeping the fixture-observed
+  status contract while removing one net DRC row. KiCad CLI `10.0.2` now
+  verifies at `ERC=0`, `DRC=30`, `unconnected=0`, schematic-parity `0`, with
+  no current shorting or courtyard bucket.
+  This follow-on removes the active onboard charge-gate island from this first
+  P0: `Q1` becomes a non-BOM copper VBUS service jumper, `R4`/`Q2`/`R6` drop
+  from the active BOM and schematic, `GPIO10` is marked no-connect, and
+  TP4054 `VCC` is fed directly from fixture `VBUS_5V`. The local U4 GND via is
+  moved to `(112.000, 102.700)` so the cut does not reopen shorting. KiCad CLI
+  `10.0.2` now verifies at `ERC=0`, `DRC=27`, `unconnected=0`,
+  schematic-parity `0`, with no current shorting, dangling, or courtyard
+  bucket.
+  The placement-level four-layer scratch is rejected too. Moving only
+  non-shell-bound support parts while keeping `J1`, `J_BAT`, `U1`, `U2`, `SW1`,
+  the PAW3204 aperture, antenna keep-out, outline, and first-board BOM/netlist
+  fixed returned non-library `DRC=127` with `unconnected_items=32` when the old
+  route geometry was retained, and non-library `DRC=137` with
+  `unconnected_items=36` when the worst power diagonals were replaced on inner
+  layers. Full via-per-pad four-layer reroutes across three support-placement
+  variants returned non-library `DRC=549..573` with `unconnected_items=74..75`.
+  No fixed-anchor placement-level four-layer topology is retained.
+  The first envelope scratch is rejected too. Coordinated scratch moves for the
+  service edge, `J1`, `J_BAT`, `SW1`, and support parts returned non-library
+  `DRC=149..157` with `unconnected_items=49..50`, `shorting_items=17..21`, and
+  a reopened courtyard row when the old route geometry was retained. Generated
+  bus reroutes for the same envelope candidates returned non-library
+  `DRC=307..317` with `unconnected_items=18`, `shorting_items=88..92`, and the
+  same courtyard debt. No same-BOM/netlist envelope topology is retained.
 - Firmware allocation decision for `CHRG_STAT` if charger status needs to be
-  reported in software rather than only checked at the local status pad
+  reported in software rather than only checked by an external pull-up fixture
 - Later-board allocation decision for PAW3204 `SENSOR_NRESET` or
   `SENSOR_MOTION_N` if bench evidence shows the first optical board needs
   firmware reset control or optical motion wake
@@ -340,8 +509,8 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
 - Shell can be opened and reclosed without destroying the battery bay, sensor
   mount, or antenna keep-out
 - Battery can actually leave the bay through the service opening without lead
-  pinch, shell cracking, or forced USB-C removal first
-- Board can be removed after lid removal without prying on the USB-C receptacle,
-  antenna end, or dome-switch contacts
+  pinch, shell cracking, or forced service-fixture removal first
+- Board can be removed after lid removal without prying on service pads, antenna
+  end, or dome-switch contacts
 - Record package-closure evidence in [STACKUP-VERIFY.md](STACKUP-VERIFY.md)
   before starting secondary ring or puck hardware

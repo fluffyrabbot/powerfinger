@@ -19,8 +19,8 @@ References:
 ## Recommended Sheet Split
 
 1. `power_and_charge`
-   Includes battery connector, TP4054 path, charge-enable MOSFET, NTC divider,
-   LDO, VBAT sensing, and any charge-status wiring.
+   Includes battery service pads, TP4054 path, fixture-fed VBUS service jumper,
+   NTC divider, LDO, VBAT sensing, and any charge-status wiring.
 2. `mcu_radio`
    Includes `ESP32-C3-MINI-1-N4`, boot/enable support, programming/debug pads,
    and module decoupling.
@@ -28,8 +28,9 @@ References:
    Includes the PAW3204-class sensor, lens-aligned support passives, motion
    output if available, and the primary dome click path.
 4. `usb_and_service`
-   Includes the USB-C receptacle, sink-attach support, and any service/test
-   pads that must be reachable without reworking the battery.
+   Includes the off-board same-net USB service-pad interface, sink-attach
+   support, and any service/test pads that must be reachable without reworking
+   the battery.
 
 ## Named Net Groups To Use
 
@@ -42,9 +43,6 @@ easier to branch.
   - `VBAT_PROTECTED`
   - `VBAT_SENSE`
   - `VREG_3V3`
-  - `CHARGE_EN`
-  - `CHARGE_GATE`
-  - `VBUS_CHG_SW`
   - `VBUS_DETECT`
   - `CHRG_STAT`
   - `NTC_SENSE`
@@ -72,14 +70,14 @@ easier to branch.
   footprints.
 - Keep the PAW3204 capture P0-specific. Do not fold PMW3360 rails or haptic
   circuitry into this first schematic.
-- The NTC and charge-enable path are not optional. The battery safety docs have
-  already promoted them from “nice to have” to baseline hardware.
-- The first PCB pass routes `CHARGE_EN` through a small gate driver before the
-  P-channel VBUS switch. Preserve that separation in schematic capture so a
-  5 V gate pull-up cannot land on an ESP32-C3 GPIO.
-- The first PCB pass now includes the BDFL-accepted `R7`-`R11` values:
+- The NTC path is not optional. The battery safety docs have already promoted
+  it from “nice to have” to baseline hardware.
+- The first P0 now cuts the onboard active charge-enable gate. Preserve the
+  non-BOM `Q1` VBUS service jumper and keep ESP32-C3 `GPIO10` no-connect unless
+  the BOM, schematic, PCB, and firmware contract are deliberately reopened.
+- The first PCB pass now includes the BDFL-accepted `R7`-`R10` values:
   `VBAT_SENSE` and `VBUS_DETECT` are MCU-facing dividers, while `CHRG_STAT` is
-  only a pulled-up local charger-status pad until firmware deliberately
+  only a fixture-observed charger-status pad until firmware deliberately
   allocates a GPIO for it.
 - Leave the antenna keep-out consequence visible in the schematic notes so the
   later board layout does not quietly compromise it.

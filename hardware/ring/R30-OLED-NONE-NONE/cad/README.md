@@ -21,11 +21,12 @@ focal-distance stack are already validated.
 - `export_mode` for either the full shell packet or quick-print fit coupons
 - routed `pcb_size_mm`, KiCad-derived feature centers, and antenna keep-out
 - lid skirt / seam clearance values
-- USB-C opening and body keep-out for the `USB4215`-class receptacle
+- off-board service-pad access opening and fixture keep-out at the `J1` edge
 - board rail, side-stop, and lid compression-pad placeholders
 - `SW1` dome pocket and actuator-relief placeholders
 - battery, sensor, and module keep-out proxies
-- battery lead channel and service-loop relief from the actual `J_BAT` area
+- battery harness channel and service-loop relief from the actual `J_BAT`
+  service-pad area
 - top-access screw-boss placeholders
 
 ## What The Model Intentionally Does
@@ -35,8 +36,8 @@ focal-distance stack are already validated.
   forever truth
 - Maps the current routed `43 x 18 mm` PCB into a top pod so the mechanical
   story no longer depends on a generic electronics box
-- Cuts a first-pass left-edge USB-C opening and local body clearance for the
-  routed service connector
+- Cuts a first-pass left-edge service-pad access opening and local fixture
+  clearance for the routed `J1` service interface
 - Adds a non-USB board-retention concept with molded rails, side stop lugs, and
   service-lid compression pads
 - Adds a `SW1` dome pocket and actuator relief as a first pass, not as proven
@@ -46,9 +47,9 @@ focal-distance stack are already validated.
 - Uses a removable top service lid with a locating skirt and pry relief instead
   of pretending the first board can be glue-sealed
 - Reserves service volume for the routed board, battery, sensor cavity, and
-  connector bodies so stackup conflicts stay visible before fabrication
-- Adds a battery lead channel and service-loop relief so the cell has a
-  believable removal path from the actual `J_BAT` area
+  service fixture path so stackup conflicts stay visible before fabrication
+- Adds a battery harness channel and service-loop relief so the cell has a
+  believable removal path from the actual `J_BAT` service-pad area
 - Adds quick-print coupon/export modes for the fit unknowns that should be
   checked before spending time on a full shell print
 
@@ -56,9 +57,9 @@ focal-distance stack are already validated.
 
 - Comfort across actual finger sizes
 - Real sensor cavity dimensions for the chosen optical sensor and lens kit
-- Measured USB-C plug insertion, board rail/stop tolerance, lid pad clearance,
-  dome-click travel, battery lead routing, and lid removal against a populated
-  board or representative coupons
+- Measured service-fixture access, board rail/stop tolerance, lid pad
+  clearance, dome-click travel, battery harness routing, and lid removal
+  against a populated board or representative coupons
 - Whether two loose service screws are acceptable for limited-dexterity repair
   or need a captured-hardware follow-up
 - Battery fit with real wiring, the chosen `BT1` interface, and real connector
@@ -77,13 +78,14 @@ for what this CAD needs to prove before secondary variants move forward.
 - Battery service is top-side only: remove the service screws, lift the lid from
   the pry relief, then lift the cell through the upper opening
 - The board service path is also top-side: once the lid is off, molded rails and
-  side stops should allow the PCB to lift out without levering on USB-C, the
-  antenna end, or the dome switch
+  side stops should allow the PCB to lift out without levering on service pads,
+  the antenna end, or the dome switch
 - The lower shell owns the rim, glide pads, and sensor tunnel so battery
   service does not ask the user or repair tech to disturb the focal-distance
   features first
-- The battery path is still an honest first pass until a real JST-SH harness,
-  protected cell, and printed lid prove lead bend radius and lift clearance
+- The battery path is still an honest first pass until a real replaceable
+  harness or fixture, protected cell, and printed lid prove lead bend radius
+  and lift clearance
 
 ## Quick-Print Fit Coupons
 
@@ -92,10 +94,10 @@ The OpenSCAD file supports these `export_mode` values:
 | Mode | Artifact | Fit Unknown Targeted |
 |------|----------|----------------------|
 | `shell` | Full lower shell plus service lid | Whole-packet geometry sanity |
-| `usb_c_coupon` | USB-C wall and board-edge pocket | Plug insertion and shell/board loading |
+| `service_access_coupon` | Off-board service-pad access pocket | Fixture/pogo access and shell/board loading |
 | `board_retention_coupon` | Board rails plus stop lugs | `43 x 18 mm` board slide, lift, and tolerance |
 | `lid_pad_coupon` | Board-edge compression-pad channel | Lid pad path without crushing components |
-| `battery_lead_coupon` | Lead channel, connector pocket, and service-loop relief | JST-SH lead bend and lift clearance |
+| `battery_harness_coupon` | Harness channel, service-pad access pocket, and service-loop relief | Replaceable harness bend and lift clearance |
 | `service_lid_coupon` | Skirt/socket/pry-removal coupon | Reopenable lid handling around service hardware |
 | `fit_coupons` | One sheet with all coupons | Fast print for the first fit sweep |
 
@@ -136,3 +138,15 @@ openscad \
 
 Render an individual coupon by replacing `fit_coupons` with one of the coupon
 modes above.
+
+For the durable local first-board coupon bundle, use:
+
+```bash
+scripts/generate-r30-ring-fit-coupons.sh
+```
+
+That regenerates coupon STLs, preview PNGs, hashes, and a blank physical-check
+worksheet under `build/r30-oled-none-none-mechanical/`. The bundle is local
+print/preview scaffolding only; transfer measured observations back into
+[../STACKUP-VERIFY.md](../STACKUP-VERIFY.md) and
+[../MANIFEST.md](../MANIFEST.md) only after physical checks.

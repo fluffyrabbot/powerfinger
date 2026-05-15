@@ -29,23 +29,19 @@ active_component_anchors:
   BT1:
     function: protected_cell
     value: 80–100mAh 3.7V
-    package: pouch cell with integrated PCM and JST-SH 2-pin 1.0mm harness
+    package: pouch cell with integrated PCM and replaceable service harness
     required_notes:
+      - replaceable harness/fixture tail
       - integrated PCM
       - UN 38.3
       - No harvested cells
   J_BAT:
-    function: battery_harness_receptacle
-    value: JST-SH 2-pin 1.0mm
-    package: SMD right-angle
-    substitutions:
-      viable:
-        - id: JST-SH 2-pin 1.0mm right-angle SMD receptacle
-          acceptance:
-            - pitch_1_0mm
-            - two_pin_harness_mating_check
-            - footprint_review
-            - service_clearance_review
+    function: off_board_battery_service_interface
+    value: VBAT+/VBAT-/MP shield pads
+    package: PCB pads
+    required_notes:
+      - same-net battery service pad interface
+      - Replaces the onboard JST-SH receptacle body
   U3:
     function: charge_controller
     description: LiPo charge controller
@@ -66,31 +62,11 @@ active_component_anchors:
           required_note: MCP73831 SOT-23-5 has different pinout
           reason: SOT-23-5 package exists but pinout differs
   Q1:
-    function: charge_path_pmos
-    description: P-ch MOSFET (charge enable/disable)
-    value: SI2301 or equiv
-    package: SOT-23
+    function: fixture_fed_vbus_service_jumper
+    description: Non-BOM PCB copper jumper from fixture VBUS to TP4054 VCC
+    value: VBUS_SERVICE_JUMPER
+    package: SOT-23 service land
     required_notes:
-      - Gate floats high (off) = charge disabled
-      - NOT directly from MCU GPIO
-  Q2:
-    function: logic_safe_charge_gate_driver
-    description: N-ch MOSFET (logic-safe charge-gate driver)
-    value: 2N7002
-    package: SOT-23
-    substitutions:
-      viable:
-        - id: BSS138
-          acceptance:
-            - pinout_review
-            - footprint_review
-            - gate_threshold_review
-        - id: BSS123
-          acceptance:
-            - pinout_review
-            - footprint_review
-            - gate_threshold_review
-      rejected:
-        - id: AP22815/TPS22918
-          required_note: Do not replace Q1/Q2/R6 with a logic-level load switch
-          reason: integrated load switch tradeoff requires explicit BDFL acceptance
+      - Fixture VBUS presence controls charge service on this P0
+      - No MCU charge-enable GPIO is allocated
+      - Q2, R4, and R6 are not populated in this packet
