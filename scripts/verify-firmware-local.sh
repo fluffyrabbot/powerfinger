@@ -244,30 +244,56 @@ run_kicad_checks_step() {
         sch_output="$packet_dir/erc.txt"
         drc_output="$packet_dir/drc.txt"
 
-        sch_violations="$(
+        local sch_summary sch_status
+        if sch_summary="$(
             kicad-cli sch erc \
                 --severity-all \
                 -o "$sch_output" \
-                "$repo_root/$sch_path" 2>&1 \
-                | sed -n 's/^Found \([0-9][0-9]*\) violations$/\1/p' \
-                | head -1
-        )"
-        sch_violations="${sch_violations:-0}"
+                "$repo_root/$sch_path" 2>&1
+        )"; then
+            sch_status=0
+        else
+            sch_status=$?
+            echo "error: kicad-cli ERC failed for $packet (exit $sch_status)" >&2
+            printf '%s\n' "$sch_summary" >&2
+            printf "       report path: %s\n" "$sch_output" >&2
+            exit "$sch_status"
+        fi
 
-        local drc_summary
-        drc_summary="$(
+        sch_violations="$(printf '%s\n' "$sch_summary" | sed -n 's/^Found \([0-9][0-9]*\) violations$/\1/p' | head -1)"
+        if [[ -z "$sch_violations" ]]; then
+            echo "error: could not parse kicad-cli ERC summary for $packet" >&2
+            printf '%s\n' "$sch_summary" >&2
+            printf "       report path: %s\n" "$sch_output" >&2
+            exit 1
+        fi
+
+        local drc_summary drc_status
+        if drc_summary="$(
             kicad-cli pcb drc \
                 --severity-all \
                 --schematic-parity \
                 -o "$drc_output" \
                 "$repo_root/$pcb_path" 2>&1
-        )"
+        )"; then
+            drc_status=0
+        else
+            drc_status=$?
+            echo "error: kicad-cli DRC failed for $packet (exit $drc_status)" >&2
+            printf '%s\n' "$drc_summary" >&2
+            printf "       report path: %s\n" "$drc_output" >&2
+            exit "$drc_status"
+        fi
+
         drc_violations="$(printf '%s\n' "$drc_summary" | sed -n 's/^Found \([0-9][0-9]*\) violations$/\1/p' | head -1)"
         drc_unconnected="$(printf '%s\n' "$drc_summary" | sed -n 's/^Found \([0-9][0-9]*\) unconnected items$/\1/p' | head -1)"
         drc_parity="$(printf '%s\n' "$drc_summary" | sed -n 's/^Found \([0-9][0-9]*\) schematic parity issues$/\1/p' | head -1)"
-        drc_violations="${drc_violations:-0}"
-        drc_unconnected="${drc_unconnected:-0}"
-        drc_parity="${drc_parity:-0}"
+        if [[ -z "$drc_violations" || -z "$drc_unconnected" || -z "$drc_parity" ]]; then
+            echo "error: could not parse kicad-cli DRC summary for $packet" >&2
+            printf '%s\n' "$drc_summary" >&2
+            printf "       report path: %s\n" "$drc_output" >&2
+            exit 1
+        fi
 
         printf "  %-22s ERC=%s  DRC=%s  unconnected=%s  parity=%s\n" \
             "$packet" "$sch_violations" "$drc_violations" "$drc_unconnected" "$drc_parity"
