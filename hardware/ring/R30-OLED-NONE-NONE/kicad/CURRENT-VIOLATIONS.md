@@ -773,6 +773,15 @@ preserving the fixture-observed status contract, no onboard pull-up, no MCU
 consumer, no service-anchor move, no shell change, and no BOM change. KiCad CLI
 `10.0.2` now reports `ERC=0`, `DRC=23`, `unconnected=0`, schematic parity `0`,
 with no current shorting, dangling, or courtyard bucket.
+The follow-on local reducer scratch is not retained. `C1A` translation,
+rotation, pad-shape, front-layer dogleg, and B-side GND-return variants either
+held `DRC=23` or lowered the raw count only by reopening
+`VBAT_PROTECTED`/GND shorting, unconnected, or extra clearance/mask debt. U4
+NC/GND pad-shape and GND-via variants likewise failed to beat `DRC=23` without
+shorting, hole-clearance, or unconnected debt. Moving the `VREG_3V3`,
+`VBAT_PROTECTED`, and `NTC_SENSE` junctions traded crossing rows for new bad
+rows or stayed at the baseline. `SW1` dome-ring pad-shape variants and a USB
+service-pair sanity check also failed the retention gate.
 The follow-on clearance-only scratch pass is not retained because every tested
 route-only clearance fix either held total DRC at `40` or reintroduced shorts.
 This confirms that one-net doglegs are not the next useful reduction.
@@ -974,14 +983,17 @@ PCB items. The closure order this snapshot recommends:
    schematic, PCB, shell CAD where applicable, BOM/manifest, stackup notes,
    packet counts, and first-board checklist move together and beat this
    retained state.
-3. The next honest reducer should avoid already-rejected broad route-migration
-   lanes. Scratch the remaining `VBAT_PROTECTED` / `VREG_3V3` / `NTC_SENSE` /
-   `SW1` / `C1A` crossing-clearance-mask pocket as a source-controlled
-   endpoint-topology or footprint cut while keeping the fixture-fed
+3. The next honest reducer should stop treating the remaining rows as isolated
+   pad or one-junction symptoms. Sketch a coupled source-controlled topology
+   cut for the `VBAT_PROTECTED` / `VREG_3V3` / `NTC_SENSE` crossing stack:
+   either move the non-shell-bound regulator input/output decoupling and sense
+   divider endpoints together, or replace the long diagonal rails with a
+   schematic-matched local distribution spine. Keep the fixture-fed
    charge-service jumper, off-board service anchors, shell-bound placements,
-   and the active BOM contract fixed. Retain only a live `DRC<23` result with
-   `unconnected=0`, no ERC errors, no new
-   schematic-parity errors, and no shorting, dangling, or courtyard bucket.
+   PAW3204 aperture, antenna keep-out, and active BOM contract fixed. Retain
+   only a live `DRC<23` result with `unconnected=0`, no ERC errors, no new
+   schematic-parity errors, and no shorting, dangling, hole-clearance, or
+   courtyard bucket.
 4. Re-run ERC + DRC and update this file's counts in the same commit.
 5. Only then update `MANIFEST.md` to drop the "not fabrication-released"
    language.

@@ -483,6 +483,12 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   KiCad CLI `10.0.2` now verifies at `ERC=0`, `DRC=23`, `unconnected=0`,
   schematic-parity `0`, with no current shorting, dangling, or courtyard
   bucket.
+  The follow-on local reducer scratch is not retained. `C1A` translation,
+  rotation, pad-shape, front-layer dogleg, and B-side GND-return variants;
+  U4 NC/GND pad and GND-via variants; `VREG_3V3`, `VBAT_PROTECTED`, and
+  `NTC_SENSE` endpoint-junction moves; `SW1` dome-ring pad-shape variants; and
+  a USB service-pair sanity check either held `DRC=23` or reopened shorting,
+  dangling, hole-clearance, unconnected, or extra clearance/mask debt.
   The placement-level four-layer scratch is rejected too. Moving only
   non-shell-bound support parts while keeping `J1`, `J_BAT`, `U1`, `U2`, `SW1`,
   the PAW3204 aperture, antenna keep-out, outline, and first-board BOM/netlist
