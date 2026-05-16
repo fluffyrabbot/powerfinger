@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.2` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` messages | 0 | No current ERC errors or warnings |
-| `pcb drc` violations | 20 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 14 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 0 | All current KiCad unconnected rows are closed |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -611,7 +611,7 @@ and sheet-interface cleanup in this snapshot.
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
 | `tracks_crossing` | 10 | Tracks of different nets physically crossing on the same layer |
-| `clearance` | 3 | Copper-to-copper or pad-to-track clearance failures in the live wrapper report |
+| `clearance` | 2 | Copper-to-copper or pad-to-track clearance failures in the live wrapper report |
 | `solder_mask_bridge` | 2 | Adjacent pads of different nets share an unbroken mask aperture |
 | `unconnected_items` | 0 | Closed by the three-contact `SW1` ring topology |
 
@@ -631,7 +631,10 @@ normalizing the remaining sub-minimum vias to `0.50` mm diameter / `0.30` mm
 drill. The sensor-rail reroute also closes the transient `hole_clearance` row
 without changing schematic/PCB parity. The `R6` relocation closes the pulldown
 ground island, and the `TP_LEDKIT` move reduces the sensor LED/test-pad pinch
-without moving the shell-bound PAW3204 aperture. The accepted U3 VBAT escape
+without moving the shell-bound PAW3204 aperture. The retained
+`SENSOR_LED_KIT` endpoint-column retarget clears one later
+`VREG_3V3`/sensor-LED clearance row while preserving that shell-bound aperture.
+The accepted U3 VBAT escape
 pulls the battery trace off the TP4054 GND/CHRG pad row; later ground-return
 cleanup closes the remaining U3-side unconnected debt without hiding it behind
 a short.
@@ -807,6 +810,32 @@ SW1-GND/`VREG_3V3` crossing and mask rows without opening shorting,
 unconnected, hole-clearance, dangling, or courtyard debt. KiCad CLI `10.0.2`
 now reports `ERC=0`, `DRC=15`, `unconnected=0`, schematic parity `0`, with no
 current shorting, dangling, hole-clearance, or courtyard bucket.
+The retained sensor-LED endpoint retarget then moves only the B-side
+`SENSOR_LED_KIT` return column from `x=115.600` to `x=116.000`, keeping U1,
+U2, SW1's shell-bound click coordinate, C1A, J_BAT, the off-board service
+anchors, PAW3204 aperture, antenna keep-out, active BOM, and schematic netlist
+fixed. This clears the `VREG_3V3`/`SENSOR_LED_KIT` clearance row without
+opening shorting, unconnected, hole-clearance, dangling, or courtyard debt.
+KiCad CLI `10.0.2` now reports `ERC=0`, `DRC=14`, `unconnected=0`, schematic
+parity `0`, with no current shorting, dangling, hole-clearance, or courtyard
+bucket.
+This follow-up then re-tested the remaining B-side `VREG_3V3` interaction as
+endpoint topology and footprint/service-clearance cuts. Dense sweeps of the
+`SENSOR_LED_KIT` column and route shape, the `CLICK_PRIMARY_N` B-side hop, the
+U1-side `VREG_3V3` escape, U4 GND-pad mask/copper sizing, and the local U4 GND
+via/return endpoint either tied `DRC=14` or reopened shorting, unconnected,
+hole-clearance, extra clearance, or extra mask debt. No copper or footprint
+change is retained from those probes, and the verified snapshot remains
+`ERC=0`, `DRC=14`, `unconnected=0`, schematic parity `0`, with no current
+shorting, dangling, hole-clearance, or courtyard bucket.
+This execution then re-tested that recommendation against the live `DRC=14`
+board instead of the older `DRC=20` scratch baseline. Via-assisted
+`NTC_SENSE` escapes, U4 `VREG_3V3` front-layer and B-side escape variants,
+local `VBAT_PROTECTED` vertical doglegs, U4 GND/VBAT land and mask refinements,
+and adjacent `USB_D+` service/data lane retargets either tied `DRC=14` or
+reopened shorting, extra clearance, solder-mask, via-dangling, or co-located
+hole debt. No copper, endpoint-topology, or footprint change is retained from
+those live-board probes.
 The U4/C2 core follow-on scratch is not retained. C2-only endpoint moves and
 C2 pad-size probes held `DRC=20` or traded the C2/`USB_D+` clearance row for a
 new `NTC_SENSE`/`USB_D+` crossing. Coupled U4 VIN/EN/VOUT/GND moves, C2 moves,
@@ -1022,11 +1051,12 @@ PCB items. The closure order this snapshot recommends:
    left-service `R2B` / lower service-shield return topology, and the
    `TP_CHRG` fixture-status endpoint retarget, the `R7`/`J_BAT`
    `VBAT_PROTECTED` service-feed dogleg, the C1A local decoupler nudge, the
-   `VBAT_SENSE` via-pair plus C1A GND-return dogleg, and the `VREG_3V3`
-   via-assisted U1/C1A feed:
+   `VBAT_SENSE` via-pair plus C1A GND-return dogleg, the `VREG_3V3`
+   via-assisted U1/C1A feed, and the `SENSOR_LED_KIT` endpoint-column retarget:
    the
    live packet now uses source-controlled service/clearance footprints and
-   proves `ERC=0`, `DRC=15`, `unconnected=0`, schematic parity `0`, and no
+   endpoint topology and proves `ERC=0`, `DRC=14`, `unconnected=0`,
+   schematic parity `0`, and no
    shorting, dangling, or courtyard bucket. Do not silently
    reintroduce an onboard USB-C receptacle, JST-SH battery body, stock U4 land
    pattern, the larger U4 pads, the old `R8` endpoint geometry, the onboard
@@ -1034,22 +1064,24 @@ PCB items. The closure order this snapshot recommends:
    `Q1`/`R4`/`Q2`/`R6` charge gate, or the former front-layer lower
    service-shield return, or the old direct `R7`-to-`J_BAT`
    `VBAT_PROTECTED` diagonal, the old C1A coordinate, the old direct C1A-to-U1
-   GND leg, the old long front-layer `VBAT_SENSE` ADC leg, or the old long
-   front-layer U4-to-U1/C1A `VREG_3V3` diagonal unless the
+   GND leg, the old long front-layer `VBAT_SENSE` ADC leg, the old long
+   front-layer U4-to-U1/C1A `VREG_3V3` diagonal, or the old
+   `SENSOR_LED_KIT` column at `x=115.600` unless the
    schematic, PCB, shell CAD where applicable, BOM/manifest, stackup notes,
    packet counts, and first-board checklist move together and beat this
    retained state.
-3. The next honest reducer should target the B-side route interactions exposed
-   by the retained U1/C1A `VREG_3V3` escape. The live report now has
-   `VREG_3V3` B.Cu crossings against the retained `VBAT_SENSE` escape,
-   `SENSOR_LED_KIT`, and `CLICK_PRIMARY_N`, plus a `VREG_3V3`/`SENSOR_LED_KIT`
-   clearance row. Scratch only packet-local endpoint-topology changes for that
-   B-side lane stack: keep U1, U2, SW1's shell-bound click coordinate, C1A,
-   J_BAT, the off-board service anchors, PAW3204 aperture, antenna keep-out,
-   active BOM contract, and schematic netlist fixed; consider retargeting the
-   `CLICK_PRIMARY_N` B-side hop or the sensor LED/local 3V3 relation only if the
-   result removes rows rather than adding shorting or hole-clearance debt.
-   Retain only a live `DRC<15` result with `unconnected=0`, no ERC errors, no
+3. The next honest reducer should stop treating the retained B-side stack and
+   the U4/C2/`NTC_SENSE`/`USB_D+` pocket as local route-only problems. The
+   latest endpoint, route-shape, local land-pattern, and solder-mask probes
+   tied `DRC=14` at best. Target a source-controlled component-class or board
+   architecture cut instead: either replace the remaining first-pass
+   U4/C2/NTC support cluster with a tighter source-controlled regulator/input
+   footprint family, or move to a documented four-layer first-board stackup
+   that gives `VBAT_PROTECTED`, `VREG_3V3`, and the service/data lanes honest
+   layer separation. Keep the fixture-fed charge-service jumper, off-board
+   service anchors, shell-bound placements, active BOM contract, and schematic
+   netlist fixed unless that contract is explicitly updated in the same packet;
+   retain only a live `DRC<14` result with `unconnected=0`, no ERC errors, no
    new schematic-parity errors, and no shorting, dangling, hole-clearance, or
    courtyard bucket.
 4. Re-run ERC + DRC and update this file's counts in the same commit.

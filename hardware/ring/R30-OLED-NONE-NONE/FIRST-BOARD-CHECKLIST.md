@@ -17,7 +17,7 @@ This checklist is the execution contract for the active ring hardware lane.
 - [x] Validate the PAW3204-class sensor placement against the aperture datum in
   the PCB pass
 - [ ] Backfill schematic symbols to match the PCB pass and clear KiCad DRC
-  (current snapshot in `kicad/CURRENT-VIOLATIONS.md`: ERC=0, DRC=15,
+  (current snapshot in `kicad/CURRENT-VIOLATIONS.md`: ERC=0, DRC=14,
   unconnected=0, parity=0 — regenerate with
   `scripts/verify-firmware-local.sh --kicad-only`)
 - [x] Add project-local `PowerFinger` symbols and `PowerFinger_Ring`
@@ -44,8 +44,9 @@ This checklist is the execution contract for the active ring hardware lane.
   substitution, not a silent equivalent
 - [x] Cut the onboard `CHRG_STAT` pull-up from this packet; `TP_CHRG` remains a
   fixture-observed status pad and needs an external pull-up if used
-- [ ] Decide whether `CHRG_STAT` gets a real MCU GPIO plus firmware config
-  symbol in a later board/firmware pass
+- [x] Decide the first-board `CHRG_STAT` contract: fixture-only status for this
+  board pass, with no onboard pull-up, no MCU GPIO, and no firmware config
+  symbol. Adding a production status consumer is a later board-contract change
 - [ ] Prove the `43 x 18 mm` rigid board, off-board service-pad access,
   off-board battery service-loop path, and antenna keep-out fit the current
   shell CAD or revise the shell/board
@@ -79,6 +80,9 @@ This checklist is the execution contract for the active ring hardware lane.
   pads, dome pocket, battery harness path, and lid removal path against the
   assembled first board or the matching quick-print coupon generated with
   `scripts/generate-r30-ring-fit-coupons.sh`
+- [x] Expose the R30 off-board service-pad access and board-retention coupons
+  in the combined first-sweep packet:
+  `scripts/generate-first-board-mechanical-packet.sh --first-sweep`
 - [ ] Verify the chosen service fastener path still fits inside the current
   `~$9` ring BOM assumptions
 - [ ] Confirm the shell still supports battery replacement without destructive

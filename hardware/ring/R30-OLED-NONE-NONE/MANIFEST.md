@@ -94,7 +94,7 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
 - Recommends `R9`/`R10` = `220k`/`100k` for `VBUS_DETECT` to ESP32-C3 `GPIO3`;
   this draws ~16 µA only from USB VBUS while plugged in
 - Keeps `TP_CHRG` as a TP4054 `CHRG_STAT` fixture status pad without an onboard
-  pull-up; no firmware consumer or MCU GPIO is claimed for it yet
+  pull-up; no firmware consumer or MCU GPIO is claimed for this board pass
 - Keeps PAW3204 `SENSOR_NRESET` and `SENSOR_MOTION_N` as local bring-up pads
   only. The first optical board spends no MCU GPIOs on sensor reset or optical
   motion wake; firmware polls the PAW3204 and uses dome-only wake until real
@@ -146,9 +146,9 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   red until tested
 - BDFL accepted the packet recommendation for the first rigid P0:
   fixture-controlled charge VBUS, `R7`/`R8` = `100k`/`100k`, and
-  `R9`/`R10` = `220k`/`100k`. Reintroducing an onboard charge-enable switch or
-  a future onboard `CHRG_STAT` pull-up remains an explicit substitution, not a
-  silent equivalent
+  `R9`/`R10` = `220k`/`100k`. Reintroducing an onboard charge-enable switch,
+  onboard `CHRG_STAT` pull-up, or production firmware status consumer remains
+  an explicit later board-contract substitution, not a silent equivalent
 - Clean routed-board DRC after full schematic/PCB parity; `R7`-`R10`, `U1`,
   `U2`, `SW1`, sensor support parts, bring-up pads, sheet-level routed nets,
   USB ESD labels, charge-service jumper mapping, service shield pads, and
@@ -513,6 +513,13 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   contract, and schematic netlist stay fixed. KiCad CLI `10.0.2` now verifies
   at `ERC=0`, `DRC=15`, `unconnected=0`, schematic-parity `0`, with no current
   shorting, dangling, hole-clearance, or courtyard bucket.
+  This follow-on then moves only the B-side `SENSOR_LED_KIT` return column from
+  `x=115.600` to `x=116.000`, clearing the local `VREG_3V3` clearance row. U1,
+  U2, SW1's shell-bound click coordinate, C1A, J_BAT, the off-board service
+  anchors, PAW3204 aperture, antenna keep-out, active BOM contract, and
+  schematic netlist stay fixed. KiCad CLI `10.0.2` now verifies at `ERC=0`,
+  `DRC=14`, `unconnected=0`, schematic-parity `0`, with no current shorting,
+  dangling, hole-clearance, or courtyard bucket.
   The U4/C2 core follow-on scratch is not retained. C2-only endpoint moves and
   C2 pad-size probes held `DRC=20` or traded the C2/`USB_D+` clearance row for
   a new `NTC_SENSE`/`USB_D+` crossing. Coupled U4 VIN/EN/VOUT/GND moves, C2
@@ -549,8 +556,9 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   bus reroutes for the same envelope candidates returned non-library
   `DRC=307..317` with `unconnected_items=18`, `shorting_items=88..92`, and the
   same courtyard debt. No same-BOM/netlist envelope topology is retained.
-- Firmware allocation decision for `CHRG_STAT` if charger status needs to be
-  reported in software rather than only checked by an external pull-up fixture
+- Later-board allocation decision for `CHRG_STAT` only if charger status needs
+  to become production firmware behavior; this board pass keeps it fixture-only
+  with no onboard pull-up, MCU GPIO, or firmware config symbol
 - Later-board allocation decision for PAW3204 `SENSOR_NRESET` or
   `SENSOR_MOTION_N` if bench evidence shows the first optical board needs
   firmware reset control or optical motion wake
