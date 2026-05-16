@@ -315,6 +315,12 @@ release.
   one live clearance row; KiCad CLI `10.0.2` now reports ERC `0`, DRC `20`,
   unconnected `0`, and schematic parity `0` with no current shorting, dangling,
   hole-clearance, or courtyard bucket
+- `VBAT_SENSE` support-corridor cleanup that moves the long ADC leg onto a
+  via-assisted B-side escape between `(116.600, 93.250)` and
+  `(118.550, 96.850)`, and bends only the local C1A GND return through
+  `(119.200, 95.300)` before U1 `GND1`; KiCad CLI `10.0.2` now reports ERC
+  `0`, DRC `17`, unconnected `0`, and schematic parity `0` with no current
+  shorting, dangling, hole-clearance, or courtyard bucket
 - U4/C2 core scratch that rejects C2-only endpoint moves, C2 pad-size probes,
   coupled U4 VIN/EN/VOUT/GND moves, U4 NC/GND pad refinements, and U4 GND-via
   relocations because the clean variants hold `DRC=20` and the lower-looking
@@ -365,7 +371,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.2` snapshot is
-  ERC=0, DRC=20, unconnected=0, and schematic-parity=0; the remaining board
+  ERC=0, DRC=17, unconnected=0, and schematic-parity=0; the remaining board
   story is dominated by hand-routed crossing, clearance, and mask-bridge debt.
 - Treat the first PCB as a routed board pass, not a green fabrication release.
   Clear schematic backfill, net cleanup, and DRC/ERC before fabrication.

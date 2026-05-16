@@ -611,8 +611,8 @@ and sheet-interface cleanup in this snapshot.
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
 | `tracks_crossing` | 10 | Tracks of different nets physically crossing on the same layer |
-| `solder_mask_bridge` | 5 | Adjacent pads of different nets share an unbroken mask aperture |
-| `clearance` | 5 | Copper-to-copper or pad-to-track clearance failures in the live wrapper report |
+| `solder_mask_bridge` | 4 | Adjacent pads of different nets share an unbroken mask aperture |
+| `clearance` | 3 | Copper-to-copper or pad-to-track clearance failures in the live wrapper report |
 | `unconnected_items` | 0 | Closed by the three-contact `SW1` ring topology |
 
 The explicit unconnected and shorting buckets are now closed in the current
@@ -787,6 +787,16 @@ dogleg, shell CAD anchors, BOM, and schematic netlist fixed while removing one
 live clearance row. KiCad CLI `10.0.2` now reports `ERC=0`, `DRC=20`,
 `unconnected=0`, schematic parity `0`, with no current shorting, dangling,
 hole-clearance, or courtyard bucket.
+The retained `VBAT_SENSE` support-corridor cleanup then moves only the long
+`VBAT_SENSE` ADC leg from F.Cu to a via-assisted B.Cu escape between
+`(116.600, 93.250)` and `(118.550, 96.850)`, and bends the local C1A GND return
+through `(119.200, 95.300)` before landing on U1 `GND1`. U1, SW1's shell-bound
+click coordinate, J_BAT, the off-board service anchors, PAW3204 aperture,
+antenna keep-out, active BOM, and schematic netlist stay fixed. This closes the
+`VBAT_SENSE`/SW1 GND crossing, the C1A-GND-to-`VBAT_SENSE` clearance row, and
+the U1 `GND1`/`VBAT_SENSE` mask bridge without opening a bad bucket. KiCad CLI
+`10.0.2` now reports `ERC=0`, `DRC=17`, `unconnected=0`, schematic parity `0`,
+with no current shorting, dangling, hole-clearance, or courtyard bucket.
 The U4/C2 core follow-on scratch is not retained. C2-only endpoint moves and
 C2 pad-size probes held `DRC=20` or traded the C2/`USB_D+` clearance row for a
 new `NTC_SENSE`/`USB_D+` crossing. Coupled U4 VIN/EN/VOUT/GND moves, C2 moves,
@@ -801,7 +811,8 @@ opened shorting rows. Via-assisted `NTC_SENSE` escapes were worse, with the best
 variants returning `DRC=24+` and current `shorting_items`.
 The earlier local reducer scratch remains rejected for its broad C1A
 rotation, pad-shape, front-layer dogleg, and B-side GND-return variants; the
-small coordinate nudge above is the only retained C1A result from this lane.
+retained C1A results in this lane are the coordinate nudge above plus the local
+GND-return dogleg paired with the `VBAT_SENSE` via-pair escape.
 Those earlier probes either held `DRC=23` or lowered the raw count only by
 reopening `VBAT_PROTECTED`/GND shorting, unconnected, or extra clearance/mask
 debt. U4
@@ -1000,30 +1011,34 @@ PCB items. The closure order this snapshot recommends:
    pad refinement, `R8` divider clearance, charge-service topology, the
    left-service `R2B` / lower service-shield return topology, and the
    `TP_CHRG` fixture-status endpoint retarget, the `R7`/`J_BAT`
-   `VBAT_PROTECTED` service-feed dogleg, and the C1A local decoupler nudge:
+   `VBAT_PROTECTED` service-feed dogleg, the C1A local decoupler nudge, and the
+   `VBAT_SENSE` via-pair plus C1A GND-return dogleg:
    the
    live packet now uses source-controlled service/clearance footprints and
-   proves `ERC=0`, `DRC=20`, `unconnected=0`, schematic parity `0`, and no
+   proves `ERC=0`, `DRC=17`, `unconnected=0`, schematic parity `0`, and no
    shorting, dangling, or courtyard bucket. Do not silently
    reintroduce an onboard USB-C receptacle, JST-SH battery body, stock U4 land
    pattern, the larger U4 pads, the old `R8` endpoint geometry, the onboard
    `R11` pull-up, the old long `TP_CHRG` status spur, the active
    `Q1`/`R4`/`Q2`/`R6` charge gate, or the former front-layer lower
    service-shield return, or the old direct `R7`-to-`J_BAT`
-   `VBAT_PROTECTED` diagonal, or the old C1A coordinate unless the
+   `VBAT_PROTECTED` diagonal, the old C1A coordinate, the old direct C1A-to-U1
+   GND leg, or the old long front-layer `VBAT_SENSE` ADC leg unless the
    schematic, PCB, shell CAD where applicable, BOM/manifest, stackup notes,
    packet counts, and first-board checklist move together and beat this
    retained state.
-3. The next honest reducer should move off the now-rejected C2/`NTC_SENSE`/
-   `USB_D+` pocket and target the `VBAT_SENSE` / U1 `GND1` / local C1A-SW1 GND
-   support corridor. The live report still has a `VBAT_SENSE` crossing against
-   the SW1-side GND run plus nearby clearance/mask rows against the C1A/U1 GND
-   return. Scratch only coupled `VBAT_SENSE` endpoint topology and the adjacent
-   local GND-return shape; keep U1, SW1's shell-bound click coordinate, J_BAT,
-   the off-board service anchors, PAW3204 aperture, antenna keep-out, active
-   BOM contract, and schematic netlist fixed. Retain only a live `DRC<20`
-   result with `unconnected=0`, no ERC errors, no new schematic-parity errors,
-   and no shorting, dangling, hole-clearance, or courtyard bucket.
+3. The next honest reducer should target the remaining `VREG_3V3` / SW1-GND
+   pressure that this pass exposes cleanly. The live report still has one
+   `VREG_3V3` crossing and one clearance row against the SW1-side GND track,
+   plus two `VREG_3V3`/SW1 GND solder-mask bridges. Scratch only a packet-local
+   endpoint-topology change for the U1/C1A 3V3 return path: keep U1, SW1's
+   shell-bound click coordinate, C1A, J_BAT, the off-board service anchors,
+   PAW3204 aperture, antenna keep-out, active BOM contract, and schematic
+   netlist fixed; consider a via-assisted or right-side local 3V3 escape that
+   removes the long front-layer `VREG_3V3` pressure beside SW1. Retain only a
+   live `DRC<17` result with `unconnected=0`, no ERC errors, no new
+   schematic-parity errors, and no shorting, dangling, hole-clearance, or
+   courtyard bucket.
 4. Re-run ERC + DRC and update this file's counts in the same commit.
 5. Only then update `MANIFEST.md` to drop the "not fabrication-released"
    language.

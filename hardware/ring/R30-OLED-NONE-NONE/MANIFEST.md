@@ -496,6 +496,15 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   shell CAD anchors, BOM, and schematic netlist stay fixed. KiCad CLI `10.0.2`
   now verifies at `ERC=0`, `DRC=20`, `unconnected=0`, schematic-parity `0`,
   with no current shorting, dangling, hole-clearance, or courtyard bucket.
+  This follow-on then moves only the long `VBAT_SENSE` ADC leg onto a
+  via-assisted B-side escape between `(116.600, 93.250)` and
+  `(118.550, 96.850)`, and bends the local C1A GND return through
+  `(119.200, 95.300)` before U1 `GND1`. U1, SW1's shell-bound click coordinate,
+  C1A, J_BAT, the off-board service anchors, PAW3204 aperture, antenna
+  keep-out, active BOM contract, and schematic netlist stay fixed. KiCad CLI
+  `10.0.2` now verifies at `ERC=0`, `DRC=17`, `unconnected=0`,
+  schematic-parity `0`, with no current shorting, dangling, hole-clearance, or
+  courtyard bucket.
   The U4/C2 core follow-on scratch is not retained. C2-only endpoint moves and
   C2 pad-size probes held `DRC=20` or traded the C2/`USB_D+` clearance row for
   a new `NTC_SENSE`/`USB_D+` crossing. Coupled U4 VIN/EN/VOUT/GND moves, C2
@@ -509,8 +518,9 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   `DRC=21+`, or reopened current shorting rows; no `DRC<20` topology is
   retained.
   The earlier local reducer scratch remains rejected for broad C1A rotation,
-  pad-shape, front-layer dogleg, and B-side GND-return variants; the tiny C1A
-  coordinate nudge above is the only retained C1A result from this lane. U4
+  pad-shape, front-layer dogleg, and B-side GND-return variants; the retained
+  C1A results in this lane are the coordinate nudge above plus the local
+  GND-return dogleg paired with the `VBAT_SENSE` via-pair escape. U4
   NC/GND pad and GND-via variants; `VREG_3V3`, `VBAT_PROTECTED`, and
   `NTC_SENSE` endpoint-junction moves; `SW1` dome-ring pad-shape variants; and
   a USB service-pair sanity check either held `DRC=23` or reopened shorting,
