@@ -787,6 +787,11 @@ dogleg, shell CAD anchors, BOM, and schematic netlist fixed while removing one
 live clearance row. KiCad CLI `10.0.2` now reports `ERC=0`, `DRC=20`,
 `unconnected=0`, schematic parity `0`, with no current shorting, dangling,
 hole-clearance, or courtyard bucket.
+The U4/C2 core follow-on scratch is not retained. C2-only endpoint moves and
+C2 pad-size probes held `DRC=20` or traded the C2/`USB_D+` clearance row for a
+new `NTC_SENSE`/`USB_D+` crossing. Coupled U4 VIN/EN/VOUT/GND moves, C2 moves,
+U4 NC/GND pad refinements, and U4 GND-via relocations either held `DRC=20` or
+reopened shorting, hole-clearance, unconnected, or extra mask debt.
 The earlier local reducer scratch remains rejected for its broad C1A
 rotation, pad-shape, front-layer dogleg, and B-side GND-return variants; the
 small coordinate nudge above is the only retained C1A result from this lane.
@@ -1002,17 +1007,14 @@ PCB items. The closure order this snapshot recommends:
    schematic, PCB, shell CAD where applicable, BOM/manifest, stackup notes,
    packet counts, and first-board checklist move together and beat this
    retained state.
-3. The next honest reducer should stop treating the remaining rows as isolated
-   pad or one-junction symptoms. Sketch a coupled source-controlled topology
-   cut for the `VBAT_PROTECTED` / `VREG_3V3` / `NTC_SENSE` crossing stack:
-   either move the non-shell-bound regulator input/output decoupling and sense
-   divider endpoints together, or replace the long diagonal rails with a
-   schematic-matched local distribution spine. Keep the fixture-fed
-   charge-service jumper, off-board service anchors, shell-bound placements,
-   PAW3204 aperture, antenna keep-out, and active BOM contract fixed. Retain
-   only a live `DRC<20` result with `unconnected=0`, no ERC errors, no new
-   schematic-parity errors, and no shorting, dangling, hole-clearance, or
-   courtyard bucket.
+3. The next honest reducer should target the C2/`NTC_SENSE`/`USB_D+` trade the
+   rejected scratch exposed: C2 can clear its `USB_D+` clearance only if the
+   `NTC_SENSE` diagonal and local USB data lane move together. Keep the
+   fixture-fed charge-service jumper, off-board service anchors, shell-bound
+   placements, PAW3204 aperture, antenna keep-out, active BOM contract, and
+   schematic netlist fixed. Retain only a live `DRC<20` result with
+   `unconnected=0`, no ERC errors, no new schematic-parity errors, and no
+   shorting, dangling, hole-clearance, or courtyard bucket.
 4. Re-run ERC + DRC and update this file's counts in the same commit.
 5. Only then update `MANIFEST.md` to drop the "not fabrication-released"
    language.

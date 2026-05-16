@@ -315,6 +315,10 @@ release.
   one live clearance row; KiCad CLI `10.0.2` now reports ERC `0`, DRC `20`,
   unconnected `0`, and schematic parity `0` with no current shorting, dangling,
   hole-clearance, or courtyard bucket
+- U4/C2 core scratch that rejects C2-only endpoint moves, C2 pad-size probes,
+  coupled U4 VIN/EN/VOUT/GND moves, U4 NC/GND pad refinements, and U4 GND-via
+  relocations because the clean variants hold `DRC=20` and the lower-looking
+  variants reopen shorting, hole-clearance, unconnected, or extra mask debt
 
 This pass cuts the onboard active charge-enable switch from the first P0:
 fixture VBUS now feeds TP4054 `VCC` through a non-BOM `Q1` service jumper, and

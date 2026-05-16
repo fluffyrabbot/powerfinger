@@ -496,6 +496,12 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   shell CAD anchors, BOM, and schematic netlist stay fixed. KiCad CLI `10.0.2`
   now verifies at `ERC=0`, `DRC=20`, `unconnected=0`, schematic-parity `0`,
   with no current shorting, dangling, hole-clearance, or courtyard bucket.
+  The U4/C2 core follow-on scratch is not retained. C2-only endpoint moves and
+  C2 pad-size probes held `DRC=20` or traded the C2/`USB_D+` clearance row for
+  a new `NTC_SENSE`/`USB_D+` crossing. Coupled U4 VIN/EN/VOUT/GND moves, C2
+  moves, U4 NC/GND pad refinements, and U4 GND-via relocations either held
+  `DRC=20` or reopened shorting, hole-clearance, unconnected, or extra mask
+  debt.
   The earlier local reducer scratch remains rejected for broad C1A rotation,
   pad-shape, front-layer dogleg, and B-side GND-return variants; the tiny C1A
   coordinate nudge above is the only retained C1A result from this lane. U4
