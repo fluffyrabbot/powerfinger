@@ -505,6 +505,14 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   `10.0.2` now verifies at `ERC=0`, `DRC=17`, `unconnected=0`,
   schematic-parity `0`, with no current shorting, dangling, hole-clearance, or
   courtyard bucket.
+  This follow-on then removes the long front-layer U4-to-U1/C1A `VREG_3V3`
+  diagonal, reuses the existing sensor-rail via at `(114.900, 102.900)`, adds
+  one U1-side via at `(118.000, 94.550)`, and lands back at U1 `3V3` with a
+  short F.Cu hop. U1, SW1's shell-bound click coordinate, C1A, J_BAT, the
+  off-board service anchors, PAW3204 aperture, antenna keep-out, active BOM
+  contract, and schematic netlist stay fixed. KiCad CLI `10.0.2` now verifies
+  at `ERC=0`, `DRC=15`, `unconnected=0`, schematic-parity `0`, with no current
+  shorting, dangling, hole-clearance, or courtyard bucket.
   The U4/C2 core follow-on scratch is not retained. C2-only endpoint moves and
   C2 pad-size probes held `DRC=20` or traded the C2/`USB_D+` clearance row for
   a new `NTC_SENSE`/`USB_D+` crossing. Coupled U4 VIN/EN/VOUT/GND moves, C2
