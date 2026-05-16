@@ -792,6 +792,13 @@ C2 pad-size probes held `DRC=20` or traded the C2/`USB_D+` clearance row for a
 new `NTC_SENSE`/`USB_D+` crossing. Coupled U4 VIN/EN/VOUT/GND moves, C2 moves,
 U4 NC/GND pad refinements, and U4 GND-via relocations either held `DRC=20` or
 reopened shorting, hole-clearance, unconnected, or extra mask debt.
+The coupled C2/`NTC_SENSE`/`USB_D+` follow-on scratch is also not retained.
+Lowering C2 to clear the live C2/`USB_D+` row still tied `DRC=20` by exposing
+the `NTC_SENSE`/`USB_D+` crossing. Sweeping the local `NTC_SENSE` junction with
+that C2 move, shrinking C2 pad 1 or both C2 lands, and retargeting the local
+`USB_D+` front/B-side lane either tied `DRC=20`, rose to clean `DRC=21+`, or
+opened shorting rows. Via-assisted `NTC_SENSE` escapes were worse, with the best
+variants returning `DRC=24+` and current `shorting_items`.
 The earlier local reducer scratch remains rejected for its broad C1A
 rotation, pad-shape, front-layer dogleg, and B-side GND-return variants; the
 small coordinate nudge above is the only retained C1A result from this lane.
@@ -1007,14 +1014,16 @@ PCB items. The closure order this snapshot recommends:
    schematic, PCB, shell CAD where applicable, BOM/manifest, stackup notes,
    packet counts, and first-board checklist move together and beat this
    retained state.
-3. The next honest reducer should target the C2/`NTC_SENSE`/`USB_D+` trade the
-   rejected scratch exposed: C2 can clear its `USB_D+` clearance only if the
-   `NTC_SENSE` diagonal and local USB data lane move together. Keep the
-   fixture-fed charge-service jumper, off-board service anchors, shell-bound
-   placements, PAW3204 aperture, antenna keep-out, active BOM contract, and
-   schematic netlist fixed. Retain only a live `DRC<20` result with
-   `unconnected=0`, no ERC errors, no new schematic-parity errors, and no
-   shorting, dangling, hole-clearance, or courtyard bucket.
+3. The next honest reducer should move off the now-rejected C2/`NTC_SENSE`/
+   `USB_D+` pocket and target the `VBAT_SENSE` / U1 `GND1` / local C1A-SW1 GND
+   support corridor. The live report still has a `VBAT_SENSE` crossing against
+   the SW1-side GND run plus nearby clearance/mask rows against the C1A/U1 GND
+   return. Scratch only coupled `VBAT_SENSE` endpoint topology and the adjacent
+   local GND-return shape; keep U1, SW1's shell-bound click coordinate, J_BAT,
+   the off-board service anchors, PAW3204 aperture, antenna keep-out, active
+   BOM contract, and schematic netlist fixed. Retain only a live `DRC<20`
+   result with `unconnected=0`, no ERC errors, no new schematic-parity errors,
+   and no shorting, dangling, hole-clearance, or courtyard bucket.
 4. Re-run ERC + DRC and update this file's counts in the same commit.
 5. Only then update `MANIFEST.md` to drop the "not fabrication-released"
    language.

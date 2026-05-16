@@ -502,6 +502,12 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   moves, U4 NC/GND pad refinements, and U4 GND-via relocations either held
   `DRC=20` or reopened shorting, hole-clearance, unconnected, or extra mask
   debt.
+  The coupled C2/`NTC_SENSE`/`USB_D+` follow-on scratch is also rejected.
+  C2-lowered variants, C2 pad-1 and paired-land shrink variants, local
+  `NTC_SENSE` junction sweeps, local `USB_D+` front/B-side lane retargets, and
+  via-assisted `NTC_SENSE` escapes either tied `DRC=20`, rose to clean
+  `DRC=21+`, or reopened current shorting rows; no `DRC<20` topology is
+  retained.
   The earlier local reducer scratch remains rejected for broad C1A rotation,
   pad-shape, front-layer dogleg, and B-side GND-return variants; the tiny C1A
   coordinate nudge above is the only retained C1A result from this lane. U4

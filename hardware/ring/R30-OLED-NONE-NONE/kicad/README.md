@@ -319,6 +319,10 @@ release.
   coupled U4 VIN/EN/VOUT/GND moves, U4 NC/GND pad refinements, and U4 GND-via
   relocations because the clean variants hold `DRC=20` and the lower-looking
   variants reopen shorting, hole-clearance, unconnected, or extra mask debt
+- coupled C2/`NTC_SENSE`/`USB_D+` scratch that rejects the full exposed trade:
+  C2-lowered, C2-land-shrink, NTC-junction, local `USB_D+` lane-retarget, and
+  via-assisted `NTC_SENSE` variants either tied `DRC=20`, rose to clean
+  `DRC=21+`, or reopened shorting; no `DRC<20` topology is retained
 
 This pass cuts the onboard active charge-enable switch from the first P0:
 fixture VBUS now feeds TP4054 `VCC` through a non-BOM `Q1` service jumper, and
