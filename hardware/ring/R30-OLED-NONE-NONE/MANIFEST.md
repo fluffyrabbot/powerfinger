@@ -483,6 +483,13 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   KiCad CLI `10.0.2` now verifies at `ERC=0`, `DRC=23`, `unconnected=0`,
   schematic-parity `0`, with no current shorting, dangling, or courtyard
   bucket.
+  This follow-on replaces the direct `R7`-to-`J_BAT` `VBAT_PROTECTED` diagonal
+  with a front-layer battery-service dogleg through `(107.500, 92.400)` and
+  `(107.500, 95.300)`, keeping `J_BAT`, `R7`/`R8`, the fixture-fed service
+  jumper, shell CAD anchors, BOM, and schematic netlist fixed. KiCad CLI
+  `10.0.2` now verifies at `ERC=0`, `DRC=21`, `unconnected=0`,
+  schematic-parity `0`, with no current shorting, dangling, hole-clearance, or
+  courtyard bucket.
   The follow-on local reducer scratch is not retained. `C1A` translation,
   rotation, pad-shape, front-layer dogleg, and B-side GND-return variants;
   U4 NC/GND pad and GND-via variants; `VREG_3V3`, `VBAT_PROTECTED`, and

@@ -301,6 +301,13 @@ release.
   move, or BOM change; KiCad CLI `10.0.2` now reports ERC `0`, DRC `23`,
   unconnected `0`, and schematic parity `0` with no current shorting, dangling,
   or courtyard bucket
+- battery-service `VBAT_PROTECTED` endpoint cleanup that replaces the direct
+  `R7`-to-`J_BAT` diagonal with a front-layer dogleg through
+  `(107.500, 92.400)` and `(107.500, 95.300)`, keeping `J_BAT`, `R7`/`R8`,
+  the service jumper, shell CAD anchors, BOM, and schematic netlist fixed while
+  clearing two live crossing rows; KiCad CLI `10.0.2` now reports ERC `0`,
+  DRC `21`, unconnected `0`, and schematic parity `0` with no current shorting,
+  dangling, hole-clearance, or courtyard bucket
 
 This pass cuts the onboard active charge-enable switch from the first P0:
 fixture VBUS now feeds TP4054 `VCC` through a non-BOM `Q1` service jumper, and
@@ -343,7 +350,7 @@ rather than drifting back to anonymous module pockets.
 - Do not let convenience routing eat the antenna keep-out.
 - Treat the current schematic as first-pass capture, not proof that the board
   is fabrication-clean. The current local KiCad CLI `10.0.2` snapshot is
-  ERC=0, DRC=23, unconnected=0, and schematic-parity=0; the remaining board
+  ERC=0, DRC=21, unconnected=0, and schematic-parity=0; the remaining board
   story is dominated by hand-routed crossing, clearance, and mask-bridge debt.
 - Treat the first PCB as a routed board pass, not a green fabrication release.
   Clear schematic backfill, net cleanup, and DRC/ERC before fabrication.

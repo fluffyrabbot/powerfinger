@@ -18,7 +18,7 @@ Toolchain: `kicad-cli 10.0.2` (Homebrew, macOS).
 | Check | Count | Notes |
 |-------|-------|-------|
 | `sch erc` messages | 0 | No current ERC errors or warnings |
-| `pcb drc` violations | 23 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
+| `pcb drc` violations | 21 | Mixed errors and warnings in the current KiCad CLI report; not fab-clean |
 | `pcb drc` unconnected items | 0 | All current KiCad unconnected rows are closed |
 | `pcb drc` schematic-parity issues | 0 | Schematic and PCB pad/net parity is clean |
 
@@ -610,7 +610,7 @@ and sheet-interface cleanup in this snapshot.
 
 | Rule | Count | Source of the problem |
 |------|-------|----------------------|
-| `tracks_crossing` | 12 | Tracks of different nets physically crossing on the same layer |
+| `tracks_crossing` | 10 | Tracks of different nets physically crossing on the same layer |
 | `solder_mask_bridge` | 5 | Adjacent pads of different nets share an unbroken mask aperture |
 | `clearance` | 6 | Copper-to-copper or pad-to-track clearance failures in the live wrapper report |
 | `unconnected_items` | 0 | Closed by the three-contact `SW1` ring topology |
@@ -773,6 +773,13 @@ preserving the fixture-observed status contract, no onboard pull-up, no MCU
 consumer, no service-anchor move, no shell change, and no BOM change. KiCad CLI
 `10.0.2` now reports `ERC=0`, `DRC=23`, `unconnected=0`, schematic parity `0`,
 with no current shorting, dangling, or courtyard bucket.
+The retained battery-service VBAT dogleg then replaces the direct
+`R7`-to-`J_BAT` `VBAT_PROTECTED` diagonal with a front-layer dogleg through
+`(107.500, 92.400)` and `(107.500, 95.300)`. This keeps `J_BAT`, `R7`/`R8`,
+the fixture-fed charge-service jumper, shell CAD anchors, BOM, and schematic
+netlist fixed while removing two live crossing rows. KiCad CLI `10.0.2` now
+reports `ERC=0`, `DRC=21`, `unconnected=0`, schematic parity `0`, with no
+current shorting, dangling, hole-clearance, or courtyard bucket.
 The follow-on local reducer scratch is not retained. `C1A` translation,
 rotation, pad-shape, front-layer dogleg, and B-side GND-return variants either
 held `DRC=23` or lowered the raw count only by reopening
@@ -971,15 +978,17 @@ PCB items. The closure order this snapshot recommends:
    service interface, battery service interface, U4 regulator land pattern and
    pad refinement, `R8` divider clearance, charge-service topology, the
    left-service `R2B` / lower service-shield return topology, and the
-   `TP_CHRG` fixture-status endpoint retarget: the
+   `TP_CHRG` fixture-status endpoint retarget, and the `R7`/`J_BAT`
+   `VBAT_PROTECTED` service-feed dogleg: the
    live packet now uses source-controlled service/clearance footprints and
-   proves `ERC=0`, `DRC=23`, `unconnected=0`, schematic parity `0`, and no
+   proves `ERC=0`, `DRC=21`, `unconnected=0`, schematic parity `0`, and no
    shorting, dangling, or courtyard bucket. Do not silently
    reintroduce an onboard USB-C receptacle, JST-SH battery body, stock U4 land
    pattern, the larger U4 pads, the old `R8` endpoint geometry, the onboard
    `R11` pull-up, the old long `TP_CHRG` status spur, the active
    `Q1`/`R4`/`Q2`/`R6` charge gate, or the former front-layer lower
-   service-shield return unless the
+   service-shield return, or the old direct `R7`-to-`J_BAT`
+   `VBAT_PROTECTED` diagonal unless the
    schematic, PCB, shell CAD where applicable, BOM/manifest, stackup notes,
    packet counts, and first-board checklist move together and beat this
    retained state.
@@ -991,7 +1000,7 @@ PCB items. The closure order this snapshot recommends:
    schematic-matched local distribution spine. Keep the fixture-fed
    charge-service jumper, off-board service anchors, shell-bound placements,
    PAW3204 aperture, antenna keep-out, and active BOM contract fixed. Retain
-   only a live `DRC<23` result with `unconnected=0`, no ERC errors, no new
+   only a live `DRC<21` result with `unconnected=0`, no ERC errors, no new
    schematic-parity errors, and no shorting, dangling, hole-clearance, or
    courtyard bucket.
 4. Re-run ERC + DRC and update this file's counts in the same commit.
