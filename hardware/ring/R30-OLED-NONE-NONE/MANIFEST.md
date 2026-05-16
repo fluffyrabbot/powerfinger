@@ -490,9 +490,16 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   `10.0.2` now verifies at `ERC=0`, `DRC=21`, `unconnected=0`,
   schematic-parity `0`, with no current shorting, dangling, hole-clearance, or
   courtyard bucket.
-  The follow-on local reducer scratch is not retained. `C1A` translation,
-  rotation, pad-shape, front-layer dogleg, and B-side GND-return variants;
-  U4 NC/GND pad and GND-via variants; `VREG_3V3`, `VBAT_PROTECTED`, and
+  This follow-on moves C1A, the MCU `VREG_3V3` decoupler, from
+  `(118.450, 94.950)` to `(118.450, 94.700)` and retargets only its local
+  `VREG_3V3` and GND endpoints. U1, SW1, J_BAT, the battery-service dogleg,
+  shell CAD anchors, BOM, and schematic netlist stay fixed. KiCad CLI `10.0.2`
+  now verifies at `ERC=0`, `DRC=20`, `unconnected=0`, schematic-parity `0`,
+  with no current shorting, dangling, hole-clearance, or courtyard bucket.
+  The earlier local reducer scratch remains rejected for broad C1A rotation,
+  pad-shape, front-layer dogleg, and B-side GND-return variants; the tiny C1A
+  coordinate nudge above is the only retained C1A result from this lane. U4
+  NC/GND pad and GND-via variants; `VREG_3V3`, `VBAT_PROTECTED`, and
   `NTC_SENSE` endpoint-junction moves; `SW1` dome-ring pad-shape variants; and
   a USB service-pair sanity check either held `DRC=23` or reopened shorting,
   dangling, hole-clearance, unconnected, or extra clearance/mask debt.
