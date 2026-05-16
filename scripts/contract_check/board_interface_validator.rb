@@ -18,8 +18,8 @@ class BoardInterfaceValidator < BaseValidator
     %w[interfaces battery_and_charge_safety cell_ntc firmware_symbol] => "CONFIG_POWERFINGER_NTC_ADC_CHANNEL",
     %w[interfaces battery_and_charge_safety vbus_detect mcu_resource] => "GPIO3",
     %w[interfaces battery_and_charge_safety vbus_detect firmware_symbol] => "CONFIG_POWERFINGER_VBUS_DETECT_PIN",
-    %w[interfaces battery_and_charge_safety charge_enable mcu_resource] => "GPIO10",
-    %w[interfaces battery_and_charge_safety charge_enable firmware_symbol] => "CONFIG_POWERFINGER_CHARGE_ENABLE_PIN",
+    %w[interfaces battery_and_charge_safety charge_service_vbus mcu_resource] => "none",
+    %w[interfaces battery_and_charge_safety charge_service_vbus firmware_symbol] => "none",
     %w[interfaces battery_and_charge_safety chrg_stat firmware_symbol] => "none",
   }.freeze
 
@@ -53,9 +53,11 @@ class BoardInterfaceValidator < BaseValidator
     reset_claimed = call(:fetch, board, %w[interfaces local_sensor_bringup_pads sensor_nreset production_behavior_claimed], ContractCheck::BOARD_REL)
     motion_claimed = call(:fetch, board, %w[interfaces local_sensor_bringup_pads sensor_motion_n production_behavior_claimed], ContractCheck::BOARD_REL)
     chrg_stat_claimed = call(:fetch, board, %w[interfaces battery_and_charge_safety chrg_stat production_behavior_claimed], ContractCheck::BOARD_REL)
+    charge_service_claimed = call(:fetch, board, %w[interfaces battery_and_charge_safety charge_service_vbus production_behavior_claimed], ContractCheck::BOARD_REL)
 
     fail!("board must not claim PAW3204 reset production behavior") unless reset_claimed == false
     fail!("board must not claim PAW3204 motion-wake production behavior") unless motion_claimed == false
+    fail!("board must not claim charge-service production behavior") unless charge_service_claimed == false
     fail!("board must not claim CHRG_STAT production behavior") unless chrg_stat_claimed == false
   end
 end

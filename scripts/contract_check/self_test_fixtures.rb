@@ -186,6 +186,15 @@ class SelfTestFixtures
         end,
       ),
       fixture(
+        "CHRG_STAT GPIO allocation drift",
+        "CHRG_STAT must not have MCU resource",
+        lambda do |root|
+          mutate_yaml(root, ContractCheck::BOARD_REL) do |data|
+            data["interfaces"]["battery_and_charge_safety"]["chrg_stat"]["mcu_resource"] = "GPIO2"
+          end
+        end,
+      ),
+      fixture(
         "envelope mismatch",
         "variant max height must match enclosure acceptance",
         lambda do |root|

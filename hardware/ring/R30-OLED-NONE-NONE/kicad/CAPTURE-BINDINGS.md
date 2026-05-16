@@ -68,8 +68,9 @@ land pattern.
   the KiCad/BOM level with `R7`-`R10`, but the board remains DRC-red and any
   BSS138/load-switch substitution needs a packet update. `CHRG_STAT` now keeps
   only a local fixture status pad; it is not pulled up on board and is not a
-  firmware-consumed signal until a spare MCU GPIO and matching firmware symbol
-  are explicitly allocated.
+  firmware-consumed signal for this board pass. Adding production status
+  behavior requires a later board-contract change with a real MCU allocation,
+  firmware config, implementation, and focused tests.
 
 ## Sense/Status And Charge-Service Decision
 
@@ -80,8 +81,9 @@ Packet recommendation for the first rigid P0:
   P0 and charge service is controlled by external fixture VBUS presence.
 - Populate `R7`/`R8` = `100k`/`100k` and `R9`/`R10` = `220k`/`100k`.
 - Keep `CHRG_STAT` as a fixture-observed local status pad in this packet. Do
-  not claim onboard pull-up behavior or firmware charge-status reporting until
-  a GPIO and firmware symbol are deliberately allocated.
+  not claim onboard pull-up behavior or firmware charge-status reporting for
+  this board pass; any production status consumer must move the board,
+  firmware, and test contracts together.
 
 | Option | Safety | Quiescent draw | Repairability / BOM | Decision |
 |--------|--------|----------------|---------------------|----------|

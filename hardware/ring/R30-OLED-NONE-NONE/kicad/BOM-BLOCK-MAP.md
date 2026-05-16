@@ -31,7 +31,8 @@ divider), and `TP_CHRG` as a fixture-observed CHRG_STAT pad without an onboard
 pull-up. Treat those as the BDFL-accepted first rigid P0 packet decision, not
 hidden extras. The remaining truth is narrower: the board is still DRC-red,
 onboard charge-enable switching needs an explicit packet update, and
-`CHRG_STAT` is only a fixture status/test pad until firmware receives an
-explicit GPIO and config symbol. See
+`CHRG_STAT` is only a fixture status/test pad for this board pass. Production
+status behavior needs an explicit MCU allocation, Kconfig symbol, firmware
+consumer, and focused tests. See
 [CURRENT-VIOLATIONS.md](CURRENT-VIOLATIONS.md) for the ERC/DRC snapshot that
 gates this packet.

@@ -32,9 +32,9 @@ resolved values below, and only then builds the ring profile.
 | Battery ADC | `CONFIG_POWERFINGER_VBAT_ADC_CHANNEL` | `0` | Binds `VBAT_SENSE` to `ADC1_CH0` / GPIO0. |
 | Cell NTC ADC | `CONFIG_POWERFINGER_NTC_ADC_CHANNEL` | `1` | Binds `NTC_SENSE` to `ADC1_CH1` / GPIO1. |
 | VBUS detect | `CONFIG_POWERFINGER_VBUS_DETECT_PIN` | `3` | Binds resistor-divided `VBUS_DETECT` to GPIO3. |
-| Charge gate | `CONFIG_POWERFINGER_CHARGE_ENABLE_PIN` | `10` | Binds `CHARGE_EN` to GPIO10 through the logic-safe gate driver. |
+| Charge gate | `CONFIG_POWERFINGER_CHARGE_ENABLE_PIN` | `-1` | This board pass has no firmware-controlled charge gate; fixture VBUS feeds TP4054 `VCC` through the non-BOM service jumper. |
 | Hall rail | `CONFIG_POWERFINGER_HALL_POWER_PIN` | `-1` | R30-OLED has no Hall rail; firmware must not drive GPIO9. |
-| Charger status | none | none | `CHRG_STAT` is a pulled-up local status/test pad only, not firmware-consumed behavior. |
+| Charger status | none | none | `CHRG_STAT` is a fixture-only local status/test pad with no onboard pull-up and no firmware-consumed behavior. |
 | PAW3204 reset / power-down | none | none | `SENSOR_NRESET` is a local bring-up pad only; firmware does not drive sensor reset on the first optical board. |
 | PAW3204 motion wake | none | none | `SENSOR_MOTION_N` is a local bring-up pad only; the board profile intentionally keeps the wake mask at dome-only `1 << 8`. |
 | BLE name | `CONFIG_POWERFINGER_DEVICE_NAME` | `PowerFinger R30` | Identifies the active board profile during pairing. |
@@ -48,7 +48,9 @@ resolved values below, and only then builds the ring profile.
    safety nets must update this file, the fragment, and the R30 KiCad interface
    contract together.
 3. Do not claim `CHRG_STAT`, `SENSOR_NRESET`, or `SENSOR_MOTION_N` firmware
-   behavior until real Kconfig symbols and production consumers exist.
+   behavior for this board pass. Any production consumer needs a later
+   board-contract change with a real MCU allocation, Kconfig symbol, firmware
+   implementation, and focused tests.
 4. If an ADNS-2080-class fallback replaces PAW3204, treat it as a new board
    profile unless it preserves the exact protocol, voltage, pin, and lens
    assumptions.

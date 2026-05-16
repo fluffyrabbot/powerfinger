@@ -71,9 +71,10 @@ It exists to stop two kinds of drift:
   by default for pre-hardware dev boards; enable them only in a real R30 board
   config that matches this capture. Do not enable
   `CONFIG_POWERFINGER_CHARGE_ENABLE_PIN` for this P0.
-- No production firmware symbol currently consumes `CHRG_STAT`. Keep it as a
-  fixture-observed local status/test point until a spare MCU GPIO and firmware
-  config are deliberately allocated.
+- No production firmware symbol consumes `CHRG_STAT` for this board pass. Keep
+  it as a fixture-observed local status/test point; adding a production status
+  consumer requires a later board-contract change with a real MCU allocation,
+  firmware config, implementation, and focused tests.
 
 ## Current PCB Alignment
 

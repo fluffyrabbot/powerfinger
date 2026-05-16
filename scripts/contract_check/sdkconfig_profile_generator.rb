@@ -17,7 +17,7 @@ class SdkconfigProfileGenerator
       "CONFIG_POWERFINGER_VBAT_ADC_CHANNEL" => adc_channel(fetch(board, %w[interfaces battery_and_charge_safety vbat_sense mcu_resource], ContractCheck::BOARD_REL)),
       "CONFIG_POWERFINGER_NTC_ADC_CHANNEL" => adc_channel(fetch(board, %w[interfaces battery_and_charge_safety cell_ntc mcu_resource], ContractCheck::BOARD_REL)),
       "CONFIG_POWERFINGER_VBUS_DETECT_PIN" => gpio_number(fetch(board, %w[interfaces battery_and_charge_safety vbus_detect mcu_resource], ContractCheck::BOARD_REL)),
-      "CONFIG_POWERFINGER_CHARGE_ENABLE_PIN" => gpio_number(fetch(board, %w[interfaces battery_and_charge_safety charge_enable mcu_resource], ContractCheck::BOARD_REL)),
+      "CONFIG_POWERFINGER_CHARGE_ENABLE_PIN" => gpio_number_or_disabled(fetch(board, %w[interfaces battery_and_charge_safety charge_service_vbus mcu_resource], ContractCheck::BOARD_REL)),
       "CONFIG_POWERFINGER_HALL_POWER_PIN" => "-1",
     }
   end
@@ -108,5 +108,11 @@ class SdkconfigProfileGenerator
 
   def gpio_number(resource)
     resource.to_s[/\bGPIO(\d+)\b/, 1]
+  end
+
+  def gpio_number_or_disabled(resource)
+    return "-1" if resource.to_s == "none"
+
+    gpio_number(resource)
   end
 end

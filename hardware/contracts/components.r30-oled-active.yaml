@@ -63,10 +63,10 @@ active_component_anchors:
           reason: SOT-23-5 package exists but pinout differs
   Q1:
     function: fixture_fed_vbus_service_jumper
-    description: Non-BOM PCB copper jumper from fixture VBUS to TP4054 VCC
+    description: PCB copper VBUS service jumper
     value: VBUS_SERVICE_JUMPER
     package: SOT-23 service land
     required_notes:
-      - Fixture VBUS presence controls charge service on this P0
-      - No MCU charge-enable GPIO is allocated
-      - Q2, R4, and R6 are not populated in this packet
+      - Fixture-fed VBUS now reaches TP4054 VCC directly
+      - no onboard MCU-controlled charge-enable switch
+      - no Q2 driver, R4 pull-up, or R6 pulldown is populated in this P0 packet

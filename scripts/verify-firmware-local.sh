@@ -374,7 +374,7 @@ verify_r30_oled_profile_sdkconfig() {
     require_sdkconfig_value "$sdkconfig_path" CONFIG_POWERFINGER_VBAT_ADC_CHANNEL 0
     require_sdkconfig_value "$sdkconfig_path" CONFIG_POWERFINGER_NTC_ADC_CHANNEL 1
     require_sdkconfig_value "$sdkconfig_path" CONFIG_POWERFINGER_VBUS_DETECT_PIN 3
-    require_sdkconfig_value "$sdkconfig_path" CONFIG_POWERFINGER_CHARGE_ENABLE_PIN 10
+    require_sdkconfig_value "$sdkconfig_path" CONFIG_POWERFINGER_CHARGE_ENABLE_PIN -1
     require_sdkconfig_value "$sdkconfig_path" CONFIG_POWERFINGER_HALL_POWER_PIN -1
 }
 

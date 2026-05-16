@@ -175,6 +175,7 @@ static void update_battery_cache(uint32_t vbat_mv)
 //   R_NTC = R_DIVIDER * V_ADC / (VCC - V_ADC)
 // Returns temperature in degrees Celsius, or INT8_MIN on error.
 
+#if HAS_NTC
 static int8_t ntc_adc_to_temp_c(uint32_t adc_mv)
 {
     if (adc_mv == 0 || adc_mv >= NTC_VCC_MV) {
@@ -203,6 +204,7 @@ static int8_t ntc_adc_to_temp_c(uint32_t adc_mv)
     if (temp_c > 127.0f) return 127;
     return (int8_t)temp_c;
 }
+#endif
 
 // --- Charge control ---
 // Charge MOSFET: GPIO high = off (safe default), GPIO low = on.
@@ -329,12 +331,12 @@ hal_status_t power_manager_init(void)
 
     // Initialize charge control GPIO (default: charging disabled via pull-up)
 #if HAS_CHARGE_CONTROL
-    hal_status_t gpio_rc = hal_gpio_init(PIN_CHARGE_ENABLE, HAL_GPIO_OUTPUT);
-    if (gpio_rc != HAL_OK) {
+    hal_status_t charge_gpio_rc = hal_gpio_init(PIN_CHARGE_ENABLE, HAL_GPIO_OUTPUT);
+    if (charge_gpio_rc != HAL_OK) {
 #ifdef ESP_PLATFORM
-        ESP_LOGE(TAG, "charge enable GPIO init failed (%d)", gpio_rc);
+        ESP_LOGE(TAG, "charge enable GPIO init failed (%d)", charge_gpio_rc);
 #endif
-        return gpio_rc;
+        return charge_gpio_rc;
     }
     // Ensure charging is disabled until first safety check passes
     charge_set_enabled(false);
@@ -342,12 +344,12 @@ hal_status_t power_manager_init(void)
 
     // Initialize VBUS detection GPIO
 #if HAS_VBUS_DETECT
-    gpio_rc = hal_gpio_init(PIN_VBUS_DETECT, HAL_GPIO_INPUT_PULLDOWN);
-    if (gpio_rc != HAL_OK) {
+    hal_status_t vbus_gpio_rc = hal_gpio_init(PIN_VBUS_DETECT, HAL_GPIO_INPUT_PULLDOWN);
+    if (vbus_gpio_rc != HAL_OK) {
 #ifdef ESP_PLATFORM
-        ESP_LOGE(TAG, "VBUS detect GPIO init failed (%d)", gpio_rc);
+        ESP_LOGE(TAG, "VBUS detect GPIO init failed (%d)", vbus_gpio_rc);
 #endif
-        return gpio_rc;
+        return vbus_gpio_rc;
     }
     s_vbus_present = hal_gpio_get(PIN_VBUS_DETECT);
 #endif
