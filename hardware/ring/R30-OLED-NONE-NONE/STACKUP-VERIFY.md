@@ -28,6 +28,13 @@ Regenerate the local blank worksheet, coupon STLs, preview PNGs, and hashes with
 `scripts/generate-r30-ring-fit-coupons.sh`. Copy only real printed/fixture
 observations back into this table.
 
+For the combined first-board first sweep, regenerate
+`build/first-board-mechanical-packet/FIRST-SWEEP/` with
+`scripts/generate-first-board-mechanical-packet.sh --first-sweep`; it selects
+the R30 off-board service-pad access coupon and board-retention coupon plus the
+matching previews/logs and a blank worksheet. This generated folder is still
+print/preview scaffolding until real observations are recorded.
+
 | Coupon | Required Outcome | Measured | Status | Notes |
 |--------|------------------|----------|--------|-------|
 | `service_access_coupon` | Off-board service access coupon lets the fixture/pogo path reach J1 without levering the board edge | | | |

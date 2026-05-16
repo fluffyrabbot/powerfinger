@@ -246,10 +246,12 @@ scripts/generate-first-board-mechanical-packet.sh --first-sweep
 ```
 
 That first sweep selects only the USB-HUB host-fit coupon, USB-HUB clamp
-alignment gauge, R30 service-access coupon, and R30 board-retention coupon plus
-matching previews/logs and a blank worksheet. Keep result fields blank until
-those printed coupons are checked against real hosts, plugs, boards, board
-blanks, or fixtures.
+alignment gauge, R30 off-board service-pad access coupon, and R30
+board-retention coupon plus matching previews/logs and a blank worksheet.
+Treat `build/first-board-mechanical-packet/FIRST-SWEEP/` as the one obvious
+starting print bundle for this packet, but keep result fields blank until those
+printed coupons are checked against real hosts, plugs, boards, board blanks, or
+fixtures.
 
 For the USB-HUB physical coupon lane, regenerate the local STL/preview coupon
 bundle and blank evidence worksheet separately:

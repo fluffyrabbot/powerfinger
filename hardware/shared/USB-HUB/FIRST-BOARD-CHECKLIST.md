@@ -60,3 +60,6 @@ This checklist is the execution contract for the active hub hardware lane.
 - [x] Add a durable local command for OpenSCAD quick-print validation coupon
   and preview-bundle regeneration:
   `scripts/generate-usb-hub-validation-coupons.sh`
+- [x] Expose the USB-HUB host-fit and clamp-alignment coupons in the combined
+  first-sweep packet:
+  `scripts/generate-first-board-mechanical-packet.sh --first-sweep`

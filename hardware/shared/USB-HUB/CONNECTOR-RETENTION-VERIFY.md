@@ -29,6 +29,16 @@ scripts/generate-usb-hub-validation-coupons.sh
 
 Default output: `build/usb-hub-mechanical/`.
 
+For the combined first-board first sweep, regenerate the selected print bundle:
+
+```sh
+scripts/generate-first-board-mechanical-packet.sh --first-sweep
+```
+
+Selected output: `build/first-board-mechanical-packet/FIRST-SWEEP/`, including
+the USB-HUB host-fit coupon, USB-HUB clamp-alignment gauge, matching previews,
+OpenSCAD logs, manifest, README, and a blank worksheet.
+
 The command renders printable STLs:
 
 - `usb-hub-host-fit-coupon.stl`
