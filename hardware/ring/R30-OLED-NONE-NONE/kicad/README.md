@@ -4,14 +4,20 @@
 This directory is the PCB/schematic starting point for the active optical ring
 lane. It is intentionally honest about its state: the first routed PCB pass now
 exists, and the power/USB plus MCU/radio plus sensor/click sheets now include
-first-pass symbols, but the board DRC is still not clean enough for fabrication
-release.
+first-pass symbols. The current KiCad wrapper snapshot is ERC/DRC/parity clean,
+but fabrication outputs and physical first-board evidence are still separate
+packet gates.
 
 ## Current Source Files
 
 - `r30_oled_none_none.kicad_sch` — root sheet for the active optical ring lane
 - `r30_oled_none_none.kicad_pcb` — first rigid P0 routed board pass, with
   footprint locks, placement zones, antenna keep-outs, and charge-path routing
+- `FABRICATION-OUTPUTS.md` — local Gerber/drill/POS plus active-BOM/POS review
+  commands, hashes, and caveats for the DRC-clean first-board source
+- `BOARD-HOUSE-OUTPUT-CONSTRAINTS.md` — prototype-house intake checklist for
+  turning the local outputs into specific pre-fab feedback without claiming
+  physical ring closure
 - `sheets/power_and_charge.kicad_sch`
 - `sheets/mcu_radio.kicad_sch`
 - `sheets/sensor_and_click.kicad_sch`
@@ -107,15 +113,16 @@ release.
 - sensor-rail cleanup that moves the `VREG_3V3` via off the PAW3204
   `SENSOR_LED_KIT`/GND pad column, routes the sensor `VDD`/`VDDA` feed down a
   right-side `B.Cu` trunk, and keeps `C1B` tied in with a short local branch
-- `TP_LEDKIT` placement cleanup that moves the PAW3204 LED test pad out of the
-  `C1B` / GND pinch
+- `TP_LEDKIT` contract cleanup that supersedes the earlier PAW3204 LED test-pad
+  move by deleting the non-BOM pad/stub and leaving the PAW3204 LED-kit pin as
+  an explicit local no-connect
 - U3 VBAT escape cleanup that routes TP4054 BAT around the GND/CHRG pad row
   through an outer dogleg before rejoining the U4 VIN trunk
 - C2 input-cap placement cleanup that moves and micro-retargets the 10uF
   capacitor closer to U4 VIN while leaving its GND pad as an honest unconnected
   blocker
-- B-side sensor-pocket cleanup that reroutes the `C1B` ground return and
-  `SENSOR_LED_KIT` test-pad stub without moving the shell-bound PAW3204 aperture
+- B-side sensor-pocket cleanup that reroutes the `C1B` ground return around the
+  PAW3204 LED pad column without moving the shell-bound PAW3204 aperture
 - C1A MCU-side decoupler cleanup that moves the non-shell-bound capacitor into
   the U1 `3V3` / `GND1` pocket while leaving the shell-bound `SW1` and U1
   placements fixed
@@ -230,11 +237,13 @@ release.
   non-library `DRC=405..416`; none kept `unconnected=0` or the closed shorting
   bucket, so the next reducer is a stackup/envelope architecture decision rather
   than another local route patch
-- first four-layer architecture scratches are rejected as route migrations: a
+- broad four-layer architecture scratches are rejected as route migrations: a
   KiCad 10-format stackup-only scratch stayed effectively tied with the live
   packet, while inner-layer moves for the existing `VREG_3V3` /
   `VBAT_PROTECTED` diagonals and VREG bus returned non-library `DRC=58..76`
-  with reopened unconnected and shorting buckets
+  with reopened unconnected and shorting buckets; the retained four-layer cut is
+  narrower, moving only the existing via-to-via `VREG_3V3` support span to
+  `In1.Cu`
 - placement-level four-layer scratches are rejected while all shell/service
   anchors remain fixed: support-part moves plus retained routes returned
   non-library `DRC=127`, targeted inner-power replacements returned
@@ -335,6 +344,74 @@ release.
   `10.0.2` now reports ERC `0`, DRC `14`, unconnected `0`, and schematic
   parity `0` with no current shorting, dangling, hole-clearance, or courtyard
   bucket
+- live `DRC=14` corridor re-probe that keeps the retained board geometry fixed
+  after USB data-pair doglegs, U4 GND doglegs, `SENSOR_LED_KIT` column moves,
+  and `NTC_SENSE` via/dogleg escapes either tied the current count or reopened
+  shorting, extra clearance, solder-mask, dangling, or hole-clearance debt
+- `TP_LEDKIT` contract cleanup that removes the non-BOM PAW3204 LED-kit test pad
+  and its B-side spur, models U2 pin 5 as an explicit schematic no-connect, and
+  keeps U2, the aperture, shell-bound placements, service anchors, charge-service
+  jumper, antenna keep-out, active BOM, and schematic/PCB parity fixed; KiCad CLI
+  `10.0.2` now reports ERC `0`, DRC `13`, unconnected `0`, and schematic parity
+  `0` with no current shorting, dangling, hole-clearance, or courtyard bucket
+- four-layer support-span cleanup that adds `In1.Cu` / `In2.Cu` and moves only
+  the long via-to-via `VREG_3V3` span from `B.Cu` to `In1.Cu`, keeping the
+  fixture-fed charge-service jumper, service anchors, shell-bound placements,
+  active BOM, antenna keep-out, and schematic parity fixed; KiCad CLI `10.0.2`
+  now reports ERC `0`, DRC `11`, unconnected `0`, and schematic parity `0` with
+  no current shorting, dangling, hole-clearance, or courtyard bucket
+- USB service-span cleanup that moves only the local `USB_D+` span from
+  `(109.200, 105.650)` to `(120.800, 105.650)` onto `In2.Cu` with two
+  board-rule vias, keeping `J1`, U1, U4, C2, NTC/R3, shell-bound placements,
+  active BOM, antenna keep-out, and schematic parity fixed; KiCad CLI `10.0.2`
+  now reports ERC `0`, DRC `10`, unconnected `0`, and schematic parity `0` with
+  no current shorting, dangling, hole-clearance, or courtyard bucket
+- left-service USB-pair cleanup that reuses the existing `USB_D-` endpoint vias
+  and moves only their via-to-via span from `B.Cu` to `In1.Cu`, keeping fixed
+  `J1`, D1, U1, service anchors, shell-bound placements, active BOM, antenna
+  keep-out, and schematic parity fixed; KiCad CLI `10.0.2` now reports ERC `0`,
+  DRC `9`, unconnected `0`, and schematic parity `0` with no current shorting,
+  dangling, hole-clearance, track-width, or courtyard bucket
+- regulator-corridor layer-partition cleanup that keeps the local
+  `NTC_SENSE` divider junction on `F.Cu`, moves its long U1 ADC span to
+  `In2.Cu` through two board-rule vias, and moves the existing local `USB_D+`
+  service span from `In2.Cu` to `In1.Cu`; KiCad CLI `10.0.2` now reports ERC
+  `0`, DRC `6`, unconnected `0`, and schematic parity `0` with no current
+  shorting, dangling, hole-clearance, track-width, or courtyard bucket
+- U4 VIN/EN topology cleanup that replaces the direct front-layer
+  `VBAT_PROTECTED` VIN-to-EN tie through the U4 GND mask pinch with a widened
+  right-side dogleg around the GND pad and away from the local `VREG_3V3`
+  diagonal; KiCad CLI `10.0.2` now reports ERC `0`, DRC `4`, unconnected `0`,
+  and schematic parity `0` with no current shorting, dangling, hole-clearance,
+  track-width, solder-mask-bridge, or courtyard bucket
+- U4 pad-mask/support-footprint follow-up scratch that is not retained: U4 pad 2
+  solder-mask-margin and land-shrink probes tied `DRC=10`, the custom pad-2
+  mask/paste aperture raised the live board to `DRC=12`, and the extra-via
+  left USB_D- inner-layer hop raised the live board to `DRC=11`; no new copper,
+  footprint, or rule change beat the then-retained `DRC=10` state without new
+  debt
+- remaining left regulator-feed scratch that is not retained: lower
+  `VBAT_PROTECTED` doglegs, right-side or lower U4 GND returns, U4 VOUT doglegs,
+  upper-junction VREG inner-layer feeds, and small U4 left/right micro-nudges
+  all raised the live board to `DRC=5..19` or reopened unconnected, shorting,
+  clearance, mask, or inner-span crossing debt; the retained snapshot stays
+  ERC `0`, DRC `4`, unconnected `0`, and schematic parity `0`
+- remaining two-net layer-partition scratch that is not retained: non-pad U4
+  VOUT-to-`In1.Cu` hops, U3 BAT-to-U4 VIN `In1.Cu` hops, and extended
+  `VBAT_PROTECTED` service-span inner doglegs either tied the live board at
+  DRC `4` without improvement or raised it to DRC `5..7` with shorting,
+  clearance, hole-clearance, or retained-inner-span debt
+- C2/NTC/R3 support-topology follow-up scratch that is not retained: lower
+  `NTC_SENSE` doglegs, offset inner-layer `NTC_SENSE` hops, rotated C2 support
+  placement, right-shifted NTC/R3 junctions, and a narrowed C2 VBAT spur either
+  raised live DRC to `11..15`, reopened current shorting, or violated the
+  `0.20 mm` minimum track-width rule; no geometry beats the retained `DRC=10`
+  state
+- U4/C2/NTC/R3 micro-placement follow-up scratch that is not retained: isolated
+  U4 x/y nudges raised live DRC to `13..14`, a coupled U4+C2/VBAT/GND upward
+  retarget raised live DRC to `13`, and a full U4+C2+NTC/R3 upward support
+  shift raised live DRC to `15`; no non-shell-bound micro-placement beats the
+  retained `DRC=10` state without new mask/clearance pressure
 - U4/C2 core scratch that rejects C2-only endpoint moves, C2 pad-size probes,
   coupled U4 VIN/EN/VOUT/GND moves, U4 NC/GND pad refinements, and U4 GND-via
   relocations because the clean variants hold `DRC=20` and the lower-looking
@@ -343,6 +420,27 @@ release.
   C2-lowered, C2-land-shrink, NTC-junction, local `USB_D+` lane-retarget, and
   via-assisted `NTC_SENSE` variants either tied `DRC=20`, rose to clean
   `DRC=21+`, or reopened shorting; no `DRC<20` topology is retained
+- regulator-island VREG/VIN topology cleanup that reroutes U4 VOUT through the
+  existing R3/VREG upper lane before dropping to the retained VREG via, then
+  shortens the paired U4 VIN/EN `VBAT_PROTECTED` dogleg from `x=115.500` to
+  `x=114.250`; the right-shifted VREG-via continuation and lower U4 GND-via
+  move were rejected with shorting, hole-clearance, sliver, click, NTC, or
+  extra clearance debt, while the retained topology verifies at ERC `0`, DRC
+  `3`, unconnected `0`, and schematic parity `0` with no current shorting,
+  dangling, hole-clearance, track-width, solder-mask-bridge, or courtyard
+  bucket
+- C2-node `VBAT_PROTECTED` service-feed cleanup that moves the former long
+  front-layer diagonal onto `In1.Cu` through board-rule vias at the C2 VBAT node
+  and retained service-feed endpoint; the final retained front bend through
+  `(111.200, 103.050)` plus the `In1.Cu` dogleg through
+  `(111.000, 105.000)` / `(109.800, 101.000)` clears the two remaining local
+  GND-via clearance rows without moving `J1`, `J_BAT`, `SW1`, `U2`, the antenna
+  keep-out, or the shell-bound/service anchors; the straight inner span and
+  front-layer C2-node diagonal were rejected with shorting, mask, or extra
+  clearance debt, while the retained topology verifies at ERC `0`, DRC `0`,
+  unconnected `0`, and schematic parity `0` with no current shorting, dangling,
+  hole-clearance, track-width, solder-mask-bridge, clearance, crossing, or
+  courtyard bucket
 
 This pass cuts the onboard active charge-enable switch from the first P0:
 fixture VBUS now feeds TP4054 `VCC` through a non-BOM `Q1` service jumper, and
@@ -383,11 +481,12 @@ rather than drifting back to anonymous module pockets.
 - Do not substitute the LDO, charge resistor, or battery safety path without
   updating the variant manifest and BOM.
 - Do not let convenience routing eat the antenna keep-out.
-- Treat the current schematic as first-pass capture, not proof that the board
-  is fabrication-clean. The current local KiCad CLI `10.0.2` snapshot is
-  ERC=0, DRC=14, unconnected=0, and schematic-parity=0; the remaining board
-  story is dominated by hand-routed crossing, clearance, and mask-bridge debt.
-- Treat the first PCB as a routed board pass, not a green fabrication release.
-  Clear schematic backfill, net cleanup, and DRC/ERC before fabrication.
+- Treat the current schematic as first-pass capture with clean local electrical
+  and layout gates, not proof that the assembled hardware is validated. The
+  current local KiCad CLI `10.0.2` snapshot is ERC=0, DRC=0, unconnected=0, and
+  schematic-parity=0.
+- Treat the first PCB as a DRC-clean routed board pass, not a completed
+  hardware release. Keep ERC/DRC/parity clean through fabrication export and
+  physical first-board evidence.
 - Close `../FIRST-BOARD-CHECKLIST.md` and `../STACKUP-VERIFY.md` before treating
   this lane as hardware-ready.

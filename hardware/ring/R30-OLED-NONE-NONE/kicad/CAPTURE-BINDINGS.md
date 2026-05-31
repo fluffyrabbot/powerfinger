@@ -65,12 +65,13 @@ land pattern.
   an onboard switch only with an explicit BOM, schematic, PCB, and firmware
   contract update.
 - firmware sense completeness. Resolved for `VBAT_SENSE` and `VBUS_DETECT` at
-  the KiCad/BOM level with `R7`-`R10`, but the board remains DRC-red and any
-  BSS138/load-switch substitution needs a packet update. `CHRG_STAT` now keeps
-  only a local fixture status pad; it is not pulled up on board and is not a
-  firmware-consumed signal for this board pass. Adding production status
-  behavior requires a later board-contract change with a real MCU allocation,
-  firmware config, implementation, and focused tests.
+  the KiCad/BOM level with `R7`-`R10`; the current board is ERC/DRC/parity
+  clean, but board-house output constraints and physical fit/stackup evidence
+  remain open. Any BSS138/load-switch substitution needs a packet update.
+  `CHRG_STAT` now keeps only a local fixture status pad; it is not pulled up on
+  board and is not a firmware-consumed signal for this board pass. Adding
+  production status behavior requires a later board-contract change with a real
+  MCU allocation, firmware config, implementation, and focused tests.
 
 ## Sense/Status And Charge-Service Decision
 

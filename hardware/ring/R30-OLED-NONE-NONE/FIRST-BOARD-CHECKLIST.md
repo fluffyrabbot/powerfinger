@@ -16,16 +16,24 @@ This checklist is the execution contract for the active ring hardware lane.
   `docs/BATTERY-SAFETY.md`
 - [x] Validate the PAW3204-class sensor placement against the aperture datum in
   the PCB pass
-- [ ] Backfill schematic symbols to match the PCB pass and clear KiCad DRC
-  (current snapshot in `kicad/CURRENT-VIOLATIONS.md`: ERC=0, DRC=14,
+- [x] Backfill schematic symbols to match the PCB pass and clear KiCad DRC
+  (current snapshot in `kicad/CURRENT-VIOLATIONS.md`: ERC=0, DRC=0,
   unconnected=0, parity=0 — regenerate with
   `scripts/verify-firmware-local.sh --kicad-only`)
+- [x] Generate and review local R30 fabrication outputs from the DRC-clean KiCad
+  source; current commands, hashes, archive path, and active-BOM/POS review
+  result live in
+  `kicad/FABRICATION-OUTPUTS.md`
+- [x] Add a board-house output-constraints checklist for the R30 annex so the
+  remaining pre-fab blocker is concrete prototype-house intake feedback rather
+  than a generic fabrication concern
 - [x] Add project-local `PowerFinger` symbols and `PowerFinger_Ring`
   footprints, then wire the sheet-interface labels enough to clear schematic
   ERC
 - [x] Populate the MCU/radio and sensor/click sub-sheets with first-pass
   symbol counterparts for `U1`, `U2`, `SW1`, `R5`, `C1A`, `C1B`, `TP_VBAT`,
-  `TP_VBUS`, `TP_RST`, `TP_MOT`, and `TP_LEDKIT`
+  `TP_VBUS`, `TP_RST`, and `TP_MOT`; the PAW3204 LED-kit pin is now an explicit
+  no-connect local sensor pin rather than a routed test pad
 - [x] Reconcile the first-two-sheet electrical parity leftovers: `J_BAT`,
   `TP_CHRG`, `R2A`/`R2B`, and stale schematic-only `C1`/`C3`/`R2`/`R12`
 - [x] Model the `J_BAT` `MP1`/`MP2` mounting pads in the local schematic /
@@ -50,6 +58,10 @@ This checklist is the execution contract for the active ring hardware lane.
 - [ ] Prove the `43 x 18 mm` rigid board, off-board service-pad access,
   off-board battery service-loop path, and antenna keep-out fit the current
   shell CAD or revise the shell/board
+- [ ] Get vendor or board-house answers for
+  `kicad/BOARD-HOUSE-OUTPUT-CONSTRAINTS.md` and regenerate/re-hash outputs if
+  their intake requires different Gerber, drill, POS, BOM, stackup, mask,
+  paste, or panelization settings
 
 ## Mechanical Closure
 

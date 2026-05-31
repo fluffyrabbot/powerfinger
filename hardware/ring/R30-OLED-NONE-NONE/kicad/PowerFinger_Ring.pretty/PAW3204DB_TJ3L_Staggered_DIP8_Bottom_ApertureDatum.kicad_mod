@@ -13,7 +13,7 @@
     (pad "2" smd roundrect (at -2.80 0.635 180) (size 1.10 0.55) (layers "B.Cu" "B.Paste" "B.Mask") (roundrect_rratio 0.20) (net 13 "SENSOR_MOTION_N") (pinfunction "MOTSWK") (pintype "output"))
     (pad "3" smd roundrect (at -2.80 -0.635 180) (size 1.10 0.55) (layers "B.Cu" "B.Paste" "B.Mask") (roundrect_rratio 0.20) (net 12 "SENSOR_SDIO") (pinfunction "SDIO") (pintype "bidirectional"))
     (pad "4" smd roundrect (at -2.80 -1.905 180) (size 1.10 0.55) (layers "B.Cu" "B.Paste" "B.Mask") (roundrect_rratio 0.20) (net 11 "SENSOR_SCLK_DAMPED") (pinfunction "SCLK") (pintype "input"))
-    (pad "5" smd roundrect (at 2.80 -1.905 180) (size 1.10 0.55) (layers "B.Cu" "B.Paste" "B.Mask") (roundrect_rratio 0.20) (net 23 "SENSOR_LED_KIT") (pinfunction "LED") (pintype "output"))
+    (pad "5" smd roundrect (at 2.80 -1.905 180) (size 1.10 0.55) (layers "B.Cu" "B.Paste" "B.Mask") (roundrect_rratio 0.20) (pinfunction "LED") (pintype "output"))
     (pad "6" smd roundrect (at 2.80 -0.635 180) (size 1.10 0.55) (layers "B.Cu" "B.Paste" "B.Mask") (roundrect_rratio 0.20) (net 1 "GND") (pinfunction "VSS") (pintype "power_in"))
     (pad "7" smd roundrect (at 2.80 0.635 180) (size 1.10 0.55) (layers "B.Cu" "B.Paste" "B.Mask") (roundrect_rratio 0.20) (net 5 "VREG_3V3") (pinfunction "VDD") (pintype "power_in"))
     (pad "8" smd roundrect (at 2.80 1.905 180) (size 1.10 0.55) (layers "B.Cu" "B.Paste" "B.Mask") (roundrect_rratio 0.20) (net 5 "VREG_3V3") (pinfunction "VDDA") (pintype "power_in"))
