@@ -6,12 +6,18 @@ house or Seeed Fusion / Propagate contact for first conversation and DFM
 scoping. It is not a purchase order, not a vendor endorsement, and not a claim
 that every attached design is fabrication-ready.
 
+Use [`SHENZHEN-SUBSTITUTE-RISK-QUESTIONS.md`](SHENZHEN-SUBSTITUTE-RISK-QUESTIONS.md)
+as the first-exchange sheet for substitute-risk classification, factory
+questions, and accessibility/serviceability non-negotiables.
+
 The packet is intentionally split into two paths:
 
 - Send-now quote path: `USB-HUB` PCB fab/assembly quote plus
   connector/enclosure DFM review.
-- Optional annex: `R30-OLED-NONE-NONE` DFM/pre-fab review only. Do not quote
-  ring PCB fabrication or assembly from the annex until its PCB DRC is closed.
+- Optional annex: `R30-OLED-NONE-NONE` DFM/pre-fab review only. The KiCad
+  ERC/DRC/parity gate is now clean, but do not treat the ring as a fab/assembly
+  quote path until the board-house output-constraints checklist and physical
+  fit/stackup evidence are closed.
 
 ## Scope To Quote
 
@@ -21,7 +27,7 @@ annex as a DFM/pre-fab review input.
 | Item | Packet | Request | Current status |
 |---|---|---|---|
 | USB hub dongle | `hardware/shared/USB-HUB/` | PCB fab/assembly quote, enclosure/connector-retention DFM review, and serviceability feedback | BOM-backed packet and routed first-board source exist; schematic ERC=0, PCB DRC=0, unconnected=0, parity=0 |
-| Optical ring annex | `hardware/ring/R30-OLED-NONE-NONE/` | DFM/pre-fab review, BOM costability review, and assembly/serviceability feedback only | BOM-backed packet and first routed rigid P0 source exist; KiCad snapshot is still red; consume `hardware/ring/R30-OLED-NONE-NONE/kicad/CURRENT-VIOLATIONS.md` as the checked-in status source |
+| Optical ring annex | `hardware/ring/R30-OLED-NONE-NONE/` | DFM/pre-fab review, BOM costability review, output-constraints review, and assembly/serviceability feedback only | BOM-backed packet and first routed rigid P0 source exist; KiCad snapshot is ERC=0, DRC=0, unconnected=0, parity=0; consume `hardware/ring/R30-OLED-NONE-NONE/kicad/CURRENT-VIOLATIONS.md`, `hardware/ring/R30-OLED-NONE-NONE/kicad/FABRICATION-OUTPUTS.md`, and `hardware/ring/R30-OLED-NONE-NONE/kicad/BOARD-HOUSE-OUTPUT-CONSTRAINTS.md` as the checked-in status sources |
 
 Do not quote secondary ring, wand, puck, OCR, cloud, or companion-app product
 features as part of this starter packet.
@@ -85,18 +91,22 @@ this annex pointed at the status source so exported packets cannot drift from
 the actual KiCad proof.
 
 Use this annex only when the factory is willing to give early manufacturability,
-assembly, serviceability, sourcing, and costability feedback before a fab-clean
-ring PCB exists. The annex is not a ring PCB fab/assembly quote request and is
-not a release-to-build package.
+assembly, serviceability, sourcing, and costability feedback before measured
+ring fit/stackup evidence exists. The annex is not a ring PCB fab/assembly quote
+request and is not a release-to-build package.
 
 - Variant: `R30-OLED-NONE-NONE`, optical ring, `30 deg` sensor posture.
 - Use case: one of two identical rings in the default cursor + scroll pair.
 - Surface claim today: opaque rigid surfaces only; not glass.
 - PCB: rigid P0, `43 x 18 mm`, split into power/service, sensor/click, and
   MCU/radio zones.
-- KiCad status: still red per `kicad/CURRENT-VIOLATIONS.md`; the board must
-  not be treated as fabrication-release until that checked-in snapshot is
-  fab-clean.
+- KiCad status: ERC=0, DRC=0, unconnected=0, and schematic parity=0 per
+  `kicad/CURRENT-VIOLATIONS.md`. `kicad/FABRICATION-OUTPUTS.md` records local
+  Gerber/drill/POS review outputs plus an active-BOM/POS review with no open
+  rows. `kicad/BOARD-HOUSE-OUTPUT-CONSTRAINTS.md` turns that generated-output
+  state into explicit prototype-house intake questions. The board must not be
+  treated as fabrication-release until that checklist and physical fit/stackup
+  evidence are closed.
 - MCU/radio: `ESP32-C3-MINI-1-N4` module, with antenna keep-out preserved.
 - Sensor: `PAW3204DB-TJ3L` optical sensor plus matched lens/emitter kit;
   `LED1` is dropped from the first capture unless bare-sensor sourcing forces
@@ -123,8 +133,9 @@ not a release-to-build package.
   glide-pad pockets, board rails/stops, lid compression pads, service-pad
   access opening, dome pocket, battery harness channel, service-loop relief, and
   quick-print fit coupon modes.
-- Open blockers: PCB DRC, printed/measured fit, stackup, focal-distance, RF,
-  click force, battery service, and fastener choice remain evidence items.
+- Open blockers: vendor response to the R30 board-house output-constraints
+  checklist, printed/measured fit, stackup, focal-distance, RF, click force,
+  battery service, and fastener choice remain evidence items.
 
 ## Quote Questions
 
@@ -144,19 +155,23 @@ Ask the factory to respond to the `USB-HUB` send-now path with:
 If the factory accepts the `R30-OLED-NONE-NONE` annex as DFM/pre-fab review
 input, ask separately:
 
-1. Whether they can review the active ring while its PCB is still DRC-red, and
-   what feedback they can give before release-to-build.
+1. Whether they can review the active ring's DRC-clean KiCad source and local
+   fabrication-output packet as a DFM/pre-fab input, and what exact output,
+   stackup, panelization, drill, solder-mask, paste, POS/BOM, or CAM-intake
+   changes they require before a ring PCB fab/assembly quote.
 2. Whether they can source or assemble the PAW3204 sensor/lens/emitter path, or
    whether they require the ADNS-2080 alternate path to be evaluated first.
 3. Whether the ring's off-board USB service-pad fixture path and replaceable
    battery harness or fixture path are manufacturable and serviceable at the
    intended prototype scale.
-4. Which DRC, stackup, focal-distance, shell-fit, serviceability, or sourcing
-   issues they would require closed before quoting ring PCB fab/assembly.
+4. Which board-house output, stackup, focal-distance, shell-fit,
+   serviceability, or sourcing issues they would require closed before quoting
+   ring PCB fab/assembly.
 
 ## USB-HUB Send-Now Source Files To Send Or Link
 
 - `docs/sensors-converge-2026/SHENZHEN-FIRST-CONTACT-TEMPLATE.md`
+- `docs/sensors-converge-2026/SHENZHEN-SUBSTITUTE-RISK-QUESTIONS.md`
 - `docs/sensors-converge-2026/SHENZHEN-FACTORY-ONE-PAGER.zh-CN.md`
 - `hardware/bom/USB-HUB.csv`
 - `hardware/shared/USB-HUB/MANIFEST.md`
@@ -195,17 +210,20 @@ input, ask separately:
 - `hardware/ring/R30-OLED-NONE-NONE/MANIFEST.md`
 - `hardware/ring/R30-OLED-NONE-NONE/FIRST-BOARD-CHECKLIST.md`
 - `hardware/ring/R30-OLED-NONE-NONE/kicad/CURRENT-VIOLATIONS.md`
+- `hardware/ring/R30-OLED-NONE-NONE/kicad/FABRICATION-OUTPUTS.md`
+- `hardware/ring/R30-OLED-NONE-NONE/kicad/BOARD-HOUSE-OUTPUT-CONSTRAINTS.md`
 - `hardware/ring/R30-OLED-NONE-NONE/kicad/CAPTURE-BINDINGS.md`
 - `hardware/ring/R30-OLED-NONE-NONE/kicad/r30_oled_none_none.kicad_pro`
 - `hardware/ring/R30-OLED-NONE-NONE/kicad/r30_oled_none_none.kicad_sch`
 - `hardware/ring/R30-OLED-NONE-NONE/kicad/r30_oled_none_none.kicad_pcb`
 - `hardware/ring/R30-OLED-NONE-NONE/cad/r30_oled_none_none_shell_blank.scad`
+- `scripts/generate-r30-assembly-review.py`
 - `LICENSE-HARDWARE`
 - `LICENSE-SOFTWARE`
 
 ## Local Export
 
-Regenerate a local copy of exactly the `USB-HUB` send-now file list:
+Regenerate the send-ready local source packet for the `USB-HUB` quote path:
 
 ```bash
 scripts/export-shenzhen-seeed-quote-packet.sh
@@ -213,13 +231,21 @@ scripts/export-shenzhen-seeed-quote-packet.sh
 
 Default output: `build/quote-packets/shenzhen-seeed-usb-hub-current/`. The
 send-now export includes the first-contact template and simplified-Chinese
-factory one-pager under `docs/sensors-converge-2026/`.
+factory one-pager under `docs/sensors-converge-2026/`. Send or link that
+directory for the hub quote.
 
 To include the R30 DFM/pre-fab review annex in a separate subdirectory:
 
 ```bash
 scripts/export-shenzhen-seeed-quote-packet.sh --include-r30-annex
 ```
+
+That keeps the hub quote packet at
+`build/quote-packets/shenzhen-seeed-usb-hub-current/` and adds the optional
+annex under
+`build/quote-packets/shenzhen-seeed-usb-hub-current/R30-OLED-NONE-NONE-DFM-ANNEX/`.
+Send the annex only for DFM/pre-fab review, not for ring PCB fab/assembly
+quote.
 
 The script copies existing source files only and writes
 `PACKET-MANIFEST.md` with file sizes and SHA-256 hashes. It does not generate
@@ -261,7 +287,10 @@ scripts/generate-usb-hub-validation-coupons.sh
 ```
 
 Default output: `build/usb-hub-mechanical/`. The generated `README.md`,
-`COUPON-MANIFEST.md`, `previews/*.png`, and `PHYSICAL-CHECK-WORKSHEET.md` are
-local evidence scaffolding only; they are not proof of fit, strain, or
-clearance until printed coupon observations are recorded back into the USB-HUB
-packet docs.
+`COUPON-MANIFEST.md`, `previews/*.png`, `PHYSICAL-CHECK-WORKSHEET.md`, and
+`FIRST-PRINT/` proof-capture packet are local evidence scaffolding only; they
+are not proof of fit, strain, or clearance until printed coupon observations are
+recorded back into the USB-HUB packet docs. `FIRST-PRINT/` is the concrete
+USB-HUB print queue for host-fit, adjacent-port clearance, clamp alignment,
+service-hatch reach, and connector-retention capture; it is generated locally
+and is not part of the source-only Shenzhen send-now export.

@@ -39,7 +39,7 @@ not 12.
 If the Shenzhen / Seeed conversation needs a factory-facing artifact, use
 [`SHENZHEN-SEEED-QUOTE-PACKET.md`](SHENZHEN-SEEED-QUOTE-PACKET.md). It is the
 current repo-backed quote starter: hub quote first, ring DFM/pre-fab review
-until the ring PCB DRC is closed.
+until board-house output constraints and physical fit/stackup evidence close.
 
 ## Caveats
 

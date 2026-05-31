@@ -136,7 +136,7 @@ cert reuse posture, sample availability for sub-100-unit eval runs.
   scope the Propagate productization program in person. Use
   [`SHENZHEN-SEEED-QUOTE-PACKET.md`](SHENZHEN-SEEED-QUOTE-PACKET.md) as the
   current starter packet: hub quote first, ring DFM/pre-fab review until the
-  ring PCB DRC is closed.
+  board-house output constraints and physical fit/stackup evidence close.
 - **JLCPCB / PCBWay (Shenzhen)** — PCB fab + assembly at small scale.
 - **Local Bao'an / Longgang prototype houses** — for cases where Seeed is
   the wrong scale.
@@ -192,7 +192,7 @@ require explicit handling.
 - [ ] Read [`SHENZHEN-SEEED-QUOTE-PACKET.md`](SHENZHEN-SEEED-QUOTE-PACKET.md)
       and keep the packet status honest: the active hub is quoteable as a
       first-board candidate, while the active ring is DFM/pre-fab review until
-      its DRC/unconnected blockers are cleared.
+      board-house output constraints and physical fit/stackup evidence close.
 - [ ] Use [`SHENZHEN-FIRST-CONTACT-TEMPLATE.md`](SHENZHEN-FIRST-CONTACT-TEMPLATE.md)
       for the first Shenzhen / Seeed outbound message so the contact starts
       from the same hub-quote / ring-review boundary as the packet.

@@ -21,10 +21,20 @@ local PACKET-MANIFEST.md with file sizes and SHA-256 hashes.
 With --include-r30-annex, also copies the "R30-OLED-NONE-NONE DFM / Pre-Fab
 Review Annex Files" list under R30-OLED-NONE-NONE-DFM-ANNEX/. That annex must
 include hardware/ring/R30-OLED-NONE-NONE/kicad/CURRENT-VIOLATIONS.md because it
-is the checked-in source for the quote-facing R30 KiCad status.
+is the checked-in source for the quote-facing R30 KiCad status, and
+hardware/ring/R30-OLED-NONE-NONE/kicad/FABRICATION-OUTPUTS.md because it records
+the local generated-output review, and
+hardware/ring/R30-OLED-NONE-NONE/kicad/BOARD-HOUSE-OUTPUT-CONSTRAINTS.md because
+it records the output-constraints questions that keep the ring blocker specific.
 
 With no output directory, regenerates:
   build/quote-packets/shenzhen-seeed-usb-hub-current
+
+Default send-ready hub quote packet:
+  build/quote-packets/shenzhen-seeed-usb-hub-current
+
+Optional R30 DFM/pre-fab annex with --include-r30-annex:
+  build/quote-packets/shenzhen-seeed-usb-hub-current/R30-OLED-NONE-NONE-DFM-ANNEX
 EOF
 }
 
@@ -81,6 +91,8 @@ read_doc_section() {
 hub_section="USB-HUB Send-Now Source Files To Send Or Link"
 r30_section="R30-OLED-NONE-NONE DFM / Pre-Fab Review Annex Files"
 r30_status_source="hardware/ring/R30-OLED-NONE-NONE/kicad/CURRENT-VIOLATIONS.md"
+r30_fabrication_outputs="hardware/ring/R30-OLED-NONE-NONE/kicad/FABRICATION-OUTPUTS.md"
+r30_output_constraints="hardware/ring/R30-OLED-NONE-NONE/kicad/BOARD-HOUSE-OUTPUT-CONSTRAINTS.md"
 
 packet_files=()
 while IFS= read -r rel_path; do
@@ -104,6 +116,24 @@ if [[ "$include_r30_annex" -eq 1 ]]; then
         fi
     done
     [[ "$has_r30_status_source" -eq 1 ]] || die "R30 annex must include checked-in status source: $r30_status_source"
+
+    has_r30_fabrication_outputs=0
+    for rel_path in "${r30_annex_files[@]}"; do
+        if [[ "$rel_path" == "$r30_fabrication_outputs" ]]; then
+            has_r30_fabrication_outputs=1
+            break
+        fi
+    done
+    [[ "$has_r30_fabrication_outputs" -eq 1 ]] || die "R30 annex must include checked-in fabrication output review: $r30_fabrication_outputs"
+
+    has_r30_output_constraints=0
+    for rel_path in "${r30_annex_files[@]}"; do
+        if [[ "$rel_path" == "$r30_output_constraints" ]]; then
+            has_r30_output_constraints=1
+            break
+        fi
+    done
+    [[ "$has_r30_output_constraints" -eq 1 ]] || die "R30 annex must include board-house output constraints: $r30_output_constraints"
 fi
 
 missing=()
@@ -177,3 +207,9 @@ fi
 total_files=$((${#packet_files[@]} + ${#r30_annex_files[@]}))
 printf 'Exported %s files to %s\n' "$total_files" "$output_dir"
 printf 'Manifest: %s\n' "$manifest"
+printf 'Send-ready hub quote packet: %s\n' "$output_dir"
+if [[ "$include_r30_annex" -eq 1 ]]; then
+    printf 'Optional R30 DFM/pre-fab annex: %s\n' "$output_dir/R30-OLED-NONE-NONE-DFM-ANNEX"
+else
+    printf 'Optional R30 annex: rerun with --include-r30-annex when the factory accepts pre-fab review.\n'
+fi
