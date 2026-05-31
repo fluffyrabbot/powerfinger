@@ -65,15 +65,16 @@ dongle that composes multiple PowerFinger devices into one USB HID mouse.
   and combined validation set
 - `scripts/generate-usb-hub-validation-coupons.sh` — local regeneration command
   for the USB-HUB validation coupon STLs, preview PNGs, hash manifest, render
-  logs, bundle README, and blank physical-check worksheet under
-  `build/usb-hub-mechanical/`
+  logs, bundle README, blank physical-check worksheet, and `FIRST-PRINT/`
+  proof-capture packet under `build/usb-hub-mechanical/`
 
 ## Missing Artifacts
 
 - Printed fit validation for the full enclosure packet
 - Physical quick-coupon observations for the USB-A shoulder, wider-body
   adjacent-port envelope, `MH1` / `MH2` alignment, and service-hatch reach
-  (STLs, previews, and worksheet scaffolding can be regenerated locally with
+  (STLs, previews, worksheet scaffolding, and the `FIRST-PRINT/` proof-capture
+  packet can be regenerated locally with
   `scripts/generate-usb-hub-validation-coupons.sh`; no physical fit evidence is
   recorded yet)
 - Measured host-port clearance for the stepped USB-A direct-plug body

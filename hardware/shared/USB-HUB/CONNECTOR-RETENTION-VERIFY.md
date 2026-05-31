@@ -51,7 +51,12 @@ printing, `README.md` for the bundle handoff, `COUPON-MANIFEST.md` with
 OpenSCAD version, file sizes, SHA-256 hashes, and render results, plus
 `PHYSICAL-CHECK-WORKSHEET.md` as the blank capture sheet for host-fit,
 clamp-alignment, service-hatch reach, adjacent-port clearance, and
-connector-retention checks.
+connector-retention checks. The same run also assembles
+`build/usb-hub-mechanical/FIRST-PRINT/` as the concrete first-print
+proof-capture packet: all four USB-HUB STLs, matching previews, OpenSCAD logs,
+hash manifest, README, and a blank worksheet that covers USB-A shoulder seating,
+adjacent-port clearance, `MH1` / `MH2` alignment, service-hatch reach, and
+connector-retention load capture.
 
 These are print/preview artifacts only. They do not prove USB-A host seating,
 adjacent-port clearance, clamp load sharing, hatch reach, or connector strain.

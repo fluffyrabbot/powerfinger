@@ -294,7 +294,7 @@ fi
     printf '# First-Board Local Mechanical Packet\n\n'
     printf 'Generated at `%s`.\n\n' "$generated_at"
     printf 'This directory assembles the current generated print/preview bundles for the active hub and ring first-board mechanical evidence lanes:\n\n'
-    printf '%s\n' '- `USB-HUB/` comes from `scripts/generate-usb-hub-validation-coupons.sh` and targets direct-plug host fit, adjacent-port clearance, clamp alignment, service-hatch reach, and connector-retention observations.'
+    printf '%s\n' '- `USB-HUB/` comes from `scripts/generate-usb-hub-validation-coupons.sh` and targets direct-plug host fit, adjacent-port clearance, clamp alignment, service-hatch reach, and connector-retention observations. Start the USB-HUB print pass from `USB-HUB/FIRST-PRINT/`.'
     printf '%s\n' '- `R30-OLED-NONE-NONE/` comes from `scripts/generate-r30-ring-fit-coupons.sh` and targets J1 service-pad fixture access, board retention, lid pads, off-board battery-service harness routing, service-lid handling, and combined fit-coupon observations.'
     if [[ "$first_sweep" -eq 1 ]]; then
         printf '%s\n' '- Start printing from `FIRST-SWEEP/`; it isolates the four recommended first physical-check STLs plus matching previews, logs, manifest, README, and blank worksheet.'
