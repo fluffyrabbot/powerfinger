@@ -73,7 +73,12 @@ contract has the minimum required schema shape, that referenced files exist,
 that the active board/sensor/battery and enclosure contracts agree with each
 other, that the R30 board contract agrees with the current board-profile
 Kconfig pins, and that the packet manifest, BOM target, and interface contract
-still name the active pin and non-claim seams. It also generates the expected
+still name the active pin and non-claim seams. It also verifies the current
+Shenzhen packet lane across the quote packet, first-contact template, Shenzhen
+pairing doc, reference-manufacturer placeholder, and factory response-capture
+sheet: `USB-HUB` stays the send-now quote path, `R30-OLED-NONE-NONE` stays
+annex-only DFM/pre-fab review, and quote-vs-verified factory response capture
+stays explicit. It also generates the expected
 R30 board-profile `sdkconfig.defaults` fragment from the active variant plus
 board contract and diffs that generated output against the checked-in firmware
 fragment.
@@ -94,9 +99,10 @@ ruby scripts/contract_check.rb --print-sdkconfig-profile
 
 The checker implementation now has dedicated classes for cross-contract
 validation, packet-text validation, generated sdkconfig validation, and
-component/BOM validation, plus a shared validator base for common checker
-delegation, a schema/identity validator for variant and contract shape, a
-board-interface validator for hard pin/interface expectations, a dedicated
+component/BOM validation, plus Shenzhen active-lane validation for the current
+factory packet boundary. A shared validator base handles common checker
+delegation, a schema/identity validator handles variant and contract shape, a
+board-interface validator owns hard pin/interface expectations, and a dedicated
 self-test fixture runner with named fixture objects, shared mutation helpers,
 and a named fixture tree object for copied active-lane proof paths, plus a
 focused sdkconfig profile generator. The generator owns sdkconfig value

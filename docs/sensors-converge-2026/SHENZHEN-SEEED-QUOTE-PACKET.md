@@ -9,6 +9,13 @@ that every attached design is fabrication-ready.
 Use [`SHENZHEN-SUBSTITUTE-RISK-QUESTIONS.md`](SHENZHEN-SUBSTITUTE-RISK-QUESTIONS.md)
 as the first-exchange sheet for substitute-risk classification, factory
 questions, and accessibility/serviceability non-negotiables.
+Use [`SHENZHEN-FACTORY-RESPONSE-CAPTURE.md`](SHENZHEN-FACTORY-RESPONSE-CAPTURE.md)
+as the paste-back sheet for proposed substitutions, DFM requests,
+source-return posture, and quote-vs-verified status after a factory replies.
+Before recording a reply, create one dated evidence directory with
+`scripts/scaffold-shenzhen-seeed-factory-reply.py YYYY-MM-DD` so incoming quote
+files, substitutions, DFM asks, and source-return artifacts are captured once
+under `docs/sensors-converge-2026/factory-replies/`.
 
 The packet is intentionally split into two paths:
 
@@ -26,7 +33,7 @@ annex as a DFM/pre-fab review input.
 
 | Item | Packet | Request | Current status |
 |---|---|---|---|
-| USB hub dongle | `hardware/shared/USB-HUB/` | PCB fab/assembly quote, enclosure/connector-retention DFM review, and serviceability feedback | BOM-backed packet and routed first-board source exist; schematic ERC=0, PCB DRC=0, unconnected=0, parity=0 |
+| USB hub dongle | `hardware/shared/USB-HUB/` | PCB fab/assembly quote, enclosure/connector-retention DFM review, and serviceability feedback | BOM-backed packet and routed first-board source exist; schematic ERC=0, PCB DRC=0, unconnected=0, parity=0; consume `hardware/shared/USB-HUB/kicad/CURRENT-VIOLATIONS.md`, `hardware/shared/USB-HUB/kicad/FABRICATION-OUTPUTS.md`, and `hardware/shared/USB-HUB/kicad/BOARD-HOUSE-OUTPUT-CONSTRAINTS.md` as the checked-in status sources |
 | Optical ring annex | `hardware/ring/R30-OLED-NONE-NONE/` | DFM/pre-fab review, BOM costability review, output-constraints review, and assembly/serviceability feedback only | BOM-backed packet and first routed rigid P0 source exist; KiCad snapshot is ERC=0, DRC=0, unconnected=0, parity=0; consume `hardware/ring/R30-OLED-NONE-NONE/kicad/CURRENT-VIOLATIONS.md`, `hardware/ring/R30-OLED-NONE-NONE/kicad/FABRICATION-OUTPUTS.md`, and `hardware/ring/R30-OLED-NONE-NONE/kicad/BOARD-HOUSE-OUTPUT-CONSTRAINTS.md` as the checked-in status sources |
 
 Do not quote secondary ring, wand, puck, OCR, cloud, or companion-app product
@@ -55,7 +62,7 @@ Packet: `hardware/shared/USB-HUB/`
 - Variant: `USB-HUB`, shared accessory / hub dongle.
 - Use case: BLE central for the active optical ring pair; USB HID mouse bridge
   to the host OS; optional local companion control port over the same USB link.
-- PCB: stepped direct USB-A dongle, not the older `~20 x 12 mm` placeholder.
+- PCB: stepped direct USB-A dongle, not an earlier compact placeholder.
   The packet documents a host-side USB-A nose and wider `54 x 26 mm`
   module/service body.
 - MCU/radio/USB: `ESP32-S3-MINI-1-N8` module with native USB.
@@ -72,10 +79,20 @@ Packet: `hardware/shared/USB-HUB/`
   service-hatch reach, and combined validation.
 - KiCad packet: project-local symbol and footprint libraries are configured;
   current local verification is ERC=0, PCB DRC=0, unconnected=0, parity=0.
+- Fabrication-review packet: `kicad/FABRICATION-OUTPUTS.md` records local
+  Gerber, split drill, POS, active-BOM/POS review, and archive hashes. The
+  current active-BOM/POS review has no open rows. The Shenzhen/Seeed export
+  script regenerates and includes this review bundle by default.
+- Board-house intake packet:
+  `kicad/BOARD-HOUSE-OUTPUT-CONSTRAINTS.md` records the current answers and
+  open questions for file set, layer order, drill/slot handling, mask, paste,
+  panelization, module assembly, no-BOM copper features, connector-retention
+  DFM, antenna keep-out handling, and editable source return.
 - Quote go/no-go: go for PCB fab/assembly quote and connector/enclosure DFM
   review from the current source packet; no-go for build release until printed
   host-fit, clamp-alignment, service-hatch reach, adjacent-port clearance, and
-  connector-retention evidence are recorded.
+  connector-retention evidence are recorded. Board-house output constraints
+  also remain open until a vendor response is recorded.
 - Open blockers: printed host-fit, clamp-alignment, service-hatch reach,
   adjacent-port clearance, and connector-retention evidence are not measured
   yet.
@@ -143,14 +160,20 @@ Ask the factory to respond to the `USB-HUB` send-now path with:
 
 1. Hub PCB fab/assembly quote using the current `USB-HUB` packet and BOM target
    as a starting point.
-2. Connector/enclosure DFM notes for the SOFNG USB-05 direct-plug topology,
+2. Confirmation that the generated hub Gerber, split drill, Gerber job, POS,
+   active-BOM/POS review, and source BOM are sufficient for intake, or the exact
+   regenerated file set they require.
+3. Connector/enclosure DFM notes for the SOFNG USB-05 direct-plug topology,
    including whether they see manufacturability risk before physical
    connector-retention evidence exists.
-3. Any part substitutions they propose, with exact MPN, footprint impact,
+4. Any part substitutions they propose, with exact MPN, footprint impact,
    source, MOQ, and whether the substitution preserves serviceability and
    offline operation.
-4. What editable source they would return for any DFM modifications so the
+5. What editable source they would return for any DFM modifications so the
    CERN-OHL-S hardware disclosure remains complete.
+6. Whether they can fill or mirror the response-capture fields in
+   `SHENZHEN-FACTORY-RESPONSE-CAPTURE.md`, keeping quote-only statements
+   separate from verified evidence.
 
 If the factory accepts the `R30-OLED-NONE-NONE` annex as DFM/pre-fab review
 input, ask separately:
@@ -167,17 +190,23 @@ input, ask separately:
 4. Which board-house output, stackup, focal-distance, shell-fit,
    serviceability, or sourcing issues they would require closed before quoting
    ring PCB fab/assembly.
+5. Whether they can label every annex answer as DFM/pre-fab feedback, not a
+   ring fabrication or assembly quote, in
+   `SHENZHEN-FACTORY-RESPONSE-CAPTURE.md`.
 
 ## USB-HUB Send-Now Source Files To Send Or Link
 
 - `docs/sensors-converge-2026/SHENZHEN-FIRST-CONTACT-TEMPLATE.md`
 - `docs/sensors-converge-2026/SHENZHEN-SUBSTITUTE-RISK-QUESTIONS.md`
+- `docs/sensors-converge-2026/SHENZHEN-FACTORY-RESPONSE-CAPTURE.md`
 - `docs/sensors-converge-2026/SHENZHEN-FACTORY-ONE-PAGER.zh-CN.md`
 - `hardware/bom/USB-HUB.csv`
 - `hardware/shared/USB-HUB/MANIFEST.md`
 - `hardware/shared/USB-HUB/FIRST-BOARD-CHECKLIST.md`
 - `hardware/shared/USB-HUB/CONNECTOR-RETENTION-VERIFY.md`
 - `hardware/shared/USB-HUB/kicad/CURRENT-VIOLATIONS.md`
+- `hardware/shared/USB-HUB/kicad/FABRICATION-OUTPUTS.md`
+- `hardware/shared/USB-HUB/kicad/BOARD-HOUSE-OUTPUT-CONSTRAINTS.md`
 - `hardware/shared/USB-HUB/kicad/P0-COMPONENT-LOCKS.md`
 - `hardware/shared/USB-HUB/kicad/fp-lib-table`
 - `hardware/shared/USB-HUB/kicad/sym-lib-table`
@@ -201,6 +230,7 @@ input, ask separately:
 - `hardware/shared/USB-HUB/kicad/PowerFinger_USB.pretty/TestPoint_Pad_D1.0mm_FirstBoard.kicad_mod`
 - `hardware/shared/USB-HUB/kicad/PowerFinger_USB.pretty/USB_A_Plug_SOFNG_USB-05.kicad_mod`
 - `hardware/shared/USB-HUB/cad/usb_hub_enclosure_blank.scad`
+- `scripts/generate-usb-hub-fabrication-review.py`
 - `LICENSE-HARDWARE`
 - `LICENSE-SOFTWARE`
 
@@ -231,8 +261,17 @@ scripts/export-shenzhen-seeed-quote-packet.sh
 
 Default output: `build/quote-packets/shenzhen-seeed-usb-hub-current/`. The
 send-now export includes the first-contact template and simplified-Chinese
-factory one-pager under `docs/sensors-converge-2026/`. Send or link that
-directory for the hub quote.
+factory one-pager under `docs/sensors-converge-2026/`, plus a regenerated
+`USB-HUB-FABRICATION-REVIEW/` directory containing the hub Gerber/drill/POS/BOM
+review bundle and archive. Send or link that directory for the hub quote.
+The export also writes two operator-facing files at the packet root:
+`OUTBOUND-DRAFT.md`, generated from
+`SHENZHEN-FIRST-CONTACT-TEMPLATE.md` with subject/body placeholders preserved
+and the optional R30 body section included only in annex-mode exports, and
+`ATTACHMENT-MANIFEST.md`, generated from the same packet-document sections that
+drive the copied USB-HUB files and optional R30 annex files. Use
+`PACKET-MANIFEST.md` as the byte-count and SHA-256 hash manifest for the whole
+generated bundle.
 
 To include the R30 DFM/pre-fab review annex in a separate subdirectory:
 
@@ -247,9 +286,28 @@ annex under
 Send the annex only for DFM/pre-fab review, not for ring PCB fab/assembly
 quote.
 
-The script copies existing source files only and writes
-`PACKET-MANIFEST.md` with file sizes and SHA-256 hashes. It does not generate
-Gerbers, STLs, zip archives, or any other derived fabrication artifacts.
+The script copies the listed source files, regenerates the USB-HUB
+fabrication-review artifacts, writes `OUTBOUND-DRAFT.md` and
+`ATTACHMENT-MANIFEST.md`, and writes `PACKET-MANIFEST.md` with file sizes and
+SHA-256 hashes. It also fails if the generated attachment manifest drifts from
+the packet-doc file sections, if the regenerated USB-HUB fabrication-review
+archive no longer matches the SHA-256 recorded in
+`hardware/shared/USB-HUB/kicad/FABRICATION-OUTPUTS.md`, or if manifest rows and
+exported file counts drift. It does not generate STLs or physical-evidence
+records.
+
+After the first factory reply arrives, scaffold the source-controlled intake
+directory before updating response tables:
+
+```bash
+scripts/scaffold-shenzhen-seeed-factory-reply.py YYYY-MM-DD
+```
+
+Use `--include-r30-annex` only if the same response explicitly accepts
+`R30-OLED-NONE-NONE` as DFM/pre-fab review input. Put raw messages in
+`incoming/`, quote sheets and DFM reports in `quote-files/`, returned editable
+source or CAM-only artifacts in `source-return/`, then cite the dated directory
+from `SHENZHEN-FACTORY-RESPONSE-CAPTURE.md`.
 
 For one local first-board mechanical print/preview packet covering both the
 USB-HUB coupon lane and the R30 DFM/pre-fab coupon lane:
@@ -290,7 +348,10 @@ Default output: `build/usb-hub-mechanical/`. The generated `README.md`,
 `COUPON-MANIFEST.md`, `previews/*.png`, `PHYSICAL-CHECK-WORKSHEET.md`, and
 `FIRST-PRINT/` proof-capture packet are local evidence scaffolding only; they
 are not proof of fit, strain, or clearance until printed coupon observations are
-recorded back into the USB-HUB packet docs. `FIRST-PRINT/` is the concrete
-USB-HUB print queue for host-fit, adjacent-port clearance, clamp alignment,
-service-hatch reach, and connector-retention capture; it is generated locally
-and is not part of the source-only Shenzhen send-now export.
+ingested into `hardware/shared/USB-HUB/COUPON-RESULTS.md` with
+`scripts/ingest-usb-hub-coupon-results.py`. Use that ledger before changing
+`CONNECTOR-RETENTION-VERIFY.md`, `MANIFEST.md`, or checklist closure state.
+`FIRST-PRINT/` is the concrete USB-HUB print queue for host-fit, adjacent-port
+clearance, clamp alignment, service-hatch reach, and connector-retention
+capture; it is generated locally and is not part of the source-only Shenzhen
+send-now export.

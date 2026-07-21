@@ -4,13 +4,15 @@ PowerFinger does not use GitHub Actions by default. The supported verification
 path is local:
 
 - Host-side unit tests in `firmware/test`
+- Active-lane contract checks, including Shenzhen lane guard fixtures and the
+  reply/coupon operator-script self-tests
 - Real ESP-IDF builds for the active firmware lane (`ring` + `hub`)
 
 ## Active-Lane Verification Contract
 
 The shared verification contract for active-lane work is:
 
-1. Host-side tests green
+1. Host-side tests and active-lane contract checks green
 2. `firmware/ring` build green
 3. `firmware/hub` build green
 
@@ -70,6 +72,7 @@ scripts/verify-firmware-local.sh
 Default behavior:
 
 - Runs host-side unit tests
+- Runs active-lane contract checks and the Shenzhen reply/coupon script self-tests
 - Builds the active validation lane: `firmware/ring` and `firmware/hub`
 - Writes ESP-IDF artifacts under `build-idf/ring/` and `build-idf/hub/`
 
@@ -94,7 +97,7 @@ Build the active R30 optical ring board profile:
 scripts/verify-firmware-local.sh --ring-profile r30-oled-none-none
 ```
 
-Run only the host-side unit tests:
+Run only the host-side unit tests and active-lane contract checks:
 
 ```bash
 scripts/verify-firmware-local.sh --host-tests-only

@@ -16,7 +16,9 @@ This is the canonical checklist for the current PowerFinger program.
 ## Source Of Truth
 
 - Ring packet: [hardware/ring/R30-OLED-NONE-NONE/MANIFEST.md](../hardware/ring/R30-OLED-NONE-NONE/MANIFEST.md)
+- Ring physical coupon ledger: [hardware/ring/R30-OLED-NONE-NONE/COUPON-RESULTS.md](../hardware/ring/R30-OLED-NONE-NONE/COUPON-RESULTS.md)
 - Hub packet: [hardware/shared/USB-HUB/MANIFEST.md](../hardware/shared/USB-HUB/MANIFEST.md)
+- Hub physical coupon ledger: [hardware/shared/USB-HUB/COUPON-RESULTS.md](../hardware/shared/USB-HUB/COUPON-RESULTS.md)
 - Driver/hardware contract: [DRIVER-HARDWARE-CONTRACT.md](DRIVER-HARDWARE-CONTRACT.md)
 - R30 board firmware config: [R30-OLED-FIRMWARE-CONFIG.md](R30-OLED-FIRMWARE-CONFIG.md)
 - Local verification flow: [FIRMWARE-VERIFY-LOCAL.md](FIRMWARE-VERIFY-LOCAL.md)
@@ -29,7 +31,9 @@ or deferred unless the checklist itself is being updated deliberately.
 
 Active-lane software verification is green only when all three are green:
 
-1. `scripts/verify-firmware-local.sh --host-tests-only`
+1. `scripts/verify-firmware-local.sh --host-tests-only` (host-side unit tests,
+   active-lane contract checks, Shenzhen reply scaffold self-test, and USB-HUB
+   coupon ingest self-test)
 2. `IDF_TARGET=esp32c3 idf.py -C firmware/ring -B build-idf/ring build`
 3. `IDF_TARGET=esp32s3 idf.py -C firmware/hub -B build-idf/hub build`
 
@@ -62,6 +66,9 @@ by default.
   [hardware/ring/R30-OLED-NONE-NONE/FIRST-BOARD-CHECKLIST.md](../hardware/ring/R30-OLED-NONE-NONE/FIRST-BOARD-CHECKLIST.md)
   and
   [hardware/ring/R30-OLED-NONE-NONE/STACKUP-VERIFY.md](../hardware/ring/R30-OLED-NONE-NONE/STACKUP-VERIFY.md)
+- Ingest printed-coupon observations into
+  [hardware/ring/R30-OLED-NONE-NONE/COUPON-RESULTS.md](../hardware/ring/R30-OLED-NONE-NONE/COUPON-RESULTS.md)
+  before turning generated worksheet rows into ring closure state
 - Keep the packet-level KiCad interface contract aligned with
   [DRIVER-HARDWARE-CONTRACT.md](DRIVER-HARDWARE-CONTRACT.md) whenever GPIO,
   supply, sensor, or service-connector assumptions change
@@ -87,7 +94,10 @@ by default.
 - Close the hub packet using
   [hardware/shared/USB-HUB/FIRST-BOARD-CHECKLIST.md](../hardware/shared/USB-HUB/FIRST-BOARD-CHECKLIST.md)
   and
-  [hardware/shared/USB-HUB/CONNECTOR-RETENTION-VERIFY.md](../hardware/shared/USB-HUB/CONNECTOR-RETENTION-VERIFY.md)
+  [hardware/shared/USB-HUB/CONNECTOR-RETENTION-VERIFY.md](../hardware/shared/USB-HUB/CONNECTOR-RETENTION-VERIFY.md);
+  ingest printed-coupon observations into
+  [hardware/shared/USB-HUB/COUPON-RESULTS.md](../hardware/shared/USB-HUB/COUPON-RESULTS.md)
+  before turning generated worksheet rows into closure state
 
 ## Evidence Publishing Rules
 

@@ -95,6 +95,13 @@ This checklist is the execution contract for the active ring hardware lane.
 - [x] Expose the R30 off-board service-pad access and board-retention coupons
   in the combined first-sweep packet:
   `scripts/generate-first-board-mechanical-packet.sh --first-sweep`
+- [x] Add a source-controlled R30 coupon-result ingest path:
+  `hardware/ring/R30-OLED-NONE-NONE/COUPON-RESULTS.md` plus
+  `scripts/ingest-r30-ring-coupon-results.py`, so filled generated worksheets
+  can be merged into the checked-in ring evidence lane without ad hoc paste-back
+- [ ] Ingest real R30 first-sweep coupon observations into
+  `COUPON-RESULTS.md` before changing stackup, manifest, or checklist closure
+  state from generated worksheet rows
 - [ ] Verify the chosen service fastener path still fits inside the current
   `~$9` ring BOM assumptions
 - [ ] Confirm the shell still supports battery replacement without destructive

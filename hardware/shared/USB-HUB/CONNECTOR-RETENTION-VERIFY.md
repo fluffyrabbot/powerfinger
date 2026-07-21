@@ -39,6 +39,27 @@ Selected output: `build/first-board-mechanical-packet/FIRST-SWEEP/`, including
 the USB-HUB host-fit coupon, USB-HUB clamp-alignment gauge, matching previews,
 OpenSCAD logs, manifest, README, and a blank worksheet.
 
+## Source-Controlled Coupon Result Ingest
+
+Generated worksheets are field-capture artifacts; they are not the durable hub
+truth surface. After real USB-HUB coupon checks are filled in, ingest the
+worksheet from the repository root:
+
+```sh
+scripts/ingest-usb-hub-coupon-results.py build/first-board-mechanical-packet/FIRST-SWEEP/PHYSICAL-CHECK-WORKSHEET.md
+```
+
+For the USB-HUB-only first-print packet, use:
+
+```sh
+scripts/ingest-usb-hub-coupon-results.py build/usb-hub-mechanical/FIRST-PRINT/PHYSICAL-CHECK-WORKSHEET.md
+```
+
+The source-controlled result ledger is
+[COUPON-RESULTS.md](COUPON-RESULTS.md). Keep the retention and serviceability
+rows above non-green until that ledger contains real result rows with fixture,
+host, board, tool, or photo references.
+
 The command renders printable STLs:
 
 - `usb-hub-host-fit-coupon.stl`

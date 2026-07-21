@@ -3,7 +3,7 @@
 # PowerFinger — Local firmware verification helper
 #
 # Preferred local verification path for the active firmware lane.
-# - Runs host-side unit tests unless --firmware-only is set
+# - Runs host-side unit tests and active-lane contract checks unless --firmware-only is set
 # - Builds selected ESP-IDF firmware projects when idf.py is available
 
 set -euo pipefail
@@ -37,7 +37,7 @@ Usage:
 Options:
   --all               Build every ESP-IDF firmware project
   --firmware-only     Skip host-side unit tests
-  --host-tests-only   Run only host-side unit tests
+  --host-tests-only   Run only host-side unit tests and active-lane contract checks
   --with-kicad        Also run kicad-cli ERC/DRC on the active hardware packets
   --kicad-only        Run kicad-cli ERC/DRC only (skips host tests + firmware)
   --kicad-strict      Exit non-zero when kicad-cli reports any violation
@@ -49,7 +49,7 @@ Options:
   -h, --help          Show this help text
 
 Defaults:
-  - Host-side tests run first
+  - Host-side tests and active-lane contract checks run first
   - Firmware verification builds the active lane: ring + hub
   - ESP-IDF build outputs go under build-idf/<project>/
   - Ring profile builds write under build-idf/<profile>/
@@ -202,6 +202,17 @@ run_host_tests_step() {
     cmake -S "$repo_root/firmware/test" -B "$repo_root/build-test"
     cmake --build "$repo_root/build-test"
     ctest --test-dir "$repo_root/build-test" --output-on-failure
+}
+
+run_active_lane_contract_checks_step() {
+    echo "==> Running active-lane contract checks"
+    "$repo_root/scripts/check-contracts-local.sh"
+
+    echo "==> Running Shenzhen reply scaffold self-test"
+    "$repo_root/scripts/scaffold-shenzhen-seeed-factory-reply.py" --self-test
+
+    echo "==> Running USB-HUB coupon ingest self-test"
+    "$repo_root/scripts/ingest-usb-hub-coupon-results.py" --self-test
 }
 
 run_kicad_checks_step() {
@@ -531,6 +542,7 @@ fi
 
 if [[ "$run_host_tests" == true ]]; then
     run_host_tests_step
+    run_active_lane_contract_checks_step
 fi
 
 if [[ "$run_firmware" == true ]]; then

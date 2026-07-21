@@ -26,7 +26,10 @@ instead of pushing the packet into secondary variants.
 
 Regenerate the local blank worksheet, coupon STLs, preview PNGs, and hashes with
 `scripts/generate-r30-ring-fit-coupons.sh`. Copy only real printed/fixture
-observations back into this table.
+observations into the generated worksheet, then ingest those rows into
+[COUPON-RESULTS.md](COUPON-RESULTS.md) with
+`scripts/ingest-r30-ring-coupon-results.py` before mirroring closure-relevant
+outcomes back into this table.
 
 For the combined first-board first sweep, regenerate
 `build/first-board-mechanical-packet/FIRST-SWEEP/` with
@@ -34,6 +37,27 @@ For the combined first-board first sweep, regenerate
 the R30 off-board service-pad access coupon and board-retention coupon plus the
 matching previews/logs and a blank worksheet. This generated folder is still
 print/preview scaffolding until real observations are recorded.
+
+## Source-Controlled Coupon Result Ingest
+
+Generated worksheets are field-capture artifacts; they are not the durable ring
+truth surface. After real R30 coupon checks are filled in, ingest the worksheet
+from the repository root:
+
+```sh
+scripts/ingest-r30-ring-coupon-results.py build/first-board-mechanical-packet/FIRST-SWEEP/PHYSICAL-CHECK-WORKSHEET.md
+```
+
+For the R30-only mechanical bundle, use:
+
+```sh
+scripts/ingest-r30-ring-coupon-results.py build/r30-oled-none-none-mechanical/PHYSICAL-CHECK-WORKSHEET.md
+```
+
+The source-controlled result ledger is
+[COUPON-RESULTS.md](COUPON-RESULTS.md). Keep the coupon rows below non-green
+until that ledger contains real result rows with fixture, board, tool, coupon
+print, or photo references.
 
 | Coupon | Required Outcome | Measured | Status | Notes |
 |--------|------------------|----------|--------|-------|

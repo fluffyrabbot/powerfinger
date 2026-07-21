@@ -21,6 +21,13 @@ class SelfTestFixtures
       "firmware/ring/components/sensors/paw3204.c",
       "firmware/ring/components/sensors/include/sensor_interface.h",
       "firmware/ring/components/click/include/click_interface.h",
+      "docs/sensors-converge-2026/SHENZHEN-SEEED-QUOTE-PACKET.md",
+      "docs/sensors-converge-2026/SHENZHEN-FIRST-CONTACT-TEMPLATE.md",
+      "docs/sensors-converge-2026/SHENZHEN-PAIRING.md",
+      "docs/sensors-converge-2026/SHENZHEN-FACTORY-RESPONSE-CAPTURE.md",
+      "docs/REFERENCE-MANUFACTURERS.md",
+      "docs/VENDOR-VERIFICATION.md",
+      "hardware/shared/USB-HUB/MANIFEST.md",
     ].freeze
 
     def initialize(repo_root, paths: PATHS)
@@ -209,6 +216,102 @@ class SelfTestFixtures
         lambda do |root|
           mutate_text(root, ContractCheck::SDKCONFIG_REL) do |text|
             text.sub("CONFIG_POWERFINGER_DOME_PIN=8", "CONFIG_POWERFINGER_DOME_PIN=9")
+          end
+        end,
+      ),
+      fixture(
+        "Shenzhen quote path drift",
+        "quote packet must keep USB-HUB as send-now quote path",
+        lambda do |root|
+          mutate_text(root, ContractCheck::SHENZHEN_QUOTE_PACKET_REL) do |text|
+            text.sub(
+              "Send-now quote path: `USB-HUB` PCB fab/assembly quote plus",
+              "Send-now quote path: `R30-OLED-NONE-NONE` PCB fab/assembly quote plus",
+            )
+          end
+        end,
+      ),
+      fixture(
+        "Shenzhen first contact ring quote drift",
+        "first contact must keep R30 annex out of fabrication quote",
+        lambda do |root|
+          mutate_text(root, ContractCheck::SHENZHEN_FIRST_CONTACT_REL) do |text|
+            text.sub(
+              "Do not quote ring PCB fabrication or assembly from the annex.",
+              "Please quote ring PCB fabrication and assembly from the annex.",
+            )
+          end
+        end,
+      ),
+      fixture(
+        "Shenzhen pairing boundary drift",
+        "pairing doc must keep hub quote first and R30 review gated",
+        lambda do |root|
+          mutate_text(root, ContractCheck::SHENZHEN_PAIRING_REL) do |text|
+            text.sub(
+              "hub quote first, ring DFM/pre-fab review",
+              "ring quote first, hub DFM review",
+            )
+          end
+        end,
+      ),
+      fixture(
+        "reference manufacturer lane drift",
+        "reference manufacturers must keep Seeed row scoped to USB-HUB quote and R30 annex",
+        lambda do |root|
+          mutate_text(root, ContractCheck::REFERENCE_MANUFACTURERS_REL) do |text|
+            text.sub(
+              "Candidate for `USB-HUB` first PCB/assembly quote, with `R30-OLED-NONE-NONE` only as a DFM/pre-fab review annex",
+              "Candidate for `R30-OLED-NONE-NONE` first PCB/assembly quote, with `USB-HUB` only as a DFM review annex",
+            )
+          end
+        end,
+      ),
+      fixture(
+        "factory response quote-vs-verified drift",
+        "response capture must define Quoted separately from Verified",
+        lambda do |root|
+          mutate_text(root, ContractCheck::SHENZHEN_RESPONSE_CAPTURE_REL) do |text|
+            text.sub(
+              "`Quoted` means the factory offered price",
+              "`Quoted` means the repo verified price",
+            )
+          end
+        end,
+      ),
+      fixture(
+        "factory response intake scaffold drift",
+        "response capture must name the dated factory-reply scaffold command",
+        lambda do |root|
+          mutate_text(root, ContractCheck::SHENZHEN_RESPONSE_CAPTURE_REL) do |text|
+            text.gsub(
+              "scripts/scaffold-shenzhen-seeed-factory-reply.py YYYY-MM-DD",
+              "scripts/manual-factory-reply-notes.sh YYYY-MM-DD",
+            )
+          end
+        end,
+      ),
+      fixture(
+        "USB-HUB BOM compact geometry drift",
+        "USB-HUB BOM must not preserve the old compact dongle geometry",
+        lambda do |root|
+          mutate_text(root, ContractCheck::USB_HUB_BOM_REL) do |text|
+            text.sub(
+              "stepped USB-A nose + 54 x 26 mm body",
+              "~20x12mm",
+            )
+          end
+        end,
+      ),
+      fixture(
+        "USB-HUB BOM unmeasured fit drift",
+        "USB-HUB BOM PCB row must keep host-fit evidence unmeasured",
+        lambda do |root|
+          mutate_text(root, ContractCheck::USB_HUB_BOM_REL) do |text|
+            text.sub(
+              "host fit and adjacent-port clearance remain unmeasured",
+              "host fit and adjacent-port clearance are accepted",
+            )
           end
         end,
       ),

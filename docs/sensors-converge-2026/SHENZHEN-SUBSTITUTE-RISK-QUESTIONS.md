@@ -144,9 +144,9 @@ Send these as the first response checklist after the introductory email:
 
 ## Recommended Followup
 
-Create a factory-return form that mirrors this sheet as a fillable table:
-`part`, `proposed substitute`, `drop-in yes/no`, `footprint changed yes/no`,
-`enclosure/fixture changed yes/no`, `accessibility/serviceability impact`,
-`source files changed`, `quote-only vs verified`, and `BDFL decision`. Then add
-that form to the quote export so every factory response can be pasted back into
-the repo without turning ambiguous email prose into hidden design decisions.
+Use [`SHENZHEN-FACTORY-RESPONSE-CAPTURE.md`](SHENZHEN-FACTORY-RESPONSE-CAPTURE.md)
+as the factory-return form that mirrors this sheet as fillable tables for
+proposed substitutions, DFM requests, source-return posture, quote-vs-verified
+status, and explicit BDFL decisions. The form is included in the quote export so
+every factory response can be pasted back into the repo without turning
+ambiguous email prose into hidden design decisions.

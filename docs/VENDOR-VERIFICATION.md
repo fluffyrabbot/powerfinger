@@ -63,6 +63,11 @@ Use that packet with these constraints:
   yield, defects, realized COGS, payment terms, and license/source-return
   behavior belong in [`docs/REFERENCE-MANUFACTURERS.md`](REFERENCE-MANUFACTURERS.md)
   only after a real quote, run, or direct verification.
+- Incoming factory quote files, proposed substitutions, DFM asks, and returned
+  source artifacts should first be captured once under
+  [`docs/sensors-converge-2026/factory-replies/`](sensors-converge-2026/factory-replies/).
+  Factory sourcing claims remain quote-only here until independently checked
+  against distributor or received-sample evidence.
 
 ---
 

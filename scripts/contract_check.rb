@@ -15,6 +15,14 @@ class ContractCheck
   SDKCONFIG_REL = "firmware/ring/sdkconfig.defaults.r30_oled_none_none"
   INTERFACE_REL = "hardware/ring/R30-OLED-NONE-NONE/kicad/INTERFACE-CONTRACT.md"
   MANIFEST_REL = "hardware/ring/R30-OLED-NONE-NONE/MANIFEST.md"
+  SHENZHEN_QUOTE_PACKET_REL = "docs/sensors-converge-2026/SHENZHEN-SEEED-QUOTE-PACKET.md"
+  SHENZHEN_FIRST_CONTACT_REL = "docs/sensors-converge-2026/SHENZHEN-FIRST-CONTACT-TEMPLATE.md"
+  SHENZHEN_PAIRING_REL = "docs/sensors-converge-2026/SHENZHEN-PAIRING.md"
+  SHENZHEN_RESPONSE_CAPTURE_REL = "docs/sensors-converge-2026/SHENZHEN-FACTORY-RESPONSE-CAPTURE.md"
+  REFERENCE_MANUFACTURERS_REL = "docs/REFERENCE-MANUFACTURERS.md"
+  VENDOR_VERIFICATION_REL = "docs/VENDOR-VERIFICATION.md"
+  USB_HUB_BOM_REL = "hardware/bom/USB-HUB.csv"
+  USB_HUB_MANIFEST_REL = "hardware/shared/USB-HUB/MANIFEST.md"
 
   attr_reader :repo_root
 
@@ -40,10 +48,12 @@ class ContractCheck
     validate_cross_contracts(variant, board, sensor, battery, enclosure, contract_paths)
     validate_sdkconfig(variant, board, sdkconfig_values)
     validate_packet_text(variant)
+    validate_shenzhen_lane_text
     validate_bom(variant)
 
     puts "ok: variant, hardware contracts, BOM, manifest, interface, and sdkconfig bindings are consistent"
     puts "ok: interface contract still names the active R30 pin and non-claim seams"
+    puts "ok: Shenzhen lane docs keep USB-HUB send-now, R30 annex-only, response capture, reply intake, and direct-plug geometry explicit"
   end
 
   def self.self_test(repo_root)
@@ -78,6 +88,10 @@ class ContractCheck
 
   def validate_packet_text(variant)
     PacketTextValidator.new(self).validate(variant)
+  end
+
+  def validate_shenzhen_lane_text
+    ShenzhenLaneValidator.new(self).validate
   end
 
   def validate_bom(variant)
@@ -169,6 +183,7 @@ require_relative "contract_check/sdkconfig_profile_generator"
 require_relative "contract_check/cross_contract_validator"
 require_relative "contract_check/board_interface_validator"
 require_relative "contract_check/packet_text_validator"
+require_relative "contract_check/shenzhen_lane_validator"
 require_relative "contract_check/sdkconfig_validator"
 require_relative "contract_check/component_bom_validator"
 require_relative "contract_check/self_test_fixtures"

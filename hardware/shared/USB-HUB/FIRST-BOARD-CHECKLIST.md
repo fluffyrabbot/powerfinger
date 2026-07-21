@@ -23,6 +23,18 @@ This checklist is the execution contract for the active hub hardware lane.
   symbol library cleanup, endpoint-grid cleanup, no-BOM service-pad modeling,
   and power-flag removal. The follow-up all-severity schematic ERC and PCB DRC
   passes have 0 violations, 0 unconnected items, and 0 schematic parity issues.
+- [x] Generate and review local USB-HUB fabrication outputs from the DRC-clean
+  KiCad source: `kicad/FABRICATION-OUTPUTS.md` records Gerber, split drill, POS,
+  active-BOM/POS review, and archive hashes; the current active-BOM/POS review
+  has no open rows.
+- [x] Add board-house output-constraints questions for the generated USB-HUB
+  fabrication outputs so file-set, layer, drill/slot, solder-mask, paste,
+  panelization, module, connector-retention DFM, and source-return questions
+  are explicit instead of handled through ad hoc manual notes.
+- [ ] Record prototype-house / Seeed response to
+  `kicad/BOARD-HOUSE-OUTPUT-CONSTRAINTS.md`; regenerate and re-hash
+  `kicad/FABRICATION-OUTPUTS.md` if their intake requires different Gerber,
+  drill, POS, BOM, stackup, mask, paste, panelization, or source-return output.
 
 ## Enclosure Closure
 
@@ -67,3 +79,13 @@ This checklist is the execution contract for the active hub hardware lane.
 - [x] Expose the USB-HUB host-fit and clamp-alignment coupons in the combined
   first-sweep packet:
   `scripts/generate-first-board-mechanical-packet.sh --first-sweep`
+- [x] Add a source-controlled USB-HUB coupon-result ingest path:
+  `hardware/shared/USB-HUB/COUPON-RESULTS.md` plus
+  `scripts/ingest-usb-hub-coupon-results.py`, so filled generated worksheets
+  can be merged into the checked-in hub evidence lane without ad hoc paste-back
+- [ ] Ingest real USB-HUB first-sweep coupon observations into
+  `COUPON-RESULTS.md` before changing connector-retention, manifest, or
+  checklist closure state from generated worksheet rows
+- [x] Teach the Shenzhen/Seeed quote export to regenerate and include the
+  USB-HUB fabrication-review bundle by default so the send-now quote path
+  includes source files plus local Gerber/drill/POS/BOM review artifacts.

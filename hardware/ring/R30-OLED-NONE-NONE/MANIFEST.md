@@ -14,6 +14,8 @@
   - `cad/` — OpenSCAD lower-shell plus service-lid packet for the first-board ring pass
   - `FIRST-BOARD-CHECKLIST.md` — concrete first-board outputs required before secondary variants
   - `STACKUP-VERIFY.md` — measured package-closure template for height, focal distance, battery, and RF evidence
+  - `COUPON-RESULTS.md` — source-controlled ledger for ingested real R30
+    physical coupon observations
 
 This packet documents the minimum repairability and assembly expectations for
 the first optical ring hardware drop. It does not claim the package geometry,
@@ -68,6 +70,9 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
 - Local generated coupon bundle from `scripts/generate-r30-ring-fit-coupons.sh`
   under `build/r30-oled-none-none-mechanical/`; this includes STL/PNG/hash
   scaffolding and a blank worksheet only, not physical fit evidence
+- `COUPON-RESULTS.md` — checked-in result ingress for real R30 coupon
+  worksheet rows, updated with `scripts/ingest-r30-ring-coupon-results.py`
+  after physical checks are run
 
 ## Current PCB Packet Scope
 
@@ -144,9 +149,12 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   drill, POS, active-BOM/POS review, and archive hashes; the current assembly
   review has no open rows, but this remains generated file evidence only
 - Printed/measured results from the new CAD coupons and full-shell export
-- Completed physical-check worksheet copied from the local
+  (STLs, previews, worksheet scaffolding, and the combined `FIRST-SWEEP/`
+  packet can be regenerated locally; no physical fit evidence is recorded yet
+  in [COUPON-RESULTS.md](COUPON-RESULTS.md))
+- Completed physical-check worksheet ingested from the local
   `build/r30-oled-none-none-mechanical/PHYSICAL-CHECK-WORKSHEET.md` scaffold
-  after real coupon or board checks
+  into [COUPON-RESULTS.md](COUPON-RESULTS.md) after real coupon or board checks
 - Measured ring stackup with focal-distance verification
 - Assembly photos, torque values, and validated fit tolerances
 - Test notes tied to [docs/GO-NO-GO-RUBRIC.md](../../../docs/GO-NO-GO-RUBRIC.md)
@@ -154,6 +162,16 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   rails/stops/lid pads, dome pocket, battery harness channel, and service-lid
   removal path; the coupon modes make these quick to print, but the rows remain
   red until tested
+
+## Required First-Hardware Evidence
+
+- Quick-print coupon results are recorded before committing to a full shell
+  print; use [COUPON-RESULTS.md](COUPON-RESULTS.md) as the source-controlled
+  result ledger rather than copying from generated build worksheets by hand
+- Record R30 coupon observations in
+  [COUPON-RESULTS.md](COUPON-RESULTS.md) first, then mirror closure-relevant
+  outcomes into [STACKUP-VERIFY.md](STACKUP-VERIFY.md) before starting
+  secondary ring or puck hardware
 
 ## Current Electrical Closure Notes
 
