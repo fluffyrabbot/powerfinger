@@ -19,7 +19,7 @@ SPEC = importlib.util.spec_from_file_location("powerfinger_verifier", REPO / "sc
 VERIFIER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(VERIFIER)
 MANIFEST = {
-    "version": "v5.2.2", "commit": "3b8741b172dc951e18509698dee938304bcf1523",
+    "version": "v6.1", "commit": "fff9895c82d744c7237be8847347bdd1b07c6643",
     "hub_dependencies_lock_sha256": hashlib.sha256(b"fixture lock\n").hexdigest(),
     "targets": ["esp32c3", "esp32s3"],
 }
@@ -229,13 +229,13 @@ class ExecutionTests(unittest.TestCase):
     def test_idf_activation_preserves_arguments_and_tools_path(self):
         with tempfile.TemporaryDirectory() as directory:
             sdk = Path(directory)
-            (sdk / "export.sh").write_text('export PF_ACTIVATED=yes\n')
+            (sdk / "export.sh").write_text('echo activation-banner >&2\nexport PF_ACTIVATED=yes\n')
             code = "import json,os,sys; print(json.dumps([os.environ['PF_ACTIVATED'],os.environ['IDF_TOOLS_PATH'],sys.argv[1:]]))"
             command = VERIFIER.idf_command(sdk, sdk / "tools with spaces", [sys.executable, "-c", code, "arg with spaces"])
             value = json.loads(VERIFIER.probe(command))
             self.assertEqual(value, ["yes", str(sdk / "tools with spaces"), ["arg with spaces"]])
-            (sdk / "export.sh").write_text('return 1\n')
-            with self.assertRaises(ValueError):
+            (sdk / "export.sh").write_text('echo activation-failed >&2\nreturn 1\n')
+            with self.assertRaisesRegex(ValueError, "activation-failed"):
                 VERIFIER.probe(command)
 
     def test_configuration_failure_skips_build_and_aggregates(self):
@@ -258,6 +258,8 @@ class ExecutionTests(unittest.TestCase):
             self.assertEqual([name for name, _ in runner.commands], ["firmware/ring/configure", "firmware/hub/configure"])
             self.assertEqual(sum(stage["status"] == "skipped" for stage in runner.stages), 2)
             ring_command = runner.commands[0][1]
+            build_arg = ring_command[ring_command.index("-B") + 1]
+            self.assertEqual(Path(build_arg), root.resolve() / "build" / MANIFEST["commit"] / "verify" / "r30-oled-none-none")
             defaults = next(str(item) for item in ring_command if str(item).startswith("-DSDKCONFIG_DEFAULTS="))
             self.assertIn("sdkconfig.defaults;", defaults)
             self.assertTrue(defaults.endswith("sdkconfig.defaults.r30_oled_none_none"))

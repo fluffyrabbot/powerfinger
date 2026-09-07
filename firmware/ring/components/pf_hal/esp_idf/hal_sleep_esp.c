@@ -26,10 +26,10 @@ static hal_status_t configure_wake_pin(hal_pin_t pin, bool level)
         return HAL_ERR_IO;
     }
 
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
-    ret = gpio_deep_sleep_wakeup_enable((gpio_num_t)pin, intr_type);
+#if SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
+    ret = gpio_wakeup_enable_on_hp_periph_powerdown_sleep((gpio_num_t)pin, intr_type);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "gpio_deep_sleep_wakeup_enable failed for pin %lu: %s",
+        ESP_LOGE(TAG, "gpio_wakeup_enable_on_hp_periph_powerdown_sleep failed for pin %lu: %s",
                  (unsigned long)pin, esp_err_to_name(ret));
         return HAL_ERR_IO;
     }
@@ -105,16 +105,19 @@ hal_status_t hal_sleep_configure_wake_timer(uint32_t us)
 
 hal_wake_cause_t hal_sleep_get_wake_cause(void)
 {
-    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
+    uint32_t causes = esp_sleep_get_wakeup_causes();
+    const uint32_t gpio_causes = (1U << ESP_SLEEP_WAKEUP_GPIO) |
+                                 (1U << ESP_SLEEP_WAKEUP_EXT0) |
+                                 (1U << ESP_SLEEP_WAKEUP_EXT1);
 
-    if (cause == ESP_SLEEP_WAKEUP_UNDEFINED) {
+    if (causes & (1U << ESP_SLEEP_WAKEUP_UNDEFINED)) {
         return HAL_WAKE_CAUSE_COLD_BOOT;
     }
-    if (cause == ESP_SLEEP_WAKEUP_GPIO || cause == ESP_SLEEP_WAKEUP_EXT0 ||
-        cause == ESP_SLEEP_WAKEUP_EXT1) {
+    // Preserve user-triggered wake classification when a timer also fires.
+    if (causes & gpio_causes) {
         return HAL_WAKE_CAUSE_GPIO;
     }
-    if (cause == ESP_SLEEP_WAKEUP_TIMER) {
+    if (causes & (1U << ESP_SLEEP_WAKEUP_TIMER)) {
         return HAL_WAKE_CAUSE_TIMER;
     }
     return HAL_WAKE_CAUSE_OTHER;

@@ -174,7 +174,7 @@ def load_manifest(repo):
     data = json.loads((repo / "toolchains/esp-idf-local.json").read_text())
     if not isinstance(data, dict):
         raise ValueError("manifest must be an object")
-    for key, pattern in (("version", r"v\d+\.\d+\.\d+"), ("commit", r"[0-9a-f]{40}"), ("hub_dependencies_lock_sha256", r"[0-9a-f]{64}")):
+    for key, pattern in (("version", r"v\d+\.\d+(?:\.\d+)?"), ("commit", r"[0-9a-f]{40}"), ("hub_dependencies_lock_sha256", r"[0-9a-f]{64}")):
         if not isinstance(data.get(key), str) or not re.fullmatch(pattern, data[key]):
             raise ValueError(f"invalid manifest field {key}")
     if data.get("targets") != ["esp32c3", "esp32s3"]:
@@ -204,7 +204,16 @@ def check_sdk(data, sdk):
 
 def idf_command(sdk, tools, command):
     # Positional arguments keep paths/data out of shell source text.
-    glue = 'set -e; export IDF_PATH="$1" IDF_TOOLS_PATH="$2"; . "$1/export.sh" >/dev/null; shift 2; exec "$@"'
+    glue = """set -e
+export IDF_PATH="$1" IDF_TOOLS_PATH="$2"
+pf_activation_log=$(mktemp)
+trap 'pf_status=$?; if [ "$pf_status" -ne 0 ]; then cat "$pf_activation_log" >&2; fi; rm -f "$pf_activation_log"' EXIT
+. "$1/export.sh" >"$pf_activation_log" 2>&1
+rm -f "$pf_activation_log"
+trap - EXIT
+shift 2
+exec "$@"
+"""
     return ["bash", "-c", glue, "powerfinger-idf", sdk, tools, *command]
 
 
@@ -231,7 +240,7 @@ def sdk_preflight(runner, repo, data, tools_record):
         sdk, tools = sdk_paths(data)
         check_sdk(data, sdk)
         check_lock(repo, data)
-        for tool in ("idf.py", "riscv32-esp-elf-gcc", "xtensa-esp32s3-elf-gcc"):
+        for tool in ("idf.py", "riscv32-esp-elf-gcc", "xtensa-esp-elf-gcc"):
             value = probe(idf_command(sdk, tools, [tool, "--version"]))
             if not value or (tool == "idf.py" and value != f"ESP-IDF {data['version']}"):
                 raise ValueError(f"unexpected {tool} version: {value}")
@@ -297,7 +306,8 @@ def run_firmware(runner, repo, data, sdk_tools, configurations):
     build_root = Path(os.environ.get("POWERFINGER_IDF_BUILD_ROOT", repo / "build-idf")).expanduser()
     if not build_root.is_absolute():
         build_root = repo / build_root
-    build_root = build_root.resolve()
+    # Compiler and CMake caches must never cross SDK revisions.
+    build_root = build_root.resolve() / data["commit"]
     for name in configurations:
         label = f"firmware/{name}"
         project, _, target = CONFIGURATIONS[name]

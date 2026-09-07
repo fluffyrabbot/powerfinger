@@ -30,7 +30,7 @@ mode=install
 
 usage() {
     cat <<EOF
-Usage: $0 [--export|--print-path|--check|--idf-version v5.2.2|--help]
+Usage: $0 [--export|--print-path|--check|--idf-version $idf_version|--help]
 The authoritative version and commit are in toolchains/esp-idf-local.json.
 Install path: $idf_dir
 EOF

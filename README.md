@@ -174,7 +174,8 @@ scripts/verify-firmware-local.sh
 ```
 
 After the one-time bootstrap, `scripts/verify-firmware-local.sh` can run from a
-fresh shell and will auto-activate the repo-pinned ESP-IDF baseline if needed.
+fresh shell and will auto-activate the repo-pinned ESP-IDF 6.1 build candidate.
+[Physical hardware qualification remains pending](docs/ESP-IDF-6.1-QUALIFICATION.md).
 If you want `idf.py` available in your current shell for direct iteration, run:
 
 ```bash

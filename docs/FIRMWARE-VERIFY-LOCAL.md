@@ -54,18 +54,21 @@ Contradictory modes are rejected.
 
 Use `--report PATH` to choose the JSON report location. Use
 `POWERFINGER_IDF_BUILD_ROOT` to relocate ESP-IDF build outputs; SDKCONFIG files
-remain inside the selected private `build-idf/verify/<profile>/` directory and are resolved
+remain inside the selected private `build-idf/<sdk-commit>/verify/<profile>/` directory and are resolved
 from committed defaults, so an ignored `firmware/<project>/sdkconfig` cannot
 silently select a previous session's configuration.
 
-## SDK baseline
+## SDK build candidate
 
-`toolchains/esp-idf-local.json` is authoritative: ESP-IDF `v5.2.2`, commit
-`3b8741b172dc951e18509698dee938304bcf1523`, with `esp32c3` and `esp32s3`
+`toolchains/esp-idf-local.json` is authoritative: ESP-IDF `v6.1`, commit
+`fff9895c82d744c7237be8847347bdd1b07c6643`, with `esp32c3` and `esp32s3`
 targets. The verifier and setup script consume that same manifest. The committed
 hub `dependencies.lock` records the resolved component versions; its hash is
 checked against the manifest before and after firmware builds. Update the lock
 and manifest together only when deliberately changing dependencies.
+
+ESP-IDF 6.1 is a build candidate with [hardware qualification pending](ESP-IDF-6.1-QUALIFICATION.md).
+Build success does not establish physical BLE, USB, power, or wake behavior.
 
 Setup never updates an existing installation automatically; it validates HEAD, tracked or
 untracked modifications, and submodule state before export or build.

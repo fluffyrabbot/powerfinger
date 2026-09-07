@@ -1,9 +1,12 @@
 {
   "name": "esp-idf-local",
-  "version": "v5.2.2",
-  "commit": "3b8741b172dc951e18509698dee938304bcf1523",
-  "hub_dependencies_lock_sha256": "a1f8c7ebb0521fe751e3cd1f55432259e59966bb7e94f1873faea89069d2d20e",
-  "targets": ["esp32c3", "esp32s3"],
+  "version": "v6.1",
+  "commit": "fff9895c82d744c7237be8847347bdd1b07c6643",
+  "hub_dependencies_lock_sha256": "68626c9cdbae10c0867946b01a41afde8ba2322c035851a1cd688bcbdd331c8d",
+  "targets": [
+    "esp32c3",
+    "esp32s3"
+  ],
   "install_root": "~/.powerfinger-sdk",
   "license": "MIT"
 }
