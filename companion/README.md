@@ -35,6 +35,15 @@ scripts/serve-companion-local.sh
 Then open `http://127.0.0.1:4173` in Chrome or Edge and connect to the hub over
 Web Serial.
 
+The dependency-free protocol test is part of the repository verifier:
+
+```bash
+scripts/verify-firmware-local.sh --fast
+```
+
+This keeps companion verification offline and does not require a browser,
+account, cloud service, or connected device.
+
 ## What The Scaffold Covers
 
 - Hub snapshot via `GET_HUB_INFO`

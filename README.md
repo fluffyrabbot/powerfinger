@@ -157,14 +157,16 @@ implementation versus planning:
 
 | Area | Current reality | Start here |
 |------|-----------------|-----------|
-| Firmware | Real ESP-IDF targets exist for `ring`, `hub`, `pen`, and `puck`, but the shared verification contract is the active `ring` + `hub` lane plus host-side tests. | `scripts/verify-firmware-local.sh`, `docs/FIRMWARE-VERIFY-LOCAL.md` |
+| Firmware | Real ESP-IDF targets exist for `ring`, `hub`, `pen`, and `puck`; the verifier covers its own regression tests, host tests, companion protocol, sanitizers, active R30 profile, hub, and strict KiCad by default. | `scripts/verify-firmware-local.sh`, `docs/FIRMWARE-VERIFY-LOCAL.md` |
 | Companion | A minimal local Web Serial app now lives under `companion/web/`. It talks to the hub's existing USB CDC text protocol and covers hub info, role assignment, swaps, forget, hub settings, per-ring tuning, live RSSI plus battery/diagnostics inspection, and hub-owned simultaneous-click gesture mapping. | `companion/README.md`, `companion/web/`, `docs/COMPANION-APP-ARCH.md` |
 | Hardware | BOM intent files still anchor the lane, and each BOM-backed variant now has a hardware publication packet with a manifest plus assembly/disassembly baseline. The active `R30-OLED-NONE-NONE` ring and `USB-HUB` now also have first-board checklists and validation templates alongside their KiCad/OpenSCAD skeletons; routed PCBs and measured hardware evidence are still pending. | `hardware/README.md`, `hardware/bom/README.md` |
 | Docs | Design, validation, accessibility, and IP docs are the most complete part of the repo today. | `docs/` |
 
 ## Quick Start
 
-For local software verification:
+Install CMake, a C compiler, Python, Ruby, Node.js, and KiCad CLI for full local
+verification. See [prerequisites and modes](docs/FIRMWARE-VERIFY-LOCAL.md).
+Then install the pinned SDK and verify (reports go under `build-verification/`):
 
 ```bash
 scripts/setup-esp-idf-local.sh
@@ -179,17 +181,24 @@ If you want `idf.py` available in your current shell for direct iteration, run:
 eval "$(scripts/setup-esp-idf-local.sh --export)"
 ```
 
-The shared verifier runs the host-side unit tests and then builds the active
-firmware lane: `ring` + `hub`. To build every ESP-IDF firmware target instead:
+The shared verifier runs all mandatory local checks and builds the active
+`R30-OLED-NONE-NONE` ring profile and hub. To include the generic development
+ring, pen, and puck as well:
 
 ```bash
 scripts/verify-firmware-local.sh --all
 ```
 
-If you only want the host-side unit tests:
+For host/contracts/operator/companion checks without SDK or hardware:
 
 ```bash
-scripts/verify-firmware-local.sh --host-tests-only
+scripts/verify-firmware-local.sh --fast
+```
+
+For prerequisite diagnostics without builds:
+
+```bash
+scripts/verify-firmware-local.sh --doctor
 ```
 
 For the local companion app scaffold:

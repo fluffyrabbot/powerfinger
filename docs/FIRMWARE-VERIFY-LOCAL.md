@@ -1,160 +1,105 @@
-# Firmware Local Verification
+# Local Verification
 
-PowerFinger does not use GitHub Actions by default. The supported verification
-path is local:
+PowerFinger verification runs locally. SDK installation and initial dependency
+retrieval require network access; device operation remains fully offline. The
+public entrypoint is `scripts/verify-firmware-local.sh`; it delegates to the
+standard-library orchestrator in `scripts/verify_firmware_local.py`. Every
+run writes a JSON report and per-stage log files under an ignored build directory.
+Commands and tests have timeouts; output is streamed to disk rather than
+accumulated in the agent's context.
 
-- Host-side unit tests in `firmware/test`
-- Active-lane contract checks, including Shenzhen lane guard fixtures and the
-  reply/coupon operator-script self-tests
-- Real ESP-IDF builds for the active firmware lane (`ring` + `hub`)
+## Default
 
-## Active-Lane Verification Contract
+```bash
+scripts/verify-firmware-local.sh
+```
 
-The shared verification contract for active-lane work is:
+The default selection is verifier regression tests, host CTests, Ruby contract
+checks, Python operator self-tests, the companion Node protocol test, a separate
+ASan+UBSan host CTest build, the active `r30-oled-none-none` ring profile, `hub`,
+and strict KiCad 10 ERC/DRC for both active packets. Failures are collected across
+independent stages; missing prerequisites fail explicitly and dependent checks
+are recorded as skipped. Such a run cannot pass.
 
-1. Host-side tests and active-lane contract checks green
-2. `firmware/ring` build green
-3. `firmware/hub` build green
+The report records source revision/dirty state, declared and observed tool
+versions, selections, statuses, reasons, and artifact paths. A dirty source
+tree is recorded for review and does not by itself turn green checks red.
+Each invocation replaces any previous report with a `running` result before
+checking anything, then atomically writes the final result. Interrupted or
+unfinished runs must not be treated as passes.
 
-If any one of those is red, the active lane is red. The `pen` and `puck`
-targets remain available for exploratory work, but they are outside the shared
-bring-up contract until the ring + hub lane clears Gate 4.
+## Modes
 
-## Pinned Local Baseline
+```bash
+scripts/verify-firmware-local.sh --fast
+scripts/verify-firmware-local.sh --firmware-only ring pen puck hub
+scripts/verify-firmware-local.sh --all
+scripts/verify-firmware-local.sh --doctor
+scripts/verify-firmware-local.sh --hardware-only
+scripts/verify-firmware-local.sh --hardware-report-only
+```
 
-- ESP-IDF baseline: `v5.2.2`
-- Target toolchains: `esp32c3`, `esp32s3`
-- Hub dependency bootstrap: `espressif/esp_tinyusb` resolves on first build via
-  Espressif's component manager if it is not already cached locally
+`--fast` (also the compatibility alias `--host-tests-only`) runs verifier tests,
+host, contracts, operator, and companion checks only. `--firmware-only` excludes all
+host and hardware checks. `--all` adds the generic development ring, pen, and
+puck to the firmware selection. The `ring` selector means the active R30
+profile; use `ring-generic` explicitly for the fake-sensor development build.
+`--doctor` performs prerequisite and pinned-SDK checks without builds.
+`--hardware-only` requires KiCad and passes only when both packets have valid
+zero-finding JSON reports. `--hardware-report-only` records findings for
+inspection but always returns nonzero and never reports `pass`; it is not
+verification. `--with-kicad` and `--kicad-strict` are retained aliases for
+adding strict hardware checks, and `--kicad-only` aliases `--hardware-only`.
+Contradictory modes are rejected.
 
-Override `POWERFINGER_IDF_VERSION` only when intentionally testing another
-baseline and record that deviation in your local bring-up notes.
+Use `--report PATH` to choose the JSON report location. Use
+`POWERFINGER_IDF_BUILD_ROOT` to relocate ESP-IDF build outputs; SDKCONFIG files
+remain inside the selected private `build-idf/verify/<profile>/` directory and are resolved
+from committed defaults, so an ignored `firmware/<project>/sdkconfig` cannot
+silently select a previous session's configuration.
 
-## Bootstrap A Local Toolchain
+## SDK baseline
 
-From the repo root:
+`toolchains/esp-idf-local.json` is authoritative: ESP-IDF `v5.2.2`, commit
+`3b8741b172dc951e18509698dee938304bcf1523`, with `esp32c3` and `esp32s3`
+targets. The verifier and setup script consume that same manifest. The committed
+hub `dependencies.lock` records the resolved component versions; its hash is
+checked against the manifest before and after firmware builds. Update the lock
+and manifest together only when deliberately changing dependencies.
+
+Setup never updates an existing installation automatically; it validates HEAD, tracked or
+untracked modifications, and submodule state before export or build.
 
 ```bash
 scripts/setup-esp-idf-local.sh
-scripts/verify-firmware-local.sh
-```
-
-The installer keeps the toolchain under `~/.powerfinger-sdk/` by default so the
-repo stays clean. After the initial install, `scripts/verify-firmware-local.sh`
-will try to activate that same local toolchain automatically from a fresh shell.
-If `idf.py` is already in `PATH` but points at a different ESP-IDF version, the
-verifier will prefer the pinned local baseline instead of silently building
-against the wrong SDK.
-
-If you want `idf.py` available in your current shell for direct one-off
-iteration, export it explicitly:
-
-```bash
+scripts/setup-esp-idf-local.sh --check
 eval "$(scripts/setup-esp-idf-local.sh --export)"
 ```
 
-## Prerequisites
+A fresh checkout may use the setup script, then the verifier. If the SDK is
+absent, host-only and fast checks remain usable while required firmware stages
+fail explicitly.
 
-- CMake available for the host-side test suite
-- `git` available if you use the repo-pinned bootstrap script
+## KiCad and host prerequisites
 
-If you prefer to manage ESP-IDF yourself, exporting your own `IDF_PATH` is
-still supported.
+The strict hardware path requires `kicad-cli` 10.x (the tested host is 10.0.6)
+and uses `--severity-all --format json --exit-code-violations`; it does not parse English
+console summaries or modify source boards. Reports must exist and contain the
+required ERC `sheets[*].violations` or DRC `violations`, `unconnected_items`,
+and `schematic_parity` arrays. Host prerequisites are CMake 3.16 or newer,
+a C11 compiler with ASan/UBSan support (Clang or GCC), Ruby with YAML and CSV,
+Python 3.10 or newer, Node.js 18 or newer, Git, and Bash. Exact host patch
+versions are not pinned. OpenSCAD is recorded when available for CAD provenance;
+these checks do not render mechanical models.
 
-## Recommended Command
+## Profile and all-target builds
 
-From the repo root:
-
-```bash
-scripts/verify-firmware-local.sh
-```
-
-Default behavior:
-
-- Runs host-side unit tests
-- Runs active-lane contract checks and the Shenzhen reply/coupon script self-tests
-- Builds the active validation lane: `firmware/ring` and `firmware/hub`
-- Writes ESP-IDF artifacts under `build-idf/ring/` and `build-idf/hub/`
-
-## Other Modes
-
-Build all ESP-IDF firmware projects:
+The active optical profile is selected automatically. To request the profile
+explicitly with a ring build:
 
 ```bash
-scripts/verify-firmware-local.sh --all
+scripts/verify-firmware-local.sh --firmware-only --ring-profile r30-oled-none-none ring
 ```
 
-Build a specific firmware project:
-
-```bash
-scripts/verify-firmware-local.sh hub
-scripts/verify-firmware-local.sh pen
-```
-
-Build the active R30 optical ring board profile:
-
-```bash
-scripts/verify-firmware-local.sh --ring-profile r30-oled-none-none
-```
-
-Run only the host-side unit tests and active-lane contract checks:
-
-```bash
-scripts/verify-firmware-local.sh --host-tests-only
-```
-
-Skip host tests and build only firmware:
-
-```bash
-scripts/verify-firmware-local.sh --firmware-only ring hub
-```
-
-Run hardware ERC/DRC against the active KiCad packets (requires `kicad-cli`):
-
-```bash
-scripts/verify-firmware-local.sh --kicad-only
-scripts/verify-firmware-local.sh --with-kicad        # alongside host tests + firmware
-scripts/verify-firmware-local.sh --kicad-only --kicad-strict   # exit nonzero on any violation
-```
-
-Reports land under `build-kicad/<packet>/`. The active packets currently carry
-a known-red baseline tracked in each `kicad/CURRENT-VIOLATIONS.md`; default
-behavior is to print counts and continue. Use `--kicad-strict` once a packet is
-expected to be clean.
-
-## Direct IDF Iteration
-
-When iterating on a single target and you already know the project you want:
-
-```bash
-IDF_TARGET=esp32c3 idf.py -C firmware/ring -B build-idf/ring build
-IDF_TARGET=esp32s3 idf.py -C firmware/hub -B build-idf/hub build
-```
-
-The local verifier script is still the preferred shared path because it keeps
-the active lane and host tests in one place.
-
-## Board-Profile Ring Build
-
-The generic ring defaults keep the pre-hardware/dev-board path available. To
-build the active `R30-OLED-NONE-NONE` optical board profile, use the verifier's
-profile mode:
-
-```bash
-scripts/verify-firmware-local.sh --ring-profile r30-oled-none-none
-```
-
-This layers `firmware/ring/sdkconfig.defaults.r30_oled_none_none`, writes the
-generated SDK config under `build-idf/r30-oled-none-none/`, checks the resolved
-safety-critical pin values, and then builds. It proves the active-board Kconfig
-selection only. Human-loop, thermal, charge-safety, and RF claims still require
-the gate evidence in
-[ACTIVE-LANE-CHECKLIST.md](ACTIVE-LANE-CHECKLIST.md).
-
-## Related Docs
-
-- [ACTIVE-LANE-CHECKLIST.md](ACTIVE-LANE-CHECKLIST.md)
-- [DRIVER-HARDWARE-CONTRACT.md](DRIVER-HARDWARE-CONTRACT.md)
-- [GO-NO-GO-RUBRIC.md](GO-NO-GO-RUBRIC.md)
-- [PROTOTYPE-SPEC.md](PROTOTYPE-SPEC.md)
-- [R30-OLED-FIRMWARE-CONFIG.md](R30-OLED-FIRMWARE-CONFIG.md)
+No flashing, hardware-in-the-loop, SDK migration, or CAD mutation is part of
+this verifier. Those activities require separate review and evidence.

@@ -15,6 +15,7 @@
 
 #ifdef ESP_PLATFORM
 #include "sdkconfig.h"
+#include "esp_attr.h"
 #include "esp_log.h"
 #include <stdatomic.h>
 static const char *TAG = "click_pen";

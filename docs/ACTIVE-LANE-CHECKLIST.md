@@ -29,17 +29,19 @@ or deferred unless the checklist itself is being updated deliberately.
 
 ## Verification Contract
 
-Active-lane software verification is green only when all three are green:
+Run `scripts/verify-firmware-local.sh` for the active-lane verification contract:
 
-1. `scripts/verify-firmware-local.sh --host-tests-only` (host-side unit tests,
-   active-lane contract checks, Shenzhen reply scaffold self-test, and USB-HUB
-   coupon ingest self-test)
-2. `IDF_TARGET=esp32c3 idf.py -C firmware/ring -B build-idf/ring build`
-3. `IDF_TARGET=esp32s3 idf.py -C firmware/hub -B build-idf/hub build`
+1. Verifier regression tests, host unit tests, contract checks, operator
+   self-tests, and companion protocol tests pass.
+2. Host tests also pass under AddressSanitizer and UndefinedBehaviorSanitizer.
+3. The active R30 optical profile and hub build from committed defaults.
+4. Both active hardware packets pass strict KiCad ERC/DRC and schematic parity.
 
-The shared verifier `scripts/verify-firmware-local.sh` remains the preferred
-entrypoint because it runs the host tests first and then builds the active lane
-by default.
+Inspect `build-verification/verification.json` for the selected checks and their
+results. A fast, firmware-only, hardware-only, or report-only run does not
+establish the full contract. These checks do not replace the measured physical
+and accessibility evidence required by the gates below. See
+[local verification](FIRMWARE-VERIFY-LOCAL.md) for prerequisites and modes.
 
 ## Gate Execution Order
 

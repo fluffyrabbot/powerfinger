@@ -1,0 +1,9 @@
+{
+  "name": "esp-idf-local",
+  "version": "v5.2.2",
+  "commit": "3b8741b172dc951e18509698dee938304bcf1523",
+  "hub_dependencies_lock_sha256": "a1f8c7ebb0521fe751e3cd1f55432259e59966bb7e94f1873faea89069d2d20e",
+  "targets": ["esp32c3", "esp32s3"],
+  "install_root": "~/.powerfinger-sdk",
+  "license": "MIT"
+}

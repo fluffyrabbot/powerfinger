@@ -3,12 +3,19 @@ build/
 build-test/
 build-idf/
 build-kicad/
+build-test*/
+build-verification*/
+build-kicad-schema-check*/
+scripts/__pycache__/
 
 # ESP-IDF
 sdkconfig
 sdkconfig.old
 managed_components/
-dependencies.lock
+# The hub lock is authoritative and committed. Other IDF projects may generate
+# local locks, but those are not part of the reproducible firmware lane.
+firmware/*/dependencies.lock
+!firmware/hub/dependencies.lock
 
 # CMake
 CMakeCache.txt

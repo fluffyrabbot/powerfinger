@@ -12,13 +12,13 @@ set(APP_RUNTIME_REQUIRES
     diagnostics
 )
 
-if(CONFIG_POWERFINGER_FORM_FACTOR_PEN)
-    list(APPEND APP_RUNTIME_REQUIRES pen_wake)
-endif()
-
 idf_component_register(
     SRCS "app_runtime.c"
     INCLUDE_DIRS "include"
     REQUIRES ${APP_RUNTIME_REQUIRES}
     PRIV_REQUIRES app_update nvs_flash
 )
+
+# IDF expands REQUIRES before CONFIG_* exists. The pen application explicitly
+# includes pen_wake; bind its private headers/library after component discovery.
+idf_component_optional_requires(PRIVATE pen_wake)

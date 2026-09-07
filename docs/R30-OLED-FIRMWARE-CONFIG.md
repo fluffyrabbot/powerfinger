@@ -13,7 +13,7 @@ through the local verifier when building firmware for the active optical board:
 scripts/verify-firmware-local.sh --ring-profile r30-oled-none-none
 ```
 
-The verifier configures `build-idf/r30-oled-none-none/sdkconfig`, checks the
+The verifier configures `build-idf/verify/r30-oled-none-none/sdkconfig`, checks the
 resolved values below, and only then builds the ring profile.
 
 ## Config Binding

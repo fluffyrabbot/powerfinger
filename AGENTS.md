@@ -8,6 +8,10 @@ Hardware designs under CERN-OHL-S 2.0, firmware/software under MIT.
 
 Repository: https://github.com/fluffyrabbot/powerfinger
 
+Treat the project as greenfield with no deployed users. Prefer coherent
+architectural refactors and resolve breakages within the change. End each round
+with a concrete recommended follow-up and its acceptance criteria.
+
 ## Hard Rules
 
 - **BDFL-led.** When uncertain about design choices, ask. Always provide a
@@ -53,28 +57,30 @@ powerfinger/
     wand/                — Pen/wand designs
     shared/              — Common components (BLE module, battery, etc.)
   firmware/
-    ble-hid/             — ESP-IDF BLE HID mouse profile
-    sensors/             — Sensor drivers (Hall, optical, laser)
-    power/               — Power management, sleep/wake
-  companion/             — Phone/laptop companion app (Flutter or PWA)
+    ring/                — ESP-IDF ring target and shared components
+    pen/                 — ESP-IDF PowerPen target
+    puck/                — ESP-IDF PowerPuck target
+    hub/                 — ESP-IDF USB hub target
+    test/                — Host CMake/CTest unit tests
+  companion/             — Dependency-free local Web Serial app
 ```
 
 ## Build & Dev Commands
 
 Preferred local verification path:
 - `scripts/verify-firmware-local.sh`
-  Default: host-side tests + ESP-IDF builds for `ring` and `hub`
+  Default: verifier regression tests, host tests, contracts, companion tests,
+  sanitizers, active R30 ring profile, hub, and strict KiCad ERC/DRC.
 - `scripts/verify-firmware-local.sh --all`
-  Builds `ring`, `pen`, `puck`, and `hub`
-- `scripts/verify-firmware-local.sh --host-tests-only`
-  Runs only the host-side unit tests
+  Adds `ring-generic`, `pen`, and `puck` to the active product builds.
+- `scripts/verify-firmware-local.sh --fast`
+  Host/contracts/operator/companion checks only; it never uses the SDK or CAD.
+- `scripts/verify-firmware-local.sh --doctor`
+  Reports prerequisite and pinned-SDK health without running builds.
 
-Direct per-project iteration when you already know the target:
-- `IDF_TARGET=esp32c3 idf.py -C firmware/ring -B build-idf/ring build`
-- `IDF_TARGET=esp32c3 idf.py -C firmware/pen -B build-idf/pen build`
-- `IDF_TARGET=esp32c3 idf.py -C firmware/puck -B build-idf/puck build`
-- `IDF_TARGET=esp32s3 idf.py -C firmware/hub -B build-idf/hub build`
-- Flash example: `idf.py -C firmware/ring -B build-idf/ring -p /dev/ttyUSBx flash`
+Use the repo verifier for builds so each profile gets an owned SDKCONFIG and
+the report records the pinned toolchain. Direct flashing is intentionally not
+part of verification.
 
 ## Key Technical Constraints
 
@@ -128,8 +134,8 @@ first-pass failure.
 
 ## Git Workflow
 
-**Atomic commits (critical for parallel agents):** Always stage + commit + push
-in ONE bash call:
+One integration owner stages, commits, and pushes explicit files in one shell
+call after review and verification:
 ```bash
 git add file1 file2 && git commit -m "type(scope): description" && git push
 ```
@@ -137,26 +143,19 @@ git add file1 file2 && git commit -m "type(scope): description" && git push
 - Never `git stash`, `git checkout --`, `git restore` without asking first.
 - If push fails: stop and report. Don't pull/merge/rebase/force-push.
 - Conventional commits: `type(scope): message`
-- Local: work on `main`. Cloud sandbox: feature branches + PRs.
+- Local integration: work on `main`. Isolate parallel implementation in separate
+  worktrees; only the integration owner updates `main`. Cloud sandbox: feature
+  branches + PRs. A chained shell command does not isolate a shared Git index.
 
-## Codex Orchestration (Codex → GPT 5.4)
+## Codex Orchestration (Codex → GPT 5.6 Luna)
 
 Codex's role is **ideation, research, architecture, and orchestration**.
-Implementation delegates to Codex with GPT 5.4 for precision. Use the Bash tool
-to invoke Codex non-interactively:
+Use GPT-5.6 Luna (`gpt-5.6-luna`) for delegated implementation. Do
+not recursively spawn agents. Use the current harness's supported background
+job mechanism when a long-running job is needed; do not invent CLI options:
 
 ```bash
-# Standard delegation (sandboxed, no approval prompts):
-codex exec --full-auto --model gpt-5.4 "<scoped implementation prompt>"
-
-# Unsandboxed (when network/system access needed):
-codex exec --dangerously-bypass-approvals-and-sandbox --model gpt-5.4 "<prompt>"
-
-# Capture structured output for review:
-codex exec --full-auto --model gpt-5.4 --json "<prompt>" | tee /tmp/codex-out.jsonl
-
-# Write final message to file:
-codex exec --full-auto --model gpt-5.4 -o /tmp/result.md "<prompt>"
+codex exec --sandbox workspace-write -m gpt-5.6-luna "<scoped implementation prompt>"
 ```
 
 **Prompt construction for delegation:**
@@ -164,16 +163,19 @@ codex exec --full-auto --model gpt-5.4 -o /tmp/result.md "<prompt>"
   not to cross
 - Include hard rules inline: repeat BOM ceiling, license constraints, no cloud
   dependency in the prompt
-- End with: "Run `idf.py build` to verify. Stop when complete."
-- Do NOT assume Codex reads AGENTS.md — repeat critical constraints in the prompt
+- End with: "Run `scripts/verify-firmware-local.sh` to verify. Stop when complete."
+- Ensure the delegated agent receives this file; repeat task-critical constraints
+  in the prompt and specify the working directory.
 
 **After Codex returns:** Always review output (`git diff`), verify no code smell
-checklist violations, then commit atomically per Git Workflow above.
+checklist violations, then integrate per Git Workflow above.
 
-**Execution model:** Codex handles long-horizon prompts well. Always invoke via
-Bash with `run_in_background: true` (no timeout cap, automatic completion
-notification). Wait for the notification before reviewing output — don't poll or
-sleep. Do parallel work only when explicitly parallelizing.
+**Execution model:** Scope delegated work to exact files, repeat the hard
+constraints, and require the delegated agent to use
+`scripts/verify-firmware-local.sh` for verification. Review `git diff` and
+tests before integration. If work is parallelized, use isolated worktrees and
+one integration owner. Stage only explicit files, and stop on a push failure;
+never pull, merge, rebase, or force-push automatically.
 
 ## Defensive Publication
 

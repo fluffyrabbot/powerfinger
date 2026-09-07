@@ -15,9 +15,26 @@ project(powerfinger_tests C)
 set(CMAKE_C_STANDARD 11)
 enable_testing()
 
+# Pure host tests should terminate promptly; catch deadlocks and accidental I/O.
+set(POWERFINGER_HOST_TEST_TIMEOUT_SECONDS 30)
+
+option(POWERFINGER_ENABLE_SANITIZERS
+    "Enable AddressSanitizer and UndefinedBehaviorSanitizer for host code" OFF)
+
+function(powerfinger_host_target target)
+    if(POWERFINGER_ENABLE_SANITIZERS)
+        target_compile_options(${target} PRIVATE -fsanitize=address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer)
+        target_link_options(${target} PRIVATE -fsanitize=address,undefined)
+    endif()
+    if(NOT "${target}" STREQUAL "unity")
+        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+endfunction()
+
 # Unity test framework (single-file, vendored)
 add_library(unity STATIC unity/unity.c)
 target_include_directories(unity PUBLIC unity)
+powerfinger_host_target(unity)
 
 # Mock HAL
 add_library(mock_hal STATIC mocks/mock_hal.c)
@@ -26,6 +43,7 @@ target_include_directories(mock_hal PUBLIC
     ../hub/components/ble_central/include
     ../ring/components/pf_hal/include
 )
+powerfinger_host_target(mock_hal)
 
 # Components under test (compiled for host, not ESP32)
 add_library(state_machine STATIC
@@ -35,6 +53,7 @@ target_include_directories(state_machine PUBLIC
     ../ring/components/state_machine/include
     ../ring/components/pf_hal/include
 )
+powerfinger_host_target(state_machine)
 
 add_library(dead_zone STATIC
     ../ring/components/click/dead_zone.c
@@ -44,6 +63,7 @@ target_include_directories(dead_zone PUBLIC
     ../ring/components/state_machine/include
     ../ring/components/pf_hal/include
 )
+powerfinger_host_target(dead_zone)
 
 add_library(ring_diagnostics STATIC
     ../ring/components/diagnostics/ring_diagnostics.c
@@ -53,6 +73,7 @@ target_include_directories(ring_diagnostics PUBLIC
     ../ring/components/state_machine/include
     ../ring/components/pf_hal/include
 )
+powerfinger_host_target(ring_diagnostics)
 
 add_library(app_controller STATIC
     ../ring/components/app_controller/app_controller.c
@@ -67,6 +88,7 @@ target_include_directories(app_controller PUBLIC
     ../ring/components/state_machine/include
     ../ring/components/pf_hal/include
 )
+powerfinger_host_target(app_controller)
 
 add_library(calibration STATIC
     ../ring/components/click/calibration.c
@@ -77,6 +99,7 @@ target_include_directories(calibration PUBLIC
     ../ring/components/state_machine/include
     ../ring/components/pf_hal/include
 )
+powerfinger_host_target(calibration)
 
 add_library(power_manager STATIC
     ../ring/components/power/power_manager.c
@@ -90,6 +113,7 @@ target_compile_definitions(power_manager PUBLIC
     CONFIG_POWERFINGER_CHARGE_ENABLE_PIN=10
     CONFIG_POWERFINGER_VBUS_DETECT_PIN=3
 )
+powerfinger_host_target(power_manager)
 target_include_directories(power_manager PUBLIC
     ../ring/components/power/include
     ../ring/components/ble_hid/include
@@ -108,6 +132,7 @@ target_compile_definitions(power_manager_pen PUBLIC
     CONFIG_POWERFINGER_HALL_POWER_ACTIVE_LOW
     CONFIG_POWERFINGER_VBAT_ADC_CHANNEL=7
 )
+powerfinger_host_target(power_manager_pen)
 target_include_directories(power_manager_pen PUBLIC
     ../ring/components/power/include
     ../ring/components/ble_hid/include
@@ -123,6 +148,7 @@ target_include_directories(ring_runtime_health PUBLIC
     ../ring/components/state_machine/include
     ../ring/components/pf_hal/include
 )
+powerfinger_host_target(ring_runtime_health)
 
 add_library(ring_settings STATIC
     ../ring/components/pf_hal/ring_settings.c
@@ -131,6 +157,7 @@ target_include_directories(ring_settings PUBLIC
     ../ring/components/pf_hal/include
     ../ring/components/state_machine/include
 )
+powerfinger_host_target(ring_settings)
 
 add_library(ring_identity STATIC
     ../ring/components/pf_hal/ring_identity.c
@@ -138,6 +165,7 @@ add_library(ring_identity STATIC
 target_include_directories(ring_identity PUBLIC
     ../ring/components/pf_hal/include
 )
+powerfinger_host_target(ring_identity)
 
 add_library(hub_identity STATIC
     ../hub/components/hub_identity/hub_identity.c
@@ -146,6 +174,7 @@ target_include_directories(hub_identity PUBLIC
     ../hub/components/hub_identity/include
     ../ring/components/pf_hal/include
 )
+powerfinger_host_target(hub_identity)
 
 add_library(gesture_engine STATIC
     ../hub/components/gesture_engine/gesture_engine.c
@@ -154,6 +183,7 @@ target_include_directories(gesture_engine PUBLIC
     ../hub/components/gesture_engine/include
     ../ring/components/pf_hal/include
 )
+powerfinger_host_target(gesture_engine)
 
 add_library(hub_settings STATIC
     ../hub/components/hub_settings/hub_settings.c
@@ -163,6 +193,7 @@ target_include_directories(hub_settings PUBLIC
     ../hub/components/ble_central/include
     ../ring/components/pf_hal/include
 )
+powerfinger_host_target(hub_settings)
 
 add_library(role_engine STATIC
     ../hub/components/role_engine/role_engine.c
@@ -172,6 +203,7 @@ target_include_directories(role_engine PUBLIC
     ../hub/components/ble_central/include
     ../ring/components/pf_hal/include
 )
+powerfinger_host_target(role_engine)
 
 add_library(hub_control STATIC
     ../hub/components/hub_control/hub_control.c
@@ -185,6 +217,7 @@ target_include_directories(hub_control PUBLIC
     ../hub/components/ble_central/include
     ../ring/components/pf_hal/include
 )
+powerfinger_host_target(hub_control)
 
 add_library(companion_protocol STATIC
     ../hub/components/companion_protocol/companion_protocol.c
@@ -198,6 +231,7 @@ target_include_directories(companion_protocol PUBLIC
     ../hub/components/ble_central/include
     ../ring/components/pf_hal/include
 )
+powerfinger_host_target(companion_protocol)
 
 add_library(companion_session STATIC
     ../hub/components/companion_session/companion_session.c
@@ -210,6 +244,7 @@ target_include_directories(companion_session PUBLIC
     ../hub/components/ble_central/include
     ../ring/components/pf_hal/include
 )
+powerfinger_host_target(companion_session)
 
 # Event composer — compiled for host with lock macros as no-ops (no ESP_PLATFORM)
 add_library(event_composer STATIC
@@ -222,6 +257,7 @@ target_include_directories(event_composer PUBLIC
     ../hub/components/ble_central/include
     ../ring/components/pf_hal/include
 )
+powerfinger_host_target(event_composer)
 
 # USB HID mouse — compiled for host (mock path, no TinyUSB)
 add_library(usb_hid STATIC
@@ -236,6 +272,7 @@ target_include_directories(usb_hid PUBLIC
     ../hub/components/ble_central/include
     ../ring/components/pf_hal/include
 )
+powerfinger_host_target(usb_hid)
 
 # Sensor driver tests: compiled as separate executables to avoid
 # symbol conflicts (all drivers define sensor_init/read/power_down/wake).
@@ -245,6 +282,7 @@ add_executable(test_click_pen
     test_click_pen.c
     ../ring/components/click/click_pen.c
 )
+powerfinger_host_target(test_click_pen)
 target_compile_definitions(test_click_pen PRIVATE
     CONFIG_POWERFINGER_BARREL_PIN=4
     CONFIG_POWERFINGER_TIP_DOME_PIN=5
@@ -257,6 +295,7 @@ target_include_directories(test_click_pen PRIVATE
 )
 target_link_libraries(test_click_pen unity mock_hal)
 add_test(NAME test_click_pen COMMAND test_click_pen)
+set_tests_properties(test_click_pen PROPERTIES TIMEOUT ${POWERFINGER_HOST_TEST_TIMEOUT_SECONDS})
 
 add_executable(test_pen_wake_debounce
     test_pen_wake_debounce.c
@@ -282,6 +321,8 @@ target_include_directories(test_pen_wake_debounce PRIVATE
 )
 target_link_libraries(test_pen_wake_debounce unity mock_hal power_manager_pen)
 add_test(NAME test_pen_wake_debounce COMMAND test_pen_wake_debounce)
+powerfinger_host_target(test_pen_wake_debounce)
+set_tests_properties(test_pen_wake_debounce PROPERTIES TIMEOUT ${POWERFINGER_HOST_TEST_TIMEOUT_SECONDS})
 
 add_executable(test_ball_hall
     test_ball_hall.c
@@ -295,6 +336,8 @@ target_include_directories(test_ball_hall PRIVATE
 )
 target_link_libraries(test_ball_hall unity mock_hal)
 add_test(NAME test_ball_hall COMMAND test_ball_hall)
+powerfinger_host_target(test_ball_hall)
+set_tests_properties(test_ball_hall PROPERTIES TIMEOUT ${POWERFINGER_HOST_TEST_TIMEOUT_SECONDS})
 
 add_executable(test_pmw3360
     test_pmw3360.c
@@ -308,6 +351,8 @@ target_include_directories(test_pmw3360 PRIVATE
 )
 target_link_libraries(test_pmw3360 unity mock_hal)
 add_test(NAME test_pmw3360 COMMAND test_pmw3360)
+powerfinger_host_target(test_pmw3360)
+set_tests_properties(test_pmw3360 PROPERTIES TIMEOUT ${POWERFINGER_HOST_TEST_TIMEOUT_SECONDS})
 
 add_executable(test_paw3204
     test_paw3204.c
@@ -321,6 +366,8 @@ target_include_directories(test_paw3204 PRIVATE
 )
 target_link_libraries(test_paw3204 unity mock_hal)
 add_test(NAME test_paw3204 COMMAND test_paw3204)
+powerfinger_host_target(test_paw3204)
+set_tests_properties(test_paw3204 PROPERTIES TIMEOUT ${POWERFINGER_HOST_TEST_TIMEOUT_SECONDS})
 
 # Test executable (main suite — uses sensor_none via calibration)
 add_executable(powerfinger_tests
@@ -344,6 +391,7 @@ add_executable(powerfinger_tests
     test_usb_hid.c
     test_main.c
 )
+powerfinger_host_target(powerfinger_tests)
 target_link_libraries(powerfinger_tests
     unity
     mock_hal
@@ -390,3 +438,4 @@ target_include_directories(powerfinger_tests PRIVATE
 )
 
 add_test(NAME powerfinger_tests COMMAND powerfinger_tests)
+set_tests_properties(powerfinger_tests PROPERTIES TIMEOUT ${POWERFINGER_HOST_TEST_TIMEOUT_SECONDS})

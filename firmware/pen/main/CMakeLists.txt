@@ -2,5 +2,5 @@
 idf_component_register(
     SRCS "main.c"
     INCLUDE_DIRS "."
-    REQUIRES app_runtime
+    REQUIRES app_runtime pen_wake
 )
