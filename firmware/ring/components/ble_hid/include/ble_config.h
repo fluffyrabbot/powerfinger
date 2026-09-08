@@ -15,8 +15,13 @@
 #define BLE_CONN_ITVL_MIN_ACTIVE    BLE_CONN_ITVL_7_5MS
 #define BLE_CONN_ITVL_MAX_ACTIVE    BLE_CONN_ITVL_7_5MS
 
-// Supervision timeout: 4 seconds (units of 10ms)
-#define BLE_SUPERVISION_TIMEOUT     400
+// NimBLE may retain an update procedure for up to 40 seconds. Do not submit
+// another request before this deadline after a successful HAL submission: a
+// late completion must not be correlated with a newer request.
+#define BLE_CONN_PARAM_UPDATE_TIMEOUT_MS 40000U
+// Three transient submission retries per connection, with exponential backoff.
+#define BLE_CONN_PARAM_RETRY_DELAY_MS    250U
+#define BLE_CONN_PARAM_MAX_RETRIES       3U
 
 // Advertising timeout before giving up and entering deep sleep
 #define BLE_ADVERTISE_TIMEOUT_MS    60000

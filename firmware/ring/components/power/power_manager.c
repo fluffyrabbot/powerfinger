@@ -7,6 +7,7 @@
 
 #include "power_manager.h"
 #include "ring_config.h"
+#include "ble_config.h"
 #include "hal_adc.h"
 #include "hal_gpio.h"
 #include "hal_sleep.h"
@@ -99,8 +100,17 @@ static uint32_t s_last_battery_check_ms = 0;
 static uint32_t s_last_thermal_check_ms = 0;
 static bool s_connected = false;
 static bool s_interaction_active = false;
-static bool s_active_params_requested = false;
-static bool s_conn_param_rejected = false;  // don't retry if central rejected
+static bool s_conn_param_rejected = false;  // active request rejected this link
+static bool s_idle_param_rejected = false;
+static bool s_conn_param_failed = false;    // timeout/failure: fail closed this link
+static bool s_conn_param_pending = false;
+static uint16_t s_conn_param_desired = 0;
+static uint16_t s_conn_param_inflight = 0;
+static uint16_t s_conn_param_actual = 0;
+static uint32_t s_conn_param_deadline_ms = 0;
+static uint32_t s_conn_param_retry_at_ms = 0;
+static bool s_conn_param_retry_waiting = false;
+static uint8_t s_conn_param_retry_count = 0;
 static uint8_t s_adc_fail_count = 0;        // consecutive VBAT read failures
 static uint32_t s_last_vbat_mv = 0;
 static uint8_t s_last_battery_pct = 0;
@@ -115,6 +125,48 @@ static int8_t s_last_cell_temp_c = INT8_MIN;  // INT8_MIN = never read / not con
 static bool s_charging_enabled = false;
 static bool s_vbus_present = false;
 static bool s_charge_thermal_lockout = false;  // true when temp is outside safe range
+
+static void request_conn_params(uint16_t interval, uint32_t now_ms)
+{
+    s_conn_param_desired = interval;
+    if (!s_connected || s_conn_param_pending || s_conn_param_failed ||
+        s_conn_param_retry_waiting ||
+        (interval == BLE_CONN_ITVL_7_5MS && s_conn_param_rejected) ||
+        (interval == BLE_CONN_ITVL_15MS && s_idle_param_rejected) ||
+        interval == s_conn_param_actual) {
+        return;
+    }
+
+    hal_status_t rc = (interval == BLE_CONN_ITVL_7_5MS) ?
+        ble_gap_request_active_params() : ble_gap_request_idle_params();
+    if (rc == HAL_OK) {
+        s_conn_param_pending = true;
+        s_conn_param_inflight = interval;
+        s_conn_param_deadline_ms = now_ms + BLE_CONN_PARAM_UPDATE_TIMEOUT_MS;
+    } else if (rc == HAL_ERR_REJECTED) {
+#ifdef ESP_PLATFORM
+        ESP_LOGW(TAG, "connection interval %u rejected for this link", interval);
+#endif
+        if (interval == BLE_CONN_ITVL_7_5MS) {
+            s_conn_param_rejected = true;
+        } else {
+            s_idle_param_rejected = true;
+        }
+    } else if (s_conn_param_retry_count < BLE_CONN_PARAM_MAX_RETRIES) {
+#ifdef ESP_PLATFORM
+        ESP_LOGW(TAG, "connection interval submission failed (%d); scheduling retry", rc);
+#endif
+        s_conn_param_retry_count++;
+        s_conn_param_retry_waiting = true;
+        s_conn_param_retry_at_ms = now_ms + BLE_CONN_PARAM_RETRY_DELAY_MS *
+                                   (1U << (s_conn_param_retry_count - 1U));
+    } else {
+        s_conn_param_failed = true;
+#ifdef ESP_PLATFORM
+        ESP_LOGW(TAG, "connection interval submission failed (%d); retry budget exhausted until reconnect", rc);
+#endif
+    }
+}
 
 // --- Hall sensor power gating (ball variants only) ---
 
@@ -272,16 +324,7 @@ static void note_activity(void)
 
     s_interaction_active = true;
 
-    // Request active (7.5ms) connection parameters if not already active.
-    if (!s_active_params_requested && !s_conn_param_rejected) {
-        hal_status_t ret = ble_gap_request_active_params();
-        if (ret == HAL_OK) {
-            s_active_params_requested = true;
-        } else if (ret == HAL_ERR_REJECTED) {
-            // Central rejected 7.5ms — don't retry this connection
-            s_conn_param_rejected = true;
-        }
-    }
+    request_conn_params(BLE_CONN_ITVL_7_5MS, s_last_activity_ms);
 }
 
 // --- Public API ---
@@ -294,8 +337,17 @@ hal_status_t power_manager_init(void)
     s_last_thermal_check_ms = now;
     s_connected = false;
     s_interaction_active = false;
-    s_active_params_requested = false;
     s_conn_param_rejected = false;
+    s_idle_param_rejected = false;
+    s_conn_param_failed = false;
+    s_conn_param_pending = false;
+    s_conn_param_desired = BLE_CONN_ITVL_15MS;
+    s_conn_param_inflight = 0;
+    s_conn_param_actual = 0;
+    s_conn_param_deadline_ms = 0;
+    s_conn_param_retry_at_ms = 0;
+    s_conn_param_retry_waiting = false;
+    s_conn_param_retry_count = 0;
     s_adc_fail_count = 0;
     s_last_vbat_mv = 0;
     s_last_battery_pct = 0;
@@ -409,15 +461,34 @@ void power_manager_on_connect(void)
     // asked for 7.5ms active params. A previous central may have rejected
     // them, but a new one may accept.
     s_conn_param_rejected = false;
-    s_active_params_requested = false;
+    s_idle_param_rejected = false;
+    s_conn_param_failed = false;
+    s_conn_param_pending = false;
+    s_conn_param_desired = BLE_CONN_ITVL_15MS;
+    s_conn_param_inflight = 0;
+    s_conn_param_actual = 0;
+    s_conn_param_deadline_ms = 0;
+    s_conn_param_retry_at_ms = 0;
+    s_conn_param_retry_waiting = false;
+    s_conn_param_retry_count = 0;
+    request_conn_params(BLE_CONN_ITVL_15MS, s_last_activity_ms);
 }
 
 void power_manager_on_disconnect(void)
 {
     s_connected = false;
     s_interaction_active = false;
-    s_active_params_requested = false;
     s_conn_param_rejected = false;
+    s_idle_param_rejected = false;
+    s_conn_param_failed = false;
+    s_conn_param_pending = false;
+    s_conn_param_desired = 0;
+    s_conn_param_inflight = 0;
+    s_conn_param_actual = 0;
+    s_conn_param_deadline_ms = 0;
+    s_conn_param_retry_at_ms = 0;
+    s_conn_param_retry_waiting = false;
+    s_conn_param_retry_count = 0;
 }
 
 void power_manager_on_motion(void)
@@ -430,8 +501,61 @@ void power_manager_on_click(void)
     note_activity();
 }
 
+void power_manager_on_conn_params_updated(uint16_t conn_interval_1_25ms)
+{
+    if (!s_connected || s_conn_param_failed) {
+        return;
+    }
+    if (!s_conn_param_pending) {
+        // A central may autonomously adjust parameters. Accept that as the
+        // current fact, while timeout quarantine above still drops stale data.
+        s_conn_param_actual = conn_interval_1_25ms;
+        return;
+    }
+    uint16_t completed_interval = s_conn_param_inflight;
+    s_conn_param_pending = false;
+    s_conn_param_actual = conn_interval_1_25ms;
+    if (completed_interval != s_conn_param_actual) {
+        // Suppress only the target the central declined. Activity may have
+        // selected the other target while this request was pending.
+        if (completed_interval == BLE_CONN_ITVL_7_5MS) {
+            s_conn_param_rejected = true;
+        } else {
+            s_idle_param_rejected = true;
+        }
+    }
+    // Activity may have changed while the request was pending. Coalesce that
+    // state change into one follow-up request after this completion.
+    request_conn_params(s_conn_param_desired, hal_timer_get_ms());
+}
+
+void power_manager_on_conn_params_rejected(void)
+{
+    if (!s_connected || !s_conn_param_pending) {
+        return;
+    }
+    s_conn_param_pending = false;
+    if (s_conn_param_inflight == BLE_CONN_ITVL_7_5MS) {
+        s_conn_param_rejected = true;
+    } else {
+        s_idle_param_rejected = true;
+    }
+    request_conn_params(s_conn_param_desired, hal_timer_get_ms());
+}
+
 power_event_t power_manager_tick(uint32_t now_ms)
 {
+    if (s_connected && s_conn_param_pending &&
+        (int32_t)(now_ms - s_conn_param_deadline_ms) >= 0) {
+        // A lost completion cannot safely be paired with a later request, so
+        // suppress further changes for this connection until reconnect.
+        s_conn_param_pending = false;
+        s_conn_param_failed = true;
+#ifdef ESP_PLATFORM
+        ESP_LOGW(TAG, "connection interval completion missing; negotiation suspended until reconnect");
+#endif
+    }
+
     // --- Thermal safety check (fast path when charging) ---
     // When VBUS is present, check temperature every THERMAL_CHECK_INTERVAL_MS.
     // Thermal emergency always takes priority over all other events.
@@ -484,22 +608,14 @@ power_event_t power_manager_tick(uint32_t now_ms)
         charge_evaluate();
     }
 
-    // --- Active -> idle transition ---
+    // Resolve the latest policy before retrying, but complete safety checks
+    // before any retry submission or idle event is emitted.
+    bool became_idle = false;
     if (s_connected && s_interaction_active &&
         (now_ms - s_last_activity_ms) >= IDLE_TRANSITION_MS) {
-        if (s_active_params_requested) {
-            hal_status_t idle_rc = ble_gap_request_idle_params();
-#ifdef ESP_PLATFORM
-            if (idle_rc != HAL_OK) {
-                ESP_LOGW(TAG, "idle conn-param request failed (%d) — link stays at active interval", idle_rc);
-            }
-#else
-            (void)idle_rc;
-#endif
-        }
+        s_conn_param_desired = BLE_CONN_ITVL_15MS;
         s_interaction_active = false;
-        s_active_params_requested = false;
-        return POWER_EVT_IDLE_TIMEOUT;
+        became_idle = true;
     }
 
     // --- Battery voltage check ---
@@ -550,6 +666,21 @@ power_event_t power_manager_tick(uint32_t now_ms)
 
         // Re-evaluate charge state after VBAT reading
         charge_evaluate();
+    }
+
+    // Retry transient HAL submission failures only after battery and thermal
+    // safety work has completed for this tick.
+    if (s_connected && !s_conn_param_pending && !s_conn_param_failed &&
+        s_conn_param_retry_waiting &&
+        (int32_t)(now_ms - s_conn_param_retry_at_ms) >= 0) {
+        s_conn_param_retry_at_ms = 0;
+        s_conn_param_retry_waiting = false;
+    }
+    if (s_connected) {
+        request_conn_params(s_conn_param_desired, now_ms);
+    }
+    if (became_idle) {
+        return POWER_EVT_IDLE_TIMEOUT;
     }
 
     // --- Sleep timeout check (idle only) ---

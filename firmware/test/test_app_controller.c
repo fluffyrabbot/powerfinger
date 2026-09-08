@@ -143,6 +143,43 @@ void test_low_battery_event_forces_sleep(void)
     TEST_ASSERT_EQUAL(1, mock_hal_get_sleep_enter_count());
 }
 
+void test_conn_update_forwarded_to_power_manager_without_diagnostics(void)
+{
+    reset();
+    app_controller_t controller;
+    app_controller_init(&controller, NULL, NULL, NULL, NULL);
+    app_controller_dispatch_ring_event(&controller,
+                                       RING_EVT_BLE_CONNECTED,
+                                       BLE_CONN_ITVL_15MS,
+                                       0,
+                                       NULL);
+    app_controller_event_t update = {
+        .type = APP_CONTROLLER_EVT_CONN_PARAMS_UPDATED,
+        .conn_interval_1_25ms = BLE_CONN_ITVL_15MS,
+    };
+    app_controller_handle_event(&controller, &update, 1);
+    power_manager_on_motion();
+    TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
+}
+
+void test_conn_rejection_forwarded_to_power_manager_without_diagnostics(void)
+{
+    reset();
+    app_controller_t controller;
+    app_controller_init(&controller, NULL, NULL, NULL, NULL);
+    app_controller_dispatch_ring_event(&controller,
+                                       RING_EVT_BLE_CONNECTED,
+                                       BLE_CONN_ITVL_15MS,
+                                       0,
+                                       NULL);
+    app_controller_event_t rejected = {
+        .type = APP_CONTROLLER_EVT_CONN_PARAMS_REJECTED,
+    };
+    app_controller_handle_event(&controller, &rejected, 1);
+    power_manager_on_motion();
+    TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
+}
+
 void run_app_controller_tests(void)
 {
     printf("App controller tests:\n");
@@ -151,4 +188,6 @@ void run_app_controller_tests(void)
     RUN_TEST(test_disconnect_event_returns_to_advertising_and_resets_buttons);
     RUN_TEST(test_reconcile_repairs_missed_connect_event);
     RUN_TEST(test_low_battery_event_forces_sleep);
+    RUN_TEST(test_conn_update_forwarded_to_power_manager_without_diagnostics);
+    RUN_TEST(test_conn_rejection_forwarded_to_power_manager_without_diagnostics);
 }

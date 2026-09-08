@@ -32,16 +32,29 @@ shared Xtensa compiler, and preserves activation diagnostics on failure without
 mixing activation banners into version output. The regenerated hub lock uses
 lock format 3, esp_tinyusb 2.1.1, and TinyUSB 0.21.0~1.
 
-## Known connection-policy gap
+## Connection policy
 
-The current power manager requests 7.5 ms on motion/click and 15 ms after the
-idle transition. It does not request 15 ms immediately after connection, so the
-initial interval is selected by the central. It also treats successful request
-submission as requested state; asynchronous remote rejection is reported by the
-BLE HAL but does not reconcile the power manager's rejection state. These are
-pre-existing behavior gaps, not evidence of an SDK regression. Resolve them
-with connection/update state tests and physical traces before claiming the
-connection policy is qualified.
+The power manager requests 15 ms immediately on connection. Motion or a held
+click selects 7.5 ms; the idle transition selects 15 ms. Desired, in-flight,
+and confirmed intervals are tracked separately. While an update is pending,
+activity changes are coalesced into the latest desired target, which is
+considered when completion arrives. Submission success is never treated as
+confirmation that the central accepted the interval.
+
+A rejection or confirmation of a different interval suppresses that requested
+target for the current connection; the other target remains eligible. Transient
+submission failures use three retries per connection with exponential backoff
+of 250, 500, and 1000 ms. Repeated motion/click events cannot bypass that delay.
+An update without a completion after NimBLE's 40-second procedure window
+suspends further negotiation until reconnect, preventing a late callback from
+being paired with a newer request. This suspension does not disconnect the
+usable HID link. Thermal, battery, sleep, and watchdog behavior remain active.
+
+The HAL rejects update callbacks for a stale connection handle, checks descriptor
+lookup before reading the interval, and forwards update/rejection events through
+the application queue to the power manager. Physical traces are still required
+to establish which intervals each central accepts and the resulting latency and
+power consumption.
 
 ## Physical acceptance gate
 
@@ -58,28 +71,41 @@ actual measured values; leave unavailable evidence marked pending.
 | USB hub | Verify composite HID and companion CDC enumeration, input forwarding, disconnect/reconnect, host suspend/resume, CDC configuration round trips, and simultaneous BLE input with CDC traffic. Record host versions and logs; require no lost releases, resets, or hung interfaces. |
 | Accessibility and surfaces | Test low-force clicks, sustained drag, slow movement and accessible recovery from disconnect. Follow SURFACE-TEST-PROTOCOL.md for wood, glass, fabric, paper, glossy magazine, and matte plastic. Record known optical limitations honestly; require no regression on supported surfaces. |
 
+For connection-policy traces, capture these sequences separately: untouched
+connection, motion while the initial idle request is pending, idle while an
+active request is pending, central rejection of each target, disconnect during
+an update, and reconnect. Record the negotiated interval rather than counting
+request submissions as success. A central that declines the requested interval
+must remain usable without a request storm; record that host as unqualified for
+the requested interval until measurements establish its supported behavior.
+
 If the programmed connection policy or measured power falls short, fix that
 behavior and repeat the affected tests before promoting the baseline. The
 existing power budgets remain estimates until measurements support them.
 
 ## Local verification result
 
-The migration passed all 36 stages of `scripts/verify-firmware-local.sh --all`:
-14 verifier regressions, host CTest executables with and without ASan/UBSan,
+The connection-policy follow-up passed all 36 stages of `scripts/verify-firmware-local.sh --all`:
+14 verifier regressions, host CTest executables with and without ASan/UBSan
+(including 14 additional power-manager/controller transition tests),
 companion protocol tests, contract/operator checks, all five firmware
 configurations, and strict ERC/DRC for both active boards with zero findings.
-The local report is `build-verification/idf61.json`; it records GCC 15.2.0,
+The local report is `build-verification/ble-policy.json`; it records GCC 15.2.0,
 resolved firmware configurations, stage logs, and binary/ELF hashes. Reports
 are generated artifacts and must be retained with a physical qualification run.
-Upstream SDK CMake emits component include-directory warnings; no repository
-firmware compiler warnings were observed in the final build logs.
+Upstream SDK CMake emits component include-directory warnings. The generic
+`SENSOR_NONE` build also reports existing unused sensor recovery/calibration
+helpers and a calibration scheduling variable in `app_runtime.c`; these
+warnings are retained in its build log.
 
 ## Evidence availability
 
-The migration workstation exposed no ESP development-board serial port and its
-USB inventory returned no devices during the initial check. No device was
-flashed and no physical measurements were collected. BLE, USB, latency, power,
-and wake evidence are all **pending**.
+The workstation still exposes no ESP development-board serial port. A follow-up
+IORegistry USB inventory found ordinary hubs, a keyboard, and storage devices,
+but no identifiable PowerFinger or ESP board. `system_profiler` returned an
+empty USB list, so that output alone was not used as proof of an empty USB bus.
+No device was flashed and no physical measurements were collected. BLE, USB,
+latency, power, and wake evidence are all **pending**.
 
 Promotion requires a reviewed evidence record satisfying the table, with any
 exceptions explicitly decided by the BDFL. Keep this status pending until then.

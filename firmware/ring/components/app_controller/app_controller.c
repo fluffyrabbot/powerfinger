@@ -264,6 +264,7 @@ void app_controller_handle_event(app_controller_t *controller,
         break;
 
     case APP_CONTROLLER_EVT_CONN_PARAMS_UPDATED:
+        power_manager_on_conn_params_updated(event->conn_interval_1_25ms);
         if (controller->diagnostics) {
             ring_diagnostics_note_conn_params_updated(controller->diagnostics,
                                                       event->conn_interval_1_25ms);
@@ -273,6 +274,7 @@ void app_controller_handle_event(app_controller_t *controller,
         break;
 
     case APP_CONTROLLER_EVT_CONN_PARAMS_REJECTED:
+        power_manager_on_conn_params_rejected();
         if (controller->diagnostics) {
             ring_diagnostics_note_conn_param_rejected(controller->diagnostics);
             app_controller_log_diagnostics_snapshot("conn-rejected",

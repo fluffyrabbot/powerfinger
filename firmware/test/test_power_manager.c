@@ -38,15 +38,17 @@ void test_init_primes_battery_cache_from_adc(void)
     TEST_ASSERT_EQUAL(50, power_manager_get_battery_level());
 }
 
-void test_motion_requests_active_conn_params_once_per_connection(void)
+void test_motion_does_not_duplicate_pending_active_request(void)
 {
     reset();
     TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
 
     power_manager_on_connect();
+    TEST_ASSERT_EQUAL(1, mock_hal_get_ble_conn_param_request_count());
+    power_manager_on_conn_params_updated(BLE_CONN_ITVL_15MS);
     power_manager_on_motion();
 
-    TEST_ASSERT_EQUAL(1, mock_hal_get_ble_conn_param_request_count());
+    TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
     uint16_t min_itvl = 0;
     uint16_t max_itvl = 0;
     mock_hal_get_last_ble_conn_param_request(&min_itvl, &max_itvl);
@@ -55,7 +57,7 @@ void test_motion_requests_active_conn_params_once_per_connection(void)
 
     power_manager_on_motion();
     power_manager_on_click();
-    TEST_ASSERT_EQUAL(1, mock_hal_get_ble_conn_param_request_count());
+    TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
 }
 
 void test_idle_transition_requests_default_conn_params(void)
@@ -64,11 +66,12 @@ void test_idle_transition_requests_default_conn_params(void)
     TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
 
     power_manager_on_connect();
+    power_manager_on_conn_params_updated(BLE_CONN_ITVL_15MS);
     power_manager_on_motion();
 
     power_event_t evt = power_manager_tick(IDLE_TRANSITION_MS - 1);
     TEST_ASSERT_EQUAL(POWER_EVT_NONE, evt);
-    TEST_ASSERT_EQUAL(1, mock_hal_get_ble_conn_param_request_count());
+    TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
 
     evt = power_manager_tick(IDLE_TRANSITION_MS);
     TEST_ASSERT_EQUAL(POWER_EVT_IDLE_TIMEOUT, evt);
@@ -76,6 +79,11 @@ void test_idle_transition_requests_default_conn_params(void)
 
     uint16_t min_itvl = 0;
     uint16_t max_itvl = 0;
+    mock_hal_get_last_ble_conn_param_request(&min_itvl, &max_itvl);
+    TEST_ASSERT_EQUAL(BLE_CONN_ITVL_MIN_ACTIVE, min_itvl);
+    TEST_ASSERT_EQUAL(BLE_CONN_ITVL_MAX_ACTIVE, max_itvl);
+    power_manager_on_conn_params_updated(BLE_CONN_ITVL_7_5MS);
+    TEST_ASSERT_EQUAL(3, mock_hal_get_ble_conn_param_request_count());
     mock_hal_get_last_ble_conn_param_request(&min_itvl, &max_itvl);
     TEST_ASSERT_EQUAL(BLE_CONN_ITVL_MIN_DEFAULT, min_itvl);
     TEST_ASSERT_EQUAL(BLE_CONN_ITVL_MAX_DEFAULT, max_itvl);
@@ -107,6 +115,7 @@ void test_sleep_timeout_requires_idle_first(void)
     TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
 
     power_manager_on_connect();
+    power_manager_on_conn_params_updated(BLE_CONN_ITVL_15MS);
     power_manager_on_motion();
 
     power_event_t evt = power_manager_tick(IDLE_TRANSITION_MS - 1);
@@ -175,17 +184,57 @@ void test_rejected_active_params_retry_after_new_connection(void)
     reset();
     TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
 
-    mock_hal_set_ble_conn_param_status(HAL_ERR_REJECTED);
     power_manager_on_connect();
+    power_manager_on_conn_params_updated(BLE_CONN_ITVL_15MS);
+    mock_hal_set_ble_conn_param_status(HAL_ERR_REJECTED);
     power_manager_on_motion();
     power_manager_on_motion();
-    TEST_ASSERT_EQUAL(1, mock_hal_get_ble_conn_param_request_count());
+    TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
     power_event_t evt = power_manager_tick(IDLE_TRANSITION_MS);
     TEST_ASSERT_EQUAL(POWER_EVT_IDLE_TIMEOUT, evt);
 
     mock_hal_set_ble_conn_param_status(HAL_OK);
     power_manager_on_connect();
     power_manager_on_motion();
+    TEST_ASSERT_EQUAL(3, mock_hal_get_ble_conn_param_request_count());
+}
+
+void test_async_active_rejection_suppresses_only_active_target(void)
+{
+    reset();
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
+    power_manager_on_connect();
+    power_manager_on_conn_params_updated(BLE_CONN_ITVL_15MS);
+    power_manager_on_motion();
+    power_manager_on_conn_params_rejected();
+    power_event_t evt = power_manager_tick(IDLE_TRANSITION_MS);
+    TEST_ASSERT_EQUAL(POWER_EVT_IDLE_TIMEOUT, evt);
+    TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
+}
+
+void test_activity_change_while_pending_is_coalesced(void)
+{
+    reset();
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
+    power_manager_on_connect();
+    power_manager_on_motion();
+    power_event_t evt = power_manager_tick(IDLE_TRANSITION_MS);
+    TEST_ASSERT_EQUAL(POWER_EVT_IDLE_TIMEOUT, evt);
+    TEST_ASSERT_EQUAL(1, mock_hal_get_ble_conn_param_request_count());
+    power_manager_on_conn_params_updated(BLE_CONN_ITVL_15MS);
+    power_manager_on_motion();
+    TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
+}
+
+void test_stale_callback_after_disconnect_is_ignored(void)
+{
+    reset();
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
+    power_manager_on_connect();
+    power_manager_on_disconnect();
+    power_manager_on_conn_params_updated(BLE_CONN_ITVL_15MS);
+    power_manager_on_conn_params_rejected();
+    power_manager_on_connect();
     TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
 }
 
@@ -484,11 +533,190 @@ void test_deep_sleep_disables_charging(void)
     TEST_ASSERT_FALSE(power_manager_is_charging_enabled());
 }
 
+void test_connect_requests_default_and_motion_coalesces_active(void)
+{
+    reset();
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
+    power_manager_on_connect();
+    TEST_ASSERT_EQUAL(1, mock_hal_get_ble_conn_param_request_count());
+    uint16_t min_itvl = 0, max_itvl = 0;
+    mock_hal_get_last_ble_conn_param_request(&min_itvl, &max_itvl);
+    TEST_ASSERT_EQUAL(BLE_CONN_ITVL_MIN_DEFAULT, min_itvl);
+    TEST_ASSERT_EQUAL(BLE_CONN_ITVL_MAX_DEFAULT, max_itvl);
+    power_manager_on_motion();
+    power_manager_on_click();
+    TEST_ASSERT_EQUAL(1, mock_hal_get_ble_conn_param_request_count());
+    power_manager_on_conn_params_updated(BLE_CONN_ITVL_15MS);
+    TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
+    mock_hal_get_last_ble_conn_param_request(&min_itvl, &max_itvl);
+    TEST_ASSERT_EQUAL(BLE_CONN_ITVL_MIN_ACTIVE, min_itvl);
+    TEST_ASSERT_EQUAL(BLE_CONN_ITVL_MAX_ACTIVE, max_itvl);
+}
+
+void test_idle_rejection_reconciles_pending_motion(void)
+{
+    reset();
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
+    power_manager_on_connect();
+    power_manager_on_motion();
+    TEST_ASSERT_EQUAL(1, mock_hal_get_ble_conn_param_request_count());
+    power_manager_on_conn_params_rejected();
+    TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
+    uint16_t min_itvl = 0, max_itvl = 0;
+    mock_hal_get_last_ble_conn_param_request(&min_itvl, &max_itvl);
+    TEST_ASSERT_EQUAL(BLE_CONN_ITVL_MIN_ACTIVE, min_itvl);
+    TEST_ASSERT_EQUAL(BLE_CONN_ITVL_MAX_ACTIVE, max_itvl);
+}
+
+void test_active_motion_coalesces_after_default_confirmation(void)
+{
+    reset();
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
+    power_manager_on_connect();
+    power_manager_on_motion();
+    power_manager_on_conn_params_updated(BLE_CONN_ITVL_15MS);
+    TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
+    power_manager_on_conn_params_rejected();
+    power_manager_on_click();
+    TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
+}
+
+void test_busy_retries_are_exponential_and_bounded_under_activity(void)
+{
+    reset();
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
+    mock_hal_set_ble_conn_param_status(HAL_ERR_BUSY);
+    power_manager_on_connect();
+    power_manager_on_motion();
+    power_manager_on_click();
+    TEST_ASSERT_EQUAL(1, mock_hal_get_ble_conn_param_request_count());
+    mock_hal_set_ble_conn_param_status(HAL_ERR_BUSY);
+    power_manager_tick(249);
+    TEST_ASSERT_EQUAL(1, mock_hal_get_ble_conn_param_request_count());
+    mock_hal_set_time_ms(250);
+    power_manager_tick(250);
+    TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
+    mock_hal_set_time_ms(749);
+    power_manager_tick(749);
+    TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
+    mock_hal_set_time_ms(750);
+    power_manager_tick(750);
+    TEST_ASSERT_EQUAL(3, mock_hal_get_ble_conn_param_request_count());
+    mock_hal_set_time_ms(1749);
+    power_manager_tick(1749);
+    TEST_ASSERT_EQUAL(3, mock_hal_get_ble_conn_param_request_count());
+    mock_hal_set_time_ms(1750);
+    power_manager_tick(1750);
+    TEST_ASSERT_EQUAL(4, mock_hal_get_ble_conn_param_request_count());
+    power_manager_on_motion();
+    power_manager_tick(5000);
+    TEST_ASSERT_EQUAL(4, mock_hal_get_ble_conn_param_request_count());
+}
+
+void test_pending_timeout_quarantines_late_callbacks_until_reconnect(void)
+{
+    reset();
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
+    power_manager_on_connect();
+    power_manager_tick(BLE_CONN_PARAM_UPDATE_TIMEOUT_MS - 1U);
+    TEST_ASSERT_EQUAL(1, mock_hal_get_ble_conn_param_request_count());
+    power_manager_tick(BLE_CONN_PARAM_UPDATE_TIMEOUT_MS);
+    power_manager_on_conn_params_updated(BLE_CONN_ITVL_15MS);
+    power_manager_on_conn_params_rejected();
+    power_manager_on_motion();
+    TEST_ASSERT_EQUAL(1, mock_hal_get_ble_conn_param_request_count());
+    power_manager_on_disconnect();
+    power_manager_on_connect();
+    TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
+}
+
+void test_retry_deadline_handles_uint32_wrap_exactly(void)
+{
+    reset();
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
+    mock_hal_set_time_ms(UINT32_MAX - (BLE_CONN_PARAM_RETRY_DELAY_MS - 1U));
+    mock_hal_set_ble_conn_param_status(HAL_ERR_BUSY);
+    power_manager_on_connect();
+    mock_hal_set_ble_conn_param_status(HAL_OK);
+    power_manager_on_motion();
+    power_manager_on_click();
+    power_manager_tick(UINT32_MAX);
+    TEST_ASSERT_EQUAL(1, mock_hal_get_ble_conn_param_request_count());
+    power_manager_tick(0U);
+    TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
+}
+
+void test_thermal_shutdown_precedes_due_retry(void)
+{
+    reset();
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
+    mock_hal_set_ble_conn_param_status(HAL_ERR_BUSY);
+    power_manager_on_connect();
+    mock_hal_set_ble_conn_param_status(HAL_OK);
+    mock_hal_set_gpio_input(TEST_VBUS_PIN, true);
+    mock_hal_set_adc_mv_channel(TEST_NTC_CH, NTC_ADC_MV_62C);
+    TEST_ASSERT_EQUAL(POWER_EVT_THERMAL_SHUTDOWN,
+                      power_manager_tick(1000));
+    TEST_ASSERT_EQUAL(1, mock_hal_get_ble_conn_param_request_count());
+}
+
+void test_alternate_interval_suppresses_only_completed_target(void)
+{
+    reset();
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
+    power_manager_on_connect();
+    power_manager_on_motion();
+    // Central selects 30ms instead of idle 15ms. Pending motion still needs
+    // one active request; repeatedly selecting 30ms must not cause a storm.
+    const uint16_t central_interval = 24;
+    power_manager_on_conn_params_updated(central_interval);
+    TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
+    uint16_t min_itvl = 0, max_itvl = 0;
+    mock_hal_get_last_ble_conn_param_request(&min_itvl, &max_itvl);
+    TEST_ASSERT_EQUAL(BLE_CONN_ITVL_MIN_ACTIVE, min_itvl);
+    TEST_ASSERT_EQUAL(BLE_CONN_ITVL_MAX_ACTIVE, max_itvl);
+    power_manager_on_conn_params_updated(central_interval);
+    power_manager_on_click();
+    power_manager_tick(IDLE_TRANSITION_MS);
+    power_manager_on_conn_params_updated(central_interval);
+    power_manager_on_motion();
+    TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
+    power_manager_on_disconnect();
+    power_manager_on_connect();
+    TEST_ASSERT_EQUAL(3, mock_hal_get_ble_conn_param_request_count());
+}
+
+void test_io_retry_uses_latest_active_policy_and_stops_after_confirmation(void)
+{
+    reset();
+    TEST_ASSERT_EQUAL(HAL_OK, power_manager_init());
+    mock_hal_set_ble_conn_param_status(HAL_ERR_IO);
+    power_manager_on_connect();
+    mock_hal_set_time_ms(BLE_CONN_PARAM_RETRY_DELAY_MS - 1U);
+    power_manager_on_motion();
+    TEST_ASSERT_EQUAL(1, mock_hal_get_ble_conn_param_request_count());
+    mock_hal_set_ble_conn_param_status(HAL_OK);
+    power_manager_tick(BLE_CONN_PARAM_RETRY_DELAY_MS);
+    TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
+    uint16_t min_itvl = 0, max_itvl = 0;
+    mock_hal_get_last_ble_conn_param_request(&min_itvl, &max_itvl);
+    TEST_ASSERT_EQUAL(BLE_CONN_ITVL_MIN_ACTIVE, min_itvl);
+    TEST_ASSERT_EQUAL(BLE_CONN_ITVL_MAX_ACTIVE, max_itvl);
+    power_manager_on_conn_params_updated(BLE_CONN_ITVL_7_5MS);
+    for (uint32_t now = 300; now < 2000; now += 100) {
+        mock_hal_set_time_ms(now);
+        power_manager_on_motion();
+        power_manager_on_click();
+        power_manager_tick(now);
+    }
+    TEST_ASSERT_EQUAL(2, mock_hal_get_ble_conn_param_request_count());
+}
+
 void run_power_manager_tests(void)
 {
     printf("Power manager tests:\n");
     RUN_TEST(test_init_primes_battery_cache_from_adc);
-    RUN_TEST(test_motion_requests_active_conn_params_once_per_connection);
+    RUN_TEST(test_motion_does_not_duplicate_pending_active_request);
     RUN_TEST(test_idle_transition_requests_default_conn_params);
     RUN_TEST(test_click_resets_sleep_timer);
     RUN_TEST(test_sleep_timeout_requires_idle_first);
@@ -497,6 +725,9 @@ void run_power_manager_tests(void)
     RUN_TEST(test_boot_below_cutoff_reenters_low_battery_shutdown_immediately);
     RUN_TEST(test_adc_failure_threshold_forces_shutdown);
     RUN_TEST(test_rejected_active_params_retry_after_new_connection);
+    RUN_TEST(test_async_active_rejection_suppresses_only_active_target);
+    RUN_TEST(test_activity_change_while_pending_is_coalesced);
+    RUN_TEST(test_stale_callback_after_disconnect_is_ignored);
     RUN_TEST(test_sensor_power_can_be_gated_for_calibration_failure);
     RUN_TEST(test_click_activity_restores_sensor_power_after_gate_off);
     RUN_TEST(test_deep_sleep_uses_configured_wake_gpio_mask);
@@ -516,4 +747,13 @@ void run_power_manager_tests(void)
     RUN_TEST(test_cell_temp_api_returns_last_reading);
     RUN_TEST(test_charging_api_reports_state);
     RUN_TEST(test_deep_sleep_disables_charging);
+    RUN_TEST(test_connect_requests_default_and_motion_coalesces_active);
+    RUN_TEST(test_idle_rejection_reconciles_pending_motion);
+    RUN_TEST(test_active_motion_coalesces_after_default_confirmation);
+    RUN_TEST(test_busy_retries_are_exponential_and_bounded_under_activity);
+    RUN_TEST(test_pending_timeout_quarantines_late_callbacks_until_reconnect);
+    RUN_TEST(test_retry_deadline_handles_uint32_wrap_exactly);
+    RUN_TEST(test_thermal_shutdown_precedes_due_retry);
+    RUN_TEST(test_alternate_interval_suppresses_only_completed_target);
+    RUN_TEST(test_io_retry_uses_latest_active_policy_and_stops_after_confirmation);
 }

@@ -23,6 +23,8 @@
 #include <string.h>
 
 static const char *TAG = "hal_ble";
+// Link-loss detection: 4 seconds in BLE units of 10 ms.
+static const uint16_t BLE_SUPERVISION_TIMEOUT = 400;
 
 // ESP-IDF ships the implementation but does not expose a public prototype.
 void ble_store_config_init(void);
@@ -562,9 +564,18 @@ static int ble_gap_event_handler(struct ble_gap_event *event, void *arg)
     }
 
     case BLE_GAP_EVENT_CONN_UPDATE:
+        if (!s_connected || event->conn_update.conn_handle != s_conn_handle) {
+            ESP_LOGW(TAG, "ignoring conn update for stale handle=%d",
+                     event->conn_update.conn_handle);
+            break;
+        }
         if (event->conn_update.status == 0) {
             struct ble_gap_conn_desc desc;
-            ble_gap_conn_find(event->conn_update.conn_handle, &desc);
+            if (ble_gap_conn_find(event->conn_update.conn_handle, &desc) != 0) {
+                ESP_LOGW(TAG, "ignoring conn update for stale/unknown handle=%d",
+                         event->conn_update.conn_handle);
+                break;
+            }
             ESP_LOGI(TAG, "conn params updated: interval=%d",
                      desc.conn_itvl);
             notify_app_conn_interval(HAL_BLE_EVT_CONN_PARAMS_UPDATED, desc.conn_itvl);
@@ -871,7 +882,7 @@ hal_status_t hal_ble_request_conn_params(uint16_t min_1_25ms, uint16_t max_1_25m
         .itvl_min = min_1_25ms,
         .itvl_max = max_1_25ms,
         .latency = 0,
-        .supervision_timeout = 400,  // 4 seconds
+        .supervision_timeout = BLE_SUPERVISION_TIMEOUT,
         .min_ce_len = 0,
         .max_ce_len = 0,
     };
@@ -879,7 +890,13 @@ hal_status_t hal_ble_request_conn_params(uint16_t min_1_25ms, uint16_t max_1_25m
     int rc = ble_gap_update_params(s_conn_handle, &params);
     if (rc != 0) {
         ESP_LOGW(TAG, "conn param update request failed: %d", rc);
-        return HAL_ERR_REJECTED;
+        if (rc == BLE_HS_EBUSY || rc == BLE_HS_EALREADY || rc == BLE_HS_ENOTCONN) {
+            return HAL_ERR_BUSY;
+        }
+        if (rc == BLE_HS_EREJECT) {
+            return HAL_ERR_REJECTED;
+        }
+        return HAL_ERR_IO;
     }
     return HAL_OK;
 }

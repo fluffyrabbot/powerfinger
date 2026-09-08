@@ -28,8 +28,8 @@ typedef enum {
 hal_status_t power_manager_init(void);
 
 // Called when a BLE connection is established.
-// Resets connection parameter rejection state so active params (7.5ms)
-// can be re-requested — the new central may accept them even if the last one didn't.
+// Requests the default 15ms interval and resets negotiation/retry state.
+// A submitted request is not a confirmed interval change.
 void power_manager_on_connect(void);
 
 // Called when the BLE connection is lost.
@@ -43,6 +43,13 @@ void power_manager_on_motion(void);
 // Called from main loop while the click is held.
 // Marks the link active and preserves low-latency button release behavior.
 void power_manager_on_click(void);
+
+// Complete an asynchronous connection-parameter negotiation. These callbacks
+// run on the main loop after ordered BLE events. Updates also track unsolicited
+// central changes; rejections require a pending request. Disconnected events
+// are ignored. Lost-completion quarantine is cleared only by reconnect.
+void power_manager_on_conn_params_updated(uint16_t conn_interval_1_25ms);
+void power_manager_on_conn_params_rejected(void);
 
 // Called from main loop periodically.
 // Checks battery voltage, cell temperature, and emits idle/sleep timeout events.
