@@ -15,6 +15,7 @@ This is the canonical checklist for the current PowerFinger program.
 
 ## Source Of Truth
 
+- First-test purchasing: [FIRST-TEST-SHOPPING-LIST.md](FIRST-TEST-SHOPPING-LIST.md)
 - Ring packet: [hardware/ring/R30-OLED-NONE-NONE/MANIFEST.md](../hardware/ring/R30-OLED-NONE-NONE/MANIFEST.md)
 - Ring physical coupon ledger: [hardware/ring/R30-OLED-NONE-NONE/COUPON-RESULTS.md](../hardware/ring/R30-OLED-NONE-NONE/COUPON-RESULTS.md)
 - Hub packet: [hardware/shared/USB-HUB/MANIFEST.md](../hardware/shared/USB-HUB/MANIFEST.md)

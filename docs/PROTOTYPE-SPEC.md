@@ -7,6 +7,7 @@ the links below — this document is the concise build spec.
 - Click mechanisms: [CLICK-MECHANISMS.md](CLICK-MECHANISMS.md)
 - Glide system: [GLIDE-SYSTEM.md](GLIDE-SYSTEM.md)
 - IP landscape: [IP-STRATEGY.md](IP-STRATEGY.md)
+- First-test parts and purchasing status: [FIRST-TEST-SHOPPING-LIST.md](FIRST-TEST-SHOPPING-LIST.md)
 
 This spec follows the active scope freeze in
 [GO-NO-GO-RUBRIC.md](GO-NO-GO-RUBRIC.md): the optical ring pair + hub is the
@@ -28,11 +29,11 @@ later research, not for current execution.
 
 | Component | Spec |
 |-----------|------|
-| MCU | ESP32-C3 SuperMini |
+| MCU | ESP32-C3-MINI-1 module on custom R30 PCB; bench dev boards listed in the shopping list |
 | Sensor | PAW3204DB-TJ3L optical sensor/lens/emitter kit; ADNS-2080 class only as evaluated fallback |
 | Click | Metal snap dome (Snaptron SQ-series or equivalent, 5-10M cycles) |
 | Battery | LiPo 80-100mAh |
-| Charging | USB-C |
+| Charging | Off-board USB service fixture; routed P0 has service pads, no onboard USB-C receptacle |
 | Protocol | BLE HID mouse — reports X/Y deltas + click press/release |
 | Shell | 3D-printed ring, 30 degree sensor angle, parametric for finger circumference |
 | Glide | Raised structural rim (POM or nylon) with replaceable UHMWPE glide pads |
