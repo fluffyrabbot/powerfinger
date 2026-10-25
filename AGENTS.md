@@ -144,8 +144,9 @@ git add file1 file2 && git commit -m "type(scope): description" && git push
 - If push fails: stop and report. Don't pull/merge/rebase/force-push.
 - Conventional commits: `type(scope): message`
 - Local integration: work on `main`. Isolate parallel implementation in separate
-  worktrees; only the integration owner updates `main`. Cloud sandbox: feature
-  branches + PRs. A chained shell command does not isolate a shared Git index.
+  worktrees; only the integration owner updates `main`. Cloud sessions push a
+  `claude/*` branch; land it by fast-forward onto `main` locally, no PRs. A
+  chained shell command does not isolate a shared Git index.
 
 ## Codex Orchestration (Codex → GPT 5.6 Luna)
 
