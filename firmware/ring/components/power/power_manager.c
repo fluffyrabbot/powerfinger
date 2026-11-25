@@ -396,7 +396,7 @@ hal_status_t power_manager_init(void)
 
     // Initialize VBUS detection GPIO
 #if HAS_VBUS_DETECT
-    hal_status_t vbus_gpio_rc = hal_gpio_init(PIN_VBUS_DETECT, HAL_GPIO_INPUT_PULLDOWN);
+    hal_status_t vbus_gpio_rc = hal_gpio_init(PIN_VBUS_DETECT, HAL_GPIO_INPUT);
     if (vbus_gpio_rc != HAL_OK) {
 #ifdef ESP_PLATFORM
         ESP_LOGE(TAG, "VBUS detect GPIO init failed (%d)", vbus_gpio_rc);

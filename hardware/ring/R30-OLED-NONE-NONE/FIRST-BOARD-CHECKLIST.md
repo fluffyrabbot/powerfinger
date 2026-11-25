@@ -1,6 +1,14 @@
 <!-- SPDX-License-Identifier: CERN-OHL-S-2.0 -->
 # R30-OLED-NONE-NONE First Board Checklist
 
+**Disposition.** Engineering review only. Start with a current-limited bench supply and a dummy cell or battery simulator. Keep charging off the body. Use a separate donor fixture for participant work.
+
+- [ ] Verify the actual U2 marking, staggered lead drawing, pin-one orientation, lens datum and IR emitter assembly with the supplier. Overlay a dimensioned drawing or measured sample on the pad and drill plot.
+- [ ] With power removed, inspect isolation between U2 pins 7 and 8. Bring up VDD and measure VDDA separately. Verify emitter polarity and pulsed current. Read register 0x00 = 0x30 and the high nibble of 0x01 = 0xD, then capture signed motion on both axes.
+- [ ] Scope U1 EN and the regulated supply during startup, radio transmission and supply removal. With VBUS inserted and removed, verify U5 input and GPIO3 output, including absence of back-power when the board is off. The PCB thermistor is in the electronics pod. Attach an independent fixture probe to the cell and demonstrate that the fixture removes VBUS on overtemperature or sensor failure before using a real cell.
+- [ ] Fit the RCG05200N sample and retainer, measure actuator force and travel, check vent clearance and access to release the click. Request separate quotes for populated board, off-board cell/harness and fixture. Record a quantity-specific BOM below the project ceiling before release.
+
+
 This checklist is the execution contract for the active ring hardware lane.
 
 ## PCB Capture And Layout
@@ -32,8 +40,7 @@ This checklist is the execution contract for the active ring hardware lane.
   ERC
 - [x] Populate the MCU/radio and sensor/click sub-sheets with first-pass
   symbol counterparts for `U1`, `U2`, `SW1`, `R5`, `C1A`, `C1B`, `TP_VBAT`,
-  `TP_VBUS`, `TP_RST`, and `TP_MOT`; the PAW3204 LED-kit pin is now an explicit
-  no-connect local sensor pin rather than a routed test pad
+  `TP_VBUS`, `TP_RST`, and `TP_MOT`; see the sensor sheet for the illuminated optical head
 - [x] Reconcile the first-two-sheet electrical parity leftovers: `J_BAT`,
   `TP_CHRG`, `R2A`/`R2B`, and stale schematic-only `C1`/`C3`/`R2`/`R12`
 - [x] Model the `J_BAT` `MP1`/`MP2` mounting pads in the local schematic /
@@ -46,7 +53,7 @@ This checklist is the execution contract for the active ring hardware lane.
   PCB so `VBAT_SENSE`/`VBUS_DETECT` are no longer pad-only claims
 - [x] Record the packet recommendation for the first rigid P0:
   fixture-controlled charge VBUS, `R7`/`R8` = `100k`/`100k`, and
-  `R9`/`R10` = `220k`/`100k`
+  `R9`/`R10` = `10k`/`100k`
 - [x] BDFL accepted that packet recommendation for the first rigid P0:
   reintroducing an onboard charge-enable switch remains an explicit
   substitution, not a silent equivalent

@@ -24,8 +24,14 @@ active_component_anchors:
   SW1:
     function: primary_click
     description: Metal snap dome switch
-    value: 5mm 200gf
-    package: 5mm round
+    value: Snaptron RCG05200N 5.3mm 200gf
+    package: 5.3mm round four-leg
+  LED1:
+    function: matched_ir_illumination_emitter
+    value: External IR emitter
+    package: Off-board emitter with two wire pads
+    required_notes:
+      - do_not_claim_matching_until_supplier_drawing
   BT1:
     function: protected_cell
     value: 80–100mAh 3.7V

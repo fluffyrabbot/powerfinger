@@ -27,9 +27,7 @@ alternatives are actually viable, and flags single-source risks.
    brokers, and Octopart-listed specialty houses. The listed alt YS8205 is not a
    real standalone component -- it is an integrated USB mouse controller IC
    harvested from disposable mice and is not a viable alternative.
-3. The Snaptron SQ-05400N is sold direct from Snaptron and through DigiKey
-   Marketplace, but not through standard DigiKey/Mouser catalog stock. Minimum
-   order quantities may apply.
+3. Snaptron lists RCG05200N for the active optical ring. Confirm sample terms and contact finish directly.
 4. The MCP73831 is NOT pin-compatible with the TP4054 without careful PCB
    layout review. The TP4054 is SOT-23-5; the MCP73831 is available in SOT-23-5
    but with a different pin assignment. The BOM's "Alt: MCP73831" note needs a
@@ -215,26 +213,9 @@ Use that packet with these constraints:
 
 ---
 
-#### Snaptron SQ-05400N (metal snap dome)
-*Used in: all ring variants, wand (optional)*
+#### Snaptron RCG05200N (active optical ring)
 
-| Distributor | Status | Notes |
-|-------------|--------|-------|
-| DigiKey Marketplace | Possibly available | Snaptron is a DigiKey supplier partner, but the specific SQ-05400N was not found in catalog search |
-| Mouser | Not found | Not in standard catalog |
-| LCSC | Not found | Not stocked |
-| Snaptron direct | Available | Order direct from snaptron.com |
-
-- **Alternatives:** The BOM correctly notes "any 4-6mm metal dome, 150-250gf
-  actuation" from Murata or C&K. These are commodity metal dome switches
-  available from multiple sources. DigiKey stocks various Snaptron dome
-  models (GX and F series) through their marketplace.
-- **Risk assessment:** Low. Metal snap domes are commodity items made to
-  standard dimensions. The specific Snaptron part number matters less than the
-  dimensional and force specs. Any 5mm round dome with ~200gf actuation will
-  work.
-- **Verdict: Single-source for specific PN (Snaptron direct), but commodity
-  category with many equivalent parts.**
+The manufacturer lists a 5.3 mm dome with nominal 200 gf actuation and 0.30 mm travel. Confirm the sample, retainer, vent, plating, and force through the assembled actuator. Other dome diameters and force ratings require a contact and actuator review. [Dome dimensions](https://www.snaptron.com/products/standard-domes/rcg-series/) · [Double-sided contact pattern](https://www.snaptron.com/products/pcb-pads/double-sided-contact-pad/)
 
 ---
 
@@ -483,7 +464,7 @@ Based on this verification, the following BOM changes are recommended:
 | Component | Risk | Mitigation |
 |-----------|------|------------|
 | PAW3204DB-TJ3L | HIGH | AliExpress/sensor-kit lane only. Evaluate ADNS-2080 as the Western-source fallback before relying on it for the active board |
-| Snaptron SQ-05400N | LOW | Any 5mm dome works. Commodity category |
+| Snaptron RCG05200N | Sample required | Validate footprint, retention, force and finish. |
 | LiPo pouch cell | LOW | Commodity on AliExpress. Multiple vendors |
 | All other parts | NONE | Multi-source verified |
 

@@ -5,6 +5,223 @@
 	(uuid "3bb73a68-f2e3-4fdc-8035-844d8d9ecf61")
 	(paper "A4")
 	(lib_symbols
+		(symbol "74xGxx:74LVC1G17"
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(duplicate_pin_numbers_are_jumpers no)
+		(property "Reference" "U"
+			(at 0 3.81 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "74LVC1G17"
+			(at 0 -3.81 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at -2.54 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" "https://www.ti.com/lit/ds/symlink/sn74lvc1g17.pdf"
+			(at 0 -6.35 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Description" "Single Schmitt Buffer Gate, Low-Voltage CMOS"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "ki_keywords" "Single Gate Buff Schmitt LVC CMOS"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "ki_fp_filters" "SOT?23* SOT?553* Texas?R-PDSO-G5?DCK* Texas?R-PDSO-N5?DRL* Texas?X2SON*0.8x0.8mm*P0.48mm*"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(symbol "74LVC1G17_0_1"
+			(polyline
+				(pts
+					(xy -7.62 6.35) (xy -7.62 -6.35) (xy 5.08 0) (xy -7.62 6.35)
+				)
+				(stroke
+					(width 0.254)
+					(type default)
+				)
+				(fill
+					(type background)
+				)
+			)
+			(polyline
+				(pts
+					(xy -3.81 -1.27) (xy -2.54 -1.27) (xy -2.54 1.27) (xy -1.27 1.27)
+				)
+				(stroke
+					(width 0.254)
+					(type default)
+				)
+				(fill
+					(type background)
+				)
+			)
+			(polyline
+				(pts
+					(xy -2.54 -1.27) (xy -1.27 -1.27) (xy -1.27 1.27) (xy 0 1.27)
+				)
+				(stroke
+					(width 0.254)
+					(type default)
+				)
+				(fill
+					(type background)
+				)
+			)
+		)
+		(symbol "74LVC1G17_1_1"
+			(pin no_connect line
+				(at -7.62 5.08 180)
+				(length 5.08)
+				(hide yes)
+				(name "NC"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin input line
+				(at -12.7 0 0)
+				(length 5.08)
+				(name ""
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin power_in line
+				(at -5.08 -10.16 90)
+				(length 5.08)
+				(name "GND"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "3"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin output line
+				(at 10.16 0 180)
+				(length 5.08)
+				(name ""
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "4"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin power_in line
+				(at -5.08 10.16 270)
+				(length 5.08)
+				(name "VCC"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "5"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+		(embedded_fonts no)
+	)
 		  (symbol "PowerFinger:VBUS_Service_Jumper_SOT23Land" (pin_numbers hide) (pin_names (offset 0)) (in_bom no) (on_board yes)
 		  (property "Reference" "Q" (at 5.08 1.27 0)
 		    (effects (font (size 1.27 1.27)) (justify left))
@@ -1928,9 +2145,9 @@
 		(at 170.18 110.49 0)
 		(unit 1)
 		(exclude_from_sim no)
-		(in_bom no)
-		(on_board no)
-		(dnp yes)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
 		(fields_autoplaced no)
 		(uuid "8ffa7e94-402a-4993-a96a-89d23a3b0f56")
 		(property "Reference" "C3"
@@ -1942,7 +2159,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100nF"
+		(property "Value" "1uF LDO output"
 			(at 170.815 107.95 0.0000)
 			(effects
 				(font
@@ -1951,7 +2168,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 171.1452 106.68 0.0000)
 			(effects
 				(font
@@ -2258,7 +2475,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "220k"
+		(property "Value" "10k"
 			(at 59.69 129.54 90)
 			(effects
 				(font
@@ -3104,7 +3321,7 @@
 		)
 		(uuid "f28c564b-d1d4-49a9-889b-3b471e15b2bd")
 	)
-	(global_label "VBUS_DETECT"
+	(global_label "VBUS_SAMPLE"
 		(shape passive)
 		(at 59.69 133.35 0.0000)
 		(effects
@@ -3115,7 +3332,7 @@
 		)
 		(uuid "013a7516-3c47-4308-a164-59e37fd2a41b")
 	)
-	(global_label "VBUS_DETECT"
+	(global_label "VBUS_SAMPLE"
 		(shape passive)
 		(at 59.69 140.97 0.0000)
 		(effects
@@ -3414,4 +3631,17 @@
 		)
 	)
 	(embedded_fonts no)
+
+(symbol (lib_id "74xGxx:74LVC1G17") (at 114.3 160.02 0) (unit 1) (in_bom yes) (on_board yes) (dnp no) (uuid "2632725a-f0aa-5780-a65b-289bf48366e5") (property "Reference" "U5" (at 116.84 156.21 0) (effects (font (size 1.27 1.27))))
+(property "Value" "SN74LVC1G17DBVR" (at 116.84 163.83 0) (effects (font (size 1.27 1.27))))
+(property "Footprint" "Package_TO_SOT_SMD:SOT-23-5" (at 116.84 166.37 0) (effects (font (size 1.27 1.27)) hide)) (pin "1" (uuid "0c52e620-0d72-5b20-9922-5b60a7cd8708")) (pin "2" (uuid "032668d5-7e44-5399-a853-c60ed6f6eb54")) (pin "3" (uuid "d12e1509-c427-56ec-be87-86bca0dfd657")) (pin "4" (uuid "48a6fed4-1b16-5bcc-b8ee-81a1dd065023")) (pin "5" (uuid "63893be0-724c-5275-b28f-0909b02f46ca")) (instances (project "r30_oled_none_none" (path "/52806972-2821-46ce-8d75-ee50d26e4d1c/c83d3312-a274-42e4-b797-212a360a25ad" (reference "U5") (unit 1)))))
+(global_label "VBUS_SAMPLE" (shape passive) (at 101.6 160.02 180) (effects (font (size 1.27 1.27)) (justify right)) (uuid "422402e2-a00b-563b-96fd-3ce5bd91ea50"))
+(global_label "GND" (shape passive) (at 109.22 170.18 180) (effects (font (size 1.27 1.27)) (justify right)) (uuid "0f95218d-7f26-5b5c-bf17-d48fdf1a4f41"))
+(global_label "VBUS_DETECT" (shape passive) (at 124.46 160.02 0) (effects (font (size 1.27 1.27)) (justify left)) (uuid "87fea854-fa75-5301-b519-3a7d59c33502"))
+(global_label "VREG_3V3" (shape passive) (at 109.22 149.86 180) (effects (font (size 1.27 1.27)) (justify right)) (uuid "552f19f2-776e-508b-8400-13bd07e8dd9d"))
+(symbol (lib_id "Device:C") (at 162.56 160.02 0) (unit 1) (in_bom yes) (on_board yes) (dnp no) (uuid "0eaa971a-3f84-5a05-aa8e-c203bb425ebd") (property "Reference" "C6" (at 165.1 156.21 0) (effects (font (size 1.27 1.27))))
+(property "Value" "100nF" (at 165.1 163.83 0) (effects (font (size 1.27 1.27))))
+(property "Footprint" "Capacitor_SMD:C_0402_1005Metric" (at 165.1 166.37 0) (effects (font (size 1.27 1.27)) hide)) (pin "1" (uuid "9980bb17-2945-5c7a-b3be-51cf67b13782")) (pin "2" (uuid "33a852f2-af20-510c-b506-16906cb8b48d")) (instances (project "r30_oled_none_none" (path "/52806972-2821-46ce-8d75-ee50d26e4d1c/c83d3312-a274-42e4-b797-212a360a25ad" (reference "C6") (unit 1)))))
+(global_label "VREG_3V3" (shape passive) (at 162.56 156.21 0) (effects (font (size 1.27 1.27)) (justify left)) (uuid "0404ecda-7c9f-5f72-91aa-35681aa1d0a7"))
+(global_label "GND" (shape passive) (at 162.56 163.83 0) (effects (font (size 1.27 1.27)) (justify left)) (uuid "6b4bcd53-59c0-562d-8e6f-40f91a179e1e"))
 )

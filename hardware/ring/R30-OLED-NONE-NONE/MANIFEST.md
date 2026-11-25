@@ -1,6 +1,9 @@
 <!-- SPDX-License-Identifier: CERN-OHL-S-2.0 -->
 # R30-OLED-NONE-NONE Manifest
 
+**Current disposition.** R30 is an off-body DFM and fit fixture. The exact optical assembly, cell/harness, switch actuation, USB service, RF behavior and quantity-specific cost require physical evidence. Earlier routing notes below describe previous revisions. Use [capture bindings](kicad/CAPTURE-BINDINGS.md) and the [first-board checklist](FIRST-BOARD-CHECKLIST.md) for the current build.
+
+
 ## Status
 
 - Variant ID: `R30-OLED-NONE-NONE`
@@ -35,7 +38,8 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
 - Shell sizing: parametric for finger circumference, not one fixed ring size
 - Focal-distance strategy: raised rim and glide pads maintain the optical gap
 - Shell closure stays non-hermetic and reopenable through a top service lid,
-  nested seam skirt, pry relief, and two commodity service screws
+  nested seam skirt, pry relief, and four commodity service screws (two per
+  lateral pod)
 - The current CAD keeps the rim and glide-pad geometry on the lower shell so
   battery service does not require disturbing the focal-distance features
 - The current seam assumption should remain inside the existing `~$9` ring BOM
@@ -79,6 +83,9 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
 - Locks the P0 rigid board as a `43 x 18 mm` validation pass split into
   power/service, sensor/click, and MCU/radio zones
 - Preserves an ESP32-C3 antenna copper/component keep-out at the outward edge
+- Maps the final ESP32-C3 radio anchor at KiCad `(133.70, 100)` / board-local
+  `(+13.20, 0)`, including the populated `16.6 x 13.2 x 2.4 mm` body and
+  copper void `x=136.60..142.00` across the complete board width
   before any routing convenience
 - Places the PAW3204 on the bottom side at the optical aperture datum and keeps
   the sensor lane P0-specific rather than adding PMW3360 copper
@@ -100,8 +107,8 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   regulator, pinout, or BOM line
 - Recommends `R7`/`R8` = `100k`/`100k` for `VBAT_SENSE` to ESP32-C3 `GPIO0`;
   this accepts an always-on ~21 µA cell draw for first-board ADC reliability
-- Recommends `R9`/`R10` = `220k`/`100k` for `VBUS_DETECT` to ESP32-C3 `GPIO3`;
-  this draws ~16 µA only from USB VBUS while plugged in
+- Recommends `R9`/`R10` = `10k`/`100k` for `VBUS_DETECT` to ESP32-C3 `GPIO3`;
+  the divider draws about 45 µA from a 5 V fixture and feeds U5, which drives GPIO3 at the MCU rail
 - Keeps `TP_CHRG` as a TP4054 `CHRG_STAT` fixture status pad without an onboard
   pull-up; no firmware consumer or MCU GPIO is claimed for this board pass
 - Keeps PAW3204 `SENSOR_NRESET` and `SENSOR_MOTION_N` as local bring-up pads
@@ -113,8 +120,15 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
 
 - Models a lower shell that retains the structural rim, angled sensor tunnel,
   and four discrete glide-pad pockets
-- Models the routed board as a `43 x 18 mm` PCB in a shallow top pod instead of
-  a generic module pocket; the PCB datum is KiCad board center `(120.5, 100)`
+- Models the routed board as a `43 x 18 mm` PCB in a lateral `46.6 x 26.6 mm`
+  electronics pod centered at `(0, 23.4)` instead of a generic module pocket.
+  This split-pod geometry is a non-wearable validation fixture, not a wearable
+  ring profile;
+  the PCB datum remains KiCad board center `(120.5, 100)`. The protected cell
+  is in a separate `24.0 x 26.6 mm` pod centered at `(-36.0, 23.4)`, joined by
+  a service bridge with positive nominal clearance from the PCB and finger
+  passage. The resulting profile is a known accessibility gate, not a comfort
+  claim.
 - Adds first-pass left-edge access for the off-board service-pad interface
   instead of an onboard USB-C receptacle body or shell-stake footprint
 - Adds a non-USB board retention path: molded side rails, two side stop lugs,
@@ -125,7 +139,8 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
 - Adds a battery harness channel from the actual `J_BAT` service-pad area plus
   a service-loop relief and top lift window for a protected `80-100 mAh` cell
 - Models a removable top service lid with a nested locating skirt, pry notch,
-  and two top-access screw paths kept away from the antenna keep-out
+  and two top-access screw paths per lateral pod kept away from the antenna
+  keep-out
 - Reserves service volume for a protected `80-100 mAh` cell, a battery harness
   channel, and a small service-loop relief so battery removal is not forced to
   start at the service connector
@@ -136,6 +151,16 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
   sheet
 - Keeps this as a first-board fit pass only; it does not prove comfort, RF,
   screw clearance, dome actuation, or printable tolerances
+- The CAD packet now asserts the nominal `10.0 mm` top-to-installed-pad height,
+  the nominal `2.9 mm` optical gap, the KiCad U2 datum `(-4.0, 0.0)`, positive
+  board/cell/passage intervals, and screw clearance outside the PCB. These are
+  geometry regressions against stated first-board assumptions, not physical
+  evidence.
+- `scripts/verify-r30-enclosure-geometry.sh` also exports a CSG
+  `collision_probe` (required empty) and `contact_probe` (required non-empty),
+  and rejects any OpenSCAD `ERROR:` or empty normal STL. This verifies posed
+  mesh relationships while leaving wearability and printed tolerance gates
+  open.
 
 ## Missing Artifacts
 
@@ -177,7 +202,7 @@ focal distance, RF behavior, or click ergonomics are already proven in hardware.
 
 - BDFL accepted the packet recommendation for the first rigid P0:
   fixture-controlled charge VBUS, `R7`/`R8` = `100k`/`100k`, and
-  `R9`/`R10` = `220k`/`100k`. Reintroducing an onboard charge-enable switch,
+  `R9`/`R10` = `10k`/`100k`. Reintroducing an onboard charge-enable switch,
   onboard `CHRG_STAT` pull-up, or production firmware status consumer remains
   an explicit later board-contract substitution, not a silent equivalent
 - DRC-clean routed-board source after full schematic/PCB parity; `R7`-`R10`, `U1`,

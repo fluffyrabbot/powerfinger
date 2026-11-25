@@ -446,7 +446,7 @@ This pass cuts the onboard active charge-enable switch from the first P0:
 fixture VBUS now feeds TP4054 `VCC` through a non-BOM `Q1` service jumper, and
 ESP32-C3 `GPIO10` is intentionally no-connect. The PCB also carries the
 recommended sense support parts: `R7`/`R8` = `100k`/`100k` for `VBAT_SENSE` and
-`R9`/`R10` = `220k`/`100k` for `VBUS_DETECT`. `VBAT_SENSE` and `VBUS_DETECT`
+`R9`/`R10` = `10k`/`100k` for `VBUS_DETECT`. `VBAT_SENSE` and `VBUS_DETECT`
 are routed to the ESP32-C3 resources named in
 [INTERFACE-CONTRACT.md](INTERFACE-CONTRACT.md). `CHRG_STAT` remains locally
 testable at `TP_CHRG`, but it has no onboard pull-up and no MCU GPIO or
@@ -467,9 +467,9 @@ shell using these KiCad facts:
 - off-board service-pad access: `J1` at `(102.650, 100.000)` on the left
   service edge
 - off-board battery service path: `J_BAT` at `(108.600, 94.250)`
-- dome pocket: `SW1` at `(114.350, 95.780)`
+- dome pocket: `SW1` at `(122.000, 97.550)`
 - optical datum: `U2`/board aperture at `(116.500, 100.000)`
-- antenna keep-out: external no-footprint zone from `x=134.150` to board edge
+- antenna copper void: `x=136.60..142.00` across the board width on all copper layers
 
 Keep these coordinates in sync if the board moves; the shell should fail loudly
 rather than drifting back to anonymous module pockets.

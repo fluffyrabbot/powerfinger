@@ -126,8 +126,7 @@ request and is not a release-to-build package.
   evidence are closed.
 - MCU/radio: `ESP32-C3-MINI-1-N4` module, with antenna keep-out preserved.
 - Sensor: `PAW3204DB-TJ3L` optical sensor plus matched lens/emitter kit;
-  `LED1` is dropped from the first capture unless bare-sensor sourcing forces
-  it back in. `ADNS-2080` is the evaluated fallback class for a future board
+  `LED1` is an external matched IR emitter on two wire pads, driven through R11. Return a drawing, part number and sample for the complete optical assembly.
   profile, not a drop-in substitution for this packet; `YS8205`-style
   integrated USB mouse controllers are not acceptable replacements.
 - Battery: protected `80-100 mAh` LiPo pack, connected through off-board
@@ -142,7 +141,7 @@ request and is not a release-to-build package.
   divider, and non-BOM `Q1` VBUS service jumper from fixture VBUS to TP4054
   `VCC`; no onboard MCU charge-enable switch is claimed in this P0.
 - Sense/status support: `R7`/`R8 = 100k`/`100k` for `VBAT_SENSE`,
-  `R9`/`R10 = 220k`/`100k` for `VBUS_DETECT`, and `TP_CHRG` as a
+  `R9`/`R10 = 10k`/`100k` for `VBUS_DETECT`, and `TP_CHRG` as a
   fixture-observed `CHRG_STAT` pad with no onboard pull-up. `CHRG_STAT` is not
   claimed as a firmware-consumed GPIO yet.
 - USB ESD: TPD2E2U06DCK-class rail-less dual data-line shunt in SC-70/SOT-323.

@@ -22,7 +22,7 @@ Review archive:
 `build-kicad/R30-OLED-NONE-NONE/r30-oled-none-none-fabrication-review.zip`
 
 Archive SHA-256:
-`0dd63a2361fecc7fd9870917a8fb1c3dbeec75227a1099f392a53a230516c52c`
+`b8ae6ac7eff9eb49f7b0646b847393fa6bf92b0e248472ba0bca23a7efeedb10`
 
 Generated output classes:
 
@@ -33,7 +33,7 @@ Generated output classes:
 | Assembly review | 3 | Position CSV plus active-BOM/POS review CSV and markdown report; no warning-bearing KiCad schematic BOM is used |
 
 The drill report records a four-layer copper stack (`F.Cu`, `In1.Cu`,
-`In2.Cu`, `B.Cu`), 40 plated through holes, and 0 unplated through holes.
+`In2.Cu`, `B.Cu`), 53 plated holes and zero unplated holes.
 
 ## Commands
 
@@ -80,13 +80,7 @@ zip -r ../r30-oled-none-none-fabrication-review.zip gerbers drill assembly
   schematic BOM export and merges `hardware/bom/R30-OLED-NONE-NONE.csv` with
   the KiCad POS export instead. This preserves board refs such as `C1A`, `R2A`,
   and `TP_VBAT` without `?` suffixes.
-- The source-controlled active BOM contract remains
-  `hardware/bom/R30-OLED-NONE-NONE.csv`. The generated active-BOM/POS review has
-  no open rows: board-real populated refs match placements, `Q1` plus
-  `TP_CHRG`/`TP_MOT`/`TP_RST`/`TP_VBAT`/`TP_VBUS` are deliberate qty-0
-  service/copper placements, `LED1` is an unplaced qty-0 fallback, and the
-  remaining no-placement rows are off-board/mechanical items (`ANT1`, `BT1`,
-  `LENS1`, `PAD1`, `PCB1`, `RIM1`, `SHELL1`).
+- The assembly review checks the key electrical endpoints from the schematic netlist before matching positions. The active BOM is `hardware/bom/R30-OLED-NONE-NONE.csv`. LED1 coordinates identify two wire terminations for an external emitter. The matched lens, holder and emitter positions require supplier drawings. Check kit quantities and component prices separately from placement matching.
 - A Gerber command with `--subtract-soldermask --check-zones` crashed locally
   with KiCad CLI `10.0.2` / macOS Swift `Array index out of range`. The retained
   command omits those options and generated the listed outputs successfully.
@@ -94,27 +88,27 @@ zip -r ../r30-oled-none-none-fabrication-review.zip gerbers drill assembly
   packet, not as proof that the ring should be quoted or built before physical
   fit and stackup evidence is recorded.
 
-## File Hashes
+## File hashes
 
 | SHA-256 | File |
-|---------|------|
-| `7a69d08d588c3d44183a9fe5ad95af7bee1a6bc00e66459178d0e6ac655014ec` | `gerbers/r30_oled_none_none-F_Cu.gtl` |
-| `5d08c319d83ca1d450be078c8690490d21bbcc64fd5f66d180df0d6fbf608181` | `gerbers/r30_oled_none_none-In1_Cu.g1` |
-| `a36a34270c4f71c391132e0446365709ca56d4121f1507c121573e84ceb1ba36` | `gerbers/r30_oled_none_none-In2_Cu.g2` |
-| `ed4bc973d04563406b48429f22f39a1d862c53e020205b991463edf2145c54f9` | `gerbers/r30_oled_none_none-B_Cu.gbl` |
-| `d4bb34d897344d2a1c9cf54883423748486b31fa3e82a897e61cf559d2b15da8` | `gerbers/r30_oled_none_none-F_Mask.gts` |
-| `ee1b4df2383b1e6474bba8e991bf75c026a41a96597ee5adfcd59c1ccce1bbbc` | `gerbers/r30_oled_none_none-B_Mask.gbs` |
-| `2c47b0ad803bf19b074de4e61c7d7b84a7b2d43f6e4b559ebc05785c8a877418` | `gerbers/r30_oled_none_none-F_Paste.gtp` |
-| `b91aa013a68ecf566078f226441bc6e51543f68688e6865e997bae917bc47935` | `gerbers/r30_oled_none_none-B_Paste.gbp` |
-| `04f520ae80d33f3d1434645152f5711b201bc04e0a1166fc3f3f9bf047c00d33` | `gerbers/r30_oled_none_none-F_Silkscreen.gto` |
-| `509620e1aea6c0706672587a6c2684f9fdfee3206186b9af87c187a4fa0e11e5` | `gerbers/r30_oled_none_none-B_Silkscreen.gbo` |
-| `378ef1379fddcf141dc49511185ca8cff32fa754f0bef1cc5c976eef02a03d39` | `gerbers/r30_oled_none_none-Edge_Cuts.gm1` |
-| `47d14b7cb35b6e3ce0f55f3280d9711a942f4952fcab1c0d44bfe24c7866784d` | `gerbers/r30_oled_none_none-job.gbrjob` |
-| `7bc2ab58fdb86153e3e2fcde93aacc57ad913a992498dcfc7c0818777f70a209` | `drill/r30_oled_none_none-PTH.drl` |
-| `af0aa0b41bf6f4ef622c595b328159efc710b0152bc506aafcba8f4187a22290` | `drill/r30_oled_none_none-NPTH.drl` |
-| `b365d113e77d8e8a164867600d27a0f4465b71cb21e1d33577e6c03e8d60c09c` | `drill/r30_oled_none_none-PTH-drl_map.gbr` |
-| `ad3b9db331a954e5ae99429874c1a536cbabf4ab1967ae98840c3d95a6ea57e8` | `drill/r30_oled_none_none-NPTH-drl_map.gbr` |
-| `7e05bbb486ec6e016c19d9719037613edc13649e723b9faaa66b6f22a49c66f2` | `drill/r30_oled_none_none-drill-report.txt` |
-| `574c2af18e1c92f41e4ea164cd6bfd554a9a61d4e9c19c1cfbc0738ee30a6b72` | `assembly/r30_oled_none_none-pos.csv` |
-| `ce69888d2e9718128bba37fa1b6c14a6e7ebd9ec885c0cfe78c57c3ab3a3dc88` | `assembly/r30_oled_none_none-active-bom-pos-review.csv` |
-| `c8c3fe7b1dd44e7d0db0159b3101019e319af383abd6ce2a6b74f69c1081c778` | `assembly/r30_oled_none_none-active-bom-pos-review.md` |
+|---|---|
+| `cd0b2c30b0a0c2ecccf395e11536b1299cda43119af9c292007317b281fd4f73` | `assembly/r30_oled_none_none-active-bom-pos-review.csv` |
+| `cc4a0c045cb100f4dd41128c864085aaa5de3f25913349097b7e188a3725ea6e` | `assembly/r30_oled_none_none-active-bom-pos-review.md` |
+| `3a561dc5f5f7d7a2342724f51e2444e0c63dadbe1aac2d2e4bc1b32900d6df7f` | `assembly/r30_oled_none_none-pos.csv` |
+| `78de7ad1dd100c5e2155c1c6cc4aa02d6eebd696f7fbeca304cf0cc4248342ba` | `drill/r30_oled_none_none-NPTH-drl_map.gbr` |
+| `dbf79c70e318e4a73b2cb6fc450ab251b49fb988156730e2af862beb732c81e0` | `drill/r30_oled_none_none-NPTH.drl` |
+| `b1a378ec8c6ac0987bda486263492a1aab39c26f16dd3127da4a9c02f886156d` | `drill/r30_oled_none_none-PTH-drl_map.gbr` |
+| `52692d41091d3645fd0824b39dfc265973e644879c81d478be422b301990dab3` | `drill/r30_oled_none_none-PTH.drl` |
+| `cf8abf3a95753f7612c036e58fd2ad4e802c2209adc5d0b2466ea626f869fcce` | `drill/r30_oled_none_none-drill-report.txt` |
+| `b641807d171c34202e8dd303a3ee5337ce82dea6a522dc95834d8f13f434caa3` | `gerbers/r30_oled_none_none-B_Cu.gbl` |
+| `61d62346a48b308f6aca352c14c7b71e89756e859646f4e3ef3b2f48f984d35a` | `gerbers/r30_oled_none_none-B_Mask.gbs` |
+| `9386e7a8c21641e530bf06dc0021a583b48bb807fbf8ee556ab996adb8b5b5f8` | `gerbers/r30_oled_none_none-B_Paste.gbp` |
+| `7f780ed7ddf1dd161d778b8cb9d77d9c5235a1c2dc6000a5c415ea6197b2c2b3` | `gerbers/r30_oled_none_none-B_Silkscreen.gbo` |
+| `155e04e6a806bd5f907a8a9576231e4edf2a1a7b11483123f919d8f843a39252` | `gerbers/r30_oled_none_none-Edge_Cuts.gm1` |
+| `06cc2ce0766016ee5a8c290f4e931c5edc09d6da87e84d8602a614987b059446` | `gerbers/r30_oled_none_none-F_Cu.gtl` |
+| `5a660bd70b7ce7c787e4902fa899a62b0f5e1d6471a793c2388711085f8a0593` | `gerbers/r30_oled_none_none-F_Mask.gts` |
+| `8efd7160652fef3c6673f62d60bceb0658ba20f16bd2fea7804994b1a66b1cbc` | `gerbers/r30_oled_none_none-F_Paste.gtp` |
+| `2c6d08ac508be365ce133cead922b718779ee79470d2213c77b45d975de1fd5d` | `gerbers/r30_oled_none_none-F_Silkscreen.gto` |
+| `bce67c3abc2a670ce316014d28509e50037dde1d8da701b6c02aea738fef0e8e` | `gerbers/r30_oled_none_none-In1_Cu.g1` |
+| `02abf959cf1057b8b31ee8ef1b205bf8878923bc22db545340a403390bdeb407` | `gerbers/r30_oled_none_none-In2_Cu.g2` |
+| `a5e8523c7fb84759062d460832bbe1952fe59374bf29bd4268aa776c5176d45f` | `gerbers/r30_oled_none_none-job.gbrjob` |

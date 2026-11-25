@@ -57,7 +57,11 @@ interfaces:
     vbus_detect:
       mcu_resource: GPIO3
       firmware_symbol: CONFIG_POWERFINGER_VBUS_DETECT_PIN
-      divider: 220k_over_100k
+      divider: 10k_over_100k
+      input_net: VBUS_SAMPLE
+      input_buffer: SN74LVC1G17DBVR
+      output_net: VBUS_DETECT
+      internal_pull: disabled
     charge_service_vbus:
       mcu_resource: none
       firmware_symbol: none

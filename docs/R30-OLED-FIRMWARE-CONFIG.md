@@ -31,7 +31,7 @@ resolved values below, and only then builds the ring profile.
 | Wake mask | `CONFIG_POWERFINGER_WAKE_GPIO_MASK` | `256` | `1 << 8`, matching the dome GPIO. |
 | Battery ADC | `CONFIG_POWERFINGER_VBAT_ADC_CHANNEL` | `0` | Binds `VBAT_SENSE` to `ADC1_CH0` / GPIO0. |
 | Cell NTC ADC | `CONFIG_POWERFINGER_NTC_ADC_CHANNEL` | `1` | Binds `NTC_SENSE` to `ADC1_CH1` / GPIO1. |
-| VBUS detect | `CONFIG_POWERFINGER_VBUS_DETECT_PIN` | `3` | Binds resistor-divided `VBUS_DETECT` to GPIO3. |
+| VBUS detect | `CONFIG_POWERFINGER_VBUS_DETECT_PIN` | `3` | Reads the U5 push-pull output on GPIO3 with internal pulls disabled. |
 | Charge gate | `CONFIG_POWERFINGER_CHARGE_ENABLE_PIN` | `-1` | This board pass has no firmware-controlled charge gate; fixture VBUS feeds TP4054 `VCC` through the non-BOM service jumper. |
 | Hall rail | `CONFIG_POWERFINGER_HALL_POWER_PIN` | `-1` | R30-OLED has no Hall rail; firmware must not drive GPIO9. |
 | Charger status | none | none | `CHRG_STAT` is a fixture-only local status/test pad with no onboard pull-up and no firmware-consumed behavior. |

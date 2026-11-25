@@ -26,6 +26,10 @@ for a ring PCB fab or assembly quote.
 | KiCad gate | ERC=0, DRC=0, unconnected=0, schematic parity=0 per `CURRENT-VIOLATIONS.md` | Clean snapshot |
 | Active BOM | `hardware/bom/R30-OLED-NONE-NONE.csv` | Source controlled |
 
+## First engineering review
+
+Return an annotated overlay of the actual TJ3L package, lens, emitter, retainer and any required board openings against the Gerber/drill files. Check end-of-lead protrusion, the two-sided assembly sequence, dome vent and contact finish. Confirm that the module's ground lands can be pasted and inspected with the proposed stencil and that the antenna area remains clear after panelization. Review the full-speed USB pair and stackup with the pogo fixture, then demonstrate enumeration on the bench. The current files are for DFM review.
+
 ## Board-House Questions To Close
 
 Ask the prototype house or Seeed-style intake contact to answer these before
@@ -45,7 +49,7 @@ the ring annex becomes a PCB fab/assembly quote path.
 | Small outline handling | Confirm whether the `43 x 18 mm` board needs tabs, rails, panelization, fiducials, tooling holes, or mouse-bites for fabrication/assembly. | Panelization or handling requirements are recorded and source changes are planned if needed. |
 | Off-board service pads | Confirm the same-net USB service-pad and battery-service-pad approach is manufacturable and testable with a pogo/fixture path. | Vendor accepts the fixture assumption or returns specific pad/spacing/fixture changes. |
 | Test points and qty-0 copper | Confirm that `Q1` non-BOM service jumper and qty-0 test/service pads are understood as copper/service features, not missing assembly lines. | Assembly notes/BOM markings are accepted or revised. |
-| DNP/unplaced rows | Confirm `LED1`, off-board/mechanical rows, and service/test refs in the active-BOM/POS review are interpreted correctly. | No unresolved BOM/POS import rows remain in vendor review. |
+| Off-board assembly | Confirm LED1 placement denotes wire terminations, identify the separate emitter/holder installation, and reconcile off-board and service items with the active BOM. | No unresolved BOM/POS import rows remain in vendor review. |
 | Antenna keep-out handling | Confirm no vendor-added copper, rails, clamps, or panel tabs enter the ESP32-C3 antenna keep-out without a source update. | Vendor handling plan preserves antenna keep-out or flags needed source changes. |
 | Deliverable source return | Confirm any CAM/DFM modifications will be returned as editable notes/source suitable for CERN-OHL-S publication. | Return format is agreed before accepting manufacturer-side edits. |
 

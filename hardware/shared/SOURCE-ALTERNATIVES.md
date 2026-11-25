@@ -31,7 +31,7 @@ re-checking fit, current draw, thermal safety, or accessibility impact.
 | USB ESD protection | Low-capacitance 2-channel USB TVS array | Equivalent 2-line USB ESD arrays from major vendors | Leaving USB data unprotected because the board is “just a prototype” | USB service and immunity realism matter before layout hardens |
 | USB-C sink attach resistors | 5.1kΩ pull-downs on `CC1` / `CC2` | Any accurate commodity `5.1 kohm` resistors | Ad-hoc values or omitted CC resistors on a receptacle design | USB-C service/debug paths should enumerate honestly and attach cleanly |
 | Ring / wand battery | 3.7V LiPo with integrated PCM and UN 38.3 docs | Alternate protected pouch cells within envelope and charge-rate limits | Bare cells, harvested cells, or undocumented packs | Replaceability cannot come at the cost of unsafe charging or transport ambiguity |
-| Dome click | `Snaptron SQ-05400N` | Similar 4–6 mm domes from Murata or C&K | Adhesive-only switches that force destructive shell entry | Click feel and replacement path both matter |
+| Dome click | `Snaptron RCG05200N (R30 optical)` | Requalify contact geometry, force and stroke for any substitute | Adhesive-only switches that force destructive shell entry | Click feel and replacement path both matter |
 | Wand barrel switch | `Kailh GM8.0` | `Omron D2FC-F-7N` class switches | Single-source boutique switches | Wand repair needs commodity mouse-switch replacements |
 | Shell material | Nylon / POM for wear surfaces, PLA/PETG for rough prototypes | Any material with honest thermal and wear notes | Brittle or skin-unfriendly materials presented as final | Surface glide and skin-contact safety must stay truthful |
 

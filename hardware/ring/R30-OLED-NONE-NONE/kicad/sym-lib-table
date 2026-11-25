@@ -1,5 +1,6 @@
 (sym_lib_table
 	(version 7)
+	(lib (name "74xGxx") (type "KiCad") (uri "${KICAD10_SYMBOL_DIR}/74xGxx.kicad_sym") (options "") (descr "Single logic gates"))
 	(lib (name "PowerFinger") (type "KiCad") (uri "${KIPRJMOD}/PowerFinger.kicad_sym") (options "") (descr "PowerFinger R30 first-board local symbols"))
 	(lib (name "Device") (type "KiCad") (uri "${KICAD10_SYMBOL_DIR}/Device.kicad_sym") (options "") (descr "Generic devices (resistors, caps, diodes, NTC, MOSFETs)"))
 	(lib (name "Battery_Management") (type "KiCad") (uri "${KICAD10_SYMBOL_DIR}/Battery_Management.kicad_sym") (options "") (descr "Battery management ICs (TP4054 via MCP73831-2-OT shape)"))

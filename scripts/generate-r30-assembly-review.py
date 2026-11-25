@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import csv
 import subprocess
+import tempfile
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
@@ -54,6 +56,30 @@ def parse_qty(value: str) -> int | None:
         return None
 
 
+def check_schematic_connections(netlist: Path) -> None:
+    """Catch a bad circuit even when its PCB and schematic agree."""
+    nets = {
+        net.attrib["name"]: {f"{node.attrib['ref']}.{node.attrib['pin']}" for node in net.findall("node")}
+        for net in ET.parse(netlist).findall("./nets/net")
+    }
+    required = {
+        "VREG_3V3": {"U1.3", "R12.1", "C3.1", "U4.5", "U5.5", "U2.7", "C1B.1", "C7.1", "R11.1"},
+        "GND": {"C3.2", "C4.2", "C5.2", "C6.2", "C7.2", "U2.6", "U5.3", "U1.49"},
+        "MCU_EN": {"U1.8", "R12.2", "C4.1"},
+        "LED_ANODE": {"R11.2", "LED1.1"},
+        "SENSOR_LED_DRIVE": {"LED1.2", "U2.5"},
+        "VBUS_SAMPLE": {"R9.2", "R10.1", "U5.2"},
+        "VBUS_DETECT": {"U5.4", "U1.6", "TP_VBUS.1"},
+        "CLICK_PRIMARY_N": {"U1.22", "SW1.1"},
+    }
+    for name, pins in required.items():
+        missing = pins - nets.get(name, set())
+        if missing:
+            raise ValueError(f"{name} missing required endpoints: {', '.join(sorted(missing))}")
+    if nets.get("VDDA_SENSOR") != {"U2.8", "C5.1"}:
+        raise ValueError("VDDA_SENSOR must connect only the sensor regulator output and its capacitor")
+
+
 def export_pos() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     subprocess.run(
@@ -97,6 +123,15 @@ def review_note(status: str, bom_ref: str, board_ref: str) -> str:
 
 
 def main() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        netlist = Path(directory) / "r30.xml"
+        subprocess.run(
+            ["kicad-cli", "sch", "export", "netlist", "--format", "kicadxml", "-o", str(netlist),
+             str(PCB.with_suffix(".kicad_sch"))],
+            cwd=REPO_ROOT,
+            check=True,
+        )
+        check_schematic_connections(netlist)
     export_pos()
 
     bom_rows = [row for row in read_csv(ACTIVE_BOM) if (row.get("Ref") or "").strip()]

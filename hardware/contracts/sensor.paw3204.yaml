@@ -29,6 +29,23 @@ electrical:
   supply:
     vdd_v: { min: 2.1, max: 3.6 }
     active_board_rail: VREG_3V3
+    vdda_v: { nominal: 1.9, min: 1.73, max: 1.98 }
+    vdda_net: VDDA_SENSOR
+    vdda_is_sensor_regulator_output: true
+    reference_decoupling:
+      vdd_bypass: C1B 100nF
+      vdda_output: C5 1uF
+      vdd_bulk: C7 10uF
+  reset_idle:
+    pin: RST_QB_PD
+    board_status: local_bringup_pad_only
+    idle_bias: internal_1Mohm_pulldown_documented_by_pixart
+    mcu_control: none
+  emitter:
+    control_pin: LED
+    board_net: SENSOR_LED_DRIVE
+    topology: sensor_led_pin_drives_external_ir_emitter_from_vdd_through_current_limit
+    reference_circuit: PixArt_PA-W3204DB-TJ3L_datasheet_section_4
 mechanical:
   matched_lens_required: true
   emitter_kit_required: true

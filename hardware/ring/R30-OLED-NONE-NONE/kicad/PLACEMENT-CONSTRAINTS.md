@@ -41,12 +41,18 @@ placement classes for P0:
   first-board regulator/click corridor
 - `Q1`: source-controlled non-BOM VBUS service jumper before TP4054 `VCC`
 
+The retained final radio anchor is KiCad `(133.70, 100.00)`, board-local
+`(+13.20, 0.00)`. The populated U1 body is `16.6 x 13.2 x 2.4 mm` above the
+PCB; the antenna copper void is KiCad `x=136.60..142.00` / board-local
+`x=+16.10..+21.50` across the complete board Y span. Enclosure CAD must keep
+closure hardware outside that void and preserve the U2 aperture datum.
+
 ## Mechanical / RF Placement Rules
 
 - Place the ESP32-C3 module so the antenna end faces outward toward the shell
   exterior, not inward toward the finger.
 - Reserve the module antenna keep-out first:
-  approximately `10 mm` beyond the antenna end, spanning the module width, with
+  keep metal clear beyond the antenna at the board edge, with an external clearance target of `10 mm`, spanning the module width, with
   no copper, traces, or components in that zone.
 - Keep a continuous ground plane under the module body, excluding the antenna
   keep-out.

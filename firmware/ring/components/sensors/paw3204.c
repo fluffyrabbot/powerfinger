@@ -125,6 +125,13 @@ static void reg_write(uint8_t addr, uint8_t value)
     delay_us(PAW3204_T_RESYNC_US);
 }
 
+static void set_configuration(uint8_t value)
+{
+    reg_write(PAW3204_REG_WRITE_PROTECT, PAW3204_WRITE_PROTECT_UNLOCK);
+    reg_write(PAW3204_REG_CONFIG, value);
+    reg_write(PAW3204_REG_WRITE_PROTECT, PAW3204_WRITE_PROTECT_LOCK);
+}
+
 // --- Sensor interface implementation ---
 
 hal_status_t sensor_init(void)
@@ -153,21 +160,20 @@ hal_status_t sensor_init(void)
     }
     LOG_I("PAW3204 detected (product ID: 0x%02X)", pid);
 
-    // Disable write protection for configuration
-    reg_write(PAW3204_REG_WRITE_PROTECT, PAW3204_WRITE_PROTECT_UNLOCK);
-
-    // Set resolution: 800 CPI (default for Standard tier)
-    reg_write(PAW3204_REG_RESOLUTION, PAW3204_RES_800CPI);
-
-    // Re-enable write protection
-    reg_write(PAW3204_REG_WRITE_PROTECT, PAW3204_WRITE_PROTECT_LOCK);
+    uint8_t id2 = reg_read(PAW3204_REG_PRODUCT_ID2);
+    if ((id2 & PAW3204_PRODUCT_ID2_MASK) != PAW3204_PRODUCT_ID2_TJ3L) {
+        LOG_E("unexpected PAW3204 variant ID: 0x%02X", id2);
+        return HAL_ERR_IO;
+    }
+    // The R30 sensor supply stays on through an MCU deep-sleep reset.
+    set_configuration(PAW3204_CONFIG_DEFAULT);
 
     // Read and discard any stale delta values
     reg_read(PAW3204_REG_MOTION);
     reg_read(PAW3204_REG_DELTA_X);
     reg_read(PAW3204_REG_DELTA_Y);
 
-    LOG_I("PAW3204 initialized at 800 CPI");
+    LOG_I("PAW3204 initialized with TJ3L reset configuration (1000 CPI nominal)");
     return HAL_OK;
 }
 
@@ -183,7 +189,7 @@ hal_status_t sensor_read(sensor_reading_t *out)
     int8_t dy = (int8_t)reg_read(PAW3204_REG_DELTA_Y);
 
     // Read surface quality
-    uint8_t squal = reg_read(PAW3204_REG_SQUAL);
+    uint8_t squal = reg_read(PAW3204_REG_IMAGE_QUALITY);
 
     out->dx = dx;
     out->dy = dy;
@@ -195,12 +201,7 @@ hal_status_t sensor_read(sensor_reading_t *out)
 
 hal_status_t sensor_power_down(void)
 {
-    // PAW3204 enters sleep automatically based on SLEEP1/SLEEP2 registers.
-    // For forced power-down, we can set the configuration register.
-    // In practice, the LDO power gate handles this for deep sleep.
-    reg_write(PAW3204_REG_WRITE_PROTECT, PAW3204_WRITE_PROTECT_UNLOCK);
-    reg_write(PAW3204_REG_CONFIG, 0x01);  // Force sleep
-    reg_write(PAW3204_REG_WRITE_PROTECT, PAW3204_WRITE_PROTECT_LOCK);
+    set_configuration(PAW3204_CONFIG_DEFAULT | PAW3204_CONFIG_POWER_DOWN);
     return HAL_OK;
 }
 
@@ -215,6 +216,8 @@ hal_status_t sensor_wake(void)
         clock_pulse();
     }
     hal_timer_delay_ms(10);
+
+    set_configuration(PAW3204_CONFIG_DEFAULT);
 
     // Verify sensor responds
     uint8_t pid = reg_read(PAW3204_REG_PRODUCT_ID);

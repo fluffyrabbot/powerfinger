@@ -133,7 +133,7 @@ menu "PowerFinger Configuration"
         int "USB VBUS detect GPIO pin (-1 if not populated)"
         default -1
         help
-            GPIO that reads USB VBUS presence through a resistor divider.
+            GPIO that reads a board-driven active-high USB presence signal.
             Set to -1 for dev-board bring-up or boards without the finished
             charge/safety path.
 

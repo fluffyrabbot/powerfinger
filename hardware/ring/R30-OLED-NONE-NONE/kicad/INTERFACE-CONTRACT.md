@@ -29,7 +29,7 @@ It exists to stop two kinds of drift:
 |----------|-------------------|-----------------|--------|-------|
 | VBAT sense | `ADC1_CH0` / `GPIO0` | `CONFIG_POWERFINGER_VBAT_ADC_CHANNEL` | Active default | Existing battery monitor path |
 | Cell NTC sense | `ADC1_CH1` / `GPIO1` | `CONFIG_POWERFINGER_NTC_ADC_CHANNEL` | Recommended first board | Matches the published battery-safety requirement without colliding with the optical lane |
-| USB VBUS detect | `GPIO3` | `CONFIG_POWERFINGER_VBUS_DETECT_PIN` | Recommended first board | Input only from a resistor-divided 5V-detect net |
+| USB VBUS detect | `GPIO3` | `CONFIG_POWERFINGER_VBUS_DETECT_PIN` | Recommended first board | U5 rail-referenced output, GPIO internal pulls disabled |
 | Charger status | none allocated | none | Fixture hardware test only | `CHRG_STAT` is exposed on a local pad without an onboard pull-up; a test fixture must provide a pull-up if status is measured |
 | Sensor clock | `GPIO4` | `CONFIG_POWERFINGER_SENSOR_SCLK_PIN` | Active default | Shared PAW3204 / PMW3360 clock path |
 | Sensor data out | `GPIO5` | `CONFIG_POWERFINGER_SENSOR_SDIO_PIN` | Active default | PAW3204 bidirectional SDIO, PMW3360 MOSI |
@@ -84,7 +84,7 @@ It exists to stop two kinds of drift:
 - `NTC_SENSE` is routed as the active NTC divider sense net near the battery
   connector.
 - `VBAT_SENSE` now routes through `R7`/`R8` to ESP32-C3 `GPIO0`.
-- `VBUS_DETECT` now routes through `R9`/`R10` to ESP32-C3 `GPIO3`.
+- `VBUS_DETECT` now comes from the U5 output. R9/R10 feed its 5 V tolerant input from fixture VBUS.
 - `CHRG_STAT` now has a local fixture status pad but no onboard pull-up; it
   does not route to the MCU in this packet.
 - PAW3204 `RST/QB/PD` and `MOTSWK` are exposed on local pads in the PCB pass

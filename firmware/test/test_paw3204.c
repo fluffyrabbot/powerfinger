@@ -53,6 +53,7 @@ static void seq_commit(void)
 static void seed_valid_init(void)
 {
     seq_push_byte(PAW3204_PRODUCT_ID);  // product ID read
+    seq_push_byte(0xD3);  // TJ3L family, revision 3
     seq_push_byte(0x00);  // motion drain
     seq_push_byte(0x00);  // delta_x drain
     seq_push_byte(0x00);  // delta_y drain
@@ -78,6 +79,15 @@ void test_paw3204_init_success(void)
     seed_valid_init();
 
     TEST_ASSERT_EQUAL(HAL_OK, sensor_init());
+}
+
+void test_paw3204_init_wrong_variant(void)
+{
+    reset();
+    seq_push_byte(PAW3204_PRODUCT_ID);
+    seq_push_byte(0x50);  // PAW3204 family with a different register profile
+    seq_commit();
+    TEST_ASSERT_EQUAL(HAL_ERR_IO, sensor_init());
 }
 
 void test_paw3204_init_wrong_product_id(void)
@@ -234,6 +244,7 @@ int main(void)
     printf("PAW3204 sensor tests:\n");
     RUN_TEST(test_paw3204_init_success);
     RUN_TEST(test_paw3204_init_wrong_product_id);
+    RUN_TEST(test_paw3204_init_wrong_variant);
     RUN_TEST(test_paw3204_read_zero_motion);
     RUN_TEST(test_paw3204_read_positive_motion);
     RUN_TEST(test_paw3204_read_negative_motion);

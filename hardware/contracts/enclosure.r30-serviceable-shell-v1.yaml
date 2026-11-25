@@ -15,9 +15,9 @@ parameters:
   band_width_mm:
     default: 18
   shell_height_mm:
-    default: 8.0
+    default: 7.8
   rim_height_mm:
-    default: 2.8
+    default: 1.7
   glide_pad_thickness_mm:
     default: 0.5
 interfaces:
@@ -25,14 +25,28 @@ interfaces:
     contract: hardware/contracts/board.r30-rigid-p0.yaml
     envelope_mm: [43.0, 18.0, 1.0]
     retention: molded_rails_side_stops_lid_compression_pads
+    pod_envelope_mm: [46.6, 26.6, 7.8]
+    pod_center_mm: [0.0, 23.4, 0.0]
+    board_local_datum_mm: [0.0, 0.0, 3.6]
+    board_clearance_mm: 0.35
+    radio_anchor_board_local_mm: [13.2, 0.0]
+    radio_body_mm: [16.6, 13.2, 2.4]
+    antenna_copper_void_board_local_x_mm: [16.1, 21.5]
   battery:
     contract: hardware/contracts/battery.lipo-protected-ring-100mah.yaml
     envelope_mm: [20.0, 15.0, 4.2]
     service_path: top_lift_window_plus_lead_channel
+    pod_envelope_mm: [24.0, 26.6, 7.8]
+    pod_center_mm: [-36.0, 23.4, 0.0]
+    board_to_cell_x_clearance_mm: 4.15
   sensor:
     contract: hardware/contracts/sensor.paw3204.yaml
     aperture_diameter_mm: 6.2
     gap_control: raised_rim_plus_uhmwpe_glide_pads
+    board_local_datum_mm: [-4.0, 0.0]
+    nominal_lens_datum_z_mm: 0.7
+    nominal_glide_surface_z_mm: -2.2
+    nominal_optical_gap_mm: 2.9
   service_connector:
     type: off-board same-net USB service pads with external fixture or pogo harness
     opening_modeled: true
@@ -58,6 +72,15 @@ acceptance:
   service_fixture_access_without_board_levering: required
   board_lifts_out_without_prying_on_service_pads_or_antenna: required
   no_metal_intrusion_in_antenna_keepout: required
+  cad_assertions:
+    - board_and_battery_envelopes_are_xyz_separated
+    - board_and_battery_clear_finger_passage
+    - lid_roof_and_battery_lift_window_have_positive_clearance
+    - service_screws_clear_pcb_width
+    - board_end_stops_clear_board_ends
+    - sensor_datum_matches_kicad_u2
+    - nominal_optical_gap_within_contract
+    - nominal_finger_to_surface_height_within_contract
 known_limits:
   - comfort is unmeasured
   - RF behavior is unmeasured
