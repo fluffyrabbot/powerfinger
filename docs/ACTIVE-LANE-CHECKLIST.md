@@ -60,6 +60,8 @@ and accessibility evidence required by the gates below. See
   [DRIVER-HARDWARE-CONTRACT.md](DRIVER-HARDWARE-CONTRACT.md) before treating a
   tracking failure as firmware-only
 - Run the surfaces and metrics defined in [SURFACE-TEST-PROTOCOL.md](SURFACE-TEST-PROTOCOL.md)
+- Use the [ring, separate switch, and puck comparison](BENCH-INPUT-COMPARISON.md)
+  to distinguish click-placement effects from wearing the ring.
 - Publish measured outcomes back into the relevant test/rubric docs rather than
   separate ad hoc notes
 

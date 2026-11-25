@@ -104,6 +104,9 @@ Bench equipment is a reusable development expense. The ring's roughly $9 BOM
 target and the project ceilings still need validation against actual component
 and assembly quotes; this shopping list does not establish those costs.
 
+For a partner-run bench, use the [prototype partner brief](PROTOTYPE-PARTNERS.md)
+and [comparison worksheet](BENCH-INPUT-COMPARISON.md).
+
 ## Recommended follow-up
 
 Prepare the dedicated C3/S3 bench profiles, connector-labelled wiring sheet,
